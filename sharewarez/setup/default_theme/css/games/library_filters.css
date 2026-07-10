@@ -129,6 +129,7 @@
     border-radius: 50%;
     background: var(--color-gray-888); 
     cursor: pointer; 
+    margin-top: -7.5px;
 }
 
 .rating-slider::-webkit-slider-runnable-track {

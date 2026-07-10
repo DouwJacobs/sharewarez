@@ -20,18 +20,6 @@
         <h2><i class="fas fa-plug"></i> Integrations Management</h2>
         <p>Manage all your external service integrations in one place.</p>
 
-        <!-- Flash Messages -->
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
-                        {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                    </div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
-
         <!-- Nav tabs -->
         <ul class="integrations-nav-tabs nav nav-tabs" id="integrationTabs" role="tablist">
             <li class="integrations-nav-item nav-item" role="presentation">

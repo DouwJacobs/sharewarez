@@ -8,6 +8,9 @@
     
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Sharewarez</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     {% block styles %}
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"/>
     <script src="https://code.jquery.com/jquery-3.7.1.js" integrity="sha256-eKhayi8LEQwp4NKxN+CfCh+3qOVUtJn3QNZ0TciWLP4=" crossorigin="anonymous"></script>
@@ -85,7 +88,7 @@
     
     <div class="sidebar-header">
         <button id="toggleSidebar" class="toggle-sidebar">
-            <i class="icon-chevron"><span>&gt;</span></i>
+            <i class="fas fa-chevron-right icon-chevron"></i>
         </button>
     </div>
     <div class="sidebar-menu">
@@ -247,6 +250,26 @@ if (prefsToggle) {
             });
     });
 }
+</script>
+
+<script>
+// Initialize all server-rendered flash toasts
+document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('.sw-toast[data-bs-autohide="true"]').forEach(function (toastEl) {
+        const delay = parseInt(toastEl.dataset.bsDelay || '6000', 10);
+        const bsToast = new bootstrap.Toast(toastEl, { delay: delay, autohide: true });
+
+        // Smooth slide-out before BS removes it
+        toastEl.addEventListener('hide.bs.toast', function () {
+            toastEl.classList.add('hiding');
+        });
+        toastEl.addEventListener('hidden.bs.toast', function () {
+            toastEl.remove();
+        });
+
+        bsToast.show();
+    });
+});
 </script>
 
 <!-- Attract Mode Idle Detection -->

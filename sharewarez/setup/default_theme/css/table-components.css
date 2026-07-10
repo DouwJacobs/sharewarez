@@ -27,7 +27,8 @@
 /* Table Headers */
 .table th,
 .table-dark th {
-    background: var(--table-header-bg);
+    background: rgba(10, 10, 15, 0.6);
+    backdrop-filter: var(--backdrop-blur);
     border-bottom: 2px solid var(--table-border);
     font-weight: 600;
     text-transform: uppercase;
@@ -74,8 +75,9 @@
 /* Table Row Hover Effects */
 .table tbody tr:hover,
 .table-dark tr:hover {
-    background-color: var(--table-hover-bg) !important;
-    transform: translateY(-1px);
+    background-color: var(--bg-light-overlay-hover) !important;
+    transform: translateX(2px);
+    box-shadow: inset 3px 0 0 var(--btn-primary);
     transition: all var(--transition-fast);
 }
 
@@ -104,7 +106,10 @@
 .table .badge {
     font-size: var(--font-size-sm);
     padding: 0.4em 0.8em;
-    border-radius: var(--border-radius-xs);
+    border-radius: 50rem;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    font-weight: 500;
 }
 
 /* Table Buttons */

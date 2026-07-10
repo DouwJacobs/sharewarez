@@ -1,16 +1,19 @@
 .sidebar {
     height: 100%;
-    width: 210px; 
+    width: 250px; 
     position: fixed;
     z-index: 1;
     top: 0;
     left: 0;
     padding: var(--spacing-sm) var(--spacing-sm) var(--spacing-sm) var(--spacing-sm);
     background-color: var(--color-dark-111);
-    overflow-x: hidden;
+    overflow: hidden;
     transition: 0.5s;
     margin-right: var(--spacing-xs);
     background: linear-gradient(to right, var(--bg-dark-gradient) 95%, transparent);
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
 }
 
 .sidebar-link:hover {
@@ -94,7 +97,7 @@
 #content {
     transition: margin-left .5s;
     padding: var(--spacing-lg);
-    margin-left: 180px;
+    margin-left: 220px;
 }
 
 #content.collapsed {
@@ -187,54 +190,117 @@
     display: none;
 }
 
-.sidebar.collapsed .user-name {
-    visibility: hidden;
+/* =====================================================
+   SIDEBAR MENU AREA (flex grow to push filters down)
+   ===================================================== */
+
+.sidebar-menu {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
 }
 
+/* =====================================================
+   SIDEBAR FILTER SECTION
+   Visual separator + subtle glass section for filters
+   ===================================================== */
 
-.sidebar.collapsed .user-account-icon {
-    width: 60px;
+.sidebar .container-filtersandsort {
+    padding: 8px 6px 6px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 0 0 var(--border-radius-sm) var(--border-radius-sm);
 }
 
-
-.user-account-menu {
-    position: fixed;
-    left: var(--spacing-xs);
-    color: var(--color-light-ecf);
-    border-radius: var(--spacing-25);
-    box-shadow: 0 2px 5px var(--shadow-dark); 
-    cursor: pointer;
-    transition: all var(--transition-normal);
-    background-color: var(--color-black-e5);
-    padding: var(--spacing-lg) var(--spacing-lg);
-    border: 2px solid transparent;
+.sidebar .container-filtersandsort .sorting-dropdown {
+    margin-bottom: 6px;
 }
 
-.user-account-icon {
-    position: fixed;
-    bottom: var(--spacing-xs);
-    left: var(--spacing-xs);
-    color: var(--color-light-ecf);
-    border-radius: var(--spacing-25);
-    box-shadow: 0 2px 5px var(--shadow-dark); 
-    cursor: pointer;
-    transition: all var(--transition-normal);
-    background-color: var(--color-black-73);
-    padding: var(--spacing-lg) var(--spacing-lg);
-    border: 2px solid transparent;
+.sidebar .container-filtersandsort select,
+.sidebar .container-filtersandsort .btn {
+    font-size: 12px;
+    height: 26px;
+    padding: 1px 5px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: var(--color-gray-ccc);
+    border-radius: 4px;
+    width: 100%;
+    margin-bottom: 3px;
 }
 
-
-.user-account-icon:hover, .user-account-menu:hover {
-    border-color: var(--color-light-ecf); 
+.sidebar .container-filtersandsort .btn {
+    width: auto;
+    margin-left: 3px;
 }
 
+.sidebar .container-filtersandsort select:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.sidebar .container-filtersandsort label {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.45);
+    margin-bottom: 1px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.sidebar.collapsed .container-filtersandsort {
+    display: none;
+}
+
+/* =====================================================
+   USER ACCOUNT MINI-MENU (bottom of sidebar)
+   ===================================================== */
+
+.useraccount-minimenu-container {
+    padding: 6px 4px 4px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    flex-shrink: 0;
+}
 
 .user-account-icon {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    color: var(--text-white);
-    padding: 4px;
-
+    justify-content: flex-start;
+    color: var(--color-light-ecf);
+    border-radius: var(--border-radius-md);
+    cursor: pointer;
+    transition: background-color var(--transition-normal), border-color var(--transition-normal);
+    background-color: rgba(0, 0, 0, 0.3);
+    padding: 5px 8px;
+    border: 1px solid transparent;
+    width: 100%;
+    gap: 6px;
 }
+
+.user-account-icon:hover {
+    background-color: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.user-account-menu {
+    background-color: var(--color-black-e5);
+    border-radius: var(--border-radius-md);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
+    padding: var(--spacing-sm);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    margin-bottom: 4px;
+    color: var(--color-light-ecf);
+}
+
+.sidebar.collapsed .user-name {
+    display: none;
+}
+
+.sidebar.collapsed .user-expand-icon {
+    display: none;
+}
+
+.sidebar.collapsed .user-account-icon {
+    justify-content: center;
+    padding: 5px;
+}
+
+
