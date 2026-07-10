@@ -1,16 +1,4 @@
-.container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 20px;
-}
 
-.glass-panel {
-    background: var(--container-glass-primary);
-    backdrop-filter: var(--backdrop-blur);
-    border-radius: var(--border-radius-lg);
-    padding: var(--spacing-xl);
-    box-shadow: var(--shadow-card);
-}
 
 .page-title {
     text-align: center;
@@ -22,11 +10,7 @@
     margin-bottom: 40px;
 }
 
-.theme-upload-form {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-}
+
 
 .form-group {
     margin-bottom: 20px;
@@ -40,10 +24,10 @@
 }
 
 .form-control-file {
-    background-color: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    border-radius: 5px;
-    padding: 10px;
+    background-color: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: var(--border-radius-xs);
+    padding: 8px 12px;
     color: #ffffff;
     width: 100%;
 }
@@ -61,10 +45,11 @@
 }
 
 .theme-card {
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: var(--border-radius-md);
     padding: 20px;
-    transition: transform 0.3s ease;
+    transition: transform var(--transition-normal) ease, box-shadow var(--transition-normal) ease;
 }
 
 .theme-card:hover {

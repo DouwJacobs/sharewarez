@@ -1233,7 +1233,7 @@ form textarea {
     }
 
     .container-content {
-        background-color: #161e25;
+        background-color: transparent;
         padding-top: 20px;
         padding-left: 20px;
         border-radius: 15px;

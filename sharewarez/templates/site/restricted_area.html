@@ -32,16 +32,20 @@
     <h1></h1>
 
     <div class="container-login">
-        <form action="/login" method="post">
-            <label for="username">Username:</label><br>
-            <input type="text" class="input-glass" id="username" name="username" autocomplete="username"><br>
-            <label for="password">Password:</label><br>
-            <input type="password" class="input-glass" id="password" name="password" autocomplete="current-password"><br>
-            <div class="button-container">
-                <input type="submit" value="LOGIN" class="btn btn-success">
-                <a href="/register" class="btn btn-primary">REGISTER</a>
+        <div class="content-login">
+            <div class="container-content">
+                <form action="/login" method="post">
+                    <label for="username" class="label-large-text">Username</label><br>
+                    <input type="text" class="input-glass" id="username" name="username" autocomplete="username"><br>
+                    <label for="password" class="label-large-text">Password</label><br>
+                    <input type="password" class="input-glass" id="password" name="password" autocomplete="current-password"><br>
+                    <div class="container-buttons-login">
+                        <input type="submit" value="Login" class="btn btn-primary button-login">
+                        <a href="/register" class="btn btn-primary button-login">Register</a>
+                    </div>
+                </form>
             </div>
-        </form>
+        </div>
     </div>
     {% endif %}
 </div>

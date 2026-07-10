@@ -37,7 +37,7 @@
             {{ form.hidden_tag() }}
             <div class="input-group">
                 {{ form.email(size=30, class="form-control", placeholder="Enter email address") }}
-                {{ form.submit(class="btn btn-success") }}
+                {{ form.submit(class="btn btn-primary") }}
             </div>
             {% for error in form.email.errors %}
                 <span class="error-message">{{ error }}</span>

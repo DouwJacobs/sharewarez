@@ -189,11 +189,22 @@
     }
 
     /* ---- FLASH TOASTS ---- */
-    .toast-container {
+    .toast-container,
+    .sw-toast-container {
         left: 8px !important;
         right: 8px !important;
         bottom: 16px !important;
+        top: auto !important;
         max-width: calc(100vw - 16px) !important;
+        width: calc(100vw - 16px) !important;
+        z-index: 12000 !important;
+        align-items: stretch !important;
+    }
+
+    .sw-toast {
+        min-width: 0 !important;
+        max-width: 100% !important;
+        width: 100% !important;
     }
 
     /* ---- SCAN JOBS ---- */
@@ -230,6 +241,68 @@
     #sidebar .container-filtersandsort {
         visibility: visible !important;
         padding: 0 8px !important;
+    }
+
+    /* ---- MOBILE LOGIN / AUTH PAGE ---- */
+    .container-login {
+        padding: 10px !important;
+        box-sizing: border-box !important;
+        width: 100% !important;
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+    }
+
+    .content-login {
+        padding: 20px 16px !important;
+        width: 100% !important;
+        max-width: 400px !important;
+        box-sizing: border-box !important;
+    }
+
+    .container-content {
+        width: 100% !important;
+        box-sizing: border-box !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        background: transparent !important;
+        background-color: transparent !important;
+    }
+
+    .login-logo {
+        max-width: 120px !important;
+        width: 100% !important;
+        height: auto !important;
+        margin: 0 auto 15px auto !important;
+        display: block !important;
+    }
+
+    .input-glass {
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    .container-buttons-login {
+        flex-direction: column !important;
+        gap: 12px !important;
+        padding: 15px 0 !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    .button-login {
+        font-size: 15px !important;
+        height: auto !important;
+        min-height: 45px !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        text-align: center !important;
+        padding: 8px 16px !important;
+        margin: 0 !important;
     }
 }
 

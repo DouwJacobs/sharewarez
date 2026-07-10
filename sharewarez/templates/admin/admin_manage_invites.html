@@ -8,15 +8,7 @@
       <a href="{{ url_for('site.admin_dashboard') }}" class="btn btn-secondary">Back to Dashboard</a>
   </div>
 </div>
-{% with messages = get_flashed_messages() %}
-{% if messages %}
-    <div class="alert alert-info" role="alert">
-        {% for message in messages %}
-            {{ message }}<br>
-        {% endfor %}
-    </div>
-{% endif %}
-{% endwith %}
+
 <div class="admin_manage_invites-panel container-settings mt-5">
   <h2 class="admin_manage_invites-heading mb-4">Manage User Invites</h2>
   <div class="admin_manage_invites-table-div table-responsive">

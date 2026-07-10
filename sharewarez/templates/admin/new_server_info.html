@@ -3,16 +3,8 @@
 
 <link rel="stylesheet" href="{{ 'css/admin/admin_server_status.css'|theme_asset }}">
 
-{% with messages = get_flashed_messages() %}
-{% if messages %}
-    <div class="alert alert-info" role="alert">
-        {% for message in messages %}
-            {{ message }}<br>
-        {% endfor %}
-    </div>
-{% endif %}
-{% endwith %}
-        
+
+
 <div class="container">
     <div class="glass-panel">
         <a href="{{ url_for('site.admin_dashboard') }}" class="btn btn-secondary">Back to Dashboard</a>
