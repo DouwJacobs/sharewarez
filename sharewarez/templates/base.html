@@ -37,6 +37,8 @@
 
     <link rel="stylesheet" href="{{ 'css/site/sidebar.css'|theme_asset }}">
     <link rel="stylesheet" href="{{ 'css/components.css'|theme_asset }}">
+    <!-- Global mobile responsiveness - loaded last to override all page-specific styles -->
+    <link rel="stylesheet" href="{{ 'css/mobile.css'|theme_asset }}">
     
     <script src="{{ 'js/preferences_modal.js'|theme_asset }}"></script>
     <script src="{{ 'js/delete_game_modal.js'|theme_asset }}"></script>
@@ -44,6 +46,53 @@
 
 
     {% endblock %}
+    <!-- Critical mobile styles embedded to avoid caching issues -->
+    <style>
+        @media (max-width: 768px) {
+            #mobile-header {
+                display: flex !important;
+                position: fixed;
+                top: 0; left: 0; right: 0;
+                height: 56px;
+                background: rgba(10, 10, 15, 0.97);
+                backdrop-filter: blur(10px);
+                border-bottom: 1px solid rgba(255,255,255,0.08);
+                z-index: 1100;
+                align-items: center;
+                padding: 0 16px;
+                gap: 12px;
+                box-sizing: border-box;
+            }
+            #sidebar {
+                transform: translateX(-100%);
+                z-index: 1000;
+                /* Full width on mobile, starts below header */
+                width: 82vw !important;
+                max-width: 320px !important;
+                top: 56px !important;
+                height: calc(100vh - 56px) !important;
+                background: rgba(10, 10, 20, 0.98) !important;
+                overflow-y: auto;
+                padding-top: 8px !important;
+                transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                box-shadow: 4px 0 20px rgba(0,0,0,0.5);
+            }
+            #sidebar.mobile-open {
+                transform: translateX(0) !important;
+            }
+            #content {
+                margin-left: 0 !important;
+                padding-top: 72px !important;
+            }
+            /* Backdrop covers full screen including header area */
+            #sidebarBackdrop {
+                top: 56px !important;
+            }
+        }
+        @media (min-width: 769px) {
+            #mobile-header { display: none !important; }
+        }
+    </style>
 </head>
 <body>
 
@@ -51,6 +100,17 @@
 
 
 {% if not is_setup_mode %}
+<!-- Mobile Header Bar -->
+<div id="mobile-header" class="mobile-header">
+    <button id="mobileMenuToggle" class="mobile-menu-btn" aria-label="Open menu">
+        <i class="fas fa-bars"></i>
+    </button>
+    <span class="mobile-title">Sharewarez</span>
+</div>
+
+<!-- Sidebar Backdrop (mobile only) -->
+<div id="sidebarBackdrop" class="sidebar-backdrop"></div>
+
 <div id="sidebar" class="sidebar">
     {% if current_user.is_authenticated %}
     <div class="useraccount-minimenu-container">
@@ -149,16 +209,54 @@
     
         closeAllSubmenus();
     
-        // Toggle sidebar
+        // Toggle sidebar (desktop chevron)
         const toggleSidebar = document.getElementById("toggleSidebar");
         if (toggleSidebar) {
             toggleSidebar.addEventListener("click", function() {
-                console.log("Sidebar toggle clicked.");
                 document.getElementById("sidebar").classList.toggle("collapsed");
                 document.getElementById("content").classList.toggle("collapsed");
                 closeAllSubmenus();
             });
         }
+
+        // Mobile hamburger toggle
+        const mobileMenuToggle = document.getElementById("mobileMenuToggle");
+        const sidebarBackdrop = document.getElementById("sidebarBackdrop");
+        const sidebar = document.getElementById("sidebar");
+
+        function openMobileSidebar() {
+            if (sidebar) sidebar.classList.add("mobile-open");
+            if (sidebarBackdrop) sidebarBackdrop.classList.add("active");
+            document.body.style.overflow = "hidden";
+        }
+
+        function closeMobileSidebar() {
+            if (sidebar) sidebar.classList.remove("mobile-open");
+            if (sidebarBackdrop) sidebarBackdrop.classList.remove("active");
+            document.body.style.overflow = "";
+        }
+
+        if (mobileMenuToggle) {
+            mobileMenuToggle.addEventListener("click", function() {
+                if (sidebar && sidebar.classList.contains("mobile-open")) {
+                    closeMobileSidebar();
+                } else {
+                    openMobileSidebar();
+                }
+            });
+        }
+        if (sidebarBackdrop) {
+            sidebarBackdrop.addEventListener("click", closeMobileSidebar);
+        }
+
+        // Close mobile sidebar when a nav link is clicked
+        document.querySelectorAll("#sidebar .sidebar-link").forEach(function(link) {
+            link.addEventListener("click", function() {
+                if (window.innerWidth <= 768) {
+                    closeMobileSidebar();
+                }
+            });
+        });
     
         // User account icon click event
         const userAccountIcon = document.getElementById('userAccountIcon');

@@ -1,6 +1,8 @@
 .game-library-container {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    justify-content: center;
+    justify-items: center;
 }
 
 .game-discovery-container {
@@ -33,8 +35,10 @@
 /* Modern Pagination Styles */
 .pagination-header {
     display: flex;
+    flex-wrap: wrap;
     justify-content: space-between;
     align-items: center;
+    gap: 10px;
     margin-bottom: 20px;
     padding: 15px 0;
     border-bottom: 1px solid var(--border-light);
@@ -119,7 +123,7 @@
     color: var(--text-white);
     font-size: 14px;
     font-weight: 500;
-    var(--text-white)-space: nowrap;
+    white-space: nowrap;
     min-width: 80px;
     text-align: center;
 }
@@ -183,4 +187,42 @@
 
 .hidden {
     display: none;
+}
+
+@media (max-width: 768px) {
+    /* Smaller cards on mobile */
+    .game-library-container {
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+        gap: 8px;
+        padding: 0 4px;
+    }
+
+    /* Pagination header stacks on mobile */
+    .pagination-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .pagination-controls-right {
+        align-self: center;
+        width: 100%;
+        justify-content: center;
+    }
+
+    .pagination-controls {
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 6px;
+        padding: 6px 8px;
+    }
+
+    .pagination-label {
+        font-size: 12px;
+    }
+
+    .dropdown-perpage {
+        padding: 5px 8px;
+        font-size: 13px;
+    }
 }

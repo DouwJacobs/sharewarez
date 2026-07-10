@@ -1,0 +1,246 @@
+/* =====================================================
+   SHAREWAREZ - GLOBAL MOBILE RESPONSIVE STYLES
+   Applies to all pages at max-width: 768px
+   ===================================================== */
+
+@media (max-width: 768px) {
+
+    /* ---- GLOBAL LAYOUT ---- */
+    body {
+        overflow-x: hidden;
+    }
+
+    /* Prevent horizontal overflow on major containers */
+    .container,
+    .discovery-panel,
+    .discovery-view-panel,
+    .container-settings {
+        box-sizing: border-box;
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+        padding-left: 12px !important;
+        padding-right: 12px !important;
+        border-radius: 8px !important;
+    }
+
+    /* Glass panel: only prevent overflow, don't force padding */
+    .glass-panel {
+        box-sizing: border-box;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        overflow-x: hidden;
+    }
+
+    .discovery-panel,
+    .discovery-view-panel,
+    .admin-content,
+    .game-discovery-container {
+        flex-direction: column !important;
+    }
+
+    /* ---- GAME DETAILS PAGE ---- */
+    .glass-panel-gamecard {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        padding: 12px !important;
+        margin: 8px auto !important;
+        box-sizing: border-box;
+    }
+
+    .game-card-topq {
+        flex-direction: column !important;
+        min-height: unset !important;
+    }
+
+    .game-card-gamename {
+        width: 100% !important;
+        font-size: 1.2rem !important;
+    }
+
+    .game-card-q1,
+    .game-card-q2,
+    .game-card-q3 {
+        width: 100% !important;
+        margin: 8px 0 !important;
+    }
+
+    .game-card-coverimage img {
+        max-width: 100% !important;
+        height: auto !important;
+    }
+
+    .summary-modal-content {
+        width: 95% !important;
+        margin: 10% auto !important;
+        padding: 16px !important;
+    }
+
+    /* ---- ADMIN PAGES ---- */
+    .container-settings {
+        padding: 12px !important;
+        margin: 8px auto !important;
+    }
+
+    .nav-tabs,
+    .nav-pills {
+        flex-wrap: wrap !important;
+        gap: 4px;
+    }
+
+    .nav-tabs .nav-link,
+    .nav-pills .nav-link {
+        font-size: 13px !important;
+        padding: 6px 10px !important;
+    }
+
+    .table-responsive,
+    .dataTables_wrapper {
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* Admin dashboard stat cards */
+    .admin-stat-cards,
+    .stat-cards-container {
+        grid-template-columns: 1fr 1fr !important;
+        gap: 8px !important;
+    }
+
+    /* ---- SETTINGS / PROFILE ---- */
+    .settings-container,
+    .profile-container,
+    .profile-card {
+        flex-direction: column !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+    }
+
+    /* ---- LOGIN / REGISTER ---- */
+    .login-container,
+    .register-container,
+    .auth-card {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        padding: 20px 16px !important;
+        margin: 8px !important;
+    }
+
+    /* ---- DISCOVER PAGE ---- */
+    .discover-grid,
+    .discovery-grid {
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)) !important;
+        gap: 8px !important;
+    }
+
+    /* ---- GAME LIBRARY ---- */
+    .game-library-container {
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)) !important;
+        gap: 8px !important;
+    }
+
+    /* ---- DOWNLOADS PAGE ---- */
+    .download-item {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 8px !important;
+    }
+
+    /* ---- FORMS (all pages) ---- */
+    .form-group {
+        margin-bottom: 12px !important;
+    }
+
+    /* Prevent iOS auto-zoom on focus by keeping font >= 16px */
+    .form-control,
+    .form-select,
+    input[type="text"],
+    input[type="email"],
+    input[type="password"],
+    input[type="search"],
+    input[type="number"],
+    select,
+    textarea {
+        font-size: 16px !important;
+        width: 100% !important;
+    }
+
+    /* ---- BUTTONS ---- */
+    .btn-group,
+    .button-group {
+        flex-wrap: wrap !important;
+        gap: 6px !important;
+    }
+
+    /* ---- MODALS ---- */
+    .modal-dialog {
+        margin: 8px !important;
+        max-width: calc(100vw - 16px) !important;
+    }
+
+    .modal-content {
+        border-radius: 12px !important;
+    }
+
+    /* ---- FLASH TOASTS ---- */
+    .toast-container {
+        left: 8px !important;
+        right: 8px !important;
+        bottom: 16px !important;
+        max-width: calc(100vw - 16px) !important;
+    }
+
+    /* ---- SCAN JOBS ---- */
+    .scanjob-container,
+    .scan-card {
+        flex-direction: column !important;
+        min-width: 0 !important;
+    }
+
+    /* ---- TRAILERS PAGE ---- */
+    .trailers-container,
+    .trailer-card,
+    .random-trailers-layout {
+        width: 100% !important;
+        min-width: 0 !important;
+        flex-direction: column !important;
+    }
+
+    /* ---- TYPOGRAPHY ---- */
+    h1 { font-size: 1.4rem !important; }
+    h2 { font-size: 1.2rem !important; }
+    h3 { font-size: 1.1rem !important; }
+
+    .discovery-header {
+        font-size: 1.2rem !important;
+        padding: 8px !important;
+    }
+
+    /* ---- SIDEBAR FILTERS (when sidebar is open on mobile) ---- */
+    #sidebar .container-filtersandsort {
+        visibility: visible !important;
+        padding: 0 8px !important;
+    }
+}
+
+/* Extra small screens (< 400px) */
+@media (max-width: 400px) {
+    .game-library-container {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+
+    .admin-stat-cards,
+    .stat-cards-container {
+        grid-template-columns: 1fr !important;
+    }
+
+    .glass-panel,
+    .discovery-panel {
+        padding: 8px !important;
+    }
+}

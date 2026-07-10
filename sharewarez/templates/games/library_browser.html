@@ -20,19 +20,8 @@
 
 
     <div class="glass-panel">
-        <!-- Top Pagination Bar -->
+        <!-- Top Pagination Bar (nav only) -->
         <div class="pagination-header">
-            <div class="pagination-controls-left">
-                <span class="pagination-label">Items per page:</span>
-                <select id="perPageSelect" class="dropdown-perpage">
-                    <option value="16" {% if user_per_page == 16 %}selected{% endif %}>16</option>
-                    <option value="20" {% if user_per_page == 20 %}selected{% endif %}>20</option>
-                    <option value="50" {% if user_per_page == 50 %}selected{% endif %}>50</option>
-                    <option value="100" {% if user_per_page == 100 %}selected{% endif %}>100</option>
-                    <option value="500" {% if user_per_page == 500 %}selected{% endif %}>500</option>
-                    <option value="1000" {% if user_per_page == 1000 %}selected{% endif %}>1000</option>
-                </select>
-            </div>
             <div class="pagination-controls-right">
                 <nav aria-label="Page navigation" class="pagination-nav">
                     <div class="pagination-controls">
@@ -172,6 +161,17 @@
                     </button>
                 </div>
             </nav>
+            <div class="perpage-footer">
+                <span class="pagination-label">Items per page:</span>
+                <select id="perPageSelect" class="dropdown-perpage">
+                    <option value="16" {% if user_per_page == 16 %}selected{% endif %}>16</option>
+                    <option value="20" {% if user_per_page == 20 %}selected{% endif %}>20</option>
+                    <option value="50" {% if user_per_page == 50 %}selected{% endif %}>50</option>
+                    <option value="100" {% if user_per_page == 100 %}selected{% endif %}>100</option>
+                    <option value="500" {% if user_per_page == 500 %}selected{% endif %}>500</option>
+                    <option value="1000" {% if user_per_page == 1000 %}selected{% endif %}>1000</option>
+                </select>
+            </div>
         </div>
 
     </div>
