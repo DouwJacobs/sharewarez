@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const testResultsDiv = document.getElementById('testResults');
 
     // Define test settings function
-    window.testSettings = function() {
+    window.testSmtpSettings = function() {
         testButton.disabled = true;
 
         fetch('/admin/smtp_test', {
@@ -38,7 +38,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Define functions in global scope
-    window.saveSettings = function() {
+    window.saveSmtpSettings = function() {
         const data = {
             smtp_enabled: document.getElementById('smtp_enabled').checked,
             smtp_server: document.getElementById('smtp_server').value,
