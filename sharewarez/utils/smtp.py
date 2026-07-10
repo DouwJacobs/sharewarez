@@ -191,7 +191,7 @@ def send_email(to, subject, template):
 
 
 def send_password_reset_email(user_email, token):
-    reset_url = url_for('main.reset_password', token=token, _external=True)
+    reset_url = url_for('login.reset_password', token=token, _external=True)
     html = f'''<p>Ahoy there!</p>
 
 <p>Ye be wantin' to reset yer password, aye? No worries, we got ye covered! Jus' click on the link below to set a new course for yer password:</p>

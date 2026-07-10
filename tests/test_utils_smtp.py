@@ -684,7 +684,7 @@ class TestSendPasswordResetEmail:
         send_password_reset_email('user@example.com', 'abc123')
         
         # Verify URL generation
-        mock_url_for.assert_called_once_with('main.reset_password', token='abc123', _external=True)
+        mock_url_for.assert_called_once_with('login.reset_password', token='abc123', _external=True)
         
         # Verify send_email was called
         mock_send_email.assert_called_once()
