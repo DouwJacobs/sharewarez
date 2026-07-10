@@ -907,6 +907,28 @@ def delete_game(game_identifier):
         else:
             print(f'Error deleting game: {e}')
 
+def heal_image_download_url(image):
+    """Attempts to fetch and set a missing download_url for an image using its IGDB ID."""
+    if image.download_url or not image.igdb_image_id:
+        return False
+        
+    try:
+        from sharewarez.utils.functions import make_igdb_api_request
+        endpoint = 'https://api.igdb.com/v4/covers' if image.image_type == 'cover' else 'https://api.igdb.com/v4/screenshots'
+        query = f'fields url; where id={image.igdb_image_id};'
+        response = make_igdb_api_request(endpoint, query)
+        
+        if response and isinstance(response, list) and len(response) > 0 and 'error' not in response:
+            url = response[0].get('url')
+            if url:
+                if not url.startswith(('http://', 'https://')):
+                    url = 'https:' + url
+                image.download_url = url.replace('/t_thumb/', '/t_original/')
+                db.session.commit()
+                return True
+    except Exception as e:
+        print(f"Error healing download URL for image {image.id}: {e}")
+    return False
 
 def download_pending_images(batch_size=10, delay_between_downloads=1, app=None):
     """Download images that are queued but not yet downloaded."""
@@ -926,8 +948,9 @@ def download_pending_images(batch_size=10, delay_between_downloads=1, app=None):
             for image in pending_images:
                 try:
                     if not image.download_url:
-                        print(f"No download URL for image {image.id}, skipping.")
-                        continue
+                        if not heal_image_download_url(image):
+                            print(f"No download URL for image {image.id}, skipping.")
+                            continue
                     
                     # Download the image
                     save_path = os.path.join(app.config['IMAGE_SAVE_PATH'], image.url)
@@ -1005,7 +1028,8 @@ def download_images_for_game(game_uuid, app=None):
             for image in pending_images:
                 try:
                     if not image.download_url:
-                        continue
+                        if not heal_image_download_url(image):
+                            continue
                     
                     save_path = os.path.join(app.config['IMAGE_SAVE_PATH'], image.url)
                     
@@ -1036,7 +1060,8 @@ def download_single_image_worker(image, app):
     """Worker function to download a single image - designed for parallel execution."""
     try:
         if not image.download_url:
-            return {'success': False, 'image_id': image.id, 'error': 'No download URL'}
+            if not heal_image_download_url(image):
+                return {'success': False, 'image_id': image.id, 'error': 'No download URL'}
         
         save_path = os.path.join(app.config['IMAGE_SAVE_PATH'], image.url)
         

@@ -8,8 +8,8 @@
 
     // Check if there's an image refresh in progress on page load
     document.addEventListener('DOMContentLoaded', function() {
-        // Check if there's an image-refresh flash message
-        const imageRefreshAlert = document.querySelector('.alert-image-refresh');
+        // Check if there's an image-refresh flash message (using the new toast class)
+        const imageRefreshAlert = document.querySelector('.sw-toast-image-refresh');
 
         if (imageRefreshAlert) {
             // Get the game UUID from the session (we'll need to pass it via data attribute)
@@ -21,13 +21,48 @@
         }
     });
 
-    function startProgressTracking(alertElement, gameUuid) {
-        // Create and append the spinner SVG
+    function startProgressTracking(toastElement, gameUuid) {
+        // Create and append the spinner SVG to the toast body
         const spinner = createSpinner();
-        alertElement.appendChild(spinner);
+        const toastBody = toastElement.querySelector('.sw-toast-body');
+        const toastHeader = toastElement.querySelector('.sw-toast-header');
+        
+        if (toastBody) {
+            // Add a container for text + spinner to keep them aligned
+            const textSpan = document.createElement('span');
+            textSpan.textContent = toastBody.textContent;
+            toastBody.innerHTML = '';
+            toastBody.style.display = 'flex';
+            toastBody.style.alignItems = 'center';
+            toastBody.style.justifyContent = 'space-between';
+            toastBody.appendChild(textSpan);
+            toastBody.appendChild(spinner);
+        }
 
         let pollCount = 0;
         const maxPolls = 120; // 2 minutes max (120 * 1000ms)
+
+        function updateToast(type, headerText, bodyText) {
+            toastElement.classList.remove('sw-toast-image-refresh', 'sw-toast-danger', 'sw-toast-success', 'sw-toast-warning');
+            toastElement.classList.add('sw-toast-' + type);
+            
+            if (toastHeader) {
+                toastHeader.classList.remove('sw-toast-header-image-refresh', 'sw-toast-header-danger', 'sw-toast-header-success', 'sw-toast-header-warning');
+                toastHeader.classList.add('sw-toast-header-' + type);
+                const title = toastHeader.querySelector('strong');
+                if (title) title.textContent = headerText;
+                
+                // Update icon
+                const icon = toastHeader.querySelector('i');
+                if (icon) {
+                    icon.className = 'fas me-2 ' + (type === 'success' ? 'fa-check-circle' : (type === 'danger' || type === 'warning' ? 'fa-exclamation-triangle' : 'fa-info-circle'));
+                }
+            }
+            
+            if (toastBody) {
+                toastBody.textContent = bodyText; // This also removes the spinner
+            }
+        }
 
         const pollInterval = setInterval(function() {
             pollCount++;
@@ -46,24 +81,20 @@
 
                     // Wait a moment to show completion, then update message
                     setTimeout(function() {
-                        alertElement.classList.remove('alert-image-refresh');
-                        alertElement.classList.add('alert-success');
-                        alertElement.textContent = 'Game updated, images downloaded successfully';
+                        updateToast('success', 'Success', 'Game updated, images downloaded successfully');
 
-                        // Remove the alert after 3 seconds
+                        // Remove the toast after 3 seconds by utilizing Bootstrap's hide method or custom animation
                         setTimeout(function() {
-                            alertElement.style.opacity = '0';
+                            toastElement.classList.add('hiding');
                             setTimeout(function() {
-                                alertElement.remove();
+                                toastElement.remove();
                             }, 300);
                         }, 3000);
                     }, 500);
 
                     clearInterval(pollInterval);
                 } else if (data.status === 'error') {
-                    alertElement.classList.remove('alert-image-refresh');
-                    alertElement.classList.add('alert-danger');
-                    alertElement.textContent = 'Failed to refresh game images';
+                    updateToast('danger', 'Error', 'Failed to refresh game images');
                     spinner.remove();
                     clearInterval(pollInterval);
                 } else if (data.status === 'in_progress') {
@@ -71,18 +102,14 @@
                     updateSpinnerProgress(spinner, data.progress || 0);
                 } else if (data.status === 'not_found' && pollCount > 5) {
                     // If not found after 5 polls, assume it completed
-                    alertElement.classList.remove('alert-image-refresh');
-                    alertElement.classList.add('alert-success');
-                    alertElement.textContent = 'Game updated successfully';
+                    updateToast('success', 'Success', 'Game updated successfully');
                     spinner.remove();
                     clearInterval(pollInterval);
                 }
 
                 // Stop polling after max attempts
                 if (pollCount >= maxPolls) {
-                    alertElement.classList.remove('alert-image-refresh');
-                    alertElement.classList.add('alert-warning');
-                    alertElement.textContent = 'Image refresh is taking longer than expected';
+                    updateToast('warning', 'Warning', 'Image refresh is taking longer than expected');
                     spinner.remove();
                     clearInterval(pollInterval);
                 }

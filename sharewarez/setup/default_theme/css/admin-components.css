@@ -30,7 +30,7 @@
 
 .container-settings {
     min-width: 800px;
-    margin: var(--spacing-rem-xl) auto;
+    /* margin: var(--spacing-rem-xl) auto; */
     padding: var(--spacing-rem-xl);
     background-color: var(--bg-dark-primary);
     border-radius: var(--border-radius-md);
@@ -247,7 +247,7 @@
     font-size: 12px;
     font-weight: bold;
     color: #333;
-    text-shadow: 0 0 3px rgba(255,255,255,0.8);
+    text-shadow: 0 0 3px rgba(255, 255, 255, 0.8);
 }
 
 .progress {
@@ -303,9 +303,17 @@
 }
 
 @keyframes pulse {
-    0% { opacity: 1; }
-    50% { opacity: 0.5; }
-    100% { opacity: 1; }
+    0% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.5;
+    }
+
+    100% {
+        opacity: 1;
+    }
 }
 
 /* === ADMIN ALERTS === */
@@ -426,6 +434,7 @@
 /* === RESPONSIVE ADMIN DESIGN === */
 
 @media (max-width: 768px) {
+
     .admin-panel,
     .admin-section {
         padding: var(--spacing-md);

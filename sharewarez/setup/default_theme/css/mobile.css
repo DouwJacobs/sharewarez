@@ -37,7 +37,8 @@
     .discovery-panel,
     .discovery-view-panel,
     .admin-content,
-    .game-discovery-container {
+    .game-discovery-container,
+    .config-path-row {
         flex-direction: column !important;
     }
 
@@ -199,6 +200,10 @@
     .scanjob-container,
     .scan-card {
         flex-direction: column !important;
+        min-width: 0 !important;
+    }
+    
+    .search-container {
         min-width: 0 !important;
     }
 
