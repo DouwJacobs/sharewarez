@@ -19,6 +19,83 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">    
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/notify/0.4.2/notify.min.js"></script>
+    <script>
+        // Override jQuery notify to use Bootstrap toasts
+        (function($) {
+            if ($) {
+                $.notify = function(message, options) {
+                    let type = 'info';
+                    if (typeof options === 'string') {
+                        type = options;
+                    } else if (options && typeof options === 'object') {
+                        type = options.className || options.style || 'info';
+                    }
+                    
+                    // Map notify types to bootstrap classes
+                    let bsClass = type;
+                    if (type === 'error') bsClass = 'danger';
+                    if (type === 'warn' || type === 'warning') bsClass = 'warning';
+                    if (type === 'success') bsClass = 'success';
+                    if (type === 'info') bsClass = 'info';
+                    
+                    // Select or create container
+                    let container = document.querySelector('.sw-toast-container');
+                    if (!container) {
+                        container = document.createElement('div');
+                        container.className = 'sw-toast-container';
+                        container.setAttribute('aria-live', 'polite');
+                        container.setAttribute('aria-atomic', 'true');
+                        document.body.appendChild(container);
+                    }
+                    
+                    // Determine icon
+                    let icon = 'fa-info-circle';
+                    if (bsClass === 'success') icon = 'fa-check-circle';
+                    else if (bsClass === 'warning' || bsClass === 'danger') icon = 'fa-exclamation-triangle';
+                    
+                    // Determine title
+                    let title = 'Notice';
+                    if (bsClass === 'success') title = 'Success';
+                    else if (bsClass === 'danger') title = 'Error';
+                    else if (bsClass === 'warning') title = 'Warning';
+                    
+                    // Create toast element
+                    const toastEl = document.createElement('div');
+                    toastEl.className = `toast sw-toast sw-toast-${bsClass}`;
+                    toastEl.setAttribute('role', 'alert');
+                    toastEl.setAttribute('aria-live', 'assertive');
+                    toastEl.setAttribute('aria-atomic', 'true');
+                    toastEl.setAttribute('data-bs-autohide', 'true');
+                    toastEl.setAttribute('data-bs-delay', '6000');
+                    
+                    toastEl.innerHTML = `
+                        <div class="toast-header sw-toast-header sw-toast-header-${bsClass}">
+                            <i class="fas ${icon} me-2"></i>
+                            <strong class="me-auto">${title}</strong>
+                            <button type="button" class="btn-close btn-close-white ms-2" data-bs-dismiss="toast" aria-label="Close"></button>
+                        </div>
+                        <div class="toast-body sw-toast-body">
+                            ${message}
+                        </div>
+                    `;
+                    
+                    container.appendChild(toastEl);
+                    
+                    // Initialize and show
+                    const bsToast = new bootstrap.Toast(toastEl, { delay: 6000, autohide: true });
+                    
+                    toastEl.addEventListener('hide.bs.toast', function () {
+                        toastEl.classList.add('hiding');
+                    });
+                    toastEl.addEventListener('hidden.bs.toast', function () {
+                        toastEl.remove();
+                    });
+                    
+                    bsToast.show();
+                };
+            }
+        })(window.jQuery);
+    </script>
 
     <!-- Cropper.js for image editing -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css" />
