@@ -165,6 +165,7 @@ class Game(db.Model):
     steam_url = db.Column(db.String, nullable=True)
     times_downloaded = db.Column(db.Integer, default=0)
     nfo_content = db.Column(db.Text, nullable=True)
+    install_instructions = db.Column(db.Text, nullable=True)
     # HowLongToBeat integration fields
     hltb_id = db.Column(db.Integer, nullable=True)
     hltb_main_story = db.Column(db.Float, nullable=True)

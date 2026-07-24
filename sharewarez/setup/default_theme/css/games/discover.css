@@ -1,9 +1,12 @@
 .discovery-library-label, .discovery-latest-games-label, .discovery-last-updated-label, .discovery-most-downloaded-label, .discovery-highest-rated-label  {
-    font-size: 20px;
-    font-weight: bold;
-    margin-top: 10px;
-    margin-bottom: 10px;
-    text-align: center;
+    font-size: 1.05rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    margin: 32px 0 16px;
+    padding-bottom: 10px;
+    text-align: left;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    color: #fff;
 }
 
 .discovery-latest-games-container {
@@ -43,11 +46,13 @@
 }
 
 .discovery-most-favorited-label {
-    font-size: 20px;
-    font-weight: bold;
-    margin-top: 10px;
-    margin-bottom: 10px;
-    text-align: center;
+    font-size: 1.05rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    margin: 32px 0 16px;
+    padding-bottom: 10px;
+    text-align: left;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 
@@ -79,10 +84,10 @@
 
 .library-name {
     display: block;
-    background-color: black;
+    background: linear-gradient(145deg, rgba(28, 29, 45, 0.96), rgba(16, 16, 27, 0.98));
     color: white;
-    border: 1px solid white;
-    border-radius: var(--border-radius-lg);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
     padding: 5px 5px;
     margin-top: 8px;
     max-width: calc(100% - 20px);
@@ -99,15 +104,17 @@
     object-fit: contain;
     display: block;
     margin: 0 auto;
-    padding: 5px;
-    border: 1px solid rgb(49, 49, 49);
-    border-radius: var(--border-radius-lg);
-    background-color: #2a2c35;
+    padding: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.04);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.42);
 }
 
 .library-cover:hover {
     transition: transform 0.3s ease, box-shadow 0.3s ease;
-    transform: scale(1.1);
+    transform: translateY(-5px) scale(1.03);
+    box-shadow: 0 16px 35px rgba(0, 0, 0, 0.55), 0 0 26px rgba(94, 125, 255, 0.18);
 }
 
 
@@ -147,25 +154,99 @@
 }
 
 .discovery-header {
-	text-align: center;
+	text-align: left;
+    margin: 0;
+    padding: 0;
+    font-size: clamp(1.65rem, 3vw, 2.15rem);
+    text-shadow: 0 0 28px rgba(120, 160, 255, 0.34);
+}
+
+.discovery-page-header {
+    padding-bottom: 24px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.discovery-eyebrow {
+    margin: 0 0 7px;
+    color: rgba(176, 191, 255, 0.86);
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+.discovery-latest-games-container,
+.discovery-most-downloaded-container,
+.discovery-highest-rated-container,
+.discovery-last-updated-container,
+.discovery-most-favorited-container {
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 16px;
+    padding: 2px;
+}
+
+.discovery-panel .game-card-container {
+    width: 100%;
+    max-width: 220px;
+}
+
+.discovery-panel .game-card {
+    width: 100%;
+    max-width: none;
+    max-height: none;
+    margin: 0;
+}
+
+.discovery-panel .game-cover {
+    width: 100%;
+    max-width: none;
+    max-height: none;
+    aspect-ratio: 3 / 4;
+    object-fit: cover;
 }
 
 .discovery-panel {
     display: flex;
     flex-direction: column;
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(10px);
-    border-radius: var(--border-radius-lg);
-    padding: 20px;
-    margin: 20px;
+    background: linear-gradient(145deg, rgba(18, 18, 28, 0.96), rgba(12, 12, 20, 0.98));
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 20px;
+    padding: 28px 32px 42px;
+    margin: 24px;
     grid-template-columns: auto 1fr auto;
     gap: 10px;
     justify-content: space-between;
-    box-shadow: 0 9px 16px rgba(17, 2, 2, 2);
-    padding-bottom: 50px;
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.025), 0 20px 60px rgba(0, 0, 0, 0.58), 0 0 70px rgba(80, 120, 255, 0.06);
 }
 
 .game-cover-container {
     position: relative;
     display: inline-block;
+}
+
+@media (max-width: 768px) {
+    .discovery-panel {
+        margin: 12px;
+        padding: 22px 16px 30px;
+        border-radius: 16px;
+    }
+
+    .discovery-library-label,
+    .discovery-latest-games-label,
+    .discovery-last-updated-label,
+    .discovery-most-downloaded-label,
+    .discovery-highest-rated-label,
+    .discovery-most-favorited-label {
+        margin-top: 24px;
+    }
+
+    .discovery-latest-games-container,
+    .discovery-most-downloaded-container,
+    .discovery-highest-rated-container,
+    .discovery-last-updated-container,
+    .discovery-most-favorited-container {
+        grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+        gap: 10px;
+    }
 }

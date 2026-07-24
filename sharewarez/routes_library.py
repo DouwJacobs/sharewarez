@@ -39,6 +39,7 @@ def inject_settings():
 
 
 @library_bp.route('/libraries')
+@library_bp.route('/admin/libraries', endpoint='admin_libraries')
 @login_required
 @admin_required
 def libraries():

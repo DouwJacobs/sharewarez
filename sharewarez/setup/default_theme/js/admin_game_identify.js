@@ -283,6 +283,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             nameInput.value = data.name;
                             document.querySelector('#summary').value = data.summary || '';
                             document.querySelector('#storyline').value = data.storyline || '';
+                    const instInput1 = document.querySelector('#install_instructions'); if (instInput1) instInput1.value = data.install_instructions || '';
                             urlInput.value = data.url || '';
                             document.querySelector('#video_urls').value = data.video_urls || '';
                             
@@ -358,6 +359,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                 nameInput.value = game.name;
                                 document.querySelector('#summary').value = game.summary || '';
                                 document.querySelector('#storyline').value = game.storyline || '';
+                         const instInput2 = document.querySelector('#install_instructions'); if (instInput2) instInput2.value = game.install_instructions || '';
                                 document.querySelector('#url').value = game.url || '';
                                 checkFieldsAndToggleSubmit();
                                 resultsContainer.innerHTML = ''; // Clear results after selection

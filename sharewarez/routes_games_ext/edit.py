@@ -95,6 +95,12 @@ def game_edit(game_uuid):
             storyline = storyline[:4096]
             flash('Storyline was truncated to 4096 characters', 'warning')
         game.storyline = storyline
+
+        install_instructions = form.install_instructions.data or ""
+        if len(install_instructions) > 10000:
+            install_instructions = install_instructions[:10000]
+            flash('Install instructions were truncated to 10000 characters', 'warning')
+        game.install_instructions = install_instructions
         
         video_urls = form.video_urls.data or ""
         if len(video_urls) > 4096:
@@ -263,6 +269,21 @@ def game_edit(game_uuid):
         try:
             db.session.commit()
             log_system_event(f"Game {game.name} updated by admin {current_user.name}", event_type='game', event_level='information')
+
+            # Update local metadata file if enabled
+            from sharewarez.utils.local_metadata import write_local_metadata
+            from sharewarez.models import GlobalSettings
+            settings = db.session.execute(select(GlobalSettings)).scalar_one_or_none()
+            if settings and settings.write_local_metadata:
+                metadata_filename = settings.local_metadata_filename or 'sharewarez.json'
+                write_local_metadata(
+                    full_disk_path=game.full_disk_path,
+                    igdb_id=game.igdb_id,
+                    game_title=game.name,
+                    manually_verified=True,
+                    filename=metadata_filename,
+                    install_instructions=game.install_instructions
+                )
 
             if igdb_id_changed:
                 # Single flash message that will show progress spinner via JavaScript

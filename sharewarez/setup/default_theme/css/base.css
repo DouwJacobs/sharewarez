@@ -980,6 +980,129 @@ form textarea {
     gap: 30px;
 }
 
+/* Shared premium surface language
+   Mirrors the game-details card so user-facing views feel like one product. */
+.glass-panel,
+.glass-panel-dark,
+.glass-panel-black,
+.content-login,
+.content-restricted-textblock {
+    position: relative;
+    background: linear-gradient(145deg, rgba(18, 18, 28, 0.96), rgba(12, 12, 20, 0.98));
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 20px;
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.025), 0 20px 60px rgba(0, 0, 0, 0.58), 0 0 70px rgba(80, 120, 255, 0.06);
+    backdrop-filter: blur(20px);
+}
+
+.glass-panel::before,
+.content-login::before,
+.content-restricted-textblock::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto;
+    height: 2px;
+    border-radius: 20px 20px 0 0;
+    background: linear-gradient(90deg, transparent, rgba(100, 140, 255, 0.62), rgba(180, 100, 255, 0.72), transparent);
+    pointer-events: none;
+}
+
+.btn {
+    border-radius: 10px;
+    border-color: rgba(255, 255, 255, 0.12);
+    box-shadow: inset 0 1px rgba(255, 255, 255, 0.08), 0 4px 14px rgba(0, 0, 0, 0.2);
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #426ee8, #7554d6);
+    border-color: rgba(154, 177, 255, 0.48);
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, #527df4, #8763e8);
+    border-color: rgba(194, 205, 255, 0.72);
+    box-shadow: 0 8px 22px rgba(88, 105, 235, 0.34);
+}
+
+.form-control,
+.form-select,
+form input[type="text"],
+form input[type="password"],
+form input[type="email"],
+form input[type="search"],
+form input[type="number"],
+form select,
+form textarea {
+    background: rgba(255, 255, 255, 0.045);
+    border-color: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.24);
+}
+
+.form-control:focus,
+.form-select:focus,
+form input:focus,
+form select:focus,
+form textarea:focus {
+    border-color: rgba(126, 157, 255, 0.9);
+    box-shadow: 0 0 0 3px rgba(98, 122, 239, 0.18), inset 0 1px 2px rgba(0, 0, 0, 0.24);
+}
+
+.table-dark {
+    background: rgba(7, 8, 15, 0.58);
+    border-color: rgba(255, 255, 255, 0.09);
+    border-radius: 14px;
+}
+
+.table-dark th {
+    background: rgba(95, 115, 205, 0.13);
+    border-bottom-color: rgba(143, 166, 255, 0.26);
+}
+
+.table-dark tr:hover {
+    background: rgba(105, 130, 255, 0.1);
+}
+
+/* Standard card anatomy — mirrors the game-detail card's surface, accent,
+   header divider, and roomy body spacing. */
+.card {
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(145deg, rgba(18, 18, 28, 0.96), rgba(12, 12, 20, 0.98));
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 18px;
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.025), 0 18px 48px rgba(0, 0, 0, 0.46), 0 0 60px rgba(80, 120, 255, 0.05);
+}
+
+.card::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, rgba(100, 140, 255, 0.56), rgba(180, 100, 255, 0.62), transparent);
+    pointer-events: none;
+    z-index: 1;
+}
+
+.card > .card-header {
+    padding: 22px 24px 17px;
+    margin: 0;
+    background: transparent !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.card > .card-body {
+    padding: 24px;
+}
+
+@media (max-width: 768px) {
+    .glass-panel,
+    .content-login,
+    .content-restricted-textblock {
+        border-radius: 16px;
+    }
+}
+
 
 
 .status-value {

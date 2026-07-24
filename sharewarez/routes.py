@@ -221,6 +221,7 @@ def scan_folder():
 
 
 @bp.route('/scan_management', methods=['GET', 'POST'])
+@bp.route('/admin/scan_management', methods=['GET', 'POST'], endpoint='admin_scan_management')
 @login_required
 @admin_required
 def scan_management():

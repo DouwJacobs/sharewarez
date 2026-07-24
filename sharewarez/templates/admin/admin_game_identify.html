@@ -116,6 +116,10 @@
                         <label for="storyline">Storyline</label>
                         {{ form.storyline(class="form-control", id="storyline") }}
                     </div>
+                    <div class="game_edit-form-group-install-instructions">
+                        <label for="install_instructions">How to Install</label>
+                        {{ form.install_instructions(class="form-control", id="install_instructions", rows="4", placeholder="Optional special installation instructions...") }}
+                    </div>
                     <div class="game_edit-form-group-url">
                         <label for="url">URL</label>
                         {{ form.url(class="form-control", id="url") }}

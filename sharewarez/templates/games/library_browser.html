@@ -6,20 +6,23 @@
 <link rel="stylesheet" href="{{ 'css/games/library_browser.css'|theme_asset }}">
 <link rel="stylesheet" href="{{ 'css/games/game_status.css'|theme_asset }}">
 
-<head>
-    <meta charset="UTF-8">
-    <title>Browse Games</title>
-    <script src="{{ 'js/popup_menu.js'|theme_asset }}"></script>
-    <script src="{{ 'js/library_slideshow.js'|theme_asset }}"></script>
-    <script src="{{ 'js/library_pagination.js'|theme_asset }}"></script>
-    <script src="{{ 'js/library_search.js'|theme_asset }}"></script>
-    <script src="{{ 'js/favorites_manager.js'|theme_asset }}"></script>
-    <script src="{{ 'js/game_status_manager.js'|theme_asset }}"></script>
-</head>
-<body data-user-per-page="{{ user_per_page }}" data-user-default-sort="{{ user_default_sort }}" data-user-default-sort-order="{{ user_default_sort_order }}" data-enable-delete-game-on-disk="{{ enable_delete_game_on_disk|lower }}" data-discord-configured="{{ discord_configured|lower }}" data-discord-manual-trigger="{{ discord_manual_trigger_enabled|lower }}" data-is-admin="{{ is_admin|lower }}" data-show-play-status="{{ show_play_status|lower }}" data-current-filters="{{ filters|tojson|e }}" data-current-page="{{ current_page }}" data-total-pages="{{ pages }}">
+<script src="{{ 'js/popup_menu.js'|theme_asset }}"></script>
+<script src="{{ 'js/library_slideshow.js'|theme_asset }}"></script>
+<script src="{{ 'js/library_pagination.js'|theme_asset }}"></script>
+<script src="{{ 'js/library_search.js'|theme_asset }}"></script>
+<script src="{{ 'js/favorites_manager.js'|theme_asset }}"></script>
+<script src="{{ 'js/game_status_manager.js'|theme_asset }}"></script>
 
+<main class="library-browser-page">
 
-    <div class="glass-panel">
+    <div class="glass-panel library-browser-panel">
+        <header class="library-browser-header">
+            <div>
+                <p class="library-browser-eyebrow">Your collection</p>
+                <h1>Browse games</h1>
+            </div>
+            <p class="library-browser-count">{{ total }} game{% if total != 1 %}s{% endif %}</p>
+        </header>
         <!-- Top Pagination Bar (nav only) -->
         <div class="pagination-header">
             <div class="pagination-controls-right">
@@ -186,6 +189,5 @@
 
     </script>
 
-</body>
-</html>
+</main>
 {% endblock %}

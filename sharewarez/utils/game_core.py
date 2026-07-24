@@ -127,6 +127,7 @@ def create_game_instance(game_data, full_disk_path, folder_size_bytes, library_u
             name=game_data['name'],
             summary=game_data.get('summary'),
             storyline=game_data.get('storyline'),
+            install_instructions=game_data.get('install_instructions'),
             url=game_data.get('url'),
             first_release_date=datetime.fromtimestamp(game_data.get('first_release_date', 0), UTC) if game_data.get('first_release_date') else None,
             aggregated_rating=game_data.get('aggregated_rating'),
@@ -497,6 +498,9 @@ def retrieve_and_save_game(game_name, full_disk_path, scan_job_id=None, library_
                 if new_game is None:
                     print(f"Failed to create game instance from local metadata for {game_name}. Skipping further processing.")
                     return None
+
+                if 'install_instructions' in local_metadata:
+                    new_game.install_instructions = local_metadata['install_instructions']
 
                 # Process genres, themes, etc. (same as existing code from line 481 onward)
                 if 'genres' in response_json[0]:

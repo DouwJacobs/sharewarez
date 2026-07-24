@@ -101,6 +101,7 @@ def add_game_manual():
             name=form.name.data,
             summary=form.summary.data,
             storyline=form.storyline.data,
+            install_instructions=form.install_instructions.data,
             url=form.url.data,
             full_disk_path=form.full_disk_path.data,
             # Set default cover for custom games
@@ -167,7 +168,8 @@ def add_game_manual():
                     igdb_id=form.igdb_id.data,
                     game_title=form.name.data,
                     manually_verified=True,
-                    filename=metadata_filename
+                    filename=metadata_filename,
+                    install_instructions=form.install_instructions.data
                 )
 
                 if success:

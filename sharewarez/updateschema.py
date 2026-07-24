@@ -278,6 +278,10 @@ class DatabaseManager:
         ALTER TABLE games
         ADD COLUMN IF NOT EXISTS hltb_last_updated TIMESTAMP;
 
+        -- Add install instructions field to games table
+        ALTER TABLE games
+        ADD COLUMN IF NOT EXISTS install_instructions TEXT;
+
         -- Add HowLongToBeat settings to global_settings table
         ALTER TABLE global_settings
         ADD COLUMN IF NOT EXISTS enable_hltb_integration BOOLEAN DEFAULT TRUE;

@@ -9,11 +9,11 @@
 <script src="{{ 'js/popup_menu.js'|theme_asset }}"></script>
 
 
-<body>
-    <div class="discovery-panel">
-        <h1 class="discovery-header">	
-		<p>{{ loc.heading }}</p>
-		</h1>
+    <main class="discovery-panel">
+        <header class="discovery-page-header">
+            <p class="discovery-eyebrow">Explore your collection</p>
+            <h1 class="discovery-header">{{ loc.heading }}</h1>
+        </header>
             <div class="discovery-libraries-container">
                     {% for section in visible_sections %}
                         {% if section.identifier == 'libraries' and section_data.libraries %}
@@ -166,5 +166,5 @@
                     {% endif %}
                     {% endfor %}
                 </div>
-</body>
+    </main>
 {% endblock %}

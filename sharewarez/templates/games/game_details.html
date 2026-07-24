@@ -249,17 +249,6 @@
                             {% endif %}
                         </div>
                     {% endif %}
-
-                    {# Summary #}
-                    <div class="game-card-text-summary">
-                        {% if game.summary and game.summary|length > 340 %}
-                            <span class="summary-short">{{ game.summary[:340] }}...</span>
-                            <a href="#" class="read-more-link">Read More</a>
-                            <span class="summary-full" style="display: none;">{{ game.summary }}</span>
-                        {% else %}
-                            <span>{{ game.summary or 'Summary Not Available' }}</span>
-                        {% endif %}
-                    </div>
                 </div>
 
                 <div class="game-card-q2">
@@ -441,11 +430,32 @@
                             </div>
                         {% endif %}
                     </div>
+                </div>
+            </div>
 
-                    
+            {# Full width content section #}
+            <div class="game-card-bottom-info">
+                {# Summary #}
+                <div class="game-card-text-summary">
+                    <div class="game-card-labels" style="margin-top:0; margin-bottom:10px;"><i class="fas fa-align-left"></i> Summary</div>
+                    {% if game.summary and game.summary|length > 340 %}
+                        <span class="summary-short">{{ game.summary[:340] }}...</span>
+                        <a href="#" class="read-more-link">Read More</a>
+                        <span class="summary-full" style="display: none;">{{ game.summary }}</span>
+                    {% else %}
+                        <span>{{ game.summary or 'Summary Not Available' }}</span>
+                    {% endif %}
                 </div>
 
-
+                {# How to Install Section #}
+                {% if game.install_instructions and game.install_instructions.strip() %}
+                    <div class="install-instructions-section">
+                        <div class="install-instructions-header">
+                            <i class="fas fa-wrench"></i> How to Install
+                        </div>
+                        <div class="install-instructions-content">{{ game.install_instructions }}</div>
+                    </div>
+                {% endif %}
             </div>
 
             {# Screenshots Gallery #}

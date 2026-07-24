@@ -171,7 +171,7 @@
         }
     </style>
 </head>
-<body>
+<body class="{% if request.path.startswith('/admin') or request.endpoint in ['download.manage_downloads', 'library.libraries', 'main.scan_management'] %}admin-ui{% endif %}"{% if request.path == '/library' %} data-user-per-page="{{ user_per_page }}" data-user-default-sort="{{ user_default_sort }}" data-user-default-sort-order="{{ user_default_sort_order }}" data-enable-delete-game-on-disk="{{ enable_delete_game_on_disk|lower }}" data-discord-configured="{{ discord_configured|lower }}" data-discord-manual-trigger="{{ discord_manual_trigger_enabled|lower }}" data-is-admin="{{ is_admin|lower }}" data-show-play-status="{{ show_play_status|lower }}" data-current-filters="{{ filters|tojson|e }}" data-current-page="{{ current_page }}" data-total-pages="{{ pages }}"{% endif %}>
 
 
 
@@ -260,6 +260,16 @@
 {% endif %}
 <div id="content" class="{% if is_setup_mode %}setup-mode-content{% endif %}">
     {% include 'partials/flash_messages.html' %}
+    {% if (request.path.startswith('/admin') and request.path != '/admin/dashboard') or request.endpoint in ['library.libraries', 'main.scan_management'] %}
+    <nav class="admin-breadcrumb" aria-label="Admin navigation">
+        <a href="{{ url_for('site.admin_dashboard') }}" aria-label="Return to the admin dashboard">
+            <i class="fas fa-arrow-left" aria-hidden="true"></i>
+            <span>Admin dashboard</span>
+        </a>
+        <i class="fas fa-chevron-right admin-breadcrumb-separator" aria-hidden="true"></i>
+        <span class="admin-breadcrumb-current">Administration</span>
+    </nav>
+    {% endif %}
     {% block content %}{% endblock %}
 </div>
 

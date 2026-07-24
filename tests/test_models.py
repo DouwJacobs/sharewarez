@@ -362,6 +362,27 @@ class TestGameModel:
         assert game.size == 1000000
         assert game.times_downloaded == 0  # Default value
         assert game.date_created is not None
+
+    def test_create_game_with_install_instructions(self, db_session):
+        library = Library(
+            name='Test Library',
+            platform=LibraryPlatform.PCWIN
+        )
+        db_session.add(library)
+        db_session.flush()
+        
+        game = Game(
+            name='Test Game Installation',
+            library_uuid=library.uuid,
+            full_disk_path='/path/to/game',
+            size=1000000,
+            install_instructions='1. Extract ZIP\n2. Run setup.exe'
+        )
+        
+        db_session.add(game)
+        db_session.flush()
+        
+        assert game.install_instructions == '1. Extract ZIP\n2. Run setup.exe'
     
     def test_game_library_relationship(self, db_session):
         """Test game-library relationship."""
