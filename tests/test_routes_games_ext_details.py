@@ -499,6 +499,23 @@ class TestGameDetailsTemplateSecurity:
         assert 'form' in kwargs
         assert 'library_uuid' in kwargs
         assert kwargs['library_uuid'] == test_game.library_uuid
+        assert kwargs['back_url'] == '/library'
+
+    def test_game_details_uses_same_host_referrer_for_back_link(self, client, test_user, test_game):
+        """The details back link preserves the originating in-app page."""
+        with client.session_transaction() as sess:
+            sess['_user_id'] = str(test_user.id)
+            sess['_fresh'] = True
+
+        with patch('sharewarez.routes_games_ext.details.render_template') as mock_render:
+            mock_render.return_value = 'mocked response'
+            response = client.get(
+                f'/game_details/{test_game.uuid}',
+                headers={'Referer': 'http://localhost/library?tag=Portable'}
+            )
+
+        assert response.status_code == 200
+        assert mock_render.call_args.kwargs['back_url'] == '/library?tag=Portable'
 
 
 class TestGameDetailsErrorHandling:

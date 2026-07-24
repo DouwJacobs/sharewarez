@@ -184,6 +184,10 @@
             {% endif %}
 
             <div class="game-card-gamename">
+                <a href="{{ back_url }}" class="game-details-back" aria-label="Back to library">
+                    <i class="fas fa-arrow-left" aria-hidden="true"></i>
+                    <span>Back</span>
+                </a>
                 <h1>{{ game.name or 'Game Name Not Available' }}</h1>
             </div>
 

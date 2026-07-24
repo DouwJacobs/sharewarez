@@ -53,6 +53,30 @@ body.modal-open {
     width: 100%;
     box-sizing: border-box;
     border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    gap: 16px;
+}
+
+.game-details-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    flex: 0 0 auto;
+    padding: 8px 11px;
+    color: rgba(220, 228, 250, 0.9);
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-decoration: none;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 9px;
+    transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+}
+
+.game-details-back:hover {
+    color: #ffffff;
+    background: rgba(100, 140, 255, 0.18);
+    border-color: rgba(130, 165, 255, 0.42);
+    transform: translateX(-2px);
 }
 
 .game-card-gamename h1 {
@@ -1313,6 +1337,10 @@ pre {
 
     .game-card-gamename h1 {
         font-size: 1.55rem;
+    }
+
+    .game-details-back span {
+        display: none;
     }
 
     .game-card-topq {

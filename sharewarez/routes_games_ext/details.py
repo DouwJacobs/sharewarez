@@ -1,6 +1,6 @@
 import uuid
 import os
-from flask import render_template, jsonify, abort
+from flask import render_template, jsonify, abort, request, url_for
 from flask_login import login_required, current_user
 from sharewarez.forms import CsrfForm
 from sharewarez.models import GameUpdate, GameExtra, user_game_status, get_status_info
@@ -10,6 +10,7 @@ from sharewarez.utils.functions import format_size, sanitize_string_input, get_u
 from sharewarez.utils.game_core import get_game_by_uuid
 from sharewarez.utils.security import sanitize_path_for_logging
 from sharewarez.utils.event_logging import log_system_event
+from urllib.parse import urlparse
 
 from . import games_bp
 
@@ -33,6 +34,18 @@ def get_path_size(file_path):
     except (OSError, IOError):
         pass
     return 0
+
+
+def get_safe_back_url():
+    """Return an in-app referrer, falling back to the library."""
+    fallback_url = url_for('library.library')
+    if not request.referrer:
+        return fallback_url
+
+    referrer = urlparse(request.referrer)
+    if referrer.netloc != request.host:
+        return fallback_url
+    return referrer.path + (f'?{referrer.query}' if referrer.query else '')
 
 
 @games_bp.route('/game_details/<string:game_uuid>')
@@ -190,7 +203,8 @@ def game_details(game_uuid):
             is_favorite=is_favorite,
             user_status=user_status,
             status_icon=status_icon,
-            status_label=status_label
+            status_label=status_label,
+            back_url=get_safe_back_url()
         )
     else:
         log_system_event(
