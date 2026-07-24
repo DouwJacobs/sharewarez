@@ -24,6 +24,12 @@ from . import games_bp
 def game_edit(game_uuid):
     game = db.session.execute(select(Game).filter_by(uuid=game_uuid)).scalars().first() or abort(404)
     form = AddGameForm(obj=game)
+    # WTForms copies a relationship object verbatim when populating a
+    # StringField from ``obj``. Supply the display values explicitly so the
+    # edit form never renders SQLAlchemy's ``<Developer …>`` representation.
+    if request.method == 'GET':
+        form.developer.data = game.developer.name if game.developer else ''
+        form.publisher.data = game.publisher.name if game.publisher else ''
     form.library_uuid.choices = [(str(lib.uuid), lib.name) for lib in db.session.execute(select(Library).order_by(Library.name)).scalars().all()]
     platform_id = PLATFORM_IDS.get(game.library.platform.value.upper(), None)
     platform_name = game.library.platform.value

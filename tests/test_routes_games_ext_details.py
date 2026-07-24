@@ -264,7 +264,9 @@ class TestGameDetailsRouteResponse:
         
         assert response.status_code == 200
         assert b'Test Game' in response.data
-        
+        assert test_game.developer.name.encode() in response.data
+        assert b'<Developer ' not in response.data
+
         # Verify audit logging of successful access
         mock_log.assert_any_call(
             f"User {test_user.name} accessed game 'Test Game' with 1 updates and 1 extras",

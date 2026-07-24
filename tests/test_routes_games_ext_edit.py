@@ -616,6 +616,8 @@ class TestGameEditSuccessScenarios:
         assert response.status_code == 200
         assert test_game.name.encode() in response.data
         assert test_game.summary.encode() in response.data if test_game.summary else True
+        assert f'value="{test_game.developer.name}"'.encode() in response.data
+        assert b'<Developer ' not in response.data
     
     def test_nonexistent_game_returns_404(self, client, admin_user):
         """Test that editing nonexistent game returns 404."""
