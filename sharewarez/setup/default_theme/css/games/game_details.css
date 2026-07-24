@@ -466,14 +466,14 @@ body.modal-open {
 
 /* ── Web Links ───────────────────────────────────────────── */
 .game-card-links {
-    position: absolute;
-    top: 20px;
-    right: 16px;
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
+    flex-wrap: wrap;
     justify-content: flex-start;
     align-items: center;
     gap: 8px;
+    margin: 16px 0 4px;
+    min-height: 26px;
 }
 
 .game-card-links:empty {
@@ -495,6 +495,9 @@ body.modal-open {
     transition: color 0.2s ease, transform 0.2s ease;
     text-decoration: none;
     font-size: 15px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .game-link-icon-container .game-link-icon:hover {

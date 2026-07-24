@@ -133,11 +133,21 @@ def game_details(game_uuid):
         }
         
         # Augment game_data with URLs using smart icon detection
-        game_data['urls'] = [{
-            "type": url.url_type,
-            "url": url.url,
-            "icon": get_url_icon(url.url_type, url.url)
-        } for url in game.urls]
+        # IGDB imports can contain duplicate website records. Keep the first
+        # occurrence of each destination so the details view never renders the
+        # same social/link icon more than once.
+        seen_urls = set()
+        game_data['urls'] = []
+        for game_url in game.urls:
+            normalized_url = (game_url.url or '').strip().rstrip('/').casefold()
+            if not normalized_url or normalized_url in seen_urls:
+                continue
+            seen_urls.add(normalized_url)
+            game_data['urls'].append({
+                "type": game_url.url_type,
+                "url": game_url.url,
+                "icon": get_url_icon(game_url.url_type, game_url.url)
+            })
         
         library_uuid = game.library_uuid
         
