@@ -1,11 +1,6 @@
 <!-- templates/admin/admin_manage_downloads.html -->
 {% extends "base.html" %}  
 {% block content %}
-<div class="container">
-    <div class="glass-panel">
-        <a href="{{ url_for('site.admin_dashboard') }}" class="btn btn-secondary">Back to Dashboard</a>
-    </div>
-</div>
 
             
 <div class="card">
@@ -15,6 +10,7 @@
     </div>
     <div class="admin_manage_downloads-requests">
         {% if download_requests %}
+            <div class="table-responsive">
             <table id="downloadsTable" class="admin_manage_downloads-table table table-dark table-striped">
                 <thead class="admin_manage_downloads-table-header">
                     <tr class="admin_manage_downloads-tr-headings">
@@ -45,6 +41,7 @@
                     {% endfor %}
                 </tbody>
             </table>
+            </div>
         {% else %}
             <p>No download requests found.</p>
         {% endif %}

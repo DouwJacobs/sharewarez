@@ -299,10 +299,10 @@ document.addEventListener('DOMContentLoaded', function() {
                                 <i class="fas fa-spinner fa-spin"></i>
                             </button>` :
                             `${isAnyJobRunning ?
-                                `<button class="btn btn-info btn-sm" disabled title="Cannot restart while another scan is running"><i class="fas fa-sync"></i></button>` :
+                                `<button class="btn btn-secondary btn-sm" disabled title="Cannot restart while another scan is running"><i class="fas fa-sync"></i></button>` :
                                 `<form action="/restart_scan_job/${job.id}" method="post" style="display: inline-block;">
                                     <input type="hidden" name="csrf_token" value="${csrfToken}">
-                                    <button type="submit" class="btn btn-info btn-sm" title="Restart Scan"><i class="fas fa-sync"></i></button>
+                                        <button type="submit" class="btn btn-secondary btn-sm" title="Restart Scan"><i class="fas fa-sync"></i></button>
                                 </form>`
                             }`
                         }
@@ -363,7 +363,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             title="Ignored folders are not scanned">
                             <i class="fas ${folder.status === 'Ignore' ? 'fa-eye-slash' : 'fa-eye'}"></i>
                         </button>
-                        <button onclick="clearEntry('${folder.id}')" class="btn btn-info btn-sm" title="Remove from unmatched list"><i class="fas fa-eraser"></i></button>
+                        <button onclick="clearEntry('${folder.id}')" class="btn btn-secondary btn-sm" title="Remove from unmatched list"><i class="fas fa-eraser"></i></button>
                         <form class="delete-folder-form" style="display: inline;">
                             <input type="hidden" name="csrf_token" value="${csrfToken}">
                             <input type="hidden" name="folder_path" value="${folder.folder_path}">

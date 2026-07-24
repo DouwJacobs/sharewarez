@@ -1,7 +1,9 @@
 {% extends "base.html" %}
-{% block content %}
-
+{% block styles %}
+{{ super() }}
 <link rel="stylesheet" href="{{ 'css/login/registration_already_confirmed.css'|theme_asset }}">
+{% endblock %}
+{% block content %}
 
 {% with messages = get_flashed_messages() %}
 {% if messages %}
@@ -18,7 +20,7 @@
             <div class="speech-bubble ai">
                 <h1>Already Confirmed</h1>
                 <p>Your account is already activated. You can log in and continue using our services.</p>
-                <a href="{{ url_for('login.login') }}" class="btn btn-success">Login</a>
+                <a href="{{ url_for('login.login') }}" class="btn btn-primary">Login</a>
             </div>
         </div>
     </div>

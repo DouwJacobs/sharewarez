@@ -1,0 +1,6 @@
+.container-login { display: grid; min-height: calc(100vh - 48px); place-items: center; padding: 24px; }
+.content-login { width: min(460px, 100%); padding: 32px; text-align: center; border: 1px solid rgba(255,255,255,.08); border-radius: 18px; background: linear-gradient(145deg, rgba(18,18,28,.96), rgba(12,12,20,.98)); }
+.content-login .login-logo { width: min(220px, 70%); height: auto; margin-bottom: 20px; }
+.content-login .logo { color: #fff; font-size: 1.75rem; }
+.content-login p { color: rgba(225,229,245,.76); }
+.container-buttons-login { display: flex; justify-content: center; margin-top: 24px; }

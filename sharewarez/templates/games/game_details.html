@@ -162,12 +162,6 @@
 
 {% if game %}
     <div class="glass-panel-gamecard">
-        <head>
-            <meta name="csrf-token" content="{{ csrf_token() }}">
-            <title>{{ game.name or 'Game Details' }}</title>
-        </head>
-
-        <body>
             {# NFO Modal #}
             {% if game.nfo_content and game.nfo_content.lower() != 'none' %}
                 <div id="nfoModal" class="modal-nfo">
@@ -485,7 +479,6 @@
                     {% endfor %}
                 </div>
             {% endif %}
-        </body>
     </div>
 {% else %}
     <div class="alert alert-warning" role="alert">

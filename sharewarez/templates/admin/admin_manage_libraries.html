@@ -1,11 +1,13 @@
 {% extends "base.html" %}
+{% block styles %}
+{{ super() }}
+<link rel="stylesheet" href="{{ 'css/admin/admin_manage_libraries.css'|theme_asset }}">
+{% endblock %}
 {% block content %}
 
-<link rel="stylesheet" href="{{ 'css/admin/admin_manage_libraries.css'|theme_asset }}">
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
 
-
-<body data-base-delete-url="{{ url_for('main.delete_full_library', library_uuid='') }}" data-delete-url="#" data-progress-url="{{ url_for('main.delete_library_progress', job_id='') }}" data-check-progress-url="{{ url_for('main.check_deletion_progress', job_id='') }}">
+<main class="admin-manage-libraries-page" data-base-delete-url="{{ url_for('main.delete_full_library', library_uuid='') }}" data-delete-url="#" data-progress-url="{{ url_for('main.delete_library_progress', job_id='') }}" data-check-progress-url="{{ url_for('main.check_deletion_progress', job_id='') }}">
     <!-- Loading Spinner with Progress -->
     <div id="deleteSpinner" class="spinner-overlay" style="display: none;">
         <div class="spinner-container">
@@ -18,7 +20,6 @@
         </div>
     </div>
     <!-- Rest of your HTML -->
-</body>
 
 <!-- Bootstrap Modal for Warning Confirmation -->
 <div class="modal fade" id="deleteWarningModal" tabindex="-1" role="dialog" aria-labelledby="deleteWarningModalLabel" aria-hidden="true">
@@ -39,13 +40,6 @@
         </div>
     </div>
 </div>
-<div class="container">
-    <div class="glass-panel">
-        <a href="{{ url_for('site.admin_dashboard') }}" class="btn btn-secondary">Back to Dashboard</a>
-    </div>
-</div>
-
-
 <div class="admin_manage_libraries-library-container">
     <div class="container-settings">
         <div class="card">
@@ -102,6 +96,7 @@
         </div>
     </div>
 </div>
+</main>
 
 <script src="{{ 'js/admin_manage_libs.js'|theme_asset }}"></script>
 

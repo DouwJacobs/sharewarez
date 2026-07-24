@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', function() {
     const testButton = document.createElement('button');
-    testButton.className = 'btn btn-info ms-2';
+    testButton.className = 'btn btn-secondary ms-2';
     testButton.innerHTML = '<i class="fas fa-vial"></i> Test Webhook';
     testButton.id = 'test-webhook-btn';
 

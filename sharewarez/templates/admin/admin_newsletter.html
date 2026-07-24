@@ -1,24 +1,12 @@
 <!-- in templates/admin/admin_newsletter.html -->
 {% extends "base.html" %}
-{% block content %}
-
+{% block styles %}
+{{ super() }}
 <link rel="stylesheet" href="{{ 'css/admin/admin_newsletter.css'|theme_asset }}">
-
-
-<!-- Back to Dashboard Button -->
-
-<div class="container">
-    <div class="glass-panel">
-        <a href="{{ url_for('site.admin_dashboard') }}" class="btn btn-secondary">Back to Dashboard</a>
-        <!-- Add CKEditor CDN -->
-        <script src="https://cdn.ckeditor.com/ckeditor5/39.0.1/classic/ckeditor.js"></script>
-        <style>
-            .ck-editor__editable { min-height: 300px; background: rgba(255, 255, 255, 0.1) !important; }
-        </style>
-    </div>
-</div>
-<div class="container-settings">        
-    <div class="card">        
+{% endblock %}
+{% block content %}
+<script src="https://cdn.ckeditor.com/ckeditor5/39.0.1/classic/ckeditor.js"></script>
+<main class="newsletter-page">
         <h1>Newsletter</h1>
         <form action="" method="post" novalidate>
             {{ form.hidden_tag() }}
@@ -29,7 +17,7 @@
             
             <div class="mb-3">
                 <label for="content" class="form-label">{{ form.content.label }}</label>
-                {{ form.content(id="content", class="form-control input-glass") }}
+                {{ form.content(id="editor", class="form-control input-glass") }}
             </div>
             
             <div class="mb-3 form-check">
@@ -37,7 +25,7 @@
                 <label class="form-check-label" for="selectAll">Select All/Select None</label>
             </div>
             
-            <div class="list-group mb-3">
+            <div class="newsletter-recipient-list list-group mb-3">
             {% for user in users %}
                 <label class="list-group-item">
                     <input class="form-check-input me-1 userCheckbox" type="checkbox" name="user" value="{{ user.email }}" checked onchange="updateRecipients()">
@@ -46,14 +34,14 @@
             {% endfor %}
             </div>
             
-            {{ form.recipients(style="display:none") }}  <!-- hidden input field -->
+            {{ form.recipients(class="visually-hidden") }}
             <button type="submit" class="btn btn-primary">{{ form.send.label }}</button>
         </form>
         
        <!-- Newsletter History Table -->
        <div class="newsletter-history mt-5">
            <h2>Newsletter History</h2>
-           <table class="table table-dark">
+           <div class="table-responsive"><table class="table table-dark">
                <thead>
                    <tr>
                        <th>Subject</th>
@@ -80,9 +68,9 @@
                    </tr>
                    {% endfor %}
                </tbody>
-           </table>
+           </table></div>
        </div>
-    </div>
+ </main>
 
 <script>
     document.getElementById("selectAll").addEventListener("click", function(e) {

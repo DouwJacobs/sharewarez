@@ -12,12 +12,6 @@
 <meta name="active-tab" content="{{ active_tab }}">
 <meta name="selected-library-uuid" content="{{ selected_library_uuid }}">
 
-<!-- Back to Dashboard Button -->
-<div class="container">
-    <div class="glass-panel">
-        <a href="{{ url_for('site.admin_dashboard') }}" class="btn btn-secondary">Back to Dashboard</a>
-    </div>
-</div>
 
 <div class="admin_manage_scanjobs-nav-panel mt-3">
     <div class="container-settings">
@@ -154,7 +148,7 @@
                                 </div>
                                 <div class="input-with-button">
                                     {{ auto_form.folder_path(class="form-control path-input") }}
-                                    <button id="browseFoldersBtn" type="button" class="btn btn-info browse-btn" data-browse-url="{{ url_for('apis.browse_folders_ss') }}">
+                                    <button id="browseFoldersBtn" type="button" class="btn btn-secondary browse-btn" data-browse-url="{{ url_for('apis.browse_folders_ss') }}">
                                         <i class="fas fa-search"></i> Browse
                                     </button>
                                 </div>
@@ -210,7 +204,7 @@
                     </div>
                     
                     <div class="card-content">
-                        <div class="jobs-table-wrapper">
+                        <div class="jobs-table-wrapper table-responsive">
                             <table id="scanJobsTable" class="simple-jobs-table">
                                 <thead>
                                     <tr>
@@ -289,7 +283,7 @@
                     </div>
 
                     <div class="form-group">
-                        <button id="browseFoldersBtnManual" type="button" class="admin_manage_scanjobs-browsefolders-btn btn btn-info">Browse Folders</button>
+                        <button id="browseFoldersBtnManual" type="button" class="admin_manage_scanjobs-browsefolders-btn btn btn-secondary">Browse Folders</button>
                         <button id="manualScanSubmitBtn" type="submit" name="submit" value="ManualScan" class="admin_manage_scanjobs-browsefolders-listgames-btn btn btn-primary">
                             <i class="fas fa-list" aria-hidden="true"></i> List Games
                         </button>
@@ -371,7 +365,7 @@
                             Showing all entries
                         </div>
                     </div>
-                    <table id="unmatchedTable" class="simple-unmatched-table" style="border-radius: 15px;">
+                    <div class="table-responsive"><table id="unmatchedTable" class="simple-unmatched-table">
                         <thead>
                             <tr>
                                 <th>Folder Path</th>
@@ -384,7 +378,7 @@
                         <tbody id="unmatchedFoldersTableBody">
                             <!-- This will be populated dynamically by JavaScript -->
                         </tbody>
-                    </table>
+                    </table></div>
                     
                 </div>
 
@@ -432,7 +426,7 @@
 
                     <hr>
                     <h4>Existing Filters</h4>
-                    <table class="admin_manage_filters-table table table-dark table-striped table-hover">
+                    <div class="table-responsive"><table class="admin_manage_filters-table table table-dark table-striped table-hover">
                         <thead>
                             <tr>
                                 <th width="60%">Scanning Filter Pattern</th>
@@ -462,7 +456,7 @@
                             </tr>
                         {% endfor %}
                         </tbody>
-                    </table>
+                    </table></div>
                 </div>
             </div>
 
@@ -482,7 +476,7 @@
                                     <i class="fas fa-plus"></i> Add New
                                 </button>
                             </div>
-                            <div class="card-body">
+                            <div class="card-body table-responsive">
                                 <table class="table table-dark table-hover" id="allowedTypesTable">
                                     <thead>
                                         <tr>
@@ -872,7 +866,7 @@
                     <td><small>${image.created_at}</small></td>
                     <td>
                         ${!image.is_downloaded ? `
-                            <button class="btn btn-sm btn-success me-1" onclick="downloadSingle(${image.id})" title="Download">
+                            <button class="btn btn-sm btn-primary me-1" onclick="downloadSingle(${image.id})" title="Download">
                                 <i class="fas fa-download"></i>
                             </button>
                         ` : ''}

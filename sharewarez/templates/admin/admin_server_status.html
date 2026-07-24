@@ -5,11 +5,6 @@
 
 
 
-<div class="container">
-    <div class="glass-panel">
-        <a href="{{ url_for('site.admin_dashboard') }}" class="btn btn-secondary">Back to Dashboard</a>
-    </div>
-</div>
         
 <div class="container-settings">
     <div class="container-serverstatus-version">
@@ -68,6 +63,7 @@
         <!-- Application Configuration -->
         <div class="info-block">
             <h3><i class="fas fa-cogs"></i> Application Configuration</h3>
+            <div class="table-responsive">
             <table class="table table-dark table-striped">
                 <thead>
                     <tr>
@@ -96,11 +92,13 @@
                     {% endfor %}
                 </tbody>
             </table>
+            </div>
         </div>
         <!-- Configuration Dump -->
         <div class="info-block">
             <h3><i class="fas fa-info-circle"></i> Configuration Parameters</h3>
 
+            <div class="table-responsive">
             <table class="table table-dark table-striped">
                 <thead>
                     <tr>
@@ -119,11 +117,13 @@
                     {% endfor %}
                 </tbody>
             </table>
+            </div>
         </div>
         
         <!-- Database Information -->
         <div class="info-block">
             <h3><i class="fas fa-database"></i> Database Information</h3>
+            <div class="table-responsive">
             <table class="table table-dark table-striped">
                 <thead>
                     <tr>
@@ -150,6 +150,7 @@
                     </tr>
                 </tbody>
             </table>
+            </div>
         </div>
         
         <!-- Log Information -->

@@ -1,7 +1,9 @@
 {% extends "base.html" %}
-{% block content %}
-
+{% block styles %}
+{{ super() }}
 <link rel="stylesheet" href="{{ 'css/login/confirmation_invalid.css'|theme_asset }}">
+{% endblock %}
+{% block content %}
 <div class="container-login">
     <div class="content-login">
         <img src="{{ url_for('static', filename='newstyle/sharewarez_logo.png') }}" alt="ShareWareZ Logo" class="login-logo">
