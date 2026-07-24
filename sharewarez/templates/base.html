@@ -210,24 +210,27 @@
     </div>
     <div class="sidebar-menu">
         {% if current_user.is_authenticated %}
+            <p class="sidebar-menu-label">Browse</p>
             {% if show_discovery %}
-                <a href="{{ url_for('discover.discover') }}" class="sidebar-link"><i class="fas fa-compass"></i><span class="link-text">Discover</span></a>
+                <a href="{{ url_for('discover.discover') }}" class="sidebar-link{% if request.path.startswith('/discover') %} active{% endif %}" title="Discover"{% if request.path.startswith('/discover') %} aria-current="page"{% endif %}><i class="fas fa-compass"></i><span class="link-text">Discover</span></a>
             {% endif %}
-            <a href="{{ url_for('library.library') }}" class="sidebar-link"><i class="fas fa-gamepad"></i><span class="link-text">Library</span></a>
-            <a href="{{ url_for('download.downloads') }}" class="sidebar-link"><i class="fas fa-download"></i><span class="link-text">Downloads</span></a>
+            <a href="{{ url_for('library.library') }}" class="sidebar-link{% if request.path.startswith('/library') %} active{% endif %}" title="Library"{% if request.path.startswith('/library') %} aria-current="page"{% endif %}><i class="fas fa-gamepad"></i><span class="link-text">Library</span></a>
+            <a href="{{ url_for('download.downloads') }}" class="sidebar-link{% if request.path.startswith('/downloads') %} active{% endif %}" title="Downloads"{% if request.path.startswith('/downloads') %} aria-current="page"{% endif %}><i class="fas fa-download"></i><span class="link-text">Downloads</span></a>
             {% if show_favorites %}
-                <a href="{{ url_for('site.favorites') }}" class="sidebar-link"><i class="fas fa-heart"></i><span class="link-text">Favorites</span></a>
+                <a href="{{ url_for('site.favorites') }}" class="sidebar-link{% if request.path.startswith('/favorites') %} active{% endif %}" title="Favorites"{% if request.path.startswith('/favorites') %} aria-current="page"{% endif %}><i class="fas fa-heart"></i><span class="link-text">Favorites</span></a>
             {% endif %}
             {% if show_trailers %}
-                <a href="{{ url_for('site.random_trailers') }}" class="sidebar-link"><i class="fas fa-film"></i><span class="link-text">Trailers</span></a>
+                <a href="{{ url_for('site.random_trailers') }}" class="sidebar-link{% if request.path.startswith('/random_trailers') %} active{% endif %}" title="Trailers"{% if request.path.startswith('/random_trailers') %} aria-current="page"{% endif %}><i class="fas fa-film"></i><span class="link-text">Trailers</span></a>
             {% endif %}
 
-            {% if current_user.role == 'admin' %}
-                <a href="/admin/dashboard" class="sidebar-link"><i class="fas fa-cogs"></i><span class="link-text">Settings</span></a>
-            {% endif %}
-
-            {% if show_help_button %}
-                <a href="{{ url_for('site.helpfaq') }}" class="sidebar-link"><i class="fas fa-question-circle"></i><span class="link-text">Help</span></a>
+            {% if current_user.role == 'admin' or show_help_button %}
+                <p class="sidebar-menu-label sidebar-menu-label-system">System</p>
+                {% if current_user.role == 'admin' %}
+                    <a href="/admin/dashboard" class="sidebar-link{% if request.path.startswith('/admin') %} active{% endif %}" title="Settings"{% if request.path.startswith('/admin') %} aria-current="page"{% endif %}><i class="fas fa-cogs"></i><span class="link-text">Settings</span></a>
+                {% endif %}
+                {% if show_help_button %}
+                    <a href="{{ url_for('site.helpfaq') }}" class="sidebar-link{% if request.path.startswith('/help') %} active{% endif %}" title="Help"{% if request.path.startswith('/help') %} aria-current="page"{% endif %}><i class="fas fa-question-circle"></i><span class="link-text">Help</span></a>
+                {% endif %}
             {% endif %}
         {% else %}
             <a href="{{ url_for('login.login') }}" class="sidebar-link"><i class="fas fa-sign-in-alt"></i><span class="link-text">Login</span></a>
