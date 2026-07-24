@@ -102,9 +102,21 @@ function displayImage(data) {
     let newImgDiv = document.createElement('div');
 
     newImgDiv.id = `image-${data.image_id}`;
-    newImgDiv.className = 'image-editor-image'; // Add this line to set the class
+    newImgDiv.className = 'image-editor-image';
 
-    newImgDiv.innerHTML = `<button class="btn btn-danger" onclick="deleteImage(${data.image_id})">Delete</button><img src="${data.url}" alt="Image" class="image-editor-image" style="max-width: 300px; max-height: 300px;">`;
+    const image = document.createElement('img');
+    image.src = data.url;
+    image.alt = 'Screenshot';
+
+    const deleteButton = document.createElement('button');
+    deleteButton.type = 'button';
+    deleteButton.className = 'image-delete-button';
+    deleteButton.setAttribute('aria-label', 'Delete screenshot');
+    deleteButton.title = 'Delete screenshot';
+    deleteButton.innerHTML = '<i class="fas fa-trash"></i>';
+    deleteButton.addEventListener('click', () => deleteImage(data.image_id));
+
+    newImgDiv.append(image, deleteButton);
     imageList.appendChild(newImgDiv);
 }
 
@@ -116,13 +128,26 @@ function displayCoverImage(data) {
         existingImg.remove();
     }
 
+    let existingDeleteButton = coverImageEditor.querySelector('.image-delete-button');
+    if (existingDeleteButton) {
+        existingDeleteButton.remove();
+    }
+
     let img = document.createElement('img');
     img.src = data.url;
     img.alt = "Cover Image";
-    img.style.maxWidth = "300px";
-    img.style.maxHeight = "300px";
+    img.dataset.imageId = data.image_id;
 
     coverImageEditor.insertBefore(img, coverImageEditor.firstChild);
+
+    const deleteButton = document.createElement('button');
+    deleteButton.type = 'button';
+    deleteButton.className = 'image-delete-button image-delete-cover';
+    deleteButton.setAttribute('aria-label', 'Delete cover image');
+    deleteButton.title = 'Delete cover image';
+    deleteButton.innerHTML = '<i class="fas fa-trash"></i>';
+    deleteButton.addEventListener('click', () => deleteImage(data.image_id));
+    coverImageEditor.appendChild(deleteButton);
 }
 
 function deleteImage(imageId) {
@@ -167,6 +192,7 @@ function deleteImage(imageId) {
                 img.src = data.default_cover;
                 img.removeAttribute('data-image-id');
             }
+            coverImageEditor.querySelector('.image-delete-button')?.remove();
         } else {
             // Regular screenshot, just remove it
             document.getElementById(`image-${imageId}`).remove();

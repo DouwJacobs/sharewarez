@@ -1,88 +1,192 @@
-.image-editor-image img{
-    width: 300px;
+.image-editor-page {
+    width: min(1100px, calc(100% - 48px));
+    margin: 24px auto;
 }
 
-.image-editor-image {
-    display: flex;
-    flex-direction: column;
+.image-editor-header {
+    margin: 0 0 18px;
+    padding: 0 4px;
 }
 
-.image-editor-list {
-    display: flex;
-    flex-direction: row;
-    overflow: auto;
-    gap: 10px;
-    margin-top: 20px;
+.image-editor-eyebrow {
+    margin: 0 0 6px;
+    color: rgba(176, 191, 255, 0.86);
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
 }
 
-.glass-panel-image-editor {
-    flex-direction: row;
-    align-items: flex-start;
-    gap: 16px;
-    margin-bottom: 20px;
-    margin-top: 20px;
+.image-editor-header h1,
+.image-editor-card h2 {
+    margin: 0;
+    color: #fff;
 }
 
-.glass-panel-image-editor-upload {
-    flex-direction: column;
-    gap: 14px;
-    margin-bottom: 20px;
-    margin-top: 20px;
+.image-editor-header h1 {
+    font-size: clamp(1.65rem, 3vw, 2.15rem);
+    text-shadow: 0 0 28px rgba(120, 160, 255, 0.34);
 }
 
-.glass-panel-image-editor-cover {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 16px;
-    margin-bottom: 20px;
-    margin-top: 20px;
+.image-editor-game-name,
+.image-editor-card-header p,
+.image-editor-empty {
+    margin: 6px 0 0;
+    color: rgba(221, 225, 237, 0.66);
 }
 
-.delete-cover-image-container {
-    width: 300px;
-    display: inline-block;
+.image-editor-layout {
+    display: grid;
+    grid-template-columns: minmax(260px, 0.8fr) minmax(320px, 1.2fr);
+    gap: 18px;
 }
 
-.spinner {
-    display: none;
-    position: absolute;
-    width: 50px;
-    height: 50px;
-    border: 5px solid #f3f3f3;
-    border-top: 5px solid #3498db;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-    z-index: 1000;
+.image-editor-card,
+.image-editor-gallery-card {
+    padding: 22px;
 }
 
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+.image-editor-card-header {
+    margin-bottom: 18px;
+}
+
+.image-editor-card h2 {
+    font-size: 1.1rem;
 }
 
 .cover-image-container {
     position: relative;
-    display: inline-block;
+    width: min(100%, 280px);
+    margin: 0 auto 16px;
 }
 
-#upload-area {
+.cover-image-container img {
+    display: block;
     width: 100%;
-    min-height: 100px;
+    aspect-ratio: 3 / 4;
+    object-fit: cover;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.42);
+}
+
+.image-file-input {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    min-height: 36px;
+    border: 1px solid rgba(154, 177, 255, 0.28);
+    border-radius: 8px;
+    background: rgba(98, 122, 239, 0.1);
+    color: rgba(231, 235, 255, 0.92);
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.image-file-input:hover { background: rgba(98, 122, 239, 0.2); }
+.image-editor-cover-card input[type="file"] { display: none; }
+
+.image-delete-button {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: 1px solid rgba(255, 120, 120, 0.4);
+    border-radius: 50%;
+    background: rgba(54, 18, 24, 0.88);
+    color: #ffb5bd;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.2s ease, transform 0.2s ease, background 0.2s ease;
+}
+
+.cover-image-container:hover .image-delete-button,
+.image-editor-image:hover .image-delete-button,
+.image-delete-button:focus-visible { opacity: 1; }
+
+.image-delete-button:hover { background: rgba(151, 33, 50, 0.95); transform: scale(1.08); }
+
+.upload-dropzone {
+    display: flex;
+    min-height: 140px;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 14px;
+    padding: 20px;
     border: 2px dashed rgba(150, 170, 255, 0.32);
     border-radius: 12px;
     background: rgba(255, 255, 255, 0.025);
-    padding: 20px;
+    color: rgba(231, 235, 255, 0.82);
     text-align: center;
-    transition: all 0.3s ease;
     cursor: pointer;
-    margin-bottom: 15px;
+    transition: all 0.2s ease;
 }
 
-#upload-area.highlight {
-    border-color: rgba(150, 170, 255, 0.8);
-    background-color: rgba(98, 122, 239, 0.11);
+.upload-dropzone i { color: rgba(154, 177, 255, 0.92); font-size: 1.6rem; }
+.upload-dropzone small { color: rgba(221, 225, 237, 0.55); }
+.upload-dropzone.highlight,
+.upload-dropzone:hover { border-color: rgba(150, 170, 255, 0.8); background: rgba(98, 122, 239, 0.11); }
+
+.image-editor-upload-card .form-control { margin-bottom: 12px; }
+.image-editor-upload-card .btn { align-self: flex-start; }
+
+.image-editor-gallery-card { margin-top: 18px; }
+
+.image-editor-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 14px;
+    margin: 0;
 }
 
-#upload-area:hover {
-    border-color: rgba(150, 170, 255, 0.8);
+.image-editor-image {
+    position: relative;
+    margin: 0;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.03);
+    aspect-ratio: 16 / 10;
+}
+
+.image-editor-image img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.25s ease;
+}
+
+.image-editor-image:hover img { transform: scale(1.04); }
+
+.spinner {
+    display: none;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 42px;
+    height: 42px;
+    margin: -21px;
+    border: 4px solid rgba(255, 255, 255, 0.25);
+    border-top-color: #9ab1ff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    z-index: 2;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+@media (max-width: 700px) {
+    .image-editor-page { width: calc(100% - 24px); margin: 12px auto; }
+    .image-editor-layout { grid-template-columns: 1fr; }
+    .image-editor-card, .image-editor-gallery-card { padding: 18px; }
 }

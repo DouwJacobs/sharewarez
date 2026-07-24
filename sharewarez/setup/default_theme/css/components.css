@@ -23,7 +23,7 @@
     max-width: 250px;
     max-height: 332px;
     border-radius: 16px;
-    overflow: hidden;
+    overflow: visible;
     background: linear-gradient(145deg, rgba(18, 18, 28, 0.96), rgba(12, 12, 20, 0.98));
     border: 1px solid rgba(255, 255, 255, 0.1);
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.05), 0 0 40px rgba(80, 120, 255, 0.1);
@@ -90,7 +90,12 @@
     z-index: 13;
     background-color: var(--btn-hamburger-bg);
     border-radius: 50%;
-    padding: 1px 6px;
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     border: 1px solid rgba(255, 255, 255, 0.15);
     cursor: pointer;
     opacity: 0;
@@ -107,6 +112,17 @@
 
 .game-card:hover .button-glass-hamburger {
     opacity: 1; 
+}
+
+.game-card .popup-menu {
+    top: 50px;
+    left: 8px;
+    min-width: 210px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    background: linear-gradient(145deg, rgba(28, 29, 45, 0.98), rgba(12, 12, 20, 0.98));
+    backdrop-filter: blur(16px);
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.58), 0 0 24px rgba(80, 120, 255, 0.14);
 }
 
 /* Favorite Button */
@@ -145,6 +161,14 @@
 .favorite-btn.processing {
     pointer-events: none;
     opacity: 0.7;
+}
+
+@media (max-width: 768px) {
+    /* Touch screens do not expose hover-only card actions. */
+    .game-card .button-glass-hamburger,
+    .game-card .favorite-btn {
+        opacity: 1;
+    }
 }
 
 /* Local Metadata Badge */

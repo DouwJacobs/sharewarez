@@ -15,6 +15,167 @@
     padding: 0 32px 32px;
 }
 
+/* Filters live with the library content rather than in the global sidebar. */
+.library-browser-panel .container-filtersandsort {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    margin: 18px 0 6px;
+    padding: 12px 14px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.025);
+}
+
+.library-browser-panel .filters-heading {
+    justify-content: space-between;
+    border: 0;
+    padding: 0;
+    background: transparent;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    width: 100%;
+    color: rgba(226, 231, 255, 0.9);
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+.library-browser-panel .filters-heading > span {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+}
+
+.library-browser-panel .filters-toggle-icon {
+    transition: transform 0.2s ease;
+}
+
+.library-browser-panel .filters-heading[aria-expanded="false"] .filters-toggle-icon {
+    transform: rotate(180deg);
+}
+
+.library-browser-panel .library-filters-body {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 12px;
+    width: 100%;
+}
+
+.library-browser-panel .sorting-dropdown,
+.library-browser-panel .library-filters,
+.library-browser-panel #filterForm,
+.library-browser-panel .library-filters .form-group,
+.library-browser-panel .button-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+}
+
+.library-browser-panel #filterForm {
+    align-items: flex-end;
+}
+
+.library-browser-panel .sorting-dropdown {
+    flex: 0 0 auto;
+}
+
+.library-browser-panel .library-filters {
+    flex: 1 1 auto;
+}
+
+.library-browser-panel .library-filters .form-group {
+    flex: 1 1 150px;
+    flex-direction: column;
+    align-items: stretch;
+    min-width: 0;
+}
+
+.library-browser-panel .container-filtersandsort select.form-control,
+.library-browser-panel .container-filtersandsort #sortSelect,
+.library-browser-panel .container-filtersandsort button {
+    height: 34px;
+    margin: 0;
+    border-radius: 8px;
+}
+
+.library-browser-panel .container-filtersandsort select.form-control,
+.library-browser-panel .container-filtersandsort #sortSelect {
+    line-height: 1.2;
+    padding: 6px 28px 6px 9px;
+}
+
+.library-browser-panel .container-filtersandsort label {
+    display: block;
+    margin: 0;
+    color: rgba(226, 231, 255, 0.66);
+    font-size: 0.72rem;
+    font-weight: 600;
+}
+
+.library-browser-panel .rating-slider {
+    width: 150px;
+    height: 34px;
+    margin: 0 auto 0 0;
+    align-self: flex-start;
+}
+
+.library-browser-panel .rating-slider::-webkit-slider-runnable-track {
+    margin-bottom: 0;
+}
+
+.library-browser-panel .library-filters .filter-rating-group {
+    flex: 0 1 170px;
+    align-items: flex-start;
+}
+
+.library-browser-panel .button-group .btn {
+    min-width: 72px;
+    padding: 0 12px;
+    line-height: 1;
+}
+
+@media (max-width: 900px) {
+    .library-browser-panel .library-filters,
+    .library-browser-panel #filterForm {
+        flex-wrap: wrap;
+    }
+}
+
+@media (max-width: 768px) {
+    .library-browser-panel .container-filtersandsort {
+        padding: 10px;
+    }
+
+    .library-browser-panel .library-filters-body,
+    .library-browser-panel .library-filters,
+    .library-browser-panel #filterForm {
+        width: 100%;
+    }
+
+    .library-browser-panel .sorting-dropdown,
+    .library-browser-panel .library-filters .form-group,
+    .library-browser-panel .library-filters .filter-rating-group,
+    .library-browser-panel .button-group {
+        flex: 1 1 100%;
+        width: 100%;
+    }
+
+    .library-browser-panel .rating-slider {
+        width: 100%;
+    }
+
+    .library-browser-panel .button-group .btn {
+        flex: 1;
+    }
+}
+
 .library-browser-header {
     display: flex;
     align-items: end;

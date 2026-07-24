@@ -250,6 +250,96 @@
     display: none;
 }
 
+/* Refined library filter panel */
+.sidebar .container-filtersandsort {
+    margin: 8px 2px 0;
+    padding: 12px 10px 10px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 14px;
+    background: linear-gradient(145deg, rgba(28, 29, 45, 0.72), rgba(12, 12, 20, 0.72));
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.22);
+}
+
+.sidebar .filters-heading {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 2px 10px;
+    color: rgba(226, 231, 255, 0.9);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+.sidebar .filters-heading i {
+    color: rgba(154, 177, 255, 0.9);
+    font-size: 12px;
+}
+
+.sidebar .container-filtersandsort .sorting-dropdown {
+    display: grid;
+    grid-template-columns: auto 1fr 30px;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 10px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.sidebar .container-filtersandsort .sorting-dropdown label {
+    color: rgba(255, 255, 255, 0.55);
+    font-size: 11px;
+    text-transform: none;
+    letter-spacing: 0;
+}
+
+.sidebar .container-filtersandsort select,
+.sidebar .container-filtersandsort .btn {
+    height: 32px;
+    margin: 0;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.055);
+    border-color: rgba(255, 255, 255, 0.12);
+    transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.sidebar .container-filtersandsort select {
+    padding: 4px 9px;
+}
+
+.sidebar .container-filtersandsort .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+}
+
+.sidebar .container-filtersandsort select:focus,
+.sidebar .container-filtersandsort .btn:focus,
+.sidebar .container-filtersandsort select:hover,
+.sidebar .container-filtersandsort .btn:hover {
+    border-color: rgba(154, 177, 255, 0.5);
+    background: rgba(98, 122, 239, 0.16);
+    box-shadow: none;
+}
+
+.sidebar .library-filters .form-group {
+    margin-bottom: 7px;
+}
+
+.sidebar .library-filters .button-group {
+    gap: 7px;
+    margin-top: 10px;
+}
+
+.sidebar .library-filters .button-group .btn {
+    flex: 1;
+    height: 32px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
 /* =====================================================
    USER ACCOUNT MINI-MENU (bottom of sidebar)
    ===================================================== */

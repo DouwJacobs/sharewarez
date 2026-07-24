@@ -91,10 +91,17 @@
     padding: 5px 5px;
     margin-top: 8px;
     max-width: calc(100% - 20px);
+    margin-left: auto;
+    margin-right: auto;
     box-sizing: border-box;
     white-space: normal;
     overflow-wrap: break-word; 
     font-size: 1.3em; 
+}
+
+.library-link {
+    width: min(250px, 100%);
+    text-align: center;
 }
 
 
@@ -213,7 +220,9 @@
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 20px;
     padding: 28px 32px 42px;
-    margin: 24px;
+    width: min(1440px, calc(100% - 48px));
+    margin: 24px auto;
+    box-sizing: border-box;
     grid-template-columns: auto 1fr auto;
     gap: 10px;
     justify-content: space-between;
@@ -227,7 +236,8 @@
 
 @media (max-width: 768px) {
     .discovery-panel {
-        margin: 12px;
+        width: calc(100% - 24px);
+        margin: 12px auto;
         padding: 22px 16px 30px;
         border-radius: 16px;
     }

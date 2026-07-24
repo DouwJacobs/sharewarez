@@ -1,37 +1,39 @@
 <div class="modal fade" id="preferencesModal" tabindex="-1" aria-labelledby="preferencesModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="preferencesModalLabel">
-                    <i class="fas fa-cog"></i> User Preferences
-                </h5>
+    <div class="modal-dialog modal-dialog-centered preferences-modal-dialog">
+        <div class="modal-content preferences-modal-content">
+            <div class="modal-header preferences-modal-header">
+                <div>
+                    <p class="preferences-modal-eyebrow">Your experience</p>
+                    <h5 class="modal-title" id="preferencesModalLabel"><i class="fas fa-sliders"></i> Preferences</h5>
+                </div>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body">
-                <form id="preferencesForm" method="POST" action="{{ url_for('settings.settings_panel') }}">
+            <div class="modal-body preferences-modal-body">
+                <p class="preferences-modal-intro">Set the defaults used when you browse your library.</p>
+                <form id="preferencesForm" method="POST" action="{{ url_for('settings.settings_panel') }}" class="preferences-form">
                     {{ form.hidden_tag() }}
-                    <div class="mb-3">
+                    <div class="preferences-field">
                         {{ form.items_per_page.label(class="form-label") }}
                         {{ form.items_per_page(class="form-control") }}
                         {% for error in form.items_per_page.errors %}
                             <div class="invalid-feedback">{{ error }}</div>
                         {% endfor %}
                     </div>
-                    <div class="mb-3">
+                    <div class="preferences-field">
                         {{ form.default_sort.label(class="form-label") }}
                         {{ form.default_sort(class="form-select") }}
                         {% for error in form.default_sort.errors %}
                             <div class="invalid-feedback">{{ error }}</div>
                         {% endfor %}
                     </div>
-                    <div class="mb-3">
+                    <div class="preferences-field">
                         {{ form.default_sort_order.label(class="form-label") }}
                         {{ form.default_sort_order(class="form-select") }}
                         {% for error in form.default_sort_order.errors %}
                             <div class="invalid-feedback">{{ error }}</div>
                         {% endfor %}
                     </div>
-                    <div class="mb-3">
+                    <div class="preferences-field">
                         {{ form.theme.label(class="form-label") }}
                         {{ form.theme(class="form-select") }}
                         {% for error in form.theme.errors %}
@@ -40,7 +42,7 @@
                     </div>
                 </form>
             </div>
-            <div class="modal-footer">
+            <div class="modal-footer preferences-modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                 <button type="submit" form="preferencesForm" class="btn btn-primary">Save Changes</button>
             </div>

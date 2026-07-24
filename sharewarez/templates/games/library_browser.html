@@ -23,6 +23,7 @@
             </div>
             <p class="library-browser-count">{{ total }} game{% if total != 1 %}s{% endif %}</p>
         </header>
+        {% include 'games/library_filters.html' %}
         <!-- Top Pagination Bar (nav only) -->
         <div class="pagination-header">
             <div class="pagination-controls-right">

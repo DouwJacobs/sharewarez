@@ -1,6 +1,5 @@
-function copyToClipboard(textToCopy) {
+function copyToClipboard(textToCopy, buttonElement) {
     // Use the full URL that's already in the textToCopy parameter
-    const buttonElement = event.target;
     
     // Copy text to clipboard
     navigator.clipboard.writeText(textToCopy).then(() => {

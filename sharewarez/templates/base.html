@@ -249,7 +249,6 @@
             {% if show_help_button %}
                 <a href="{{ url_for('site.helpfaq') }}" class="sidebar-link"><i class="fas fa-question-circle"></i><span class="link-text">Help</span></a>
             {% endif %}
-            {% include 'games/library_filters.html' %}
         {% else %}
             <a href="{{ url_for('login.login') }}" class="sidebar-link"><i class="fas fa-sign-in-alt"></i><span class="link-text">Login</span></a>
             <a href="{{ url_for('login.register') }}" class="sidebar-link"><i class="fas fa-user-plus"></i><span class="link-text">Register</span></a>

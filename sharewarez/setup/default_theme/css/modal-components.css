@@ -5,7 +5,8 @@
 .modal {
     display: none;
     position: fixed;
-    z-index: 1000;
+    /* Must sit above Bootstrap's 1050 backdrop. */
+    z-index: 1055;
     left: 0;
     top: 0;
     width: 100%;
@@ -251,4 +252,51 @@
         flex-direction: column;
         align-items: center;
     }
+}
+
+/* User preferences modal */
+.preferences-modal-dialog { max-width: 540px; }
+
+.preferences-modal-content {
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 18px;
+    background: linear-gradient(145deg, rgba(18, 18, 28, 0.98), rgba(12, 12, 20, 0.99));
+    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.68), 0 0 55px rgba(80, 120, 255, 0.1);
+}
+
+.preferences-modal-header,
+.preferences-modal-footer {
+    border-color: rgba(255, 255, 255, 0.08);
+    padding: 20px 24px;
+}
+
+.preferences-modal-eyebrow {
+    margin: 0 0 5px;
+    color: rgba(176, 191, 255, 0.86);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.11em;
+    text-transform: uppercase;
+}
+
+.preferences-modal-header .modal-title { color: #fff; font-size: 1.2rem; }
+.preferences-modal-header .modal-title i { margin-right: 8px; color: rgba(154, 177, 255, 0.9); }
+.preferences-modal-body { padding: 22px 24px 24px; }
+.preferences-modal-intro { margin: 0 0 20px; color: rgba(221, 225, 237, 0.66); font-size: 0.9rem; }
+.preferences-form { display: grid; gap: 15px; }
+.preferences-field { margin: 0; }
+.preferences-field .form-label { display: block; margin-bottom: 7px; color: rgba(226, 231, 255, 0.78); font-size: 0.84rem; font-weight: 600; }
+.preferences-field .form-control,
+.preferences-field .form-select { min-height: 40px; border-color: rgba(255, 255, 255, 0.12); border-radius: 9px; background-color: rgba(255, 255, 255, 0.055); color: #fff; }
+.preferences-field .form-control:focus,
+.preferences-field .form-select:focus { border-color: rgba(154, 177, 255, 0.62); box-shadow: 0 0 0 3px rgba(98, 122, 239, 0.14); }
+.preferences-modal-footer { gap: 8px; }
+.preferences-modal-footer .btn { min-width: 108px; }
+
+@media (max-width: 768px) {
+    .preferences-modal-header,
+    .preferences-modal-footer { padding: 16px; }
+    .preferences-modal-body { padding: 18px 16px; }
+    .preferences-modal-footer .btn { flex: 1; }
 }

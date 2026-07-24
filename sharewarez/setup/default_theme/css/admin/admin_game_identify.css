@@ -168,3 +168,28 @@ label {
     border: 2px solid #dc3545;
     background: rgba(220, 53, 69, 0.1);
 }
+
+/* Match the premium surface used by game details and keep the edit view centered. */
+.glass-panel-addgame {
+    width: min(1000px, calc(100% - 48px));
+    margin: 24px auto;
+    box-sizing: border-box;
+    background: linear-gradient(145deg, rgba(18, 18, 28, 0.96), rgba(12, 12, 20, 0.98));
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.025), 0 20px 60px rgba(0, 0, 0, 0.58), 0 0 70px rgba(80, 120, 255, 0.06);
+}
+
+.game_edit-form-group-id,
+.game_edit-form-group-name,
+.game_edit-form-group-path {
+    background: linear-gradient(145deg, rgba(28, 29, 45, 0.72), rgba(16, 16, 27, 0.78));
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+@media (max-width: 768px) {
+    .glass-panel-addgame {
+        width: calc(100% - 24px);
+        margin: 12px auto;
+        padding: 22px 16px 30px;
+    }
+}

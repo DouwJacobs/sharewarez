@@ -1292,3 +1292,69 @@ pre {
     color: rgba(220, 220, 235, 0.9);
     line-height: 1.6;
 }
+
+@media (max-width: 768px) {
+    .glass-panel-gamecard {
+        width: calc(100% - 24px) !important;
+        min-height: 0;
+        margin: 12px auto;
+        border-radius: 16px;
+    }
+
+    .game-card-gamename {
+        padding: 22px 18px 16px;
+    }
+
+    .game-card-gamename h1 {
+        font-size: 1.55rem;
+    }
+
+    .game-card-topq {
+        flex-direction: column;
+        padding: 18px;
+        gap: 18px;
+    }
+
+    .game-card-q1,
+    .game-card-q2,
+    .game-card-q3 {
+        width: 100% !important;
+        margin: 0;
+    }
+
+    .game-card-coverimage {
+        width: min(100%, 320px);
+        margin: 0 auto;
+    }
+
+    .game-card-meta,
+    .game-files {
+        padding: 16px;
+    }
+
+    .rating-container {
+        flex-wrap: wrap;
+    }
+
+    .rating-row {
+        min-width: calc(50% - 6px);
+    }
+
+    .game-card-bottom-info {
+        gap: 12px;
+        padding: 0 18px 18px;
+    }
+
+    .button-glass-hamburger-cover,
+    .favorite-btn-cover {
+        opacity: 1;
+        visibility: visible;
+    }
+}
+
+@media (max-width: 420px) {
+    .game-card-topq { padding: 14px; }
+    .game-card-meta, .game-files { padding: 14px; }
+    .rating-row { min-width: 100%; }
+    .game-card-bottom-info { padding: 0 14px 14px; }
+}
