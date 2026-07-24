@@ -124,13 +124,14 @@
 
 /* Modal Content Search Variant */
 .modal-content-search {
-    background: var(--modal-bg);
+    width: min(560px, calc(100% - 32px));
+    margin: 12vh auto;
+    padding: 20px;
+    background: linear-gradient(145deg, rgba(18, 18, 28, 0.98), rgba(12, 12, 20, 0.99));
     color: var(--text-white);
-    margin: 25% auto;
-    padding: var(--spacing-lg);
-    border: 15px solid var(--bg-dark-primary);
-    width: 80%;
-    border-radius: var(--border-radius-lg);
+    border: 1px solid rgba(154, 177, 255, 0.2);
+    border-radius: 18px;
+    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.68), 0 0 55px rgba(80, 120, 255, 0.1);
 }
 
 /* Delete Game Modal - Special Styling */
