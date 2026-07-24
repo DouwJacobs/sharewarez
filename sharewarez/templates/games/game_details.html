@@ -209,7 +209,7 @@
                             {% for image in game.images if 'cover' in image.url %}
                                 <img src="{{ url_for('static', filename='library/images/' + image.url) }}"
                                      alt="{{ game.name }} Cover Image"
-                                     class="game-card-coverimage animated-entry">
+                                     class="game-card-cover-image animated-entry">
                             {% endfor %}
 
                             {# Favorite button on cover #}

@@ -214,8 +214,27 @@ document.addEventListener('DOMContentLoaded', function() {
         return job.status;
     }
 
+    const activeScanStatuses = new Set(['Running', 'Stopping']);
+    let scanJobsPollTimer = null;
+    let scanJobsPollInFlight = false;
+
+    const isAutoScanTabVisible = () =>
+        document.querySelector('#autoScan')?.classList.contains('active') && !document.hidden;
+
+    const stopScanJobsPolling = () => {
+        if (scanJobsPollTimer) {
+            window.clearTimeout(scanJobsPollTimer);
+            scanJobsPollTimer = null;
+        }
+    };
+
     const updateScanJobs = () => {
-        fetch('/api/scan_jobs_status', {cache: 'no-store'})
+        if (scanJobsPollInFlight) {
+            return Promise.resolve(false);
+        }
+
+        scanJobsPollInFlight = true;
+        return fetch('/api/scan_jobs_status', {cache: 'no-store'})
             .then(response => response.json())
             .then(data => {
                 // Sort the data array to ensure the latest scan is at the top
@@ -224,7 +243,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Clear the table body
                 scanJobsTableBody.innerHTML = '';
                 
-                const isAnyJobRunning = data.some(j => j.status === 'Running' || j.status === 'Stopping');
+                const isAnyJobRunning = data.some(job => activeScanStatuses.has(job.status));
                 
                 data.forEach(job => {
                     // Create progress column content
@@ -300,8 +319,32 @@ document.addEventListener('DOMContentLoaded', function() {
                     `;
                     scanJobsTableBody.appendChild(row);
                 });
+
+                return isAnyJobRunning;
             })
-            .catch(error => console.error('Error fetching scan jobs status:', error));
+            .catch(error => {
+                console.error('Error fetching scan jobs status:', error);
+                return false;
+            })
+            .finally(() => {
+                scanJobsPollInFlight = false;
+            });
+    };
+
+    const refreshScanJobs = () => {
+        stopScanJobsPolling();
+
+        if (!isAutoScanTabVisible()) {
+            return;
+        }
+
+        updateScanJobs().then(isAnyJobRunning => {
+            if (!isAnyJobRunning || !isAutoScanTabVisible()) {
+                return;
+            }
+
+            scanJobsPollTimer = window.setTimeout(refreshScanJobs, 3000);
+        });
     };
 
     const updateUnmatchedFolders = () => {
@@ -485,18 +528,43 @@ document.addEventListener('DOMContentLoaded', function() {
     // Set up filter controls
     setupUnmatchedFilters();
 
-    // Run immediately on load
-    updateScanJobs();
-    updateUnmatchedFolders();
+    const refreshUnmatchedFolders = () => {
+        const unmatchedTab = document.querySelector('#unmatchedFolders');
+        if (!unmatchedTab?.classList.contains('active') || document.hidden) {
+            return;
+        }
 
-    // Set up periodic updates
-    setInterval(updateScanJobs, 3000);  // Update every 3 seconds
-    setInterval(() => {
-        updateUnmatchedFolders().then(() => {
-            // Reapply current filters after periodic refresh
-            filterUnmatchedRows();
+        updateUnmatchedFolders().then(filterUnmatchedRows);
+    };
+
+    // Load data only for the currently visible tab. A scan job then enables
+    // three-second polling until it reaches a terminal status.
+    refreshScanJobs();
+    refreshUnmatchedFolders();
+
+    document.querySelectorAll('.admin_manage_scanjobs-nav-tabs .nav-link').forEach(tab => {
+        tab.addEventListener('shown.bs.tab', event => {
+            if (event.target.getAttribute('href') === '#autoScan') {
+                refreshScanJobs();
+            } else {
+                stopScanJobsPolling();
+            }
+
+            if (event.target.getAttribute('href') === '#unmatchedFolders') {
+                refreshUnmatchedFolders();
+            }
         });
-    }, 30000);  // Update every 30 seconds
+    });
+
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden) {
+            stopScanJobsPolling();
+            return;
+        }
+
+        refreshScanJobs();
+        refreshUnmatchedFolders();
+    });
 
     // Global functions for table interactions
     window.toggleIgnoreStatus = function(folderId, button) {
