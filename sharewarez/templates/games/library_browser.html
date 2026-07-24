@@ -21,45 +21,25 @@
                 <p class="library-browser-eyebrow">Your collection</p>
                 <h1>Browse games</h1>
             </div>
-            <p class="library-browser-count">{{ total }} game{% if total != 1 %}s{% endif %}</p>
+            <div class="library-browser-actions">
+                <p class="library-browser-count">{{ total }} game{% if total != 1 %}s{% endif %}</p>
+                <button id="librarySearchButton" class="library-search-button" type="button" aria-haspopup="dialog" aria-controls="searchModal">
+                    <i class="fas fa-magnifying-glass" aria-hidden="true"></i><span>Search games</span><kbd>/</kbd>
+                </button>
+            </div>
         </header>
         {% include 'games/library_filters.html' %}
-        <!-- Top Pagination Bar (nav only) -->
-        <div class="pagination-header">
-            <div class="pagination-controls-right">
-                <nav aria-label="Page navigation" class="pagination-nav">
-                    <div class="pagination-controls">
-                        <button class="btn-pagination" id="firstPage" aria-label="First page">
-                            <i class="fas fa-angle-double-left"></i>
-                        </button>
-                        <button class="btn-pagination" id="prevPage" aria-label="Previous page">
-                            <i class="fas fa-angle-left"></i>
-                        </button>
-                        <div class="page-info" id="currentPageInfo">Loading...</div>
-                        <button class="btn-pagination" id="nextPage" aria-label="Next page">
-                            <i class="fas fa-angle-right"></i>
-                        </button>
-                        <button class="btn-pagination" id="lastPage" aria-label="Last page">
-                            <i class="fas fa-angle-double-right"></i>
-                        </button>
-                    </div>
-                </nav>
-            </div>
-        </div>
-        
-        
         <!-- Search Modal -->
         <div class="modal fade" id="searchModal" tabindex="-1" aria-labelledby="searchModalLabel" aria-hidden="true">
             <div class="modal-dialog">
             <div class="modal-content modal-content-search">
                 <div class="modal-header">
                 <h5 class="modal-title" id="searchModalLabel">Search</h5>
-                <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                 <input type="text" class="form-control" id="searchInput" placeholder="Start typing...">
+                <p id="searchStatus" class="library-search-status" role="status" aria-live="polite">Type at least two characters to search your library.</p>
                 <div id="searchResults"></div>
                 </div>
             </div>
@@ -134,6 +114,7 @@
                             <img src="{{ url_for('static', filename='newstyle/default_cover.jpg') }}" alt="Default Cover Image" class="game-cover">
                         </a>
                     {% endif %}
+                    <a class="game-card-title" href="{{ url_for('games.game_details', game_uuid=game.uuid) }}">{{ game.name }}</a>
                     {% if game.has_local_override %}
                     <div class="local-metadata-badge" title="Uses local metadata or images">L</div>
                     {% endif %}

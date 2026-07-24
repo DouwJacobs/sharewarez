@@ -274,6 +274,7 @@ $(document).ready(function() {
         var queryString = $.param(filters);
         console.log(`Full query URL: /browse_games?${queryString}`);
 
+        $('#gamesContainer').attr('aria-busy', 'true').html('<div class="game-grid-loading" role="status"><i class="fas fa-circle-notch fa-spin" aria-hidden="true"></i><span>Loading games…</span></div>');
         $.ajax({
             url: '/browse_games',
             data: filters,
@@ -287,6 +288,10 @@ $(document).ready(function() {
             },
             error: function(xhr, status, error) {
                 console.error("AJAX error:", error);
+                $('#gamesContainer').html('<div class="game-grid-empty game-grid-error" role="alert"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i><p>Games could not be loaded. Please try again.</p></div>');
+            },
+            complete: function() {
+                $('#gamesContainer').attr('aria-busy', 'false');
             }
         });
     }
@@ -300,16 +305,16 @@ $(document).ready(function() {
                 success: function(response) {
                     let message;
                     if (response.role === 'admin') {
-                        message = `<p>You have no Libraries!<br><br> Go to <a href="${libraryManagerUrl}">Library Manager</a> and create one.</p>`;
+                        message = `<div class="game-grid-empty"><i class="fas fa-book" aria-hidden="true"></i><p>You have no libraries yet.</p><a class="btn btn-primary" href="${libraryManagerUrl}">Create a library</a></div>`;
                     } else {
-                        message = '<p>No games or libraries found. Complain to the Captain of this vessel!</p>';
+                        message = '<div class="game-grid-empty"><i class="fas fa-gamepad" aria-hidden="true"></i><p>No games or libraries are available yet.</p></div>';
                     }
                     if ($('#gamesContainer').empty()) {
                         $('#gamesContainer').append(message);
                     }
                 },
                 error: function() {
-                    $('#gamesContainer').append('<p>Error fetching user role. Please try again later.</p>');
+                    $('#gamesContainer').append('<div class="game-grid-empty game-grid-error"><p>Unable to load this library state. Please try again.</p></div>');
                 }
             });
             return;
@@ -495,11 +500,10 @@ $(document).ready(function() {
             ${popupMenuHtml}
             ${statusButtonHtml}
 
-            <div class="game-cover">
-                <a href="/game_details/${game.uuid}">
+            <a href="/game_details/${game.uuid}">
                 <img src="${fullCoverUrl}" alt="${game.name}" class="game-cover">
-                </a>
-            </div>
+            </a>
+            <a class="game-card-title" href="/game_details/${game.uuid}">${game.name}</a>
             <div id="details-${game.uuid}" class="popup-game-details hidden">
                 <!-- Details and screenshots will be injected here by JavaScript -->
             </div>

@@ -12,16 +12,19 @@
 /* Game Card Component */
 .game-card-container {
     position: relative;
+    width: 100%;
     transition: transform var(--transition-normal);
 }
 
 .game-card {
+    box-sizing: border-box;
     cursor: pointer;
     transition: transform var(--transition-normal);
     position: relative;
     margin: var(--spacing-xs);
+    width: calc(100% - (2 * var(--spacing-xs)));
     max-width: 250px;
-    max-height: 332px;
+    max-height: none;
     border-radius: 16px;
     overflow: visible;
     background: linear-gradient(145deg, rgba(18, 18, 28, 0.96), rgba(12, 12, 20, 0.98));

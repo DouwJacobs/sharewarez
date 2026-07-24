@@ -34,6 +34,49 @@
         overflow-x: hidden;
     }
 
+    /* Mobile pages read better as a continuous surface. Flatten only page-level
+       shells; nested cards and controls retain their visual hierarchy. */
+    #content > .glass-panel,
+    #content > .container > .glass-panel,
+    #content > .container-settings,
+    #content > .container-settings > .card,
+    #content > .container > .card,
+    #content > .admin-section,
+    #content > .admin-panel,
+    #content > main > .glass-panel,
+    #content > main > .container-settings,
+    #content > main > .admin-section,
+    #content > main > .admin-panel,
+    .discovery-panel,
+    .favorites-page > .glass-panel,
+    .users-management-panel,
+    .extensions-management-page,
+    .image-queue-page,
+    .newsletter-page,
+    .settings-panel-page,
+    .restricted-area-page {
+        background: transparent !important;
+        border: 0 !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+    }
+
+    #content > .glass-panel,
+    #content > .container > .glass-panel,
+    #content > .container-settings,
+    #content > main > .glass-panel,
+    #content > main > .container-settings,
+    .discovery-panel,
+    .users-management-panel,
+    .newsletter-page,
+    .settings-panel-page,
+    .restricted-area-page {
+        width: calc(100% - 24px) !important;
+        margin: 8px 12px 20px !important;
+        padding-right: 0 !important;
+        padding-left: 0 !important;
+    }
+
     .discovery-panel,
     .discovery-view-panel,
     .admin-content,
@@ -304,6 +347,11 @@
     .library-browser-count {
         align-self: flex-start;
         white-space: normal;
+    }
+
+    .game-card-title {
+        padding-top: 10px;
+        font-size: 0.98rem;
     }
 
     .admin-breadcrumb {

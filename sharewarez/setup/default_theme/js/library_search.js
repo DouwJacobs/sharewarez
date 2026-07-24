@@ -19,9 +19,27 @@ $(document).ready(function() {
     var accumulatedChars = ''; // For accumulating rapid keypresses
     var modalOpening = false; // Track if modal is in process of opening
     var accumTimeout; // Timeout to clear accumulated chars
+    const searchModalElement = document.getElementById('searchModal');
+
+    // The library panel uses backdrop filtering, which creates a stacking
+    // context. Bootstrap backdrops are appended to <body>, so keep this modal
+    // there as well or the backdrop can render above its dialog.
+    if (searchModalElement && searchModalElement.parentElement !== document.body) {
+        document.body.appendChild(searchModalElement);
+    }
+
+    function openSearchModal() {
+        if (!searchModalElement || !window.bootstrap) return;
+        bootstrap.Modal.getOrCreateInstance(searchModalElement).show();
+    }
+
+    $('#librarySearchButton').on('click', function() {
+        openSearchModal();
+    });
 
     $(document).on('keypress', function(e) {
-        if (!$("input, textarea").is(":focus")) {
+        const modalIsOpen = searchModalElement?.classList.contains('show');
+        if (!modalIsOpen && !$("input, textarea, select, [contenteditable='true']").is(":focus")) {
             e.preventDefault(); // Prevent default to avoid double character input
             var char = String.fromCharCode(e.which);
             
@@ -34,7 +52,7 @@ $(document).ready(function() {
             // Only open modal if it's not already opening
             if (!modalOpening) {
                 modalOpening = true;
-                $('#searchModal').modal('show');
+                openSearchModal();
             }
             
             // Set timeout to clear accumulated chars if user stops typing
@@ -45,7 +63,7 @@ $(document).ready(function() {
         }
     });
 
-    $('#searchModal').on('shown.bs.modal', function() {
+    searchModalElement?.addEventListener('shown.bs.modal', function() {
         console.log("Search modal shown");
         if (accumulatedChars) {
             $('#searchInput').focus().val(accumulatedChars);
@@ -60,6 +78,9 @@ $(document).ready(function() {
 
     $('#searchInput').on('input', function() {
         var query = $(this).val();
+        if (query.trim().length < 2) {
+            $('#searchStatus').text('Type at least two characters to search your library.').removeClass('is-error');
+        }
         // Debounce this function to avoid excessive AJAX calls
         fetchSearchResults(query);
         console.log(`Search query: ${query}`);
@@ -103,6 +124,7 @@ $(document).ready(function() {
             $('#searchResults').empty();
             return;
         }
+        $('#searchStatus').html('<i class="fas fa-circle-notch fa-spin" aria-hidden="true"></i> Searching your library…').removeClass('is-error');
     
         // AJAX call to server to fetch search results
         $.ajax({
@@ -116,6 +138,7 @@ $(document).ready(function() {
                     return `<div class="search-result" data-game-uuid="${item.uuid}" tabindex="0">${item.name}</div>`;
                 }).join('');
                 $('#searchResults').html(html);
+                $('#searchStatus').text(response.length ? `${response.length} matching game${response.length === 1 ? '' : 's'}.` : 'No matching games found.').removeClass('is-error');
                 selectedIndex = -1; 
                 
                 $('#searchResults .search-result').on('focus', function() {
@@ -132,6 +155,7 @@ $(document).ready(function() {
             },
             error: function(xhr, status, error) {
                 console.error("Search error:", error);
+                $('#searchStatus').text('Search is unavailable right now. Please try again.').addClass('is-error');
             }
         });
     }, 250);
@@ -139,4 +163,3 @@ $(document).ready(function() {
     
     
 });
-
