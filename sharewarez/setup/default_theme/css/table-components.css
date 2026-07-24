@@ -125,6 +125,8 @@
 
 /* Table Buttons */
 .table .btn-sm {
+    min-width: 36px;
+    min-height: 36px;
     padding: 0.25rem 0.5rem;
     margin: 0 0.2rem;
     font-size: var(--font-size-xs);
@@ -292,9 +294,38 @@
     }
 
     .table .btn-sm {
-        padding: 0.125rem 0.25rem;
-        font-size: 0.7rem;
+        min-width: 40px;
+        min-height: 40px;
+        padding: 0.25rem 0.5rem;
+        font-size: 0.75rem;
     }
+}
+
+/* Shared pagination surface for legacy and Bootstrap pagination markup. */
+.pagination {
+    gap: 6px;
+}
+
+.pagination .page-link {
+    min-width: 36px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px !important;
+    background: rgba(255, 255, 255, 0.05);
+    color: rgba(225, 229, 245, 0.82);
+    text-align: center;
+    transition: background-color var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
+}
+
+.pagination .page-link:hover {
+    border-color: rgba(154, 177, 255, 0.3);
+    background: rgba(98, 122, 239, 0.16);
+    color: #fff;
+}
+
+.pagination .page-item.active .page-link {
+    border-color: rgba(154, 177, 255, 0.5);
+    background: linear-gradient(135deg, #426ee8, #7554d6);
+    color: #fff;
 }
 
 /* === BOOTSTRAP TABLE OVERRIDES === */
