@@ -130,14 +130,14 @@
                 display: flex !important;
                 position: fixed;
                 top: 0; left: 0; right: 0;
-                height: 56px;
-                background: rgba(10, 10, 15, 0.97);
-                backdrop-filter: blur(10px);
-                border-bottom: 1px solid rgba(255,255,255,0.08);
+                height: 64px;
+                background: linear-gradient(135deg, rgba(18, 19, 31, 0.98), rgba(10, 11, 20, 0.98));
+                backdrop-filter: blur(18px);
+                border-bottom: 1px solid rgba(154, 177, 255, 0.14);
                 z-index: 1100;
                 align-items: center;
-                padding: 0 16px;
-                gap: 12px;
+                padding: 0 14px;
+                gap: 10px;
                 box-sizing: border-box;
             }
             #sidebar {
@@ -146,8 +146,8 @@
                 /* Full width on mobile, starts below header */
                 width: 82vw !important;
                 max-width: 320px !important;
-                top: 56px !important;
-                height: calc(100vh - 56px) !important;
+                top: 64px !important;
+                height: calc(100vh - 64px) !important;
                 background: rgba(10, 10, 20, 0.98) !important;
                 overflow-y: auto;
                 padding-top: 8px !important;
@@ -159,11 +159,11 @@
             }
             #content {
                 margin-left: 0 !important;
-                padding-top: 72px !important;
+                padding-top: 80px !important;
             }
             /* Backdrop covers full screen including header area */
             #sidebarBackdrop {
-                top: 56px !important;
+                top: 64px !important;
             }
         }
         @media (min-width: 769px) {
@@ -182,6 +182,7 @@
     <button id="mobileMenuToggle" class="mobile-menu-btn" aria-label="Open menu">
         <i class="fas fa-bars"></i>
     </button>
+    <span class="mobile-brand-mark" aria-hidden="true"><i class="fas fa-gamepad"></i></span>
     <span class="mobile-title">Sharewarez</span>
 </div>
 

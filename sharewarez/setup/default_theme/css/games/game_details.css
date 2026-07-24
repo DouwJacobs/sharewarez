@@ -1308,16 +1308,23 @@ pre {
     .glass-panel-gamecard {
         width: calc(100% - 24px) !important;
         min-height: 0;
-        margin: 12px auto;
-        border-radius: 16px;
+        margin: 8px 12px 20px;
+        overflow: visible;
+        background: transparent;
+        border: 0;
+        border-radius: 0;
+        box-shadow: none;
     }
+
+    .glass-panel-gamecard::before { display: none; }
 
     .game-card-gamename {
         padding: 22px 18px 16px;
     }
 
     .game-card-gamename h1 {
-        font-size: 1.55rem;
+        font-size: 1.8rem;
+        line-height: 1.18;
     }
 
     .game-details-back span {
@@ -1338,13 +1345,14 @@ pre {
     }
 
     .game-card-coverimage {
-        width: min(100%, 320px);
+        width: min(100%, 380px);
         margin: 0 auto;
     }
 
     .game-card-meta,
     .game-files {
-        padding: 16px;
+        padding: 20px 18px;
+        font-size: 1rem;
     }
 
     .rating-container {
@@ -1358,6 +1366,14 @@ pre {
     .game-card-bottom-info {
         gap: 12px;
         padding: 0 18px 18px;
+    }
+
+    .game-card-bottom-info .install-instructions-content,
+    .game-card-bottom-info .summary-text,
+    .game-card-q2,
+    .game-card-q3 {
+        font-size: 1rem;
+        line-height: 1.65;
     }
 
     .button-glass-hamburger-cover,

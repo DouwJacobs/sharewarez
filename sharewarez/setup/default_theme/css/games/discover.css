@@ -314,3 +314,17 @@
         gap: 10px;
     }
 }
+
+@media (max-width: 520px) {
+    .discovery-latest-games-container,
+    .discovery-most-downloaded-container,
+    .discovery-highest-rated-container,
+    .discovery-last-updated-container,
+    .discovery-most-favorited-container {
+        grid-template-columns: minmax(0, 260px);
+        justify-content: center;
+        gap: 16px;
+    }
+
+    .discovery-panel .game-card-container { max-width: 260px; }
+}

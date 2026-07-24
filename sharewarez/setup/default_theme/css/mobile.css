@@ -178,6 +178,63 @@
         gap: 6px !important;
     }
 
+    /* Controls stay comfortably tappable without forcing a desktop-width row. */
+    .btn,
+    .btn-sm,
+    button,
+    input[type="submit"],
+    input[type="button"] {
+        min-height: 40px;
+    }
+
+    .admin-header,
+    .library-browser-header,
+    .discovery-header,
+    .game-edit-heading,
+    .libraries-management-header,
+    .extensions-management-header,
+    .image-queue-header,
+    .statistics-header,
+    .server-info-header,
+    .user-invites-header,
+    .admin_manage_invites-header {
+        align-items: stretch !important;
+        flex-direction: column !important;
+        gap: 14px !important;
+    }
+
+    .admin-header > .btn,
+    .library-browser-header > .btn,
+    .discovery-header > .btn,
+    .libraries-management-header > .btn,
+    .extensions-management-header > .btn,
+    .image-queue-header > .btn,
+    .statistics-header > .btn,
+    .server-info-header > .btn,
+    .user-invites-header > .btn,
+    .admin_manage_invites-header > .btn {
+        width: 100%;
+    }
+
+    .input-group,
+    .field-actions,
+    .game-edit-actions,
+    .scan-controls-group {
+        align-items: stretch !important;
+        flex-wrap: wrap;
+        gap: 8px !important;
+    }
+
+    .input-group > .form-control,
+    .input-group > .form-select,
+    .input-group > .btn,
+    .field-actions > .btn,
+    .game-edit-actions > .btn,
+    .scan-controls-group > .btn {
+        flex: 1 1 100%;
+        width: 100%;
+    }
+
     /* ---- MODALS ---- */
     .modal-dialog {
         margin: 8px !important;
@@ -186,6 +243,11 @@
 
     .modal-content {
         border-radius: 12px !important;
+    }
+
+    .modal-body {
+        max-height: calc(100vh - 150px);
+        overflow-y: auto;
     }
 
     /* ---- FLASH TOASTS ---- */
@@ -216,6 +278,44 @@
     
     .search-container {
         min-width: 0 !important;
+    }
+
+    .jobs-controls,
+    .filter-controls,
+    .search-container,
+    .image-queue-actions,
+    .libraries-table-wrapper td:last-child {
+        width: 100%;
+    }
+
+    .libraries-table-wrapper td:last-child,
+    .table td:last-child .btn-group,
+    .table td:last-child .inline-form {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+
+    .table td:last-child .btn,
+    .table td:last-child .inline-form .btn {
+        flex: 1 1 auto;
+    }
+
+    .library-browser-count {
+        align-self: flex-start;
+        white-space: normal;
+    }
+
+    .admin-breadcrumb {
+        margin: 8px 12px 0;
+        min-width: 0;
+        overflow: hidden;
+    }
+
+    .admin-breadcrumb-current {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
 
     /* ---- TRAILERS PAGE ---- */

@@ -459,3 +459,12 @@
         font-size: 13px;
     }
 }
+
+@media (max-width: 520px) {
+    .game-library-container {
+        grid-template-columns: minmax(0, 260px);
+        justify-content: center;
+        gap: 16px;
+        padding: 0;
+    }
+}
