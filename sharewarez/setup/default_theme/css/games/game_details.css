@@ -91,7 +91,9 @@ body.modal-open {
     border-radius: 16px;
     width: 100%;
     position: relative;
-    overflow: hidden;
+    /* The cover itself has rounded corners; keep the wrapper open so its
+       absolute-positioned action menu is never cropped by the image bounds. */
+    overflow: visible;
     flex-shrink: 0;
 }
 
@@ -122,6 +124,7 @@ body.modal-open {
     left: 10px;
     border-radius: 12px;
     min-width: 200px;
+    z-index: 100;
 }
 
 /* ── Hamburger button on cover ────────────────────────────── */
