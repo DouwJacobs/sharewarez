@@ -1,0 +1,124 @@
+.users-management-page {
+    width: min(1440px, calc(100% - 48px));
+    margin: 24px auto 48px;
+}
+
+.users-management-back {
+    margin-bottom: 18px;
+    padding: 12px 16px;
+}
+
+.users-management-panel {
+    padding: 24px;
+    background: linear-gradient(145deg, rgba(18, 18, 28, 0.96), rgba(12, 12, 20, 0.98));
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    border-radius: 18px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5), 0 0 60px rgba(80, 120, 255, 0.06);
+}
+
+.users-management-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    margin-bottom: 22px;
+}
+
+.users-management-eyebrow {
+    margin: 0 0 5px;
+    color: rgba(130, 165, 255, 0.9);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+.users-management-header h2 {
+    margin: 0;
+    color: #fff;
+    font-size: 1.65rem;
+}
+
+.users-management-header p:not(.users-management-eyebrow) {
+    margin: 6px 0 0;
+    color: rgba(205, 214, 235, 0.68);
+}
+
+.users-management-panel .dataTables_wrapper {
+    margin-top: 0;
+    padding: 16px;
+    background: rgba(8, 10, 18, 0.42);
+    border-color: rgba(255, 255, 255, 0.08);
+}
+
+.users-management-panel .dataTables_length,
+.users-management-panel .dataTables_filter {
+    margin-bottom: 16px;
+}
+
+.users-management-panel .dataTables_filter input,
+.users-management-panel .dataTables_length select {
+    min-height: 36px;
+    background: rgba(255, 255, 255, 0.07) !important;
+    border-color: rgba(255, 255, 255, 0.13) !important;
+}
+
+#usersTable {
+    margin: 0 !important;
+}
+
+#usersTable thead th {
+    padding: 14px 16px;
+    background: rgba(8, 10, 19, 0.88) !important;
+    color: rgba(205, 217, 247, 0.82) !important;
+    font-size: 0.7rem;
+    letter-spacing: 0.09em;
+}
+
+#usersTable tbody td {
+    padding: 14px 16px;
+}
+
+#usersTable .user-avatar-small {
+    width: 44px;
+    height: 44px;
+    border-color: rgba(130, 165, 255, 0.35);
+}
+
+#usersTable .badge {
+    min-width: 76px;
+    padding: 0.45em 0.7em;
+}
+
+#usersTable td:last-child {
+    white-space: nowrap;
+}
+
+#usersTable .btn-sm {
+    margin: 2px;
+}
+
+@media (max-width: 768px) {
+    .users-management-page {
+        width: calc(100% - 24px);
+        margin-top: 12px;
+    }
+
+    .users-management-panel {
+        padding: 16px;
+        border-radius: 14px;
+    }
+
+    .users-management-header {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .users-management-header .btn {
+        width: 100%;
+    }
+
+    .users-management-panel .dataTables_wrapper {
+        padding: 10px;
+    }
+}
