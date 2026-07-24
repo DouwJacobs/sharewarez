@@ -71,6 +71,7 @@ $(document).ready(function() {
             $('#libraryNameSelect').val(savedFilters.library_uuid || '');
             $('#genreSelect').val(savedFilters.genre || '');
             $('#themeSelect').val(savedFilters.theme || '');
+            $('#tagSelect').val(savedFilters.tag || '');
             $('#gameModeSelect').val(savedFilters.game_mode || '');
             $('#playerPerspectiveSelect').val(savedFilters.player_perspective || '');
             $('#ratingSlider').val(savedFilters.rating || 0);
@@ -91,6 +92,7 @@ $(document).ready(function() {
             'library_uuid': 'library_uuid',
             'genre': 'genre', 
             'theme': 'theme',
+            'tag': 'tag',
             'game_mode': 'game_mode',
             'player_perspective': 'player_perspective',
             'rating': 'rating'
@@ -226,6 +228,18 @@ $(document).ready(function() {
         });
     }
 
+    function populateTags(callback) {
+        populateDropdown({
+            apiUrl: '/api/tags',
+            elementId: '#tagSelect',
+            defaultText: 'All Tags',
+            valueField: 'name',
+            textField: 'name',
+            paramName: 'tag',
+            callback: callback
+        });
+    }
+
     function getUrlParams() {
         var params = {};
         var queryString = window.location.search.substring(1);
@@ -251,6 +265,7 @@ $(document).ready(function() {
             game_mode: $('#gameModeSelect').val() || urlParams.gameMode,
             player_perspective: $('#playerPerspectiveSelect').val() || urlParams.playerPerspective,
             theme: $('#themeSelect').val() || urlParams.theme,
+            tag: $('#tagSelect').val() || urlParams.tag,
             rating: $('#ratingSlider').val() !== '0' ? $('#ratingSlider').val() : undefined, 
             sort_by: $('#sortSelect').val(),
             sort_order: sortOrder,
@@ -412,6 +427,7 @@ $(document).ready(function() {
 
     function createGameCardHtml(game) {
         var genres = game.genres ? game.genres.join(', ') : 'No Genres';
+        var tags = game.tags ? game.tags.join(', ') : '';
         var defaultCover = 'newstyle/default_cover.jpg';
         var fullCoverUrl = !game.cover_url || game.cover_url === defaultCover ? '/static/' + defaultCover : '/static/library/images/' + game.cover_url;
         var popupMenuHtml = createPopupMenuHtml(game);
@@ -471,7 +487,7 @@ $(document).ready(function() {
 
         var gameCardHtml = `
     <div class="game-card-container">
-        <div class="game-card" onmouseover="showDetails(this, '${game.uuid}')" onmouseout="hideDetails()" data-name="${game.name}" data-size="${game.size}" data-genres="${genres}">
+        <div class="game-card" onmouseover="showDetails(this, '${game.uuid}')" onmouseout="hideDetails()" data-name="${game.name}" data-size="${game.size}" data-genres="${genres}" data-tags="${tags}">
             <button id="menuButton-${game.uuid}" class="button-glass-hamburger"><i class="fas fa-bars"></i></button>
             <button class="favorite-btn" data-game-uuid="${game.uuid}" data-is-favorite="${game.is_favorite}">
                 <i class="fas fa-heart"></i>
@@ -558,6 +574,7 @@ $(document).ready(function() {
             library_uuid: $('#libraryNameSelect').val(),
             genre: $('#genreSelect').val(),
             theme: $('#themeSelect').val(),
+            tag: $('#tagSelect').val(),
             game_mode: $('#gameModeSelect').val(),
             player_perspective: $('#playerPerspectiveSelect').val(),
             rating: $('#ratingSlider').val()
@@ -572,7 +589,7 @@ $(document).ready(function() {
     });
 
     $('#clearFilters').click(function() {
-        $('#libraryNameSelect, #genreSelect, #themeSelect, #gameModeSelect, #playerPerspectiveSelect').val('');
+        $('#libraryNameSelect, #genreSelect, #themeSelect, #tagSelect, #gameModeSelect, #playerPerspectiveSelect').val('');
         $('#ratingSlider').val(0);
         $('#ratingValue').text('0');
         $('#sortSelect').val('name');
@@ -587,6 +604,7 @@ $(document).ready(function() {
     populateLibraries(function() {
         populateGenres(function() {
             populateThemes(function() {
+                populateTags(function() {
                 populateGameModes(function() {
                     populatePlayerPerspectives(function() {
                         // restore filters from cookie
@@ -596,6 +614,7 @@ $(document).ready(function() {
                             $('#libraryNameSelect').val(savedFilters.library_uuid || '');
                             $('#genreSelect').val(savedFilters.genre || '');
                             $('#themeSelect').val(savedFilters.theme || '');
+                            $('#tagSelect').val(savedFilters.tag || '');
                             $('#gameModeSelect').val(savedFilters.game_mode || '');
                             $('#playerPerspectiveSelect').val(savedFilters.player_perspective || '');
                             $('#ratingSlider').val(savedFilters.rating || 0);
@@ -618,6 +637,7 @@ $(document).ready(function() {
                             }
                         }
                     });
+                });
                 });
             });
         });

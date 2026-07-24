@@ -23,7 +23,7 @@ from sharewarez.forms import (
 )
 from sharewarez.models import (
     Game, Image, ScanJob, UnmatchedFolder,
-    Genre, Theme, GameMode, PlayerPerspective,
+    Genre, Theme, GameMode, PlayerPerspective, GameTag,
     Category, Library,
     ReleaseGroup, AllowedFileType
 )
@@ -68,6 +68,7 @@ def browse_games():
     game_mode = request.args.get('game_mode')
     player_perspective = request.args.get('player_perspective')
     theme = request.args.get('theme')
+    tag = request.args.get('tag')
     sort_by = request.args.get('sort_by', 'name')
     sort_order = request.args.get('sort_order', 'asc')
     query = select(Game).options(joinedload(Game.genres))
@@ -87,6 +88,8 @@ def browse_games():
         query = query.filter(Game.player_perspectives.any(PlayerPerspective.name == player_perspective))
     if theme:
         query = query.filter(Game.themes.any(Theme.name == theme))
+    if tag:
+        query = query.filter(Game.tags.any(GameTag.name == tag))
     if sort_by == 'name':
         query = query.order_by(Game.name.asc() if sort_order == 'asc' else Game.name.desc())
     elif sort_by == 'rating':
@@ -123,6 +126,7 @@ def browse_games():
         cover_image = db.session.execute(select(Image).filter_by(game_uuid=game.uuid, image_type='cover')).scalars().first()
         cover_url = cover_image.url if cover_image else 'newstyle/default_cover.jpg'
         genres = [genre.name for genre in game.genres]
+        tags = [tag.name for tag in game.tags]
         game_size_formatted = format_size(game.size)
 
         # Get user status for this game
@@ -137,6 +141,7 @@ def browse_games():
             'url': game.url,
             'size': game_size_formatted,
             'genres': genres,
+            'tags': tags,
             'library_uuid': game.library_uuid,
             'is_favorite': current_user_id in [user.id for user in game.favorited_by],
             'user_status': user_status

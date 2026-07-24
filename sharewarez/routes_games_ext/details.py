@@ -113,6 +113,7 @@ def game_details(game_uuid):
             "themes": [theme.name for theme in game.themes],
             "platforms": [platform.name for platform in game.platforms],
             "player_perspectives": [perspective.name for perspective in game.player_perspectives],
+            "tags": [tag.name for tag in game.tags],
             "developer": game.developer.name if game.developer else 'Not available',
             "publisher": game.publisher.name if game.publisher else 'Not available',
             "multiplayer_modes": [mode.name for mode in game.multiplayer_modes],

@@ -7,6 +7,7 @@ from sharewarez.utils.auth import admin_required
 from sharewarez.utils.scanning import is_scan_job_running, refresh_images_in_background
 from sharewarez.utils.security import is_safe_path, get_allowed_base_directories, sanitize_path_for_logging
 from sharewarez.utils.event_logging import log_system_event
+from sharewarez.utils.tags import assign_game_tags
 from sharewarez import db
 from threading import Thread
 from datetime import datetime, timezone
@@ -30,6 +31,7 @@ def game_edit(game_uuid):
     if request.method == 'GET':
         form.developer.data = game.developer.name if game.developer else ''
         form.publisher.data = game.publisher.name if game.publisher else ''
+        form.tags.data = ', '.join(tag.name for tag in game.tags)
     form.library_uuid.choices = [(str(lib.uuid), lib.name) for lib in db.session.execute(select(Library).order_by(Library.name)).scalars().all()]
     platform_id = PLATFORM_IDS.get(game.library.platform.value.upper(), None)
     platform_name = game.library.platform.value
@@ -241,6 +243,13 @@ def game_edit(game_uuid):
         game.themes = form.themes.data
         game.platforms = form.platforms.data
         game.player_perspectives = form.player_perspectives.data
+
+        try:
+            assign_game_tags(game, form.tags.data)
+        except ValueError as e:
+            flash(str(e), 'error')
+            db.session.rollback()
+            return render_template('admin/admin_game_identify.html', form=form, game_uuid=game_uuid, action="edit")
         
         # Updating size with error handling
         try:

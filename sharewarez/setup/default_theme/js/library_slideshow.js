@@ -15,6 +15,12 @@ function debounce(func, wait, immediate) {
 
 const slideshowIntervals = {};
 
+function escapeHtml(value) {
+    const element = document.createElement('div');
+    element.textContent = value;
+    return element.innerHTML;
+}
+
 function startSlideshowForGameUuid(gameUuid) {
     if (slideshowIntervals[gameUuid]) {
         clearTimeout(slideshowIntervals[gameUuid]);
@@ -76,10 +82,16 @@ const showDetailsDebounced = debounce(function(element, gameUuid, rowid) {
             });
             detailsHtml += '</div></div>'; // End slideshow container
 
+            const tags = (element.dataset.tags || '').split(', ').filter(Boolean);
+            const tagsHtml = tags.length
+                ? `<div class="game-card-hover-tags"><span class="game-card-hover-label">Tags</span>${tags.map(tag => `<span class="chip">${escapeHtml(tag)}</span>`).join('')}</div>`
+                : '';
+
             detailsHtml += `<div class="game-info-box" style="animation: fadein 0.5s;">
                                 <div class="game-name">${element.dataset.name}</div>
                                 <div class="game-size chip file-size-chip">${element.dataset.size}</div>
                                 <div>${element.dataset.genres.split(', ').map(genre => `<span class="chip">${genre}</span>`).join('')}</div>
+                                ${tagsHtml}
                             </div>`;
 
             detailsDiv.innerHTML = detailsHtml;

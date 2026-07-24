@@ -277,6 +277,9 @@
                         {{ list_items(game.themes, "Themes", "theme") }}
                         {{ list_items(game.game_modes, "Game Modes", "game_mode") }}
                         {{ list_items(game.player_perspectives, "Player Perspectives", "player_perspective") }}
+                        {% if game.tags %}
+                            {{ list_items(game.tags, "Tags", "tag") }}
+                        {% endif %}
 
                         <div class="flex-row-horiz">
                             {{ detail_item("Category", game.category) }}

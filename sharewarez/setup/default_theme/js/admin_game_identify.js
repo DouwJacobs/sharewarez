@@ -113,56 +113,23 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function updateFormWithGameData(gameData) {
         console.log("Received game data:", gameData); // Print out the gameData object
-        // Update genres
-        const genreCheckboxes = document.querySelectorAll('#genres-container .form-check-input');
-        console.log("Genres:", genreCheckboxes);
-        genreCheckboxes.forEach(checkbox => {
-            const checkboxLabel = checkbox.nextElementSibling ? checkbox.nextElementSibling.textContent.trim().toLowerCase() : "";
-            // Check if genres exist in gameData and then if current genre matches any of those genres
-            const isGenreMatched = gameData.genres ? gameData.genres.some(genre => genre.name.toLowerCase() === checkboxLabel) : false;
-            checkbox.checked = isGenreMatched;
-        });
-    
-        // Update game modes
-        const gameModeCheckboxes = document.querySelectorAll('#gamemodes-container input[type="checkbox"]');
-        gameModeCheckboxes.forEach((checkbox) => {
-            const checkboxLabel = checkbox.nextElementSibling ? checkbox.nextElementSibling.textContent.trim().toLowerCase() : "";
-            // Check if game_modes exist in gameData and then if current game mode matches any of those game modes
-            const isGameModeMatched = gameData.game_modes ? gameData.game_modes.some(mode => mode.name.toLowerCase() === checkboxLabel) : false;
-            checkbox.checked = isGameModeMatched;
-        });
-    
-        // Update themes
-        const themeCheckboxes = document.querySelectorAll('#themes-container .form-check-input');
-        themeCheckboxes.forEach(checkbox => {
-            const label = document.querySelector(`label[for="${checkbox.id}"]`);
-            const labelText = label ? label.textContent.trim() : "";
-            // Check if themes exist in gameData and then if current theme matches any of those themes
-            const isThemeMatched = gameData.themes ? gameData.themes.some(theme => theme.name === labelText) : false;
-            checkbox.checked = isThemeMatched;
-        });
-    
-        // Update platforms
-        const platformCheckboxes = document.querySelectorAll('#platforms-container .form-check-input');
-        platformCheckboxes.forEach(checkbox => {
-            const label = document.querySelector(`label[for="${checkbox.id}"]`);
-            const labelText = label ? label.textContent.trim() : "";
-            // Check if platforms exist in gameData and then if current platform matches any of those platforms
-            const isPlatformMatched = gameData.platforms ? gameData.platforms.some(platform => platform.name === labelText) : false;
-            checkbox.checked = isPlatformMatched;
-        });
+        function updateMultiSelect(containerId, values) {
+            const checkboxes = document.querySelectorAll(`${containerId} input[type="checkbox"]`);
+            const selectedNames = new Set((values || []).map(value =>
+                (typeof value === 'string' ? value : value.name || '').trim().toLowerCase()
+            ));
+            checkboxes.forEach(checkbox => {
+                const label = checkbox.closest('label');
+                const name = label ? label.textContent.trim().toLowerCase() : '';
+                checkbox.checked = selectedNames.has(name);
+            });
+        }
 
-
-        // Update player perspectives
-        const perspectiveCheckboxes = document.querySelectorAll('#perspectives-container input[type="checkbox"]');
-        console.log("Found perspective checkboxes: ", perspectiveCheckboxes.length);
-        perspectiveCheckboxes.forEach(checkbox => {
-            // Since the label text is directly after the checkbox, we use the checkbox ID to match the label text.
-            const labelText = checkbox.nextSibling.textContent.trim();
-            // Check if player_perspectives exist in gameData and then if current perspective matches any of those perspectives
-            const isPerspectiveMatched = gameData.player_perspectives ? gameData.player_perspectives.some(perspective => perspective.name === labelText) : false;
-            checkbox.checked = isPerspectiveMatched;
-        });
+        updateMultiSelect('#genres-container', gameData.genres);
+        updateMultiSelect('#gamemodes-container', gameData.game_modes);
+        updateMultiSelect('#themes-container', gameData.themes);
+        updateMultiSelect('#platforms-container', gameData.platforms);
+        updateMultiSelect('#perspectives-container', gameData.player_perspectives);
 
         // Update Category select field - using original field names to match scanning code
         const categorySelect = document.querySelector('#category'); // Assuming #category is the ID of the select

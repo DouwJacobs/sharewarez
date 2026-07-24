@@ -197,6 +197,7 @@ class AddGameForm(FlaskForm):
     player_perspectives = QuerySelectMultipleField('Player Perspectives', query_factory=player_perspective_choices, get_label='name', widget=ListWidget(prefix_label=False), option_widget=CheckboxInput())
     developer = StringField('Developer', validators=[Optional()])
     publisher = StringField('Publisher', validators=[Optional()])
+    tags = StringField('Tags', validators=[Optional()])
     library_uuid = SelectField('Library', coerce=str, validators=[DataRequired()])
     submit = SubmitField('Save')    
     

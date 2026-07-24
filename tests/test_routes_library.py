@@ -7,7 +7,7 @@ from sqlalchemy import select, func
 from sharewarez import create_app, db
 from sharewarez.models import (
     User, Game, Library, Genre, GameMode, Theme, Platform, 
-    PlayerPerspective, Image, UserPreference
+    PlayerPerspective, Image, UserPreference, GameTag
 )
 from sharewarez.platform import LibraryPlatform
 
@@ -344,6 +344,22 @@ class TestGetGamesFunction:
                 games, total, pages, current_page = get_games(genre='Action')
                 
         assert isinstance(games, list)
+
+    def test_get_games_with_tag_filter(self, app, db_session, test_game):
+        """Custom tags narrow the library just like other game metadata."""
+        tag = GameTag(name=f'Portable-{uuid4().hex[:8]}')
+        test_game.tags = [tag]
+        db_session.commit()
+
+        with app.app_context():
+            with patch('sharewarez.routes_library.current_user') as mock_current_user:
+                mock_current_user.is_authenticated = True
+                mock_current_user.id = 1
+
+                from sharewarez.routes_library import get_games
+                games, total, pages, current_page = get_games(tag=tag.name)
+
+        assert [game['uuid'] for game in games] == [test_game.uuid]
 
     def test_get_games_with_rating_filter(self, app, db_session, test_game):
         """Test get_games with rating filter."""

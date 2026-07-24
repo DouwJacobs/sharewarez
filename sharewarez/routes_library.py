@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import login_required, current_user
-from sharewarez.models import Library, Game, Genre, GameMode, PlayerPerspective, Theme, Image, UserPreference
+from sharewarez.models import Library, Game, Genre, GameMode, PlayerPerspective, Theme, GameTag, Image, UserPreference
 from sharewarez import db
 from sharewarez.utils.functions import format_size, get_library_count, get_games_count
 from sharewarez.utils.auth import admin_required
@@ -78,6 +78,7 @@ def library():
     game_mode = request.args.get('game_mode') or saved_filters.get('game_mode')
     player_perspective = request.args.get('player_perspective') or saved_filters.get('player_perspective')
     theme = request.args.get('theme') or saved_filters.get('theme')
+    tag = request.args.get('tag') or saved_filters.get('tag')
     sort_by = request.args.get('sort_by') or sort_by
     sort_order = request.args.get('sort_order') or sort_order
 
@@ -87,7 +88,8 @@ def library():
         'rating': rating,
         'game_mode': game_mode,
         'player_perspective': player_perspective,
-        'theme': theme
+        'theme': theme,
+        'tag': tag
     }
     # Filter out None values
     filters = {k: v for k, v in filters.items() if v is not None}
@@ -158,6 +160,8 @@ def get_games(page=1, per_page=20, sort_by='name', sort_order='asc', **filters):
         query = query.filter(Game.player_perspectives.any(PlayerPerspective.name == filters['player_perspective']))
     if filters.get('theme'):
         query = query.filter(Game.themes.any(Theme.name == filters['theme']))
+    if filters.get('tag'):
+        query = query.filter(Game.tags.any(GameTag.name == filters['tag']))
     # Sorting logic
     if sort_by == 'name':
         query = query.order_by(Game.name.asc() if sort_order == 'asc' else Game.name.desc())
@@ -193,6 +197,7 @@ def get_games(page=1, per_page=20, sort_by='name', sort_order='asc', **filters):
         cover_image = db.session.execute(select(Image).filter_by(game_uuid=game.uuid, image_type='cover')).scalars().first()
         cover_url = cover_image.url if cover_image else "newstyle/default_cover.jpg"
         genres = [genre.name for genre in game.genres]
+        tags = [tag.name for tag in game.tags]
         game_size_formatted = format_size(game.size)
         first_release_date_formatted = game.first_release_date.strftime('%Y-%m-%d') if game.first_release_date else 'Not available'
 
@@ -218,6 +223,7 @@ def get_games(page=1, per_page=20, sort_by='name', sort_order='asc', **filters):
             'url': game.url,
             'size': game_size_formatted,
             'genres': genres,
+            'tags': tags,
             'is_favorite': current_user_id in [user.id for user in game.favorited_by],
             'first_release_date': first_release_date_formatted,
             'has_local_override': has_local_override,
