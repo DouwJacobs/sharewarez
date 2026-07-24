@@ -177,6 +177,22 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
         });
+
+        manualScanForm.addEventListener('submit', function(event) {
+            const submitter = event.submitter || document.activeElement;
+            if (!submitter || submitter.value !== 'ManualScan') {
+                return;
+            }
+
+            const submitButton = document.getElementById('manualScanSubmitBtn');
+            const progress = document.getElementById('manualScanProgress');
+            const browseButton = document.getElementById('browseFoldersBtnManual');
+
+            submitButton.disabled = true;
+            browseButton.disabled = true;
+            manualScanForm.setAttribute('aria-busy', 'true');
+            progress.hidden = false;
+        });
     }
 
     setupFolderBrowse('#browseFoldersBtn', '#folderContents', '#loadingSpinner', '#upFolderBtn', '#folder_path', 'currentPathAuto');

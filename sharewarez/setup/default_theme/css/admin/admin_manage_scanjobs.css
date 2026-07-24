@@ -353,6 +353,15 @@
 
 @media (max-width: 768px) {
 
+    .config-card,
+    .path-card {
+        padding: 18px;
+    }
+
+    .options-row {
+        grid-template-columns: 1fr;
+    }
+
     .simple-jobs-table,
     .simple-unmatched-table {
         font-size: 0.875rem;
@@ -464,6 +473,35 @@
     height: auto;
 }
 
+.manual-scan-progress {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 14px;
+    padding: 12px 14px;
+    color: rgba(225, 233, 255, 0.92);
+    background: rgba(37, 99, 235, 0.12);
+    border: 1px solid rgba(100, 150, 255, 0.3);
+    border-radius: 10px;
+}
+
+.manual-scan-progress[hidden] {
+    display: none;
+}
+
+.manual-scan-spinner {
+    width: 18px;
+    height: 18px;
+    border: 2px solid rgba(210, 225, 255, 0.36);
+    border-top-color: #9fc0ff;
+    border-radius: 50%;
+    animation: manual-scan-spin 0.7s linear infinite;
+}
+
+@keyframes manual-scan-spin {
+    to { transform: rotate(360deg); }
+}
+
 /* Auto scan styling */
 .auto-scan-header {
     text-align: center;
@@ -493,13 +531,13 @@
 .config-card,
 .path-card,
 .action-card {
-    background: var(--bg-light-overlay);
-    backdrop-filter: blur(10px);
-    border: 1px solid var(--border-light-strong);
-    border-radius: var(--border-radius-lg);
-    padding: 20px;
+    background: linear-gradient(145deg, rgba(28, 29, 45, 0.9), rgba(13, 14, 25, 0.95));
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    border-radius: 16px;
+    padding: 24px;
     margin-bottom: 0;
-    /* Remove bottom margin when in side-by-side layout */
+    box-shadow: 0 16px 38px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 
 /* When cards are in the side-by-side row, they should take equal width */
@@ -510,14 +548,16 @@
     /* Allows flex items to shrink below their content size */
 }
 
-.card-header {
-    border-bottom: 1px solid var(--border-light-strong);
-    padding-bottom: 15px;
+.config-card .card-header,
+.path-card .card-header {
+    background: transparent;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 0 0 16px;
     margin-bottom: 20px;
 }
 
 .card-title {
-    color: #fff;
+    color: rgba(235, 240, 255, 0.96);
     margin: 0;
     font-size: 1.1rem;
     display: flex;
@@ -542,15 +582,18 @@
 }
 
 .config-label {
-    color: #fff;
-    font-weight: bold;
+    color: rgba(190, 205, 240, 0.8);
+    font-weight: 600;
+    font-size: 0.78rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
     margin-bottom: 8px;
 }
 
 .config-input,
 .form-control {
-    background: var(--bg-light-overlay);
-    border: 1px solid var(--border-light-30);
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: 8px;
     padding: 10px;
     color: #fff;
@@ -576,11 +619,11 @@
 }
 
 .options-row {
-    display: flex;
-    flex-direction: column;
-    /* Changed to vertical layout */
-    gap: 12px;
-    /* Reduced gap for vertical spacing */
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px 16px;
+    padding-top: 16px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .option-item {
@@ -592,6 +635,8 @@
     display: flex;
     align-items: center;
     gap: 8px;
+    min-height: 28px;
+    color: rgba(225, 232, 250, 0.86);
 }
 
 /* Path input styling */
@@ -625,9 +670,10 @@
 }
 
 .folder-contents {
-    background: rgba(0, 0, 0, 0.1);
-    border-radius: 8px;
-    padding: 8px;
+    background: rgba(5, 7, 15, 0.38);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 10px;
+    padding: 10px;
     max-height: 400px;
     overflow-y: auto;
 }
