@@ -37,6 +37,63 @@
     margin-bottom: var(--spacing-lg);
 }
 
+.essential-info-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--spacing-lg);
+}
+
+.essential-info-grid .game_edit-form-group-id,
+.essential-info-grid .game_edit-form-group-name,
+.essential-info-grid .game_edit-form-group-path {
+    margin-bottom: 0;
+}
+
+.essential-info-grid .game_edit-form-group-path {
+    grid-column: 1 / -1;
+}
+
+.field-actions,
+.game-edit-actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--spacing-sm);
+    margin-top: var(--spacing-md);
+}
+
+.field-actions .btn,
+.game-edit-actions .btn {
+    white-space: nowrap;
+}
+
+.search-status {
+    min-height: 1.5rem;
+    margin: var(--spacing-sm) 0 0;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+
+.search-status.is-loading {
+    color: var(--text-white);
+}
+
+.button-spinner {
+    display: inline-block;
+    width: 0.9rem;
+    height: 0.9rem;
+    margin-right: 0.45rem;
+    border: 2px solid currentColor;
+    border-right-color: transparent;
+    border-radius: 50%;
+    vertical-align: -0.1rem;
+    animation: game-edit-spin 0.65s linear infinite;
+}
+
+@keyframes game-edit-spin {
+    to { transform: rotate(360deg); }
+}
+
 /* Form controls */
 
 .form-control:focus {
@@ -161,6 +218,19 @@ label {
     align-items: flex-start;
 }
 
+.game-edit-heading h2 {
+    margin: 0;
+}
+
+.game-edit-actions {
+    margin-top: 0;
+    justify-content: flex-end;
+}
+
+.game-edit-actions .btn-primary {
+    padding: var(--spacing-sm) var(--spacing-lg);
+}
+
 /* Feedback text styling - using unified .form-text-muted from base.css */
 
 /* Invalid input highlighting */
@@ -191,5 +261,31 @@ label {
         width: calc(100% - 24px);
         margin: 12px auto;
         padding: 22px 16px 30px;
+    }
+
+    .glass-panel-addgame-top {
+        flex-direction: column;
+        gap: var(--spacing-md);
+    }
+
+    .game-edit-actions {
+        width: 100%;
+        justify-content: stretch;
+    }
+
+    .game-edit-actions .btn {
+        flex: 1 1 auto;
+    }
+
+    .essential-info-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .essential-info-grid .game_edit-form-group-path {
+        grid-column: auto;
+    }
+
+    .field-actions .btn {
+        flex: 1 1 auto;
     }
 }

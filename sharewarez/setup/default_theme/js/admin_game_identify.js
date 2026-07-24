@@ -8,6 +8,27 @@ document.addEventListener('DOMContentLoaded', function() {
     const submitButton = document.querySelector('button[type="submit"]');
     const igdbIdFeedback = document.querySelector('#igdb_id_feedback');
     const fullPathFeedback = document.createElement('small');
+    const igdbIdSearchButton = document.querySelector('#search-igdb-btn');
+    const igdbNameSearchButton = document.querySelector('#search-igdb');
+    const igdbIdSearchStatus = document.querySelector('#igdb-id-search-status');
+    const igdbNameSearchStatus = document.querySelector('#igdb-name-search-status');
+
+    function setSearchLoading(button, statusElement, isLoading, message = '') {
+        if (isLoading) {
+            button.dataset.defaultContent = button.innerHTML;
+            button.disabled = true;
+            button.setAttribute('aria-busy', 'true');
+            button.innerHTML = `<span class="button-spinner" aria-hidden="true"></span>${message}`;
+            statusElement.textContent = '';
+            statusElement.classList.add('is-loading');
+            return;
+        }
+
+        button.disabled = false;
+        button.removeAttribute('aria-busy');
+        button.innerHTML = button.dataset.defaultContent || button.innerHTML;
+        statusElement.classList.remove('is-loading');
+    }
 
     // Function to fetch the next available custom IGDB ID
     async function fetchNextCustomIgdbId() {
@@ -256,9 +277,10 @@ document.addEventListener('DOMContentLoaded', function() {
         triggerClickOnEnter(event, document.querySelector('#search-igdb'));
     });
 
-    document.querySelector('#search-igdb-btn').addEventListener('click', function() {
+    igdbIdSearchButton.addEventListener('click', function() {
         const igdbId = igdbIdInput.value;
         if (igdbId) {
+            setSearchLoading(igdbIdSearchButton, igdbIdSearchStatus, true, 'Looking up game…');
             fetch(`/api/search_igdb_by_id?igdb_id=${igdbId}`)
                 .then(response => response.json())
                 .then(data => {
@@ -270,6 +292,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             className: 'error',
                             position: 'top center'
                         });
+                        igdbIdSearchStatus.textContent = 'No game was found for that IGDB ID.';
                     } else {
                         const gameDetailsCollapse = document.querySelector('#gameDetails');
                         if (gameDetailsCollapse) {
@@ -288,19 +311,27 @@ document.addEventListener('DOMContentLoaded', function() {
                             document.querySelector('#video_urls').value = data.video_urls || '';
                             
                             checkFieldsAndToggleSubmit();
+                            igdbIdSearchStatus.textContent = 'Game details loaded.';
                         }, 300);
                     }
                 })
-                .catch(error => console.error('Error:', error));
+                .catch(error => {
+                    console.error('Error:', error);
+                    igdbIdSearchStatus.textContent = 'Unable to look up that IGDB ID. Please try again.';
+                })
+                .finally(() => setSearchLoading(igdbIdSearchButton, igdbIdSearchStatus, false));
+        } else {
+            igdbIdSearchStatus.textContent = 'Enter an IGDB ID to look up a game.';
         }
     });
 
-    document.querySelector('#search-igdb').addEventListener('click', function() {
+    igdbNameSearchButton.addEventListener('click', function() {
         const gameName = nameInput.value;
         const platformId = document.querySelector('#platform_id').textContent; // Retrieve the platform ID from the HTML
 
         console.log(`Initiating IGDB search for name: ${gameName}`);
         if (gameName) {
+            setSearchLoading(igdbNameSearchButton, igdbNameSearchStatus, true, 'Searching IGDB…');
             fetch(`/api/search_igdb_by_name?name=${encodeURIComponent(gameName)}&platform_id=${encodeURIComponent(platformId)}`)
                 .then(response => response.json())
                 .then(data => {
@@ -370,10 +401,17 @@ document.addEventListener('DOMContentLoaded', function() {
                     } else {
                         resultsContainer.textContent = 'No results found';
                     }
+                    igdbNameSearchStatus.textContent = data.results && data.results.length > 0
+                        ? `${data.results.length} result${data.results.length === 1 ? '' : 's'} found. Choose a game to fill in the form.`
+                        : 'No matching games found.';
                 })
                 .catch(error => {
                     console.error('Error:', error);
-                });
+                    igdbNameSearchStatus.textContent = 'Unable to search IGDB. Please try again.';
+                })
+                .finally(() => setSearchLoading(igdbNameSearchButton, igdbNameSearchStatus, false));
+        } else {
+            igdbNameSearchStatus.textContent = 'Enter a game name to search IGDB.';
         }
     });
     

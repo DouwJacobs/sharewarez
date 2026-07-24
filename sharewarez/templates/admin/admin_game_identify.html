@@ -28,8 +28,8 @@
 
         
         <form method="POST" action="" class="game_edit-form">
-            <div class="glass-panel-addgame-top d-flex justify-content-between align-items-center">
-                <div>
+            <div class="glass-panel-addgame-top">
+                <div class="game-edit-heading">
                     {% if action == "edit" %}
                     <h2>Edit Game Entry</h2>
                     {% elif from_unmatched %}
@@ -50,17 +50,28 @@
                         {% endif %}
                     </div>
                 </div>
-                <div class="game-edit-savebutton">
-                    <button type="submit" class="btn btn-primary">Save</button>
+                <div class="game-edit-actions" aria-label="Game entry actions">
+                    <a href="{{ url_for('library.library') }}" class="btn btn-secondary">Cancel</a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-floppy-disk" aria-hidden="true"></i> Save changes
+                    </button>
                 </div>
             </div>
             {{ form.hidden_tag() }}
             <!-- Essential Information Section -->
             <div class="essential-info">
+            <div class="essential-info-grid">
             <div class="game_edit-form-group-id">
                 <label for="igdb_id">IGDB ID#</label>
                 {{ form.igdb_id(class="form-control", id="igdb_id") }}
-                <button type="button" class="btn btn-info mb-3" id="search-igdb-btn">Search IGDB</button>
+                <div class="field-actions">
+                    <button type="button" class="btn btn-primary" id="search-igdb-btn">
+                        <i class="fas fa-magnifying-glass" aria-hidden="true"></i> Look up ID
+                    </button>
+                    <button type="button" class="btn btn-secondary" id="add-non-existing-game">
+                        <i class="fas fa-plus" aria-hidden="true"></i> Custom game
+                    </button>
+                </div>
                 {% if form.igdb_id.errors %}
                     <div class="alert alert-danger" role="alert">
                         {% for error in form.igdb_id.errors %}
@@ -69,11 +80,8 @@
                     </div>
                 {% endif %}
                 <small id="igdb_id_feedback" class="form-text-muted">Enter the IGDB ID of the game.</small>
+                <p id="igdb-id-search-status" class="search-status" role="status" aria-live="polite"></p>
             </div>
-            <!-- Add Non-Existing Game Button -->
-            <button type="button" class="btn btn-secondary" id="add-non-existing-game">
-                Add Non-Existing Game
-            </button>
             <div class="game_edit-form-group-name">
                 <label for="name">Name</label>
                 {{ form.name(class="form-control", id="name") }}
@@ -85,7 +93,12 @@
                     </div>
                 {% endif %}
     
-                <button type="button" id="search-igdb" class="btn btn-info mb-3">Search IGDB</button>
+                <div class="field-actions">
+                    <button type="button" id="search-igdb" class="btn btn-primary">
+                        <i class="fas fa-magnifying-glass" aria-hidden="true"></i> Search IGDB
+                    </button>
+                </div>
+                <p id="igdb-name-search-status" class="search-status" role="status" aria-live="polite"></p>
                 
                 <div id="search-results" style="margin-top: 10px;">
                 <!-- Container for search results -->
@@ -101,6 +114,7 @@
                         {% endfor %}
                     </div>
                 {% endif %}
+            </div>
             </div>
             </div>
             
