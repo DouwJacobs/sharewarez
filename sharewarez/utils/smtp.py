@@ -192,19 +192,19 @@ def send_email(to, subject, template):
 
 def send_password_reset_email(user_email, token):
     reset_url = url_for('login.reset_password', token=token, _external=True)
-    html = f'''<p>Ahoy there!</p>
+    html = f'''<p>Hello,</p>
 
-<p>Ye be wantin' to reset yer password, aye? No worries, we got ye covered! Jus' click on the link below to set a new course for yer password:</p>
+<p>We received a request to reset your SharewareZ password. Use the link below to choose a new password:</p>
 
-<p><a href="{reset_url}">Password Reset Link</a></p>
+<p><a href="{reset_url}">Reset your password</a></p>
 
-<p>If ye didn't request this, ye can just ignore this message and continue sailin' the digital seas.</p>
+<p>If you did not request a password reset, you can safely ignore this email.</p>
 
-<p>Fair winds and followin' seas,</p>
+<p>Regards,</p>
 
-<p>Captain Blackbeard</p>'''
+<p>The SharewareZ team</p>'''
 
-    subject = "Ye Password Reset Request Arrr!"
+    subject = "Reset your SharewareZ password"
     send_email(user_email, subject, html)
     
     

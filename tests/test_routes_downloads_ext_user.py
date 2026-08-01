@@ -97,7 +97,8 @@ class TestDownloadsRoute:
         
         response = client.get('/downloads')
         assert response.status_code == 200
-        assert b'Test Game' in response.data or b'manage_downloads' in response.data
+        assert b'Test Game' in response.data
+        assert f'/game_details/{sample_download_request.game_uuid}'.encode() in response.data
     
     def test_downloads_route_user_isolation(self, client, authenticated_user, admin_user, sample_download_request, db_session):
         """Test that users can only see their own downloads."""

@@ -692,13 +692,13 @@ class TestSendPasswordResetEmail:
         
         # Check arguments
         assert args[0] == 'user@example.com'
-        assert args[1] == "Ye Password Reset Request Arrr!"
+        assert args[1] == "Reset your SharewareZ password"
         
         # Check that HTML content contains the reset URL
         html_content = args[2]
         assert 'https://example.com/reset/abc123' in html_content
-        assert 'Password Reset Link' in html_content
-        assert 'Captain Blackbeard' in html_content
+        assert 'Reset your password' in html_content
+        assert 'The SharewareZ team' in html_content
 
 
 class TestSendInviteEmail:

@@ -1,14 +1,22 @@
 <!-- templates/admin/admin_manage_downloads.html -->
 {% extends "base.html" %}  
+{% block styles %}
+{{ super() }}
+<link rel="stylesheet" href="{{ 'css/admin/admin_manage_downloads.css'|theme_asset }}">
+{% endblock %}
+
 {% block content %}
+<section class="downloads-page" aria-labelledby="downloads-page-title">
+    <header class="downloads-page-header">
+        <div>
+            <p class="downloads-page-eyebrow"><i class="fas fa-shield-halved" aria-hidden="true"></i> Administration</p>
+            <h1 id="downloads-page-title">Download requests</h1>
+            <p>Review download activity, open the related game, or remove stale requests.</p>
+        </div>
+        <span class="downloads-count">{{ download_requests|length }} request{% if download_requests|length != 1 %}s{% endif %}</span>
+    </header>
 
-            
-<div class="card">
-
-    <div class="admin_manage_downloads-requests-header">
-        <h2>Download Requests</h2>
-    </div>
-    <div class="admin_manage_downloads-requests">
+    <div class="downloads-panel admin_manage_downloads-requests">
         {% if download_requests %}
             <div class="table-responsive">
             <table id="downloadsTable" class="admin_manage_downloads-table table table-dark table-striped">
@@ -16,7 +24,7 @@
                     <tr class="admin_manage_downloads-tr-headings">
                         <th class="admin_manage_downloads-th-headings-1">ID</th>
                         <th class="admin_manage_downloads-th-headings-2">Username</th>
-                        <th class="admin_manage_downloads-th-headings-3">Game UUID (Part)</th>
+                        <th class="admin_manage_downloads-th-headings-3">Game</th>
                         <th class="admin_manage_downloads-th-headings-4">Status</th>
                         <th class="admin_manage_downloads-th-headings-5">Zip File Path</th>
                         <th class="admin_manage_downloads-th-headings-6">Request Time</th>
@@ -29,13 +37,20 @@
                     <tr class="admin_manage_downloads-tr-data" data-download-id="{{ request[0].id }}">
                         <td class="admin_manage_downloads-td-data-1">{{ request[0].id }}</td>
                         <td class="admin_manage_downloads-td-data-2">{{ request[1] }}</td>
-                        <td class="admin_manage_downloads-td-data-3">{{ request[0].game_uuid[:8] }}</td>
-                        <td class="admin_manage_downloads-td-data-4">{{ request[0].status }}</td>
-                        <td class="admin_manage_downloads-td-data-5">{{ request[0].zip_file_path }}</td>
+                        <td class="admin_manage_downloads-td-data-3">
+                            <a class="downloads-game-link" href="{{ url_for('games.game_details', game_uuid=request[0].game_uuid) }}">
+                                <i class="fas fa-gamepad" aria-hidden="true"></i>
+                                <span>{{ request[0].game.name }}</span>
+                                <i class="fas fa-arrow-up-right-from-square downloads-game-link-icon" aria-hidden="true"></i>
+                            </a>
+                            <small class="downloads-game-uuid">{{ request[0].game_uuid[:8] }}</small>
+                        </td>
+                        <td class="admin_manage_downloads-td-data-4"><span class="download-status download-status--{{ request[0].status|lower|replace(' ', '-') }}"><span class="download-status-dot" aria-hidden="true"></span>{{ request[0].status|replace('_', ' ')|title }}</span></td>
+                        <td class="admin_manage_downloads-td-data-5 file-name-cell" title="{{ request[0].zip_file_path or 'Not available yet' }}">{{ request[0].zip_file_path or 'Preparing file…' }}</td>
                         <td class="admin_manage_downloads-td-data-6">{{ request[0].request_time.strftime('%Y-%m-%d %H:%M') if request[0].request_time else 'N/A' }}</td>
                         <td class="admin_manage_downloads-td-data-7">{{ request[0].completion_time.strftime('%Y-%m-%d %H:%M') if request[0].completion_time else 'N/A' }}</td>
                         <td>
-                            <button type="button" class="btn btn-danger btn-sm" onclick="showDeleteModal({{ request[0].id }})">Delete</button>
+                            <button type="button" class="btn btn-danger btn-sm" onclick="showDeleteModal({{ request[0].id }})"><i class="fas fa-trash" aria-hidden="true"></i> Delete</button>
                         </td>
                     </tr>
                     {% endfor %}
@@ -43,7 +58,11 @@
             </table>
             </div>
         {% else %}
-            <p>No download requests found.</p>
+            <div class="downloads-empty-state">
+                <i class="fas fa-inbox" aria-hidden="true"></i>
+                <h2>No download requests</h2>
+                <p>New user download activity will appear here.</p>
+            </div>
         {% endif %}
     </div>
 
@@ -129,6 +148,6 @@ function confirmDelete() {
             </div>
         </div>
     </div>
-</div>
+</section>
 
 {% endblock %}

@@ -1,49 +1,59 @@
 {% extends "base.html" %}
 
+{% block styles %}
+{{ super() }}
+<link rel="stylesheet" href="{{ 'css/admin/admin_manage_downloads.css'|theme_asset }}">
+{% endblock %}
+
 {% block content %}
-
-
-<div class="glass-panel">
-    <div class="content-download">
-        <div class="logo-download">
-            <img src="{{ url_for('static', filename='newstyle/download/download_banner.png') }}" alt="My Downloads" style="vertical-align: middle;">
+<section class="downloads-page" aria-labelledby="downloads-page-title">
+    <header class="downloads-page-header">
+        <div>
+            <p class="downloads-page-eyebrow"><i class="fas fa-download" aria-hidden="true"></i> Library activity</p>
+            <h1 id="downloads-page-title">My downloads</h1>
+            <p>Track your requested files and return to a game whenever you need more details.</p>
         </div>
-        <h2 class="text-center">Download yer Booty</h2>
+        <span class="downloads-count">{{ download_requests|length }} request{% if download_requests|length != 1 %}s{% endif %}</span>
+    </header>
+
+    <div class="downloads-panel">
+        {% if download_requests %}
         <div class="table-responsive">
-            <table class="table table-dark table-striped table-hover">
+            <table class="table table-dark table-striped table-hover downloads-table">
                 <thead>
                     <tr>
-                        <th>Game Name</th>
-						<th>File Name</th>
+                        <th>Game</th>
+                        <th>File</th>
                         <th>Status</th>
                         <th>Size</th>
-                        <th>Actions</th>
+                        <th class="text-end">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for download in download_requests %}
                     <tr data-download-id="{{ download.id }}">
-                        <td>{{ download.game.name }}</td>
-						{% if download.zip_file_path %}
-							{% set download_file_name = download.zip_file_path.split('\\')[-1] %}
-							{% set download_file_name = download_file_name.split('/')[-1] %}
-						{% endif %}
-						<td class="file-name-cell">
-							{{ download_file_name }}
-						</td>
+                        <td>
+                            <a class="downloads-game-link" href="{{ url_for('games.game_details', game_uuid=download.game_uuid) }}">
+                                <i class="fas fa-gamepad" aria-hidden="true"></i>
+                                <span>{{ download.game.name }}</span>
+                                <i class="fas fa-arrow-up-right-from-square downloads-game-link-icon" aria-hidden="true"></i>
+                            </a>
+                        </td>
+                        {% set download_file_name = download.zip_file_path.replace('\\', '/').split('/')[-1] if download.zip_file_path else 'Preparing file…' %}
+                        <td class="file-name-cell" title="{{ download_file_name }}">{{ download_file_name }}</td>
                         <td class="status-cell">
-                            <div class="status-value" {% if download.status == 'failed' %}style="color: #ff0000; background-color: #ffe8e8; border: 2px solid #ff0000; padding: 2px 6px; border-radius: 4px; font-weight: bold;"{% endif %}>
-                                {{ download.status }}
-                            </div>
+                            <span class="download-status download-status--{{ download.status|lower|replace(' ', '-') }}">
+                                <span class="download-status-dot" aria-hidden="true"></span>{{ download.status|replace('_', ' ')|title }}
+                            </span>
                         </td>
                         <td>{{ download.formatted_size }}</td>
-                        <td class="actions-cell">
+                        <td class="actions-cell text-end">
                             {% if download.status == 'available' %}
-                            <a href="{{ url_for('download.download_zip', download_id=download.id) }}" class="btn btn-primary">Download</a>
+                            <a href="{{ url_for('download.download_zip', download_id=download.id) }}" class="btn btn-primary btn-sm"><i class="fas fa-download" aria-hidden="true"></i> Download</a>
                             {% endif %}
                             <form action="{{ url_for('download.delete_download', download_id=download.id) }}" method="post" class="inline-form">
                                 {{ form.csrf_token }}
-                                <button type="submit" class="btn btn-danger">Delete</button>
+                                <button type="submit" class="btn btn-danger btn-sm"><i class="fas fa-trash" aria-hidden="true"></i> Delete</button>
                             </form>
                         </td>
                     </tr>
@@ -51,9 +61,15 @@
                 </tbody>
             </table>
         </div>
-        {{ form.csrf_token }}
+        {% else %}
+        <div class="downloads-empty-state">
+            <i class="fas fa-box-open" aria-hidden="true"></i>
+            <h2>No downloads yet</h2>
+            <p>Files you request from a game page will appear here.</p>
+            <a class="btn btn-primary" href="{{ url_for('library.library') }}"><i class="fas fa-gamepad" aria-hidden="true"></i> Browse library</a>
+        </div>
+        {% endif %}
     </div>
-</div>
+</section>
 <script src="{{ 'js/downloads_manager.js'|theme_asset }}"></script>
-
 {% endblock %}
