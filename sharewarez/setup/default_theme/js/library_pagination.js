@@ -345,7 +345,7 @@ $(document).ready(function() {
                     if (response.role === 'admin') {
                         message = `<p>You have no games!<br> <br>Go to <a href="${libraryScanUrl}">Scan Manager</a> and add some games.</p>`;
                     } else {
-                        message = '<p>No games or libraries found. Complain to the Captain of this vessel!</p>';
+                        message = '<p>No games or libraries are available. Contact an administrator for help.</p>';
                     }
                     if ($('#gamesContainer').empty()) {
                         $('#gamesContainer').append(message);
@@ -367,7 +367,7 @@ $(document).ready(function() {
                     if (response.role === 'admin') {
                         message = `<p>You have no games in this library!<br> <br>Go to <a href="${libraryScanUrl}">Scan Manager</a> and add some games to the library.</p>`;
                     } else {
-                        message = '<p>No games or libraries found. Complain to the Captain of this vessel!</p>';
+                        message = '<p>No games or libraries are available. Contact an administrator for help.</p>';
                     }
                     if ($('#gamesContainer').empty()) {
                         $('#gamesContainer').append(message);
