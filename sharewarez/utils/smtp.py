@@ -191,10 +191,15 @@ def send_email(to, subject, template):
 
 
 def send_password_reset_email(user_email, token):
+    from markupsafe import escape
+    from sharewarez.utils.processors import get_global_settings
+
+    site_title = get_global_settings()['site_title']
+    escaped_site_title = escape(site_title)
     reset_url = url_for('login.reset_password', token=token, _external=True)
     html = f'''<p>Hello,</p>
 
-<p>We received a request to reset your SharewareZ password. Use the link below to choose a new password:</p>
+<p>We received a request to reset your {escaped_site_title} password. Use the link below to choose a new password:</p>
 
 <p><a href="{reset_url}">Reset your password</a></p>
 
@@ -202,9 +207,9 @@ def send_password_reset_email(user_email, token):
 
 <p>Regards,</p>
 
-<p>The SharewareZ team</p>'''
+<p>The {escaped_site_title} team</p>'''
 
-    subject = "Reset your SharewareZ password"
+    subject = f"Reset your {site_title} password"
     send_email(user_email, subject, html)
     
     

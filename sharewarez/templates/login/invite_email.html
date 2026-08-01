@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>SharewareZ !</title>
+    <title>Invitation to {{ site_title }}</title>
     <style>
         body {
             background-color: #f3f4f6;
@@ -36,13 +36,12 @@
 </head>
 <body>
     <div class="container">
-        <h2>Welcome to ShareWareZ!</h2>
+        <h2>Welcome to {{ site_title }}!</h2>
         <p>Hello,</p>
-        <p>You've been invited to join ShareWareZ, a platform for sharing games. To complete your registration and get started, please use the link below:</p>
+        <p>You've been invited to join {{ site_title }}, a platform for sharing games. To complete your registration and get started, please use the link below:</p>
         <a href="{{ invite_url }}" style="display: inline-block; margin: 20px 0;">Complete Your Registration</a>
         <p>Please note that this invitation link will expire after 48 hours. If you don't complete your registration by then, you'll need to request a new invitation.</p>
-        <p>Best regards,<br>The ShareWareZ Team</p>
+        <p>Best regards,<br>The {{ site_title }} team</p>
     </div>
 </body>
 </html>
-

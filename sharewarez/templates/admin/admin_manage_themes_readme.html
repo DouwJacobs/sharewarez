@@ -1,77 +1,91 @@
 {% extends "base.html" %}
-{% block content %}
+{% from "partials/ui_components.html" import admin_page_header %}
 
+{% block styles %}
+{{ super() }}
 <link rel="stylesheet" href="{{ 'css/admin/readme_theme.css'|theme_asset }}">
+{% endblock %}
 
+{% block content %}
+<main class="admin-page theme-guide-page">
+    {% call admin_page_header('Theme development guide', 'Create a complete theme or override only the assets you want to change.', 'Appearance', 'fa-palette') %}
+        <a href="{{ url_for('admin2.manage_themes') }}" class="btn btn-secondary"><i class="fas fa-arrow-left" aria-hidden="true"></i> Back to themes</a>
+    {% endcall %}
 
+    <nav class="admin-surface help-on-this-page" aria-label="On this page">
+        <strong>On this page</strong>
+        <a href="#package">Package structure</a><a href="#metadata">Metadata</a><a href="#fallback">Asset fallback</a><a href="#install">Install and test</a><a href="#checklist">Compatibility checklist</a>
+    </nav>
 
-<div class="container">
-    <div class="glass-panel">
-        <h1>Creating Your Own Theme</h1>
-        <section>
-            <h2>Theme Structure</h2>
-            <p>A theme consists of the following components:</p>
-            <ul>
-                <li>A ZIP file containing all theme files</li>
-                <li>A <code>theme.json</code> file with theme metadata</li>
-                <li>CSS files in a <code>css</code> folder</li>
-                <li>Optional image files in an <code>images</code> folder</li>
-            </ul>
-        </section>
-        <section>
-            <h2>theme.json Format</h2>
-            <pre><code>
-{
-    "name": "Your Theme Name",
-    "author": "Your Name",
-    "description": "A brief description of your theme",
-    "version": "1.0.0",
-    "release_date": "YYYY-MM-DD"
-}
-            </code></pre>
-        </section>
-        <section>
-            <h2>CSS Files</h2>
-            <p>Place your CSS files in the <code>css</code> folder. The main CSS file should be named <code>base.css</code>. Additional CSS files are structured by folder.</p>
-        </section>
-        <section>
-            <h2>Creating the ZIP File</h2>
-            <p><strong>Important:</strong> The ZIP file must contain the theme files at the root level, not inside a subfolder.</p>
-            <ol>
-                <li>Create a folder with your theme name for organization</li>
-                <li>Add the <code>theme.json</code> file to this folder</li>
-                <li>Create a <code>css</code> subfolder and add your CSS files</li>
-                <li>Optionally, create an <code>images</code> subfolder for any theme-specific images</li>
-                <li><strong>Important:</strong> When creating the ZIP file, select all the <em>contents</em> of your theme folder (theme.json, css/, images/, etc.) and zip those files directly - do NOT zip the theme folder itself</li>
-            </ol>
-
-            <h3>Correct ZIP Structure</h3>
-            <p>Your ZIP file should contain:</p>
-            <pre><code>
-mytheme.zip
-├── theme.json          ← At root level
-├── css/               ← At root level
+    <section class="admin-surface theme-guide-section" id="package">
+        <h2>Package structure</h2>
+        <p>Upload a ZIP whose contents begin at the archive root. Do not wrap the files in an extra theme directory.</p>
+        <div class="guide-example-grid">
+            <div><h3><i class="fas fa-circle-check text-success" aria-hidden="true"></i> Correct</h3><pre><code>my-theme.zip
+├── theme.json
+├── css/
 │   ├── base.css
 │   ├── components.css
-│   └── admin/
-│       └── admin_dashboard.css
-└── js/                ← Optional, at root level
-    └── custom.js
-            </code></pre>
-
-            <h3>Incorrect ZIP Structure (will fail)</h3>
-            <pre><code>
-mytheme.zip
-└── mytheme/           ← Extra folder layer causes upload to fail
+│   ├── admin/
+│   ├── games/
+│   └── site/
+├── js/          # optional
+└── images/      # optional</code></pre></div>
+            <div><h3><i class="fas fa-circle-xmark text-danger" aria-hidden="true"></i> Incorrect</h3><pre><code>my-theme.zip
+└── my-theme/
     ├── theme.json
     ├── css/
-    └── js/
-            </code></pre>
-        </section>
-        <section>
-            <h2>Uploading Your Theme</h2>
-            <p>Use the theme upload form on the Manage Themes page to upload your ZIP file.</p>
-        </section>
-    </div>
-</div>
+    └── js/</code></pre></div>
+        </div>
+        <div class="help-callout"><strong>Upload limits:</strong> ZIP format, maximum 25 MB. Theme names cannot contain path separators, traversal sequences, Windows reserved names, or characters such as <code>&lt; &gt; : &quot; | ? *</code>.</div>
+    </section>
+
+    <section class="admin-surface theme-guide-section" id="metadata">
+        <h2>Theme metadata</h2>
+        <p><code>theme.json</code> must contain the four required fields below. <code>version</code> is recommended but currently optional.</p>
+        <pre><code>{
+  "name": "Your Theme Name",
+  "author": "Your Name",
+  "description": "A short description",
+  "release_date": "2026-08-01",
+  "version": "1.0.0"
+}</code></pre>
+        <p>The theme name becomes its installed directory name after filesystem-safe normalization. Choose a stable, unique name.</p>
+    </section>
+
+    <section class="admin-surface theme-guide-section" id="fallback">
+        <h2>Partial themes and asset fallback</h2>
+        <p>The <code>css/</code> directory is required, but you do not need to copy every default asset. Templates request assets through the <code>theme_asset</code> filter:</p>
+        <pre><code>{{ "{{ 'css/components.css'|theme_asset }}" }}</code></pre>
+        <p>If that relative path exists in the selected theme, {{ site_title }} uses it. Otherwise it falls back to the same path in the default theme. This makes small, maintainable override themes possible.</p>
+        <ul>
+            <li>Mirror the exact relative path of every asset you override.</li>
+            <li>Start with color, typography, and surface overrides in <code>css/base.css</code> or <code>css/components.css</code>.</li>
+            <li>Add page-specific files only when that page needs structural changes.</li>
+            <li>JavaScript is optional and should be overridden only when behavior must change.</li>
+        </ul>
+        <div class="help-callout help-callout-warning"><strong>Trusted code:</strong> Installed theme JavaScript runs in users’ browsers with the application’s origin. Only install themes from authors you trust, and review custom JavaScript before uploading.</div>
+    </section>
+
+    <section class="admin-surface theme-guide-section" id="install">
+        <h2>Install, select, and test</h2>
+        <ol>
+            <li>Create <code>theme.json</code> and at least a <code>css/</code> directory.</li>
+            <li>ZIP the directory contents at the archive root.</li>
+            <li>Open <a href="{{ url_for('admin2.manage_themes') }}">Themes</a> and install the ZIP.</li>
+            <li>Select the theme from user preferences, then hard-refresh the browser.</li>
+            <li>Test desktop and mobile layouts with both user and administrator accounts.</li>
+        </ol>
+        <p>During default-theme development, <code>DEV_MODE=true</code> recopies bundled theme files during application startup. {{ site_title }} does not hot reload these files, so restart with <code>./startweb.sh</code> after changes.</p>
+        <div class="help-callout help-callout-warning"><strong>Restore defaults:</strong> “Restore default theme” replaces the installed default-theme directory with the bundled source. Any direct modifications to the installed default theme are overwritten.</div>
+    </section>
+
+    <section class="admin-surface theme-guide-section" id="checklist">
+        <h2>Compatibility checklist</h2>
+        <div class="theme-checklist-grid">
+            <ul><li>Sidebar expanded and collapsed</li><li>Centered global search and result palette</li><li>Game cards and game details</li><li>Tables with horizontal overflow</li><li>Forms, validation, and file inputs</li></ul>
+            <ul><li>Admin headers and action buttons</li><li>Modals, confirmations, and toasts</li><li>Keyboard focus indicators</li><li>Mobile widths at 768 px and below</li><li><code>prefers-reduced-motion</code> behavior</li></ul>
+        </div>
+    </section>
+</main>
 {% endblock %}

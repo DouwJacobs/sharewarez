@@ -9,7 +9,14 @@ fi
 
 cd "$(dirname "$0")"
 
-source venv/bin/activate
+# Respect an already activated pyenv/virtualenv environment. Fall back to the
+# legacy project-local venv when present.
+if [ -f venv/bin/activate ]; then
+    source venv/bin/activate
+elif [ -z "$VIRTUAL_ENV" ]; then
+    echo "❌ No Python environment is active. Run: pyenv activate sharewarez"
+    exit 1
+fi
 
 # Load .env file and export variables to shell environment
 if [ -f .env ]; then

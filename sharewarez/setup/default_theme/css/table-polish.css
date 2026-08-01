@@ -1,0 +1,190 @@
+/* Final shared table presentation.
+   This intentionally loads after view-specific styles to keep every table aligned. */
+:is(.table-responsive, .dataTables_wrapper) {
+    border: 1px solid rgba(154, 177, 255, 0.14) !important;
+    border-radius: 18px !important;
+    background: rgba(14, 16, 29, 0.78) !important;
+    box-shadow: 0 18px 48px rgba(0, 0, 0, 0.17) !important;
+}
+
+.table-responsive {
+    overflow-x: auto;
+}
+
+:is(.table, .table-dark, .simple-jobs-table, .simple-unmatched-table) {
+    --bs-table-bg: transparent !important;
+    --bs-table-color: #dce1ef !important;
+    --bs-table-striped-bg: transparent !important;
+    --bs-table-striped-color: #dce1ef !important;
+    --bs-table-hover-bg: rgba(118, 137, 255, 0.045) !important;
+    --bs-table-hover-color: #eef1ff !important;
+    width: 100%;
+    margin: 0 !important;
+    border: 0 !important;
+    border-collapse: collapse !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    color: #dce1ef !important;
+}
+
+/* Standalone tables get the same panel edge as responsive tables. */
+:is(.table, .table-dark, .simple-jobs-table, .simple-unmatched-table):not(.table-responsive *):not(.dataTables_wrapper *) {
+    border: 1px solid rgba(154, 177, 255, 0.14) !important;
+    border-radius: 14px !important;
+    background: rgba(14, 16, 29, 0.62) !important;
+    box-shadow: 0 14px 38px rgba(0, 0, 0, 0.14) !important;
+    overflow: hidden;
+}
+
+:is(.table, .table-dark, .simple-jobs-table, .simple-unmatched-table) > thead > tr > th,
+:is(.table, .table-dark, .simple-jobs-table, .simple-unmatched-table) thead th {
+    position: static;
+    z-index: auto;
+    padding: 13px 15px !important;
+    border: 0 !important;
+    border-bottom: 1px solid rgba(154, 177, 255, 0.11) !important;
+    background: rgba(7, 9, 18, 0.54) !important;
+    color: #8f99b1 !important;
+    font-size: 0.72rem !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.07em !important;
+    line-height: 1.25;
+    text-align: left;
+    text-transform: uppercase !important;
+    white-space: nowrap;
+}
+
+:is(.table, .table-dark, .simple-jobs-table, .simple-unmatched-table) > tbody > tr,
+:is(.table, .table-dark, .simple-jobs-table, .simple-unmatched-table) tbody tr {
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    transform: none !important;
+    transition: background-color 150ms ease !important;
+}
+
+:is(.table, .table-dark, .simple-jobs-table, .simple-unmatched-table) > tbody > tr:nth-of-type(odd) > *,
+:is(.table, .table-dark, .simple-jobs-table, .simple-unmatched-table) > tbody > tr:nth-of-type(even) > * {
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+:is(.table, .table-dark, .simple-jobs-table, .simple-unmatched-table) > tbody > tr:hover,
+:is(.table, .table-dark, .simple-jobs-table, .simple-unmatched-table) tbody tr:hover {
+    background: rgba(118, 137, 255, 0.055) !important;
+    box-shadow: none !important;
+    transform: none !important;
+}
+
+:is(.table, .table-dark, .simple-jobs-table, .simple-unmatched-table) > tbody > tr > td,
+:is(.table, .table-dark, .simple-jobs-table, .simple-unmatched-table) tbody td {
+    padding: 14px 15px !important;
+    border: 0 !important;
+    border-top: 1px solid rgba(154, 177, 255, 0.08) !important;
+    background: transparent !important;
+    color: #dce1ef !important;
+    font-size: 0.86rem;
+    line-height: 1.45;
+    text-align: left;
+    vertical-align: middle;
+}
+
+:is(.table, .table-dark, .simple-jobs-table, .simple-unmatched-table) tbody tr:first-child td {
+    border-top: 0 !important;
+}
+
+:is(.table, .table-dark) td :is(small, .text-muted),
+:is(.simple-jobs-table, .simple-unmatched-table) td :is(small, .text-muted) {
+    color: #7f8aa4 !important;
+}
+
+:is(.table, .table-dark) td a:not(.btn),
+:is(.simple-jobs-table, .simple-unmatched-table) td a:not(.btn) {
+    color: #aebcff;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+:is(.table, .table-dark) td a:not(.btn):hover,
+:is(.simple-jobs-table, .simple-unmatched-table) td a:not(.btn):hover {
+    color: #d8deff;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+:is(.table, .table-dark) :is(.badge, [class*="status-badge"], .download-status) {
+    border-width: 1px;
+    border-style: solid;
+    border-color: rgba(255, 255, 255, 0.1);
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+}
+
+/* DataTables controls now resemble the logs filters instead of plugin defaults. */
+.dataTables_wrapper {
+    margin-top: 0 !important;
+    padding: 18px !important;
+    color: #aab3ca !important;
+}
+
+.dataTables_wrapper :is(.dataTables_length, .dataTables_filter) label {
+    color: #aab3ca !important;
+    font-size: 0.78rem;
+    font-weight: 700;
+}
+
+.dataTables_wrapper :is(.dataTables_filter input, .dataTables_length select) {
+    min-height: 40px;
+    border: 1px solid rgba(154, 177, 255, 0.16) !important;
+    border-radius: 10px !important;
+    background: rgba(7, 9, 19, 0.75) !important;
+    color: #eef1ff !important;
+    box-shadow: none !important;
+}
+
+.dataTables_wrapper .dataTables_filter input {
+    min-width: min(280px, 60vw);
+    padding: 0 12px !important;
+}
+
+.dataTables_wrapper :is(.dataTables_info, .dataTables_paginate) {
+    padding-top: 16px !important;
+    color: #8f99b1 !important;
+    font-size: 0.8rem;
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button {
+    min-width: 34px;
+    margin: 0 2px !important;
+    padding: 7px 10px !important;
+    border: 1px solid transparent !important;
+    border-radius: 9px !important;
+    background: transparent !important;
+    color: #aeb7cd !important;
+    box-shadow: none !important;
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button:hover,
+.dataTables_wrapper .dataTables_paginate .paginate_button.current {
+    border-color: rgba(139, 153, 255, 0.3) !important;
+    background: rgba(117, 136, 255, 0.16) !important;
+    color: #fff !important;
+}
+
+@media (max-width: 768px) {
+    :is(.table, .table-dark, .simple-jobs-table, .simple-unmatched-table) {
+        min-width: 680px;
+    }
+
+    :is(.table, .table-dark, .simple-jobs-table, .simple-unmatched-table) > thead > tr > th,
+    :is(.table, .table-dark, .simple-jobs-table, .simple-unmatched-table) > tbody > tr > td {
+        padding: 11px 12px !important;
+    }
+
+    .dataTables_wrapper {
+        padding: 12px !important;
+    }
+}

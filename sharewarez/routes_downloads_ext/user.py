@@ -1,8 +1,10 @@
-from flask import render_template, redirect, url_for, flash, jsonify, current_app, abort
+from flask import render_template, redirect, url_for, flash, jsonify, current_app, abort, request
+import os
 from flask_login import login_required, current_user
 from sharewarez.forms import CsrfProtectForm
 from sharewarez.models import DownloadRequest
 from sqlalchemy import select
+from sqlalchemy.orm import joinedload
 from sharewarez.utils.functions import format_size
 from sharewarez.utils.event_logging import log_system_event
 from . import download_bp
@@ -12,11 +14,56 @@ from sharewarez import db
 @login_required
 def downloads():
     user_id = current_user.id
-    download_requests = db.session.execute(select(DownloadRequest).filter_by(user_id=user_id)).scalars().all()
-    for download_request in download_requests:
+    page = max(1, request.args.get('page', 1, type=int))
+    per_page = min(max(10, request.args.get('per_page', 25, type=int)), 100)
+    query = (
+        select(DownloadRequest)
+        .options(joinedload(DownloadRequest.game))
+        .filter_by(user_id=user_id)
+        .order_by(DownloadRequest.request_time.desc(), DownloadRequest.id.desc())
+    )
+    pagination = db.paginate(query, page=page, per_page=per_page, error_out=False)
+    for download_request in pagination.items:
         download_request.formatted_size = format_size(download_request.download_size)
     form = CsrfProtectForm()
-    return render_template('games/manage_downloads.html', download_requests=download_requests, form=form)
+    return render_template('games/manage_downloads.html', download_requests=pagination.items, pagination=pagination, form=form)
+
+@download_bp.route('/downloads/<int:download_id>/cancel', methods=['POST'])
+@login_required
+def cancel_download(download_id):
+    download_request = db.session.execute(
+        select(DownloadRequest).filter_by(id=download_id, user_id=current_user.id)
+    ).scalar_one_or_none()
+    if not download_request:
+        abort(404)
+    if download_request.status not in {'pending', 'processing'}:
+        flash('Only pending or processing requests can be cancelled.', 'warning')
+    else:
+        download_request.status = 'cancelled'
+        db.session.commit()
+        log_system_event(f"User {current_user.id} cancelled download request {download_id}", event_type='audit', event_level='information')
+        flash('Download request cancelled.', 'success')
+    return redirect(url_for('download.downloads'))
+
+@download_bp.route('/downloads/<int:download_id>/retry', methods=['POST'])
+@login_required
+def retry_download(download_id):
+    download_request = db.session.execute(
+        select(DownloadRequest).filter_by(id=download_id, user_id=current_user.id)
+    ).scalar_one_or_none()
+    if not download_request:
+        abort(404)
+    if download_request.status not in {'failed', 'cancelled'}:
+        flash('This request cannot be retried.', 'warning')
+    elif not download_request.file_location or not os.path.exists(download_request.file_location):
+        flash('The source file is no longer available.', 'error')
+    else:
+        download_request.status = 'available'
+        download_request.completion_time = None
+        db.session.commit()
+        log_system_event(f"User {current_user.id} retried download request {download_id}", event_type='audit', event_level='information')
+        flash('Download request is available again.', 'success')
+    return redirect(url_for('download.downloads'))
 
 @download_bp.route('/delete_download/<int:download_id>', methods=['POST'])
 @login_required

@@ -7,7 +7,7 @@
     <meta charset="utf-8">
     
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Sharewarez</title>
+    <title>{% block title %}{{ site_title }}{% endblock %}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -114,6 +114,7 @@
 
     <link rel="stylesheet" href="{{ 'css/site/sidebar.css'|theme_asset }}">
     <link rel="stylesheet" href="{{ 'css/components.css'|theme_asset }}">
+    <link rel="stylesheet" href="{{ 'css/global-search.css'|theme_asset }}">
     <!-- Global mobile responsiveness - loaded last to override all page-specific styles -->
     <link rel="stylesheet" href="{{ 'css/mobile.css'|theme_asset }}">
     
@@ -182,8 +183,8 @@
     <button id="mobileMenuToggle" class="mobile-menu-btn" aria-label="Open menu">
         <i class="fas fa-bars"></i>
     </button>
-    <span class="mobile-brand-mark" aria-hidden="true"><i class="fas fa-gamepad"></i></span>
-    <span class="mobile-title">Sharewarez</span>
+    <span class="mobile-brand-mark" aria-hidden="true"><img src="{{ url_for('static', filename=brand_logo_path) }}" alt=""></span>
+    <span class="mobile-title">{{ site_title }}</span>
 </div>
 
 <!-- Sidebar Backdrop (mobile only) -->
@@ -192,9 +193,7 @@
 <div id="sidebar" class="sidebar">
     <a href="/discover">
         {% if show_logo %}
-            <div class="menu-logo-image">
-                <!-- Your CSS will apply here, displaying the logo -->
-            </div>
+            <div class="menu-logo-image"><img src="{{ url_for('static', filename=brand_logo_path) }}" alt="{{ site_title }} logo"></div>
         {% endif %}
     </a>
     
@@ -259,7 +258,28 @@
 
 </div>
 {% endif %}
+{% if current_user.is_authenticated %}
+<div class="global-search" id="globalSearch" hidden>
+    <div class="global-search-backdrop" data-global-search-close></div>
+    <section class="global-search-dialog" role="dialog" aria-modal="true" aria-labelledby="globalSearchTitle">
+        <h2 id="globalSearchTitle" class="visually-hidden">Search {{ site_title }}</h2>
+        <div class="global-search-input-wrap">
+            <i class="fas fa-magnifying-glass" aria-hidden="true"></i>
+            <input id="globalSearchInput" type="search" autocomplete="off" placeholder="Search games, libraries{% if current_user.role == 'admin' %}, users, and settings{% endif %}…" aria-controls="globalSearchResults">
+            <kbd>Esc</kbd>
+        </div>
+        <div id="globalSearchResults" class="global-search-results" role="listbox"><p class="global-search-hint">Type at least two characters to search.</p></div>
+    </section>
+</div>
+{% endif %}
 <div id="content" class="{% if is_setup_mode %}setup-mode-content{% endif %}">
+    {% if current_user.is_authenticated and not is_setup_mode %}
+    <div class="content-global-search">
+        <i class="fas fa-magnifying-glass" aria-hidden="true"></i>
+        <input type="search" data-global-search-inline autocomplete="off" placeholder="Search games, libraries{% if current_user.role == 'admin' %}, users, and settings{% endif %}…" aria-label="Search {{ site_title }}">
+        <kbd>Ctrl K</kbd>
+    </div>
+    {% endif %}
     {% include 'partials/flash_messages.html' %}
     {% if (request.path.startswith('/admin') and request.path != '/admin/dashboard') or request.endpoint in ['library.libraries', 'main.scan_management'] %}
     <nav class="admin-breadcrumb" aria-label="Admin navigation">
@@ -273,6 +293,9 @@
     {% endif %}
     {% block content %}{% endblock %}
 </div>
+
+<!-- Final table layer loads after page styles so every view shares one table language. -->
+<link rel="stylesheet" href="{{ 'css/table-polish.css'|theme_asset }}">
 
 
 <!-- Add this near the end of base.html -->
@@ -463,6 +486,7 @@ document.addEventListener('DOMContentLoaded', function () {
 <!-- Attract Mode Idle Detection -->
 {% if not is_setup_mode %}
 <script src="{{ 'js/attract_mode_idle.js'|theme_asset }}"></script>
+<script src="{{ 'js/global-search.js'|theme_asset }}"></script>
 {% endif %}
 
 </body>

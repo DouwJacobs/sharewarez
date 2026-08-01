@@ -1,5 +1,6 @@
 <!-- templates/admin/admin_manage_downloads.html -->
 {% extends "base.html" %}  
+{% from "partials/ui_components.html" import page_header, status_badge, empty_state, pagination as render_pagination %}
 {% block styles %}
 {{ super() }}
 <link rel="stylesheet" href="{{ 'css/admin/admin_manage_downloads.css'|theme_asset }}">
@@ -7,21 +8,33 @@
 
 {% block content %}
 <section class="downloads-page" aria-labelledby="downloads-page-title">
-    <header class="downloads-page-header">
-        <div>
-            <p class="downloads-page-eyebrow"><i class="fas fa-shield-halved" aria-hidden="true"></i> Administration</p>
-            <h1 id="downloads-page-title">Download requests</h1>
-            <p>Review download activity, open the related game, or remove stale requests.</p>
-        </div>
-        <span class="downloads-count">{{ download_requests|length }} request{% if download_requests|length != 1 %}s{% endif %}</span>
-    </header>
+    {{ page_header('Download requests', 'Review download activity, open the related game, or remove stale requests.', 'Administration', 'fa-shield-halved', pagination.total, 'request') }}
 
     <div class="downloads-panel admin_manage_downloads-requests">
+        <form class="downloads-filter-bar" method="get">
+            <label>Username <input class="form-control" type="search" name="user" value="{{ user_filter }}" placeholder="Filter by user"></label>
+            <label>Status
+                <select class="form-select" name="status">
+                    <option value="">All statuses</option>
+                    {% for value in ['available', 'pending', 'processing', 'failed', 'cancelled'] %}<option value="{{ value }}"{% if status_filter == value %} selected{% endif %}>{{ value|title }}</option>{% endfor %}
+                </select>
+            </label>
+            <button class="btn btn-primary btn-sm" type="submit"><i class="fas fa-filter" aria-hidden="true"></i> Filter</button>
+            {% if status_filter or user_filter %}<a class="btn btn-secondary btn-sm" href="{{ url_for('download.manage_downloads') }}">Clear</a>{% endif %}
+        </form>
         {% if download_requests %}
+            <div class="downloads-bulk-bar" aria-label="Bulk download actions">
+                <span><strong id="bulkSelectedCount">0</strong> selected</span>
+                <button class="btn btn-secondary btn-sm" type="button" data-bulk-action="cancel">Cancel</button>
+                <button class="btn btn-primary btn-sm" type="button" data-bulk-action="retry">Retry</button>
+                <button class="btn btn-danger btn-sm" type="button" data-bulk-action="delete">Delete</button>
+                <a class="btn btn-secondary btn-sm ms-auto" href="{{ url_for('admin2.system_logs', event_type='download_api') }}"><i class="fas fa-clipboard-list" aria-hidden="true"></i> Audit log</a>
+            </div>
             <div class="table-responsive">
             <table id="downloadsTable" class="admin_manage_downloads-table table table-dark table-striped">
                 <thead class="admin_manage_downloads-table-header">
                     <tr class="admin_manage_downloads-tr-headings">
+                        <th><input type="checkbox" id="selectAllDownloads" aria-label="Select all requests on this page"></th>
                         <th class="admin_manage_downloads-th-headings-1">ID</th>
                         <th class="admin_manage_downloads-th-headings-2">Username</th>
                         <th class="admin_manage_downloads-th-headings-3">Game</th>
@@ -34,35 +47,33 @@
                 </thead>
                 <tbody class="admin_manage_downloads-table-body">
                     {% for request in download_requests %}
-                    <tr class="admin_manage_downloads-tr-data" data-download-id="{{ request[0].id }}">
-                        <td class="admin_manage_downloads-td-data-1">{{ request[0].id }}</td>
-                        <td class="admin_manage_downloads-td-data-2">{{ request[1] }}</td>
+                    <tr class="admin_manage_downloads-tr-data" data-download-id="{{ request.id }}" data-download-status="{{ request.status }}">
+                        <td><input type="checkbox" class="download-row-select" value="{{ request.id }}" aria-label="Select request {{ request.id }}"></td>
+                        <td class="admin_manage_downloads-td-data-1">{{ request.id }}</td>
+                        <td class="admin_manage_downloads-td-data-2">{{ request.user.name }}</td>
                         <td class="admin_manage_downloads-td-data-3">
-                            <a class="downloads-game-link" href="{{ url_for('games.game_details', game_uuid=request[0].game_uuid) }}">
+                            <a class="downloads-game-link" href="{{ url_for('games.game_details', game_uuid=request.game_uuid) }}">
                                 <i class="fas fa-gamepad" aria-hidden="true"></i>
-                                <span>{{ request[0].game.name }}</span>
+                                <span>{{ request.game.name }}</span>
                                 <i class="fas fa-arrow-up-right-from-square downloads-game-link-icon" aria-hidden="true"></i>
                             </a>
-                            <small class="downloads-game-uuid">{{ request[0].game_uuid[:8] }}</small>
+                            <small class="downloads-game-uuid">{{ request.game_uuid[:8] }}</small>
                         </td>
-                        <td class="admin_manage_downloads-td-data-4"><span class="download-status download-status--{{ request[0].status|lower|replace(' ', '-') }}"><span class="download-status-dot" aria-hidden="true"></span>{{ request[0].status|replace('_', ' ')|title }}</span></td>
-                        <td class="admin_manage_downloads-td-data-5 file-name-cell" title="{{ request[0].zip_file_path or 'Not available yet' }}">{{ request[0].zip_file_path or 'Preparing file…' }}</td>
-                        <td class="admin_manage_downloads-td-data-6">{{ request[0].request_time.strftime('%Y-%m-%d %H:%M') if request[0].request_time else 'N/A' }}</td>
-                        <td class="admin_manage_downloads-td-data-7">{{ request[0].completion_time.strftime('%Y-%m-%d %H:%M') if request[0].completion_time else 'N/A' }}</td>
+                        <td class="admin_manage_downloads-td-data-4">{{ status_badge(request.status) }}{% if request.status == 'failed' %}<small class="download-failure-reason">{% if not request.file_location %}Missing source location{% else %}Retry required{% endif %}</small>{% endif %}</td>
+                        <td class="admin_manage_downloads-td-data-5 file-name-cell" title="{{ request.zip_file_path or 'Not available yet' }}">{{ request.zip_file_path or 'Preparing file…' }}</td>
+                        <td class="admin_manage_downloads-td-data-6">{{ request.request_time.strftime('%Y-%m-%d %H:%M') if request.request_time else 'N/A' }}</td>
+                        <td class="admin_manage_downloads-td-data-7">{{ request.completion_time.strftime('%Y-%m-%d %H:%M') if request.completion_time else 'N/A' }}</td>
                         <td>
-                            <button type="button" class="btn btn-danger btn-sm" onclick="showDeleteModal({{ request[0].id }})"><i class="fas fa-trash" aria-hidden="true"></i> Delete</button>
+                            <button type="button" class="btn btn-danger btn-sm" onclick="showDeleteModal({{ request.id }})"><i class="fas fa-trash" aria-hidden="true"></i> Delete</button>
                         </td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
             </div>
+            {{ render_pagination(pagination, 'download.manage_downloads', {'status': status_filter, 'user': user_filter}) }}
         {% else %}
-            <div class="downloads-empty-state">
-                <i class="fas fa-inbox" aria-hidden="true"></i>
-                <h2>No download requests</h2>
-                <p>New user download activity will appear here.</p>
-            </div>
+            {{ empty_state('No download requests', 'No requests match the current filters.' if status_filter or user_filter else 'New user download activity will appear here.') }}
         {% endif %}
     </div>
 
@@ -70,20 +81,52 @@
 // Initialize DataTables
 $(document).ready(function() {
     $('#downloadsTable').DataTable({
-        "order": [[0, "desc"]], // Sort by ID descending by default
+        "order": [[1, "desc"]],
         "pageLength": 25,
         "theme": "dark",
         "responsive": true,
+        "paging": false,
+        "searching": false,
+        "info": false,
         "language": {
             "search": "Search downloads:",
             "lengthMenu": "Show _MENU_ entries per page",
             "info": "Showing _START_ to _END_ of _TOTAL_ download requests"
         },
         "columnDefs": [
-            { "orderable": false, "targets": 7 } // Disable sorting on Actions column
+            { "orderable": false, "targets": [0, 8] }
         ]
     });
 });
+
+const rowCheckboxes = () => Array.from(document.querySelectorAll('.download-row-select'));
+const updateBulkSelection = () => {
+    const selected = rowCheckboxes().filter(box => box.checked).length;
+    const count = document.getElementById('bulkSelectedCount');
+    if (count) count.textContent = selected;
+};
+document.getElementById('selectAllDownloads')?.addEventListener('change', event => {
+    rowCheckboxes().forEach(box => { box.checked = event.target.checked; });
+    updateBulkSelection();
+});
+rowCheckboxes().forEach(box => box.addEventListener('change', updateBulkSelection));
+document.querySelectorAll('[data-bulk-action]').forEach(button => button.addEventListener('click', async () => {
+    const ids = rowCheckboxes().filter(box => box.checked).map(box => Number(box.value));
+    if (!ids.length) { $.notify('Select at least one request.', 'warning'); return; }
+    const action = button.dataset.bulkAction;
+    if (action === 'delete' && !window.confirm(`Delete ${ids.length} selected request(s)?`)) return;
+    button.disabled = true;
+    try {
+        const response = await fetch('/api/downloads/bulk', {
+            method: 'POST', headers: CSRFUtils.getHeaders({'Content-Type': 'application/json'}),
+            body: JSON.stringify({action, ids})
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message || 'Bulk action failed');
+        $.notify(data.message, 'success');
+        window.location.reload();
+    } catch (error) { $.notify(error.message, 'error'); button.disabled = false; }
+}));
 
 let currentDeleteId = null;
 

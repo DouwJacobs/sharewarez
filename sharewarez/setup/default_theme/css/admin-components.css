@@ -3,6 +3,94 @@
 
 /* === ADMIN CONTAINERS === */
 
+.admin-page {
+    width: min(1400px, 100%);
+    margin: 0 auto;
+}
+
+.admin-page--narrow { width: min(900px, 100%); }
+
+.admin-page-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: var(--spacing-lg);
+    margin-bottom: var(--spacing-lg);
+}
+
+.admin-page-header h1 {
+    margin: 0 0 var(--spacing-xs);
+    color: var(--text-white);
+    font-size: clamp(1.75rem, 3vw, 2.35rem);
+    font-weight: 700;
+}
+
+.admin-page-eyebrow {
+    margin: 0 0 var(--spacing-xs);
+    color: var(--btn-primary);
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+}
+
+.admin-page-eyebrow i { margin-right: var(--spacing-xs); }
+.admin-page-description { max-width: 720px; margin: 0; color: var(--text-light); }
+.admin-page-actions { display: flex; flex: 0 0 auto; flex-wrap: wrap; justify-content: flex-end; gap: var(--spacing-sm); }
+.admin-page-actions .btn { margin: 0; }
+
+.admin-surface {
+    padding: var(--spacing-lg);
+    border: 1px solid var(--border-light);
+    border-radius: var(--border-radius-lg);
+    background: var(--bg-dark-secondary);
+    box-shadow: var(--shadow-card);
+    backdrop-filter: var(--backdrop-blur);
+}
+
+.admin-surface + .admin-surface { margin-top: var(--spacing-lg); }
+
+/* Admin actions share one geometry regardless of element type or page CSS. */
+.admin-ui .btn:not(.btn-circle) {
+    display: inline-flex;
+    min-height: 40px;
+    align-items: center;
+    justify-content: center;
+    gap: .45rem;
+    margin: 0;
+    line-height: 1.2;
+}
+
+.admin-ui .btn-sm:not(.btn-circle) { min-height: 34px; }
+.admin-ui .btn-lg:not(.btn-circle) { min-height: 48px; }
+.admin-ui .btn-group > .btn { margin: 0; }
+
+.admin-ui .container-settings {
+    width: min(1200px, 100%);
+    min-width: 0;
+    margin: 0 auto;
+}
+
+.admin-ui :is(.form-control, .form-select, input[type="file"]) { min-height: 40px; }
+
+.admin-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
+}
+
+.admin-section-header h2,
+.admin-section-header h3 { margin: 0; color: var(--text-white); }
+.admin-section-header p { margin: .25rem 0 0; color: var(--text-light); }
+
+@media (max-width: 768px) {
+    .admin-page-header { align-items: flex-start; flex-direction: column; }
+    .admin-page-actions { width: 100%; justify-content: flex-start; }
+    .admin-surface { padding: var(--spacing-md); }
+}
+
 /* Base Admin Section */
 .admin-section {
     background: var(--bg-dark-tertiary);

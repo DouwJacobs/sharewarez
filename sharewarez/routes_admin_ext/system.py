@@ -1,11 +1,11 @@
 from flask import render_template, request, jsonify
 from flask_login import login_required, current_user
 from sharewarez.utils.auth import admin_required
-from sharewarez.models import SystemEvents, DiscoverySection, Game, Library, user_favorites
+from sharewarez.models import SystemEvents, DiscoverySection, Game, Library, User, user_favorites
 from sharewarez import db
 from sharewarez.utils.event_logging import log_system_event
-from sqlalchemy import select, and_, func
-from datetime import datetime
+from sqlalchemy import select, and_, func, or_
+from datetime import datetime, timedelta
 from typing import Optional, Dict, Any
 from . import admin2_bp
 
@@ -53,6 +53,7 @@ def system_logs() -> str:
     Query parameters:
     - page: Page number (default: 1)
     - per_page: Items per page (default: 50, max: 200)
+    - q: Search message, type, level, and user
     - event_type: Filter by event type
     - event_level: Filter by event level
     - date_from: Filter events from date (YYYY-MM-DD format)
@@ -66,6 +67,7 @@ def system_logs() -> str:
     # Get filter parameters
     event_type = request.args.get('event_type', '').strip()
     event_level = request.args.get('event_level', '').strip()
+    search_query = request.args.get('q', '').strip()[:100]
     date_from_str = request.args.get('date_from', '').strip()
     date_to_str = request.args.get('date_to', '').strip()
     
@@ -84,20 +86,59 @@ def system_logs() -> str:
     
     if event_level:
         filters.append(SystemEvents.event_level == event_level)
+
+    if search_query:
+        search_pattern = f'%{search_query}%'
+        filters.append(or_(
+            SystemEvents.event_text.ilike(search_pattern),
+            SystemEvents.event_type.ilike(search_pattern),
+            SystemEvents.event_level.ilike(search_pattern),
+            SystemEvents.user.has(User.name.ilike(search_pattern)),
+            SystemEvents.user.has(User.email.ilike(search_pattern)),
+        ))
     
     if date_from:
         filters.append(SystemEvents.timestamp >= date_from)
     
     if date_to:
-        # Add one day to include events from the entire end date
-        date_to_end = date_to.replace(hour=23, minute=59, second=59)
-        filters.append(SystemEvents.timestamp <= date_to_end)
+        # Use an exclusive next-day boundary so fractional seconds are included.
+        filters.append(SystemEvents.timestamp < date_to + timedelta(days=1))
     
     if filters:
         query = query.filter(and_(*filters))
     
-    logs = db.paginate(query, page=page, per_page=per_page)
-    return render_template('admin/admin_server_logs.html', logs=logs)
+    logs = db.paginate(query, page=page, per_page=per_page, error_out=False)
+
+    event_types = db.session.execute(
+        select(SystemEvents.event_type).distinct().order_by(SystemEvents.event_type)
+    ).scalars().all()
+    event_levels = db.session.execute(
+        select(SystemEvents.event_level).distinct().order_by(SystemEvents.event_level)
+    ).scalars().all()
+    since = datetime.now() - timedelta(hours=24)
+    summary_rows = db.session.execute(
+        select(SystemEvents.event_level, func.count(SystemEvents.id))
+        .where(SystemEvents.timestamp >= since)
+        .group_by(SystemEvents.event_level)
+    ).all()
+    summary = {level: count for level, count in summary_rows}
+
+    active_filters = {
+        'q': search_query,
+        'event_type': event_type,
+        'event_level': event_level,
+        'date_from': date_from_str if date_from else '',
+        'date_to': date_to_str if date_to else '',
+        'per_page': per_page,
+    }
+    return render_template(
+        'admin/admin_server_logs.html',
+        logs=logs,
+        event_types=event_types,
+        event_levels=event_levels,
+        summary=summary,
+        active_filters=active_filters,
+    )
 
 @admin2_bp.route('/admin/discovery_sections')
 @login_required

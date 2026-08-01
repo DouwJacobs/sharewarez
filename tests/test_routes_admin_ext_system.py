@@ -257,6 +257,26 @@ class TestSystemLogsRoute:
         
         response = client.get('/admin/system_logs?event_level=error')
         assert response.status_code == 200
+
+    def test_system_logs_searches_event_messages(self, client, admin_user, sample_system_events):
+        with client.session_transaction() as sess:
+            sess['_user_id'] = str(admin_user.id)
+            sess['_fresh'] = True
+
+        response = client.get('/admin/system_logs?q=startup')
+        assert response.status_code == 200
+        assert b'System startup completed' in response.data
+        assert b'matching event' in response.data
+
+    def test_system_logs_preserves_filters_in_pagination(self, client, admin_user, sample_system_events):
+        with client.session_transaction() as sess:
+            sess['_user_id'] = str(admin_user.id)
+            sess['_fresh'] = True
+
+        response = client.get('/admin/system_logs?q=system&event_level=information&per_page=1')
+        assert response.status_code == 200
+        assert b'q=system' in response.data
+        assert b'event_level=information' in response.data
     
     def test_system_logs_date_filter(self, client, admin_user, sample_system_events):
         """Test filtering by date range."""

@@ -1,81 +1,43 @@
-document.addEventListener("DOMContentLoaded", function() {
-    // Easter egg click handler for the download banner
-    const downloadBanner = document.querySelector('.logo-download img');
-    if (downloadBanner) {
-        downloadBanner.addEventListener('click', function(e) {
-            // Get click coordinates relative to the image
-            const rect = this.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
-            console.log(x, y);
-            // Calculate center point
-            const centerX = this.width / 2;
-            const centerY = this.height / 2;
-            console.log(centerX, centerY);
-            // Check if click is within 25x25px area of center
-            if (Math.abs(x - centerX) <= 12.5 && Math.abs(y - centerY) <= 12.5) {
-                console.log('Easter egg activated!');
-                // Remove existing animation class if present
-                this.classList.remove('bounce-wiggle');
-                // Force reflow
-                void this.offsetWidth;
-                // Add animation class
-                this.classList.add('bounce-wiggle');
-            }
-        });
-    }
+document.addEventListener('DOMContentLoaded', () => {
+    const rows = [...document.querySelectorAll('tr[data-download-id]')];
+    if (!rows.length) return;
 
-    // Auto-dismiss flash messages after 5 seconds
-    const flashMessages = document.querySelectorAll('.flash');
-    flashMessages.forEach(flash => {
-        setTimeout(() => {
-            if (flash && flash.parentNode) {
-                flash.remove();
-            }
-        }, 5000);
-    });
+    const activeStatuses = new Set(['pending', 'processing']);
+    let delay = 3000;
+    let timer = null;
 
-    const downloads = document.querySelectorAll("tr[data-download-id]");
-    
-    downloads.forEach((download) => {
-        const download_id = download.getAttribute("data-download-id");
-        const gameName = download.querySelector("td").textContent;
-        const fileName = download.querySelector(".file-name-cell").textContent;	
-        
-        // Status handling removed - no longer tracking processing downloads
-        
-        checkDownloadStatus(download_id);
-        setInterval(() => checkDownloadStatus(download_id), 5000);
-    });
-});
+    const renderStatus = (row, status) => {
+        const cell = row.querySelector('.status-cell');
+        if (!cell) return;
+        const normalized = status.toLowerCase().replaceAll(' ', '-');
+        cell.innerHTML = `<span class="download-status download-status--${normalized}"><span class="download-status-dot" aria-hidden="true"></span>${status.replaceAll('_', ' ').replace(/\b\w/g, char => char.toUpperCase())}</span>`;
+        row.dataset.downloadStatus = status;
+        if (status === 'available' && !row.querySelector('.actions-cell a[href*="download_zip"]')) window.location.reload();
+    };
 
-function checkDownloadStatus(download_id) {
-    fetch(`/check_download_status/${download_id}`)
-    .then(response => response.json())
-    .then(data => {
-        if (data.status === 'available') {
-            const downloadRow = document.querySelector(`tr[data-download-id="${download_id}"]`);
-            if (downloadRow) {
-                updateDownloadRow(downloadRow, data.downloadId);
-            }
+    const refresh = async () => {
+        const activeRows = rows.filter(row => activeStatuses.has(row.dataset.downloadStatus || row.querySelector('.download-status')?.textContent.trim().toLowerCase()));
+        if (!activeRows.length) return;
+        const ids = activeRows.map(row => row.dataset.downloadId).join(',');
+        try {
+            const response = await fetch(`/api/downloads/status?ids=${encodeURIComponent(ids)}`);
+            if (!response.ok) throw new Error('Status refresh failed');
+            const data = await response.json();
+            data.downloads.forEach(item => {
+                const row = document.querySelector(`tr[data-download-id="${item.id}"]`);
+                if (row) renderStatus(row, item.status);
+            });
+            delay = 3000;
+        } catch (error) {
+            console.error(error);
+            delay = Math.min(delay * 2, 30000);
         }
-    })
-    .catch(error => console.error('Error fetching download status:', error));
-}
+        timer = window.setTimeout(refresh, delay);
+    };
 
-function updateDownloadRow(downloadRow, downloadId) {
-    // Update the status cell
-    const statusCell = downloadRow.querySelector(".status-cell");
-    statusCell.innerHTML = '<span class="status-value" style="color: #005f00; background-color: #e8ffe8; border: 2px solid #004c00; padding: 2px 6px; border-radius: 4px; font-weight: bold;">Available</span>';
-
-    
-    const csrfToken = CSRFUtils.getToken();
-    // Update the actions cell with the CSRF token included in the form
-    const actionsCell = downloadRow.querySelector(".actions-cell");
-    actionsCell.innerHTML = `<a href="/download_zip/${downloadId}" class="btn btn-primary">Download</a>
-                             <form action="/delete_download/${downloadId}" method="post" style="display: inline;">
-                                 <input type="hidden" name="csrf_token" value="${csrfToken}">
-                                 <button type="submit" class="btn btn-danger">Delete</button>
-                             </form>`;
-}
-
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden && timer) window.clearTimeout(timer);
+        else if (!document.hidden) refresh();
+    });
+    refresh();
+});

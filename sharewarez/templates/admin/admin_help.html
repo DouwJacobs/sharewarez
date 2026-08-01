@@ -1,333 +1,94 @@
 {% extends "base.html" %}
-{% block content %}
+{% from "partials/ui_components.html" import admin_page_header %}
 
+{% block styles %}
+{{ super() }}
 <link rel="stylesheet" href="{{ 'css/admin/admin_help.css'|theme_asset }}">
+{% endblock %}
 
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Function to open a specific section
-    function openSection(sectionId) {
-        const section = document.getElementById(sectionId);
-        if (section) {
-            const content = section.querySelector('.collapsible-content');
-            const icon = section.querySelector('.collapse-icon');
-            content.style.display = 'block';
-            icon.classList.remove('collapsed');
-        }
-    }
+{% block content %}
+<main class="admin-page admin-help-page">
+    {{ admin_page_header('Administrator guide', 'Common workflows, feature reference, and troubleshooting for ' ~ site_title ~ ' administrators.', 'Documentation', 'fa-book-open') }}
 
-    // Handle hash changes
-    function handleHashChange() {
-        const hash = window.location.hash.slice(1); // Remove the # symbol
-        if (hash) {
-            openSection(hash);
-        }
-    }
+    <nav class="admin-surface help-quick-links" aria-label="Help topics">
+        <a href="#quick-start"><i class="fas fa-rocket" aria-hidden="true"></i> Quick start</a>
+        <a href="#libraries"><i class="fas fa-layer-group" aria-hidden="true"></i> Libraries</a>
+        <a href="#downloads"><i class="fas fa-download" aria-hidden="true"></i> Downloads</a>
+        <a href="#access"><i class="fas fa-users" aria-hidden="true"></i> Access</a>
+        <a href="#integrations"><i class="fas fa-plug" aria-hidden="true"></i> Integrations</a>
+        <a href="#maintenance"><i class="fas fa-screwdriver-wrench" aria-hidden="true"></i> Troubleshooting</a>
+    </nav>
 
-    // Listen for hash changes
-    window.addEventListener('hashchange', handleHashChange);
-
-    // Handle initial page load with hash
-    if (window.location.hash) {
-        handleHashChange();
-    }
-
-    // Add click handlers for all section headers
-    document.querySelectorAll('.admin-section h2').forEach(header => {
-        header.addEventListener('click', function() {
-            const section = this.closest('.admin-section');
-            const content = section.querySelector('.collapsible-content');
-            const icon = this.querySelector('.collapse-icon');
-            
-            if (content.style.display === 'none') {
-                content.style.display = 'block';
-                icon.classList.remove('collapsed');
-            } else {
-                content.style.display = 'none';
-                icon.classList.add('collapsed');
-            }
-        });
-    });
-
-    // Collapse all sections except Quick Start Guide by default
-    document.querySelectorAll('.admin-section').forEach(section => {
-        if (section.id !== 'quick-start') {
-            const content = section.querySelector('.collapsible-content');
-            content.style.display = 'none';
-            section.querySelector('.collapse-icon').classList.add('collapsed');
-        }
-    });
-});
-</script>
-
-<div class="help-content">
-    <h1>SharewareZ Administrator Guide</h1>
-    <div class="admin-section" id="index">
-        <h2><i class="fas fa-chevron-down collapse-icon"></i>Quick Navigation</h2>
-        <div class="collapsible-content">
-            <ul>
-                <li><a href="#system-overview">System Overview</a></li>
-                <li><a href="#library-management">Library Management</a></li>
-                <li><a href="#user-management">User Management & Access Control</a></li>
-                <li><a href="#scanning">Scanning & Content Management</a></li>
-                <li><a href="#email-settings">Email & SMTP Configuration</a></li>
-                <li><a href="#discord">Discord Integration</a></li>
-                <li><a href="#maintenance">System Maintenance</a></li>
-            </ul>
-        </div>
-    </div>
-    <div class="admin-section" id="quick-start">
-        <h2><i class="fas fa-chevron-down collapse-icon"></i>Quick Start Guide</h2>
-        <div class="collapsible-content">
-            <ol class="step-by-step">
-                <li>Create a new library by going to Library Management in the admin dashboard</li>
-                <li>Select the appropriate platform type (PC, Windows, or specific console) to help IGDB make correct matches</li>
-                <li>Click on "Scan" to begin scanning a folder that's accessible to the application</li>
-                <li>The system will index all folder names or file names and add them to the library</li>
-                <li>Once scanning is complete, your games will be ready to browse and download</li>
-            </ol>
-            <div class="note">
-                <strong>Note:</strong> Correct platform selection is crucial for accurate game matching with IGDB database.
+    <section class="help-topic-list" aria-label="Administrator help">
+        <details class="admin-surface help-topic" id="quick-start" open>
+            <summary><span><i class="fas fa-rocket" aria-hidden="true"></i><strong>Quick start</strong><small>Create a library and make its games available.</small></span></summary>
+            <div class="help-topic-content">
+                <ol class="help-steps">
+                    <li><span>1</span><div><strong>Create a library</strong><p>Open Game Libraries, choose a clear name, and select the platform that best matches the collection.</p></div></li>
+                    <li><span>2</span><div><strong>Start a scan</strong><p>Select a folder within the configured storage roots. {{ site_title }} indexes folder or file names and attempts to match them with IGDB.</p></div></li>
+                    <li><span>3</span><div><strong>Resolve unmatched entries</strong><p>Use the unmatched list to search IGDB manually or add an entry without an IGDB match.</p></div></li>
+                    <li><span>4</span><div><strong>Review the library</strong><p>Confirm artwork, metadata, paths, and download behavior before inviting users.</p></div></li>
+                </ol>
+                <div class="help-callout"><strong>Tip:</strong> Accurate platform selection and clean game names substantially improve automatic matching.</div>
             </div>
-            <div class="note important">
-                <strong>Important:</strong> Folder scanning behaviour:
-                <ul>
-                    <li>If a folder contains multiple files, they will be automatically zipped during downloading</li>
-                    <li>To prevent automatic zipping, ensure there is only a single main file in the folder (like .zip or .iso)</li>
-                    <li>Additional .nfo and .sfv files are allowed without triggering zipping</li>
-                    <li>Single file games will be offered as a direct download link instead of processing into a .zip</li>
-                </ul>
-            </div>
-        </div>
-    </div>
+        </details>
 
-    <!-- System Overview -->
-    <div class="admin-section" id="system-overview">
-        <h2><i class="fas fa-chevron-down collapse-icon"></i>System Overview</h2>
-        <div class="collapsible-content">
-            <p>SharewareZ is a comprehensive game library management system that allows you to organize, catalog, and share your game collection.</p>
-            
-            <div class="help-subsection">
-                <h3>Key Features</h3>
-                <ul>
-                    <li>Multiple library support with platform-specific organization</li>
-                    <li>Automated game scanning and IGDB integration</li>
-                    <li>User management with role-based access control</li>
-                    <li>Download management and tracking</li>
-                    <li>Customizable theme system</li>
-                </ul>
+        <details class="admin-surface help-topic" id="libraries">
+            <summary><span><i class="fas fa-layer-group" aria-hidden="true"></i><strong>Libraries, scanning, and metadata</strong><small>Organize content and maintain accurate matches.</small></span></summary>
+            <div class="help-topic-content help-columns">
+                <div><h3>Library management</h3><ul><li>Each library represents a platform or logical collection.</li><li>Libraries can be reordered, edited, rescanned, or removed.</li><li>Removing a database entry and deleting files from disk are separate operations.</li></ul></div>
+                <div><h3>Scan behavior</h3><ul><li>Folder-based and file-based collections are supported.</li><li>Release-name filters improve filename parsing.</li><li>Use “Remove missing” only after confirming that all storage paths are mounted.</li><li>Scan jobs, unmatched entries, and the image queue are managed from Scan Management.</li></ul></div>
+                <div><h3>Local metadata</h3><ul><li><code>sharewarez.json</code> can preserve an IGDB match beside a game.</li><li>Local covers and screenshots can take priority when enabled.</li><li>HowLongToBeat estimates are optional and use the configured request delay.</li></ul></div>
+                <div><h3>Updates and extras</h3><ul><li>Configured Updates and Extras subfolders are indexed separately.</li><li>They appear as optional files on the game-details page.</li><li>They are excluded from the main game payload when recognized.</li></ul></div>
             </div>
-        </div>
-    </div>
+        </details>
 
-    <!-- Library Management -->
-    <div class="admin-section" id="library-management">
-        <h2><i class="fas fa-chevron-down collapse-icon"></i>Library Management</h2>
-        <div class="collapsible-content">
-            <div class="help-subsection">
-                <h3>Creating Libraries</h3>
-                <ul>
-                    <li>Each library represents a collection of games for a specific platform</li>
-                    <li>Libraries can be customized with names and platform-specific icons</li>
-                    <li>Multiple libraries can be created for different platforms or categories</li>
-                </ul>
-            </div>
-
-            <div class="help-subsection">
-                <h3>Unmatched Folders</h3>
-                <p>Unmatched folders are game directories that couldn't be automatically matched with IGDB database entries. These can occur when:</p>
-                <ul>
-                    <li>The game name doesn't match IGDB database entries</li>
-                    <li>The release group naming pattern isn't recognized</li>
-                    <li>The game isn't listed in IGDB's database</li>
-                </ul>
-                <p>You can manually identify these games using the "Identify" button in the unmatched folders section, which allows you to search and match with IGDB entries.</p>
-            </div>
-        </div>
-    </div>
-
-    <!-- User Management -->
-    <div class="admin-section" id="user-management">
-        <h2><i class="fas fa-chevron-down collapse-icon"></i>User Management & Access Control</h2>
-        <div class="collapsible-content">
-            <div class="help-subsection">
-                <h3>Invite System</h3>
-                <p>The invite system allows controlled user registration through:</p>
-                <ul>
-                    <li>Admin-generated invite codes</li>
-                    <li>User-to-user invitations (when enabled)</li>
-                    <li>Configurable invite quotas per user</li>
-                </ul>
-                <p>Enable or disable the invite system in Server Settings. When enabled, admins can distribute invite tokens to users, allowing them to invite others to join.</p>
-            </div>
-
-            <div class="help-subsection">
-                <h3>Email Whitelist</h3>
-                <p>The email whitelist provides an additional layer of registration control:</p>
-                <ul>
-                    <li>Only whitelisted email addresses can register</li>
-                    <li>Works alongside or independently of the invite system</li>
-                    <li>Useful for limiting registration to specific domains or users</li>
-                </ul>
-            </div>
-        </div>
-    </div>
-
-    <!-- Scanning Section -->
-    <div class="admin-section" id="scanning">
-        <h2><i class="fas fa-chevron-down collapse-icon"></i>Scanning & Content Management</h2>
-        <div class="collapsible-content">
-            <div class="help-subsection">
-                <h3>Scan Management</h3>
-                <ul>
-                    <li>Automatic scanning of specified folders for new games</li>
-                    <li>Support for both folder-based and file-based game structures</li>
-                    <li>Customizable release group filters for better name parsing</li>
-                    <li>Options to remove missing games during scans</li>
-                </ul>
-            </div>
-
-            <div class="help-subsection">
-                <h3>Content Updates</h3>
-                <p>The system can track and manage:</p>
-                <ul>
-                    <li>Game updates in designated update folders</li>
-                    <li>Extra content in specified extras folders</li>
-                    <li>Automatic metadata updates from IGDB</li>
-                </ul>
-            </div>
-
-            <div class="help-subsection">
-                <h3>Scanning Best Practices</h3>
-                <ul>
-                    <li>Ensure folder names match game titles as closely as possible</li>
-                    <li>Use release group filters to improve name parsing</li>
-                    <li>Consider using file-based scanning for ROMs and smaller games</li>
-                    <li>Enable "Remove Missing" only when you're sure about folder contents</li>
-                    <li>For optimal performance:
-                        <ul>
-                            <li>Use single files (.zip, .iso) instead of multiple files when possible</li>
-                            <li>Keep folder structures simple - one main file per game</li>
-                            <li>Only include necessary files (.nfo, .sfv) alongside the main game file</li>
-                        </ul>
-                    </li>
-                </ul>
-            </div>
-
-            <!-- Adding new section about Updates and Extras -->
-            <div class="help-subsection">
-                <h3>Scanning for Updates and Extra Content</h3>
-                <p>The scanning process supports detection of game updates and extra content in subfolders:</p>
-                <ul>
-                    <li><strong>Updates:</strong> Patches and version updates that bring games to newer versions
-                        <ul>
-                            <li>Located in the 'updates' subfolder within game directories</li>
-                            <li>Offered as separate download options from the main game</li>
-                            <li>Prevents users from having to redownload the entire game package</li>
-                        </ul>
-                    </li>
-                    <li><strong>Extras:</strong> Additional content files
-                        <ul>
-                            <li>Located in the 'extras' subfolder within game directories</li>
-                            <li>Can include documentation, soundtracks, image sets, etc.</li>
-                            <li>Available as optional downloads alongside the main game</li>
-                        </ul>
-                    </li>
-                </ul>
-                <div class="note">
-                    <strong>Configuration:</strong> Enable these features in Server Settings and configure the appropriate folder names
-                    for updates and extras scanning.
+        <details class="admin-surface help-topic" id="downloads">
+            <summary><span><i class="fas fa-download" aria-hidden="true"></i><strong>Downloads</strong><small>Direct files, streamed folders, status, and administration.</small></span></summary>
+            <div class="help-topic-content">
+                <div class="help-columns">
+                    <div><h3>How files are delivered</h3><ul><li>A game stored as one file, including an existing ZIP, is served directly.</li><li>A multi-file game folder is streamed as a ZIP on demand; {{ site_title }} does not need to create a temporary archive first.</li><li>Metadata files such as <code>.nfo</code>, <code>.sfv</code>, <code>file_id.diz</code>, and <code>sharewarez.json</code> do not force a single-file game to be repackaged.</li></ul></div>
+                    <div><h3>Managing requests</h3><ul><li>Game names link back to their game-details pages.</li><li>Users can cancel pending legacy jobs or retry failed/cancelled requests when the source still exists.</li><li>Administrators can filter by user or status and apply bulk actions.</li><li>Administrative actions are available in the audit log.</li></ul></div>
                 </div>
+                <div class="help-callout help-callout-warning"><strong>Paths:</strong> Downloads are allowed only from configured storage roots. A retry fails when the stored source path no longer exists or is inaccessible.</div>
             </div>
-        </div>
-    </div>
+        </details>
 
-    <!-- Email Settings -->
-    <div class="admin-section" id="email-settings">
-        <h2><i class="fas fa-chevron-down collapse-icon"></i>Email & SMTP Configuration</h2>
-        <div class="collapsible-content">
-            <p>Email functionality is used for:</p>
-            <ul>
-                <li>User registration verification</li>
-                <li>Password reset requests</li>
-                <li>System notifications</li>
-                <li>Newsletter distribution</li>
-            </ul>
-            
-            <div class="help-subsection">
-                <h3>SMTP Settings</h3>
-                <p>Configure your SMTP settings with:</p>
-                <ul>
-                    <li>SMTP server address and port</li>
-                    <li>Authentication credentials</li>
-                    <li>TLS/SSL security options</li>
-                    <li>Default sender email address</li>
-                </ul>
+        <details class="admin-surface help-topic" id="access">
+            <summary><span><i class="fas fa-users" aria-hidden="true"></i><strong>Users and access control</strong><small>Roles, invitations, whitelist, and search permissions.</small></span></summary>
+            <div class="help-topic-content help-columns">
+                <div><h3>Accounts and roles</h3><ul><li>Administrators manage account state, roles, verification, profiles, and passwords.</li><li>Administrator routes enforce authorization on the server, not only in the interface.</li><li>Review access when disabling or deleting an account.</li></ul></div>
+                <div><h3>Registration control</h3><ul><li>The whitelist permits approved email addresses to self-register.</li><li>Invitations provide controlled registration outside the whitelist.</li><li>User-to-user invitations and quotas are configurable in Server Settings.</li></ul></div>
+                <div><h3>Global search</h3><ul><li>All signed-in users can search games and libraries.</li><li>Only administrators receive user and settings results.</li><li><kbd>Ctrl</kbd> + <kbd>K</kbd> opens search from anywhere.</li></ul></div>
+                <div><h3>Security basics</h3><ul><li>Use HTTPS outside a trusted local network.</li><li>Keep the application secret and integration credentials out of source control.</li><li>Review security and audit events in System Logs.</li></ul></div>
             </div>
-        </div>
-    </div>
+        </details>
 
-    <!-- Discord Integration -->
-    <div class="admin-section" id="discord">
-        <h2><i class="fas fa-chevron-down collapse-icon"></i>Discord Integration</h2>
-        <div class="collapsible-content">
-            <p>Discord integration allows automatic notifications for:</p>
-            <ul>
-                <li>New game additions</li>
-                <li>Game updates</li>
-                <li>System announcements</li>
-                <li>Download completions</li>
-            </ul>
-            <p>Configure webhook URLs and customize bot appearance in Discord Settings.</p>
-        </div>
-    </div>
-
-    <!-- System Maintenance -->
-    <div class="admin-section" id="maintenance">
-        <h2><i class="fas fa-chevron-down collapse-icon"></i>System Maintenance</h2>
-        <div class="collapsible-content">
-            <div class="help-subsection">
-                <h3>Regular Maintenance Tasks</h3>
-                <ul>
-                    <li>Monitor system logs for issues</li>
-                    <li>Clean up temporary download files</li>
-                    <li>Verify library integrity</li>
-                    <li>Update IGDB metadata</li>
-                </ul>
+        <details class="admin-surface help-topic" id="integrations">
+            <summary><span><i class="fas fa-plug" aria-hidden="true"></i><strong>Integrations and notifications</strong><small>IGDB, SMTP, Discord, newsletters, and themes.</small></span></summary>
+            <div class="help-topic-content help-columns">
+                <div><h3>IGDB</h3><p>Configure credentials and test connectivity before scanning. Matching and artwork retrieval depend on a working IGDB connection.</p></div>
+                <div><h3>SMTP</h3><p>Email supports verification, password resets, invitations, and newsletters. Use the integration test after changing server, port, authentication, or TLS settings.</p></div>
+                <div><h3>Discord</h3><p>The current webhook integration supports automatic new-game notifications and optional manual notifications. Settings for other event types may be present but are not all implemented yet.</p></div>
+                <div><h3>Themes</h3><p>Themes may override selected assets and fall back to the default theme for missing files. Review custom JavaScript before installation. See the <a href="{{ url_for('admin2.theme_readme') }}">theme guide</a>.</p></div>
             </div>
+        </details>
 
-            <div class="help-subsection">
-                <h3>Troubleshooting</h3>
-                <ul>
-                    <li>Check server logs for detailed error information</li>
-                    <li>If you have a scan that seems to be stuck:
-                        <ul>
-                            <li>Use the Scan Manager and click on Clear All on Scan Jobs Management</li>
-                            <li>This will clear the job from the list, assuming it's not really running anymore</li>
-                            <li>Sometimes you have a stuck scan job that seems to be running, but it's no longer running</li>
-                            <li>This can happen if the application was stopped during the scan process and then started again</li>
-                        </ul>
-                    </li>
-                    <li>Verify file permissions on library folders</li>
-                    <li>Test SMTP and Discord integration regularly</li>
-                    <li>Monitor disk space usage</li>
-                    <li>Check the server logs for any error messages</li>
-                    <li>Ensure all required services are running</li>
-                </ul>
+        <details class="admin-surface help-topic" id="maintenance">
+            <summary><span><i class="fas fa-screwdriver-wrench" aria-hidden="true"></i><strong>Maintenance and troubleshooting</strong><small>Fast checks for common operational problems.</small></span></summary>
+            <div class="help-topic-content">
+                <div class="table-responsive"><table class="table table-dark help-troubleshooting-table"><thead><tr><th>Symptom</th><th>Check</th><th>Action</th></tr></thead><tbody>
+                    <tr><td>Application does not start</td><td>Database host, port, credentials, and startup output</td><td>Confirm PostgreSQL is reachable, activate the <code>sharewarez</code> pyenv, then run <code>./startweb.sh</code>.</td></tr>
+                    <tr><td>Scan appears stuck</td><td>Scan job status and System Logs</td><td>Confirm no worker is active before clearing stale jobs. Then retry the scan.</td></tr>
+                    <tr><td>Games are missing</td><td>Storage mount, library path, unmatched entries, and “Remove missing”</td><td>Restore the mount or correct the path before rescanning.</td></tr>
+                    <tr><td>Cover image is missing</td><td>Image Queue, IGDB connectivity, and local image path</td><td>Retry the queued image or refresh images from the game menu.</td></tr>
+                    <tr><td>Download retry fails</td><td>Stored source path and allowed storage roots</td><td>Restore the source or update the game path, then create a new request.</td></tr>
+                    <tr><td>Email or Discord fails</td><td>Integration test and redacted System Logs</td><td>Correct credentials, endpoint, port, TLS, or webhook configuration.</td></tr>
+                    <tr><td>Theme changes do not appear</td><td>Selected theme, browser cache, and <code>DEV_MODE</code></td><td>Restart with <code>./startweb.sh</code> and hard-refresh the browser.</td></tr>
+                </tbody></table></div>
+                <div class="help-callout"><strong>Routine checks:</strong> monitor logs and disk space, resolve unmatched entries, review failed image jobs, test integrations after configuration changes, and keep a database backup before destructive maintenance.</div>
             </div>
-
-            <div class="help-subsection">
-                <h3>Post-Setup Maintenance</h3>
-                <ul>
-                    <li>Regularly check unmatched folders and resolve them</li>
-                    <li>Monitor disk space usage for download directory</li>
-                    <li>Update IGDB metadata periodically</li>
-                    <li>Clean up temporary files and old downloads</li>
-                    <li>Review and update release group filters as needed</li>
-                </ul>
-            </div>
-        </div>
-    </div>
-</div>
-
+        </details>
+    </section>
+</main>
 {% endblock %}

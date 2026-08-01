@@ -223,54 +223,6 @@
     gap: 10px;
 }
 
-.library-search-button {
-    display: inline-flex;
-    align-items: center;
-    gap: 7px;
-    min-height: 36px;
-    padding: 0 10px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 10px;
-    background: rgba(255, 255, 255, 0.035);
-    color: rgba(225, 229, 245, 0.78);
-    font-size: 0.8rem;
-    font-weight: 600;
-    line-height: 1;
-    white-space: nowrap;
-}
-
-.library-search-button i { color: rgba(167, 187, 255, 0.88); }
-.library-search-button:hover { border-color: rgba(154, 177, 255, 0.3); background: rgba(98, 122, 239, 0.12); color: #fff; }
-.library-search-button:focus-visible { outline: 2px solid rgba(164, 183, 255, 0.9); outline-offset: 2px; }
-.library-search-button kbd {
-    margin-left: 4px;
-    padding: 1px 5px;
-    border: 1px solid rgba(255, 255, 255, 0.18);
-    border-radius: 4px;
-    background: rgba(255, 255, 255, 0.07);
-    color: rgba(225, 229, 245, 0.75);
-    font-size: 0.7rem;
-}
-
-/* Bootstrap supplies the backdrop. A second opaque layer on the modal itself
-   would otherwise cover the dialog and intercept its controls. */
-#searchModal.modal { z-index: 1080 !important; background: transparent !important; }
-#searchModal .modal-dialog { z-index: 1081; pointer-events: none; }
-#searchModal .modal-content-search { position: relative; z-index: 1082; pointer-events: auto; }
-#searchModal .modal-header { padding: 0 0 14px; }
-#searchModal .modal-body { padding: 0; }
-#searchModal .btn-close { filter: invert(1); }
-
-.library-search-status {
-    min-height: 20px;
-    margin: 10px 0;
-    color: rgba(205, 214, 235, 0.66);
-    font-size: 0.82rem;
-}
-
-.library-search-status i { margin-right: 6px; color: rgba(154, 177, 255, 0.92); }
-.library-search-status.is-error { color: rgba(255, 155, 166, 0.9); }
-
 .library-filter-count {
     display: inline-flex;
     align-items: center;
@@ -326,37 +278,6 @@
 .game-discovery-container {
     display: flex;
     flex-direction: row;
-}
-
-.modal-content-search button.close {
-    background-color: var(--btn-secondary);
-    color: var(--text-white);
-    border: 1px solid var(--btn-secondary);
-    border-radius: 4px;
-}
-
-.modal-content-search button.close:hover {
-    background-color: var(--btn-dark);
-}
-
-#searchModal .search-result {
-    margin: 5px 0;
-    padding: 11px 12px;
-    border: 1px solid transparent;
-    border-radius: 10px;
-    color: rgba(225, 229, 245, 0.82);
-    cursor: pointer;
-    transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease, transform 0.18s ease;
-}
-
-#searchModal .search-result:hover,
-#searchModal .search-result.selected,
-#searchModal .search-result:focus-visible {
-    border-color: rgba(154, 177, 255, 0.28);
-    background: linear-gradient(90deg, rgba(98, 122, 239, 0.2), rgba(98, 122, 239, 0.07));
-    color: #fff;
-    outline: none;
-    transform: translateX(2px);
 }
 
 /* Modern Pagination Styles */
@@ -545,8 +466,6 @@
     }
 
     .library-browser-actions { width: 100%; justify-content: space-between; }
-    .library-search-button { min-height: 40px; }
-
     /* A single generous card column remains easier to browse and tap. */
     .game-library-container {
         grid-template-columns: minmax(0, 320px) !important;

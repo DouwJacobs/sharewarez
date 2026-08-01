@@ -23,6 +23,8 @@ DEFAULT_DOWNLOAD_THREADS = 8
 
 # Default settings configuration
 DEFAULT_SETTINGS = {
+    'siteTitle': 'SharewareZ',
+    'brandLogoPath': 'newstyle/sharewarez_logo.png',
     'showSystemLogo': True,
     'showHelpButton': True,
     'enableWebLinksOnDetailsPage': True,

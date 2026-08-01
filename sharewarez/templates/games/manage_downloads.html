@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "partials/ui_components.html" import page_header, status_badge, empty_state, pagination as render_pagination %}
 
 {% block styles %}
 {{ super() }}
@@ -7,14 +8,7 @@
 
 {% block content %}
 <section class="downloads-page" aria-labelledby="downloads-page-title">
-    <header class="downloads-page-header">
-        <div>
-            <p class="downloads-page-eyebrow"><i class="fas fa-download" aria-hidden="true"></i> Library activity</p>
-            <h1 id="downloads-page-title">My downloads</h1>
-            <p>Track your requested files and return to a game whenever you need more details.</p>
-        </div>
-        <span class="downloads-count">{{ download_requests|length }} request{% if download_requests|length != 1 %}s{% endif %}</span>
-    </header>
+    {{ page_header('My downloads', 'Track your requested files and return to a game whenever you need more details.', 'Library activity', 'fa-download', pagination.total, 'request') }}
 
     <div class="downloads-panel">
         {% if download_requests %}
@@ -23,7 +17,6 @@
                 <thead>
                     <tr>
                         <th>Game</th>
-                        <th>File</th>
                         <th>Status</th>
                         <th>Size</th>
                         <th class="text-end">Actions</th>
@@ -31,7 +24,7 @@
                 </thead>
                 <tbody>
                     {% for download in download_requests %}
-                    <tr data-download-id="{{ download.id }}">
+                    <tr data-download-id="{{ download.id }}" data-download-status="{{ download.status }}">
                         <td>
                             <a class="downloads-game-link" href="{{ url_for('games.game_details', game_uuid=download.game_uuid) }}">
                                 <i class="fas fa-gamepad" aria-hidden="true"></i>
@@ -39,17 +32,23 @@
                                 <i class="fas fa-arrow-up-right-from-square downloads-game-link-icon" aria-hidden="true"></i>
                             </a>
                         </td>
-                        {% set download_file_name = download.zip_file_path.replace('\\', '/').split('/')[-1] if download.zip_file_path else 'Preparing file…' %}
-                        <td class="file-name-cell" title="{{ download_file_name }}">{{ download_file_name }}</td>
                         <td class="status-cell">
-                            <span class="download-status download-status--{{ download.status|lower|replace(' ', '-') }}">
-                                <span class="download-status-dot" aria-hidden="true"></span>{{ download.status|replace('_', ' ')|title }}
-                            </span>
+                            {{ status_badge(download.status) }}
+                            {% if download.status == 'failed' %}<small class="download-failure-reason">{% if not download.file_location %}The source location is unavailable.{% else %}The previous request could not be completed. Retry to validate the source.{% endif %}</small>{% endif %}
                         </td>
                         <td>{{ download.formatted_size }}</td>
                         <td class="actions-cell text-end">
                             {% if download.status == 'available' %}
                             <a href="{{ url_for('download.download_zip', download_id=download.id) }}" class="btn btn-primary btn-sm"><i class="fas fa-download" aria-hidden="true"></i> Download</a>
+                            {% endif %}
+                            {% if download.status in ['pending', 'processing'] %}
+                            <form action="{{ url_for('download.cancel_download', download_id=download.id) }}" method="post" class="inline-form">
+                                {{ form.csrf_token }}<button type="submit" class="btn btn-secondary btn-sm"><i class="fas fa-ban" aria-hidden="true"></i> Cancel</button>
+                            </form>
+                            {% elif download.status in ['failed', 'cancelled'] %}
+                            <form action="{{ url_for('download.retry_download', download_id=download.id) }}" method="post" class="inline-form">
+                                {{ form.csrf_token }}<button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-rotate-right" aria-hidden="true"></i> Retry</button>
+                            </form>
                             {% endif %}
                             <form action="{{ url_for('download.delete_download', download_id=download.id) }}" method="post" class="inline-form">
                                 {{ form.csrf_token }}
@@ -61,13 +60,9 @@
                 </tbody>
             </table>
         </div>
+        {{ render_pagination(pagination, 'download.downloads') }}
         {% else %}
-        <div class="downloads-empty-state">
-            <i class="fas fa-box-open" aria-hidden="true"></i>
-            <h2>No downloads yet</h2>
-            <p>Files you request from a game page will appear here.</p>
-            <a class="btn btn-primary" href="{{ url_for('library.library') }}"><i class="fas fa-gamepad" aria-hidden="true"></i> Browse library</a>
-        </div>
+        {{ empty_state('No downloads yet', 'Files you request from a game page will appear here.', 'fa-box-open', url_for('library.library'), 'Browse library') }}
         {% endif %}
     </div>
 </section>

@@ -11,4 +11,4 @@ def inject_settings():
     return get_global_settings()
 
 # Import routes to register them with the blueprint
-from . import browse, download, filters, game, igdb, library, scan, system, user
+from . import browse, download, filters, game, igdb, library, scan, search, system, user
