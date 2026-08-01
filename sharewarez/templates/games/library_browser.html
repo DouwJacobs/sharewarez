@@ -94,7 +94,6 @@
                             <img src="{{ url_for('static', filename='newstyle/default_cover.jpg') }}" alt="Default Cover Image" class="game-cover">
                         </a>
                     {% endif %}
-                    <a class="game-card-title" href="{{ url_for('games.game_details', game_uuid=game.uuid) }}">{{ game.name }}</a>
                     {% if game.has_local_override %}
                     <div class="local-metadata-badge" title="Uses local metadata or images">L</div>
                     {% endif %}
@@ -133,8 +132,6 @@
                     <option value="20" {% if user_per_page == 20 %}selected{% endif %}>20</option>
                     <option value="50" {% if user_per_page == 50 %}selected{% endif %}>50</option>
                     <option value="100" {% if user_per_page == 100 %}selected{% endif %}>100</option>
-                    <option value="500" {% if user_per_page == 500 %}selected{% endif %}>500</option>
-                    <option value="1000" {% if user_per_page == 1000 %}selected{% endif %}>1000</option>
                 </select>
             </div>
         </div>

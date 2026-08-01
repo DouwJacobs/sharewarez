@@ -13,6 +13,7 @@ from urllib.parse import urlparse
 from sharewarez.utils.functions import comma_separated_urls
 from sharewarez.utils.themes import ThemeManager
 from flask import current_app
+from werkzeug.utils import secure_filename
 
 
 def safe_url_validator(form, field):
@@ -259,7 +260,11 @@ class UserPreferencesForm(FlaskForm):
         super(UserPreferencesForm, self).__init__(*args, **kwargs)
         theme_manager = ThemeManager(current_app)
         installed_themes = theme_manager.get_installed_themes()
-        self.theme.choices = [('default', 'Default')] + [(theme['name'], theme['name']) for theme in installed_themes if theme['name'] != 'Default']
+        self.theme.choices = [('default', 'Default')] + [
+            (theme.get('id', secure_filename(theme['name'])), theme['name'])
+            for theme in installed_themes
+            if theme.get('id', secure_filename(theme['name'])) != 'default'
+        ]
 
 
 class LibraryForm(FlaskForm):

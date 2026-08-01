@@ -8,6 +8,8 @@
     
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{% block title %}{{ site_title }}{% endblock %}</title>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename=brand_logo_path) }}">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename=brand_logo_path) }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -296,6 +298,8 @@
 
 <!-- Final table layer loads after page styles so every view shares one table language. -->
 <link rel="stylesheet" href="{{ 'css/table-polish.css'|theme_asset }}">
+<link rel="stylesheet" href="{{ 'css/theme-components.css'|theme_asset }}">
+<link rel="stylesheet" href="{{ 'css/theme-overrides.css'|theme_asset }}">
 
 
 <!-- Add this near the end of base.html -->

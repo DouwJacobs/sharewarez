@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% from "partials/ui_components.html" import admin_page_header %}
+
+{% block styles %}
+{{ super() }}
+<link rel="stylesheet" href="{{ 'css/admin/admin_theme_builder.css'|theme_asset }}">
+{% endblock %}
+
+{% block content %}
+<main class="admin-page theme-builder-page">
+    {% call admin_page_header('Edit visual theme' if editing else 'Build a visual theme', 'Tune the shared colors used by navigation, cards, buttons, icons, forms, and tables.', 'Appearance', 'fa-wand-magic-sparkles') %}
+        <a href="{{ url_for('admin2.manage_themes') }}" class="btn btn-secondary"><i class="fas fa-arrow-left" aria-hidden="true"></i> Back to themes</a>
+    {% endcall %}
+
+    <form method="post" class="theme-builder-layout" id="themeBuilderForm">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <section class="admin-panel theme-builder-controls" aria-labelledby="builder-controls-title">
+            <div class="admin-panel-heading"><div><p class="admin-panel-kicker">Theme details</p><h2 id="builder-controls-title">Identity and palette</h2></div></div>
+
+            <div class="theme-builder-field theme-builder-field-wide">
+                <label for="name">Theme name</label>
+                <input class="form-control" id="name" name="name" maxlength="60" required value="{{ theme.name }}">
+            </div>
+            <div class="theme-builder-field theme-builder-field-wide">
+                <label for="description">Description</label>
+                <textarea class="form-control" id="description" name="description" maxlength="240" rows="3" required>{{ theme.description }}</textarea>
+            </div>
+
+            <div class="theme-color-grid">
+                {% for key, label in [
+                    ('accent', 'Primary accent'), ('accent_soft', 'Soft accent'),
+                    ('background', 'Page background'), ('sidebar', 'Sidebar'),
+                    ('card', 'Cards'), ('panel', 'Panels')
+                ] %}
+                <label class="theme-color-field" for="{{ key }}">
+                    <span>{{ label }}</span>
+                    <span class="theme-color-control"><input type="color" id="{{ key }}" name="{{ key }}" value="{{ theme[key] }}"><code data-color-value="{{ key }}">{{ theme[key] }}</code></span>
+                </label>
+                {% endfor %}
+            </div>
+
+            <div class="theme-builder-actions">
+                <button type="button" class="btn btn-secondary" id="resetThemePreview"><i class="fas fa-rotate-left" aria-hidden="true"></i> Reset palette</button>
+                <button type="submit" class="btn btn-primary"><i class="fas fa-floppy-disk" aria-hidden="true"></i> {{ 'Save changes' if editing else 'Create theme' }}</button>
+            </div>
+        </section>
+
+        <aside class="admin-panel theme-builder-preview" id="themeBuilderPreview" aria-labelledby="theme-preview-title">
+            <div class="theme-preview-sidebar">
+                <div class="theme-preview-logo"><i class="fas fa-layer-group"></i></div>
+                <div class="theme-preview-nav is-active"><i class="fas fa-gamepad"></i><span>Library</span></div>
+                <div class="theme-preview-nav"><i class="fas fa-heart"></i><span>Favorites</span></div>
+                <div class="theme-preview-nav"><i class="fas fa-compass"></i><span>Discover</span></div>
+            </div>
+            <div class="theme-preview-content">
+                <p class="theme-preview-eyebrow">Live preview</p>
+                <h2 id="theme-preview-title" data-preview-name>{{ theme.name or 'Your theme' }}</h2>
+                <div class="theme-preview-card-grid">
+                    <article class="theme-preview-card"><div class="theme-preview-cover"><i class="fas fa-rocket"></i></div><strong>Game card</strong><small>Theme-aware surface</small></article>
+                    <article class="theme-preview-card"><div class="theme-preview-cover alt"><i class="fas fa-chess-rook"></i></div><strong>Another card</strong><small>Hover and borders</small></article>
+                </div>
+                <div class="theme-preview-buttons"><button type="button" class="preview-primary"><i class="fas fa-play"></i> Primary</button><button type="button" class="preview-secondary"><i class="fas fa-sliders"></i> Secondary</button></div>
+                <div class="theme-preview-form"><i class="fas fa-magnifying-glass"></i><span>Form and search controls</span></div>
+                <div class="theme-preview-table"><div><strong>Game</strong><strong>Status</strong></div><div><span>Example title</span><span class="theme-preview-pill">Available</span></div></div>
+            </div>
+        </aside>
+    </form>
+</main>
+<script src="{{ 'js/admin/theme_builder.js'|theme_asset }}"></script>
+{% endblock %}

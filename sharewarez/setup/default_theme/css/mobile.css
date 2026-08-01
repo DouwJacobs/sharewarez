@@ -349,11 +349,6 @@
         white-space: normal;
     }
 
-    .game-card-title {
-        padding-top: 10px;
-        font-size: 0.98rem;
-    }
-
     .admin-breadcrumb {
         margin: 8px 12px 0;
         min-width: 0;

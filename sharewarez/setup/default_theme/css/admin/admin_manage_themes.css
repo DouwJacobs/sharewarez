@@ -20,7 +20,8 @@
 .theme-meta div { min-width: 0; }
 .theme-meta dt { color: var(--text-muted); font-size: var(--font-size-xs); font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
 .theme-meta dd { margin: .15rem 0 0; overflow: hidden; color: var(--text-white); text-overflow: ellipsis; white-space: nowrap; }
-.theme-card-actions { margin: auto 0 0; padding-top: var(--spacing-lg); }
+.theme-card-actions { display: flex; align-items: center; gap: var(--spacing-sm); margin: auto 0 0; padding-top: var(--spacing-lg); }
+.theme-card-actions form { margin: 0; }
 .theme-card-actions .btn { margin: 0; }
 
 @media (max-width: 900px) { .themes-operation-grid { grid-template-columns: 1fr; } }

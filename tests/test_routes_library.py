@@ -446,6 +446,17 @@ class TestGetGamesFunction:
         assert isinstance(games, list)
         assert current_page == 1
 
+    def test_get_games_caps_page_size(self, app, db_session, test_game):
+        from sharewarez.routes_library import get_games
+
+        with app.app_context():
+            with patch('sharewarez.routes_library.current_user') as mock_current_user:
+                mock_current_user.is_authenticated = True
+                mock_current_user.id = 1
+                games, total, pages, current_page = get_games(page=1, per_page=1000)
+
+        assert len(games) <= 100
+
     def test_get_games_with_cover_image(self, app, db_session, test_game):
         """Test get_games includes cover image information."""
         # Create a cover image for the game

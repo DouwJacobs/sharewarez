@@ -73,6 +73,58 @@ class TestThemeManagerInit:
         assert os.path.isabs(manager.theme_folder)
 
 
+class TestCreateThemeArchive:
+    def test_archive_is_upload_compatible(self, tmp_path):
+        theme_path = tmp_path / 'reference'
+        (theme_path / 'css').mkdir(parents=True)
+        (theme_path / 'theme.json').write_text('{"name": "Reference"}')
+        (theme_path / 'css' / 'base.css').write_text(':root {}')
+
+        archive = ThemeManager.create_theme_archive(theme_path)
+
+        with zipfile.ZipFile(archive) as zip_file:
+            assert sorted(zip_file.namelist()) == ['css/base.css', 'theme.json']
+
+
+class TestBuilderThemes:
+    @staticmethod
+    def palette(name='My Theme'):
+        return {
+            'name': name,
+            'description': 'Created in the visual builder',
+            'author': 'Admin',
+            'accent': '#123456',
+            'accent_soft': '#abcdef',
+            'background': '#090a0b',
+            'sidebar': '#111213',
+            'card': '#212223',
+            'panel': '#313233'
+        }
+
+    def test_create_and_update_builder_theme(self, theme_manager, tmp_path):
+        theme_manager.theme_folder = str(tmp_path)
+
+        theme_id, metadata = theme_manager.save_builder_theme(self.palette())
+        assert theme_id == 'My_Theme'
+        assert metadata['source'] == 'builder'
+        assert theme_manager.get_theme(theme_id)['palette']['accent'] == '#123456'
+        css = (tmp_path / theme_id / 'css' / 'theme-overrides.css').read_text()
+        assert '--theme-accent-rgb: 18, 52, 86' in css
+
+        updated = self.palette('Renamed Theme')
+        updated['accent'] = '#654321'
+        saved_id, _ = theme_manager.save_builder_theme(updated, theme_id=theme_id)
+        assert saved_id == theme_id
+        assert theme_manager.get_theme(theme_id)['name'] == 'Renamed Theme'
+
+    def test_builder_rejects_invalid_color(self, theme_manager, tmp_path):
+        theme_manager.theme_folder = str(tmp_path)
+        data = self.palette()
+        data['accent'] = 'red; background: url(evil)'
+        with pytest.raises(ValueError, match='RRGGBB'):
+            theme_manager.save_builder_theme(data)
+
+
 class TestGetDefaultTheme:
     """Tests for get_default_theme method."""
 

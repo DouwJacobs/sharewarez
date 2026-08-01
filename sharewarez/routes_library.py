@@ -5,10 +5,11 @@ from sharewarez import db
 from sharewarez.utils.functions import format_size, get_library_count, get_games_count
 from sharewarez.utils.auth import admin_required
 from sharewarez.forms import CsrfForm, CsrfProtectForm
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import selectinload
 from sqlalchemy import select, func, and_
 from sharewarez.utils.processors import get_global_settings
 from sharewarez import cache
+from sharewarez.utils.pagination import normalize_library_pagination
 import json
 import urllib.parse
 
@@ -73,6 +74,7 @@ def library():
     library_name = request.args.get('library_name')
     # Only override per_page, sort_by, and sort_order if the URL parameters are provided
     per_page = request.args.get('per_page', type=int) or per_page
+    page, per_page = normalize_library_pagination(page, per_page)
     genre = request.args.get('genre') or saved_filters.get('genre')
     rating = request.args.get('rating', type=int) or (int(saved_filters.get('rating')) if saved_filters.get('rating') and str(saved_filters.get('rating')).isdigit() else None)
     game_mode = request.args.get('game_mode') or saved_filters.get('game_mode')
@@ -132,7 +134,12 @@ def library():
 
 
 def get_games(page=1, per_page=20, sort_by='name', sort_order='asc', **filters):
-    query = select(Game).options(joinedload(Game.genres))
+    page, per_page = normalize_library_pagination(page, per_page)
+    query = select(Game).options(
+        selectinload(Game.genres),
+        selectinload(Game.tags),
+        selectinload(Game.favorited_by),
+    )
     # Add current_user to the query to check favorite status
     current_user_id = current_user.id if current_user.is_authenticated else None
     # Resolve library_name to library_uuid if necessary
@@ -175,10 +182,21 @@ def get_games(page=1, per_page=20, sort_by='name', sort_order='asc', **filters):
         query = query.order_by(Game.date_identified.asc() if sort_order == 'asc' else Game.date_identified.desc())
     # Pagination
     pagination = db.paginate(query, page=page, per_page=per_page, error_out=False)
+    if pagination.pages and page > pagination.pages:
+        pagination = db.paginate(query, page=pagination.pages, per_page=per_page, error_out=False)
     games = pagination.items
 
     # Get all user statuses for games in this page (batch query for performance)
     game_uuids = [game.uuid for game in games]
+    cover_urls = {}
+    if game_uuids:
+        cover_rows = db.session.execute(
+            select(Image.game_uuid, Image.url)
+            .where(Image.game_uuid.in_(game_uuids), Image.image_type == 'cover')
+            .order_by(Image.id)
+        ).all()
+        for game_uuid, image_url in cover_rows:
+            cover_urls.setdefault(game_uuid, image_url)
     user_statuses = {}
     if current_user_id and game_uuids:
         from sharewarez.models import user_game_status
@@ -192,10 +210,11 @@ def get_games(page=1, per_page=20, sort_by='name', sort_order='asc', **filters):
         ).all()
         user_statuses = {row[0]: row[1] for row in status_results}
 
+    from sharewarez.models import GlobalSettings
+    settings = db.session.execute(select(GlobalSettings)).scalar_one_or_none()
     game_data = []
     for game in games:
-        cover_image = db.session.execute(select(Image).filter_by(game_uuid=game.uuid, image_type='cover')).scalars().first()
-        cover_url = cover_image.url if cover_image else "newstyle/default_cover.jpg"
+        cover_url = cover_urls.get(game.uuid, "newstyle/default_cover.jpg")
         genres = [genre.name for genre in game.genres]
         tags = [tag.name for tag in game.tags]
         game_size_formatted = format_size(game.size)
@@ -203,9 +222,7 @@ def get_games(page=1, per_page=20, sort_by='name', sort_order='asc', **filters):
 
         # Check if game has local metadata or images
         from sharewarez.utils.local_metadata import has_local_metadata, has_local_images
-        from sharewarez.models import GlobalSettings
         has_local_override = False
-        settings = db.session.execute(select(GlobalSettings)).scalar_one_or_none()
         if settings:
             if (settings.use_local_metadata and has_local_metadata(game.full_disk_path, settings.local_metadata_filename or 'sharewarez.json')) or \
                (settings.use_local_images and has_local_images(game.full_disk_path)):
@@ -230,4 +247,4 @@ def get_games(page=1, per_page=20, sort_by='name', sort_order='asc', **filters):
             'user_status': user_status
         })
 
-    return game_data, pagination.total, pagination.pages, page
+    return game_data, pagination.total, pagination.pages, pagination.page

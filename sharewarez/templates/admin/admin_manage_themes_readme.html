@@ -55,12 +55,13 @@
 
     <section class="admin-surface theme-guide-section" id="fallback">
         <h2>Partial themes and asset fallback</h2>
-        <p>The <code>css/</code> directory is required, but you do not need to copy every default asset. Templates request assets through the <code>theme_asset</code> filter:</p>
+        <p>The <code>css/</code> directory is required, but you do not need to copy every default asset. Download the default reference package from the Themes page when you need a complete, current list of selectors and files. Templates request assets through the <code>theme_asset</code> filter:</p>
         <pre><code>{{ "{{ 'css/components.css'|theme_asset }}" }}</code></pre>
+        <p>For most color-focused themes, add only <code>css/theme-overrides.css</code>. It is loaded last, while every missing asset automatically falls back to the default theme. This makes themes smaller and keeps them compatible as the interface evolves.</p>
         <p>If that relative path exists in the selected theme, {{ site_title }} uses it. Otherwise it falls back to the same path in the default theme. This makes small, maintainable override themes possible.</p>
         <ul>
             <li>Mirror the exact relative path of every asset you override.</li>
-            <li>Start with color, typography, and surface overrides in <code>css/base.css</code> or <code>css/components.css</code>.</li>
+            <li>Start with color, typography, and surface overrides in <code>css/theme-overrides.css</code>.</li>
             <li>Add page-specific files only when that page needs structural changes.</li>
             <li>JavaScript is optional and should be overridden only when behavior must change.</li>
         </ul>
@@ -69,6 +70,7 @@
 
     <section class="admin-surface theme-guide-section" id="install">
         <h2>Install, select, and test</h2>
+        <p>The visual builder on the Themes page creates safe palette-based themes with a live component preview. Builder themes can be edited later and are tagged <strong>Created in app</strong>. ZIP packages are tagged <strong>Uploaded</strong> and remain the option for advanced CSS or JavaScript changes.</p>
         <ol>
             <li>Create <code>theme.json</code> and at least a <code>css/</code> directory.</li>
             <li>ZIP the directory contents at the archive root.</li>
@@ -77,7 +79,7 @@
             <li>Test desktop and mobile layouts with both user and administrator accounts.</li>
         </ol>
         <p>During default-theme development, <code>DEV_MODE=true</code> recopies bundled theme files during application startup. {{ site_title }} does not hot reload these files, so restart with <code>./startweb.sh</code> after changes.</p>
-        <div class="help-callout help-callout-warning"><strong>Restore defaults:</strong> “Restore default theme” replaces the installed default-theme directory with the bundled source. Any direct modifications to the installed default theme are overwritten.</div>
+        <div class="help-callout help-callout-warning"><strong>Restore bundled themes:</strong> The restore action replaces the default theme and refreshes all shipped themes from their bundled sources. Direct modifications to those installed files are overwritten.</div>
     </section>
 
     <section class="admin-surface theme-guide-section" id="checklist">

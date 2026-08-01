@@ -12,13 +12,19 @@
         <a href="{{ url_for('admin2.theme_readme') }}" class="btn btn-secondary">
             <i class="fas fa-book-open" aria-hidden="true"></i> Theme guide
         </a>
+        <a href="{{ url_for('admin2.theme_builder') }}" class="btn btn-primary">
+            <i class="fas fa-wand-magic-sparkles" aria-hidden="true"></i> Build a theme
+        </a>
+        <a href="{{ url_for('admin2.download_default_theme') }}" class="btn btn-primary">
+            <i class="fas fa-download" aria-hidden="true"></i> Download reference
+        </a>
     {% endcall %}
 
     <section class="admin-surface themes-operations" aria-labelledby="theme-operations-title">
         <div class="admin-section-header">
             <div>
                 <h2 id="theme-operations-title">Theme operations</h2>
-                <p>Upload a theme package or restore the bundled default theme files.</p>
+                <p>Upload a theme package or restore all themes shipped with the application.</p>
             </div>
         </div>
         <div class="themes-operation-grid">
@@ -35,13 +41,13 @@
                 </div>
             </form>
 
-            <form method="POST" action="{{ url_for('admin2.reset_default_themes') }}" class="theme-operation-card theme-reset-form" onsubmit="return confirm('Restore the bundled default theme files? Local modifications to the default theme will be overwritten.');">
+            <form method="POST" action="{{ url_for('admin2.reset_default_themes') }}" class="theme-operation-card theme-reset-form" onsubmit="return confirm('Restore all bundled themes? Local modifications to bundled theme files will be overwritten.');">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <div class="theme-operation-copy">
                     <i class="fas fa-arrow-rotate-left" aria-hidden="true"></i>
-                    <div><h3>Restore defaults</h3><p>Replace modified default-theme files with the bundled versions.</p></div>
+                    <div><h3>Restore bundled themes</h3><p>Replace modified built-in theme files with the shipped versions.</p></div>
                 </div>
-                <button type="submit" class="btn btn-warning"><i class="fas fa-arrow-rotate-left" aria-hidden="true"></i> Restore default theme</button>
+                <button type="submit" class="btn btn-warning"><i class="fas fa-arrow-rotate-left" aria-hidden="true"></i> Restore themes</button>
             </form>
         </div>
     </section>
@@ -50,27 +56,23 @@
         <div class="admin-section-header">
             <div>
                 <h2 id="installed-themes-title">Installed themes</h2>
-                <p>{{ themes|length }} custom theme{% if themes|length != 1 %}s{% endif %} installed.</p>
+                <p>{{ themes|length }} theme{% if themes|length != 1 %}s{% endif %} available.</p>
             </div>
         </div>
         <div class="themes-grid">
-            <article class="theme-card default-theme">
-                <div class="theme-card-heading"><h3>{{ default_theme.name }}</h3><span class="badge bg-primary">Default</span></div>
-                <dl class="theme-meta"><div><dt>Author</dt><dd>{{ default_theme.author }}</dd></div><div><dt>Released</dt><dd>{{ default_theme.release_date }}</dd></div></dl>
-                <p>{{ default_theme.description }}</p>
-            </article>
             {% for theme in themes %}
-            {% if theme.name != default_theme.name %}
-            <article class="theme-card">
-                <div class="theme-card-heading"><h3>{{ theme.name }}</h3><span class="badge bg-secondary">Custom</span></div>
+            <article class="theme-card{% if theme.id == 'default' %} default-theme{% endif %}">
+                <div class="theme-card-heading"><h3>{{ theme.name }}</h3><span class="badge {% if theme.id == 'default' %}bg-primary{% elif theme.source == 'bundled' %}bg-info{% elif theme.source == 'builder' %}bg-success{% else %}bg-secondary{% endif %}">{% if theme.id == 'default' %}Default{% elif theme.source == 'bundled' %}Bundled{% elif theme.source == 'builder' %}Created in app{% else %}Uploaded{% endif %}</span></div>
                 <dl class="theme-meta"><div><dt>Author</dt><dd>{{ theme.author }}</dd></div><div><dt>Released</dt><dd>{{ theme.release_date }}</dd></div></dl>
                 <p>{{ theme.description }}</p>
-                <form action="{{ url_for('admin2.delete_theme', theme_name=theme.name) }}" method="POST" class="theme-card-actions" onsubmit="return confirm('Delete this theme?');">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <button type="submit" class="btn btn-danger btn-sm"><i class="fas fa-trash" aria-hidden="true"></i> Delete theme</button>
-                </form>
+                {% if theme.editable or not theme.bundled %}<div class="theme-card-actions">
+                    {% if theme.editable %}<a href="{{ url_for('admin2.theme_builder', theme_id=theme.id) }}" class="btn btn-secondary btn-sm"><i class="fas fa-pen" aria-hidden="true"></i> Edit</a>{% endif %}
+                    {% if not theme.bundled %}<form action="{{ url_for('admin2.delete_theme', theme_name=theme.id) }}" method="POST" onsubmit="return confirm('Delete this theme?');">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-danger btn-sm"><i class="fas fa-trash" aria-hidden="true"></i> Delete</button>
+                    </form>{% endif %}
+                </div>{% endif %}
             </article>
-            {% endif %}
             {% endfor %}
         </div>
     </section>

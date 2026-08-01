@@ -118,6 +118,8 @@ $(document).ready(function() {
     // Initialize pagination from server data
     var currentPage = currentPageFromServer;
     var totalPages = totalPagesFromServer;
+    var activeGamesRequest = null;
+    var gamesRequestSequence = 0;
     
     // Initialize pagination display
     if (totalPages > 0) {
@@ -274,12 +276,20 @@ $(document).ready(function() {
         var queryString = $.param(filters);
         console.log(`Full query URL: /browse_games?${queryString}`);
 
+        if (activeGamesRequest) {
+            activeGamesRequest.abort();
+        }
+        const requestSequence = ++gamesRequestSequence;
+        const paginationButtons = $('#firstPage, #firstPageBottom, #prevPage, #prevPageBottom, #nextPage, #nextPageBottom, #lastPage, #lastPageBottom');
+        paginationButtons.prop('disabled', true);
         $('#gamesContainer').attr('aria-busy', 'true').html('<div class="game-grid-loading" role="status"><i class="fas fa-circle-notch fa-spin" aria-hidden="true"></i><span>Loading games…</span></div>');
-        $.ajax({
+        activeGamesRequest = $.ajax({
             url: '/browse_games',
             data: filters,
             method: 'GET',
+            timeout: 20000,
             success: function(response) {
+                if (requestSequence !== gamesRequestSequence) return;
                 totalPages = response.pages;
                 currentPage = response.current_page;
                 $('#currentPageInfo, #currentPageInfoBottom').text(currentPage + '/' + totalPages);
@@ -287,11 +297,17 @@ $(document).ready(function() {
                 updatePaginationControls();
             },
             error: function(xhr, status, error) {
+                if (status === 'abort' || requestSequence !== gamesRequestSequence) return;
                 console.error("AJAX error:", error);
-                $('#gamesContainer').html('<div class="game-grid-empty game-grid-error" role="alert"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i><p>Games could not be loaded. Please try again.</p></div>');
+                const message = status === 'timeout' ? 'The library request timed out. Try a smaller page size or narrower filter.' : 'Games could not be loaded. Please try again.';
+                $('#gamesContainer').html(`<div class="game-grid-empty game-grid-error" role="alert"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i><p>${message}</p><button type="button" class="btn btn-secondary" id="retryGamesRequest">Retry</button></div>`);
+                $('#retryGamesRequest').on('click', function() { fetchFilteredGames(currentPage); });
             },
             complete: function() {
+                if (requestSequence !== gamesRequestSequence) return;
+                activeGamesRequest = null;
                 $('#gamesContainer').attr('aria-busy', 'false');
+                updatePaginationControls();
             }
         });
     }
@@ -503,7 +519,6 @@ $(document).ready(function() {
             <a href="/game_details/${game.uuid}">
                 <img src="${fullCoverUrl}" alt="${game.name}" class="game-cover">
             </a>
-            <a class="game-card-title" href="/game_details/${game.uuid}">${game.name}</a>
             <div id="details-${game.uuid}" class="popup-game-details hidden">
                 <!-- Details and screenshots will be injected here by JavaScript -->
             </div>

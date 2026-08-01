@@ -1,0 +1,302 @@
+/* Shared component hooks for lightweight color themes. */
+
+.sidebar {
+    background: linear-gradient(180deg, var(--theme-sidebar-top, rgba(18, 19, 31, .98)), var(--theme-sidebar-bottom, rgba(10, 11, 20, .99))) !important;
+    border-color: rgba(var(--theme-accent-soft-rgb, 154, 177, 255), .16) !important;
+}
+
+.sidebar-link:hover,
+.toggle-sidebar:hover,
+.toggle-sidebar:focus-visible,
+.user-account-trigger:hover {
+    border-color: rgba(var(--theme-accent-soft-rgb, 154, 177, 255), .28) !important;
+    background: rgba(var(--theme-accent-rgb, 98, 122, 239), .14) !important;
+}
+
+.sidebar-link.active,
+.user-account-menu a:hover {
+    border-color: rgba(var(--theme-accent-soft-rgb, 154, 177, 255), .34) !important;
+    background: linear-gradient(90deg, rgba(var(--theme-accent-rgb, 98, 122, 239), .3), rgba(var(--theme-accent-rgb, 98, 122, 239), .08)) !important;
+}
+
+.useraccount-minimenu-container,
+.user-account-menu,
+.sidebar .container-filtersandsort {
+    background: var(--theme-panel-bg, rgba(18, 19, 31, .96)) !important;
+    border-color: rgba(var(--theme-accent-soft-rgb, 154, 177, 255), .2) !important;
+}
+
+.game-card,
+.game-card .popup-menu,
+.game-card-coverimage .popup-menu {
+    background: linear-gradient(145deg, var(--theme-card-top, rgba(18, 18, 28, .96)), var(--theme-card-bottom, rgba(12, 12, 20, .98))) !important;
+    border-color: rgba(var(--theme-accent-soft-rgb, 154, 177, 255), .16) !important;
+}
+
+.game-card:hover {
+    border-color: rgba(var(--theme-accent-soft-rgb, 154, 177, 255), .42) !important;
+    box-shadow: 0 15px 36px rgba(var(--theme-accent-rgb, 98, 122, 239), .18) !important;
+}
+
+.admin-surface,
+.admin-panel,
+.glass-panel,
+.library-toolbar,
+.filter-panel,
+.pagination-container,
+.modal-content,
+.preferences-modal-content {
+    background-color: var(--theme-panel-bg, rgba(18, 18, 28, .94)) !important;
+    border-color: rgba(var(--theme-accent-soft-rgb, 154, 177, 255), .18) !important;
+}
+
+.admin-ui .glass-panel,
+.admin-ui .admin-surface,
+.admin-ui .admin-panel {
+    background: linear-gradient(145deg, var(--theme-card-top, rgba(18, 18, 28, .96)), var(--theme-card-bottom, rgba(12, 12, 20, .98))) !important;
+}
+
+.form-control:focus,
+.form-select:focus,
+.page-link:hover,
+.page-link.active,
+.pagination .active > .page-link {
+    border-color: rgba(var(--theme-accent-soft-rgb, 154, 177, 255), .55) !important;
+    box-shadow: 0 0 0 .2rem rgba(var(--theme-accent-rgb, 98, 122, 239), .16) !important;
+}
+
+.table > :not(caption) > * > *,
+.dataTable > :not(caption) > * > * {
+    border-color: rgba(var(--theme-accent-soft-rgb, 154, 177, 255), .12) !important;
+}
+
+.table thead th,
+.dataTable thead th {
+    background-color: rgba(var(--theme-accent-rgb, 98, 122, 239), .1) !important;
+}
+
+/* Theme-aware action controls. Status actions retain their semantic colors. */
+.btn-primary,
+.btn-info,
+.btn-admin-primary,
+.btn-pagination:hover:not(:disabled),
+.btn-modal-save,
+.btn-next {
+    --sw-btn-bg: linear-gradient(135deg, rgba(var(--theme-accent-rgb, 98, 122, 239), .98), rgba(var(--theme-accent-rgb, 98, 122, 239), .68)) !important;
+    --sw-btn-border: rgba(var(--theme-accent-soft-rgb, 154, 177, 255), .55) !important;
+    --sw-btn-shadow: 0 8px 22px rgba(var(--theme-accent-rgb, 98, 122, 239), .28), inset 0 1px rgba(255, 255, 255, .18) !important;
+    background: var(--sw-btn-bg) !important;
+    border-color: var(--sw-btn-border) !important;
+    color: #fff !important;
+}
+
+.btn-primary:hover,
+.btn-info:hover,
+.btn-admin-primary:hover,
+.btn-modal-save:hover,
+.btn-next:hover {
+    --sw-btn-bg: linear-gradient(135deg, rgba(var(--theme-accent-soft-rgb, 154, 177, 255), .96), rgba(var(--theme-accent-rgb, 98, 122, 239), .82)) !important;
+    box-shadow: 0 11px 26px rgba(var(--theme-accent-rgb, 98, 122, 239), .34) !important;
+}
+
+.btn-secondary,
+.btn-dark,
+.btn-glass,
+.btn-pagination,
+.btn-settings,
+.btn-modal-cancel,
+.button-glass-hamburger,
+.button-glass-hamburger-cover,
+.button-glass-download,
+.button-glass-play,
+.button-glass-extras {
+    --sw-btn-bg: linear-gradient(145deg, var(--theme-card-top, rgba(48, 52, 70, .94)), var(--theme-card-bottom, rgba(30, 33, 48, .97))) !important;
+    --sw-btn-border: rgba(var(--theme-accent-soft-rgb, 154, 177, 255), .24) !important;
+    background: var(--sw-btn-bg) !important;
+    border-color: var(--sw-btn-border) !important;
+}
+
+.btn-outline-primary {
+    --sw-btn-border: rgba(var(--theme-accent-soft-rgb, 154, 177, 255), .58) !important;
+    --sw-btn-color: rgb(var(--theme-accent-soft-rgb, 154, 177, 255)) !important;
+}
+
+.btn-outline-primary:hover {
+    --sw-btn-bg: rgba(var(--theme-accent-rgb, 98, 122, 239), .2) !important;
+}
+
+.admin-ui .btn-circle,
+.btn-circle {
+    background: linear-gradient(145deg, rgba(var(--theme-accent-rgb, 98, 122, 239), .46), rgba(var(--theme-accent-rgb, 98, 122, 239), .24)) !important;
+    border-color: rgba(var(--theme-accent-soft-rgb, 154, 177, 255), .38) !important;
+}
+
+/* Shared card language across user and administrator pages. */
+.card,
+.theme-card,
+.theme-operation-card,
+.stat-card,
+.info-block,
+.section-item,
+.discovery-panel,
+.no-favorites,
+.game-card-q1,
+.game-card-q2,
+.game-card-q3,
+.game-card-bottom-info {
+    background: linear-gradient(145deg, var(--theme-card-top, rgba(18, 18, 28, .96)), var(--theme-card-bottom, rgba(12, 12, 20, .98))) !important;
+    border-color: rgba(var(--theme-accent-soft-rgb, 154, 177, 255), .16) !important;
+}
+
+/* Nested cards use a lighter accent surface instead of repeating the parent box. */
+:is(.admin-surface, .admin-panel, .glass-panel, .discovery-panel, .library-browser-panel)
+    :is(.card, .theme-card, .theme-operation-card, .stat-card, .info-block, .section-item, .game-card, .favorites-empty-state, .library-name),
+.discovery-panel .game-card,
+.library-browser-panel .game-card {
+    background: linear-gradient(145deg, rgba(var(--theme-accent-rgb, 98, 122, 239), .12), rgba(5, 8, 16, .34)) !important;
+    border-color: rgba(var(--theme-accent-soft-rgb, 154, 177, 255), .2) !important;
+    box-shadow: inset 0 1px rgba(255, 255, 255, .04), 0 8px 22px rgba(0, 0, 0, .24) !important;
+}
+
+:is(.admin-surface, .admin-panel, .glass-panel, .discovery-panel, .library-browser-panel)
+    :is(.card, .theme-card, .theme-operation-card, .stat-card, .info-block, .section-item, .game-card):hover,
+.discovery-panel .game-card:hover,
+.library-browser-panel .game-card:hover {
+    border-color: rgba(var(--theme-accent-soft-rgb, 154, 177, 255), .42) !important;
+    box-shadow: 0 12px 28px rgba(0, 0, 0, .32), 0 0 22px rgba(var(--theme-accent-rgb, 98, 122, 239), .16) !important;
+}
+
+.library-cover,
+.game-cover {
+    border-color: rgba(var(--theme-accent-soft-rgb, 154, 177, 255), .14) !important;
+}
+
+.card:hover,
+.theme-card:hover,
+.theme-operation-card:hover,
+.stat-card:hover,
+.section-item:hover {
+    border-color: rgba(var(--theme-accent-soft-rgb, 154, 177, 255), .34) !important;
+    box-shadow: 0 14px 32px rgba(0, 0, 0, .34), 0 0 24px rgba(var(--theme-accent-rgb, 98, 122, 239), .12) !important;
+}
+
+.admin-ui .glass-panel::before,
+.admin-ui .admin-section::before,
+.admin-ui .card::before {
+    background: linear-gradient(90deg, transparent, rgba(var(--theme-accent-soft-rgb, 154, 177, 255), .62), rgba(var(--theme-accent-rgb, 98, 122, 239), .58), transparent) !important;
+}
+
+.glass-panel::before,
+.content-login::before,
+.content-restricted-textblock::before,
+.card::before {
+    background: linear-gradient(90deg, transparent, rgba(var(--theme-accent-soft-rgb, 154, 177, 255), .68), rgba(var(--theme-accent-rgb, 98, 122, 239), .62), transparent) !important;
+}
+
+.glass-panel,
+.discovery-panel,
+.library-browser-panel,
+.content-login,
+.content-restricted-textblock {
+    box-shadow: 0 0 0 1px rgba(var(--theme-accent-soft-rgb, 154, 177, 255), .04), 0 20px 60px rgba(0, 0, 0, .52), 0 0 70px rgba(var(--theme-accent-rgb, 98, 122, 239), .09) !important;
+}
+
+/* Decorative icons follow the active palette; semantic status icons do not. */
+.sidebar-link i,
+.sidebar-link.active i,
+.toggle-sidebar i,
+.account-menu-option i,
+.admin-page-eyebrow i,
+.downloads-page-eyebrow i,
+.admin-section h3 i,
+.admin-section-header i,
+.info-block h3 i,
+.section-header i,
+.card-header h2 i,
+.integrations-nav-link i,
+.tab-content-wrapper h4 i,
+.stat-icon,
+.placeholder-icon,
+.downloads-game-link > i:first-child,
+.downloads-empty-state > i,
+.help-quick-links i,
+.help-topic summary i {
+    color: rgb(var(--theme-accent-soft-rgb, 154, 177, 255)) !important;
+}
+
+.theme-operation-copy > i,
+.btn-circle {
+    background-color: rgba(var(--theme-accent-rgb, 98, 122, 239), .16) !important;
+    border-color: rgba(var(--theme-accent-soft-rgb, 154, 177, 255), .32) !important;
+    color: rgb(var(--theme-accent-soft-rgb, 154, 177, 255)) !important;
+}
+
+.user-account-icon {
+    background: transparent !important;
+    border-color: transparent !important;
+    box-shadow: none !important;
+}
+
+.user-account-icon:hover,
+.user-account-icon[aria-expanded="true"] {
+    background: rgba(var(--theme-accent-rgb, 98, 122, 239), .14) !important;
+    border-color: transparent !important;
+}
+
+.user-account-icon:focus-visible {
+    outline-color: rgba(var(--theme-accent-soft-rgb, 154, 177, 255), .9) !important;
+}
+
+.user-avatar {
+    border-color: rgba(var(--theme-accent-soft-rgb, 154, 177, 255), .46) !important;
+}
+
+.user-expand-icon {
+    color: rgba(var(--theme-accent-soft-rgb, 154, 177, 255), .8) !important;
+}
+
+.sidebar-link.active {
+    box-shadow: inset 3px 0 0 rgba(var(--theme-accent-soft-rgb, 154, 177, 255), .95) !important;
+}
+
+input[type="checkbox"],
+input[type="radio"] {
+    accent-color: rgb(var(--theme-accent-rgb, 98, 122, 239));
+}
+
+/* Eyebrows and small section labels are a shared brand-accent element. */
+[class*="-eyebrow"],
+.admin-panel-kicker,
+.sidebar-menu-label,
+.filters-heading {
+    color: rgba(var(--theme-accent-soft-rgb, 154, 177, 255), .92) !important;
+}
+
+.library-browser-header h1,
+.discovery-page-header h1,
+.downloads-page-header h1,
+.admin-page-header h1 {
+    text-shadow: 0 0 28px rgba(var(--theme-accent-rgb, 98, 122, 239), .28) !important;
+}
+
+.library-browser-count,
+.downloads-count,
+.badge.bg-primary {
+    border-color: rgba(var(--theme-accent-soft-rgb, 154, 177, 255), .28) !important;
+    background-color: rgba(var(--theme-accent-rgb, 98, 122, 239), .14) !important;
+    color: rgb(var(--theme-accent-soft-rgb, 154, 177, 255)) !important;
+}
+
+.preferences-modal-header .modal-title i {
+    color: rgb(var(--theme-accent-soft-rgb, 154, 177, 255)) !important;
+}
+
+.preferences-modal-content {
+    box-shadow: 0 24px 70px rgba(0, 0, 0, .62), 0 0 55px rgba(var(--theme-accent-rgb, 98, 122, 239), .13) !important;
+}
+
+.preferences-field .form-control:focus,
+.preferences-field .form-select:focus {
+    border-color: rgba(var(--theme-accent-soft-rgb, 154, 177, 255), .62) !important;
+    box-shadow: 0 0 0 3px rgba(var(--theme-accent-rgb, 98, 122, 239), .16) !important;
+}
