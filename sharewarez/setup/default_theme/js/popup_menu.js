@@ -157,6 +157,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     // Show favorite button and game status elements for other cards
                     var otherCard = menu.closest('.game-card') || menu.closest('.game-card-coverimage');
                     if (otherCard) {
+                        otherCard.classList.remove('menu-open');
+                        var otherContainer = otherCard.closest('.game-card-container');
+                        if (otherContainer) otherContainer.classList.remove('menu-open');
                         showCardButtons(otherCard);
                     }
                 }
@@ -170,6 +173,9 @@ document.addEventListener('DOMContentLoaded', function() {
             // Toggle the popup menu
             var isOpening = popupMenu.style.display !== 'block';
             popupMenu.style.display = isOpening ? 'block' : 'none';
+            parentContainer.classList.toggle('menu-open', isOpening);
+            var cardContainer = parentContainer.closest('.game-card-container');
+            if (cardContainer) cardContainer.classList.toggle('menu-open', isOpening);
 
             // Hide or show the favorite button and game status elements
             if (isOpening) {
@@ -312,6 +318,9 @@ document.addEventListener('DOMContentLoaded', function() {
             // Handle both library page (.game-card) and game details page (.game-card-coverimage)
             var gameCard = menu.closest('.game-card') || menu.closest('.game-card-coverimage');
             if (gameCard) {
+                gameCard.classList.remove('menu-open');
+                var cardContainer = gameCard.closest('.game-card-container');
+                if (cardContainer) cardContainer.classList.remove('menu-open');
                 showCardButtons(gameCard);
             }
         });

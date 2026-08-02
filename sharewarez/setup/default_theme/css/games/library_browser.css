@@ -453,9 +453,21 @@
     /* A single generous card column remains easier to browse and tap. */
     .game-library-container {
         grid-template-columns: minmax(0, 320px) !important;
+        justify-items: center;
         justify-content: center;
         gap: 18px;
         padding: 0;
+    }
+
+    .game-library-container .game-card-container {
+        display: flex;
+        justify-content: center;
+        width: 100%;
+    }
+
+    .game-library-container .game-card {
+        margin-right: auto;
+        margin-left: auto;
     }
 
     /* Pagination header stacks on mobile */

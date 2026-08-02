@@ -38,6 +38,19 @@
     box-shadow: 0 16px 34px rgba(0, 0, 0, 0.58), 0 0 28px rgba(94, 125, 255, 0.18), 0 0 0 1px rgba(164, 183, 255, 0.22);
 }
 
+/* An expanded card menu must sit above later grid items and their controls. */
+.game-card-container.menu-open {
+    z-index: 100;
+}
+
+.game-card.menu-open {
+    z-index: 101;
+}
+
+.game-card.menu-open .popup-menu {
+    z-index: 102;
+}
+
 .game-cover {
     display: flex;
     position: relative;

@@ -746,6 +746,9 @@ window.addEventListener('click', function() {
         // Show favorite button and game status elements when menu closes
         var gameCard = menu.closest('.game-card');
         if (gameCard) {
+            gameCard.classList.remove('menu-open');
+            var cardContainer = gameCard.closest('.game-card-container');
+            if (cardContainer) cardContainer.classList.remove('menu-open');
             showCardButtons(gameCard);
         }
     });

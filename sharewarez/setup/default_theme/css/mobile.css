@@ -230,6 +230,18 @@
         min-height: 40px;
     }
 
+    /* Card action buttons are compact circles, not full-size form controls. */
+    .game-card :is(.button-glass-hamburger, .favorite-btn, .game-status-btn) {
+        width: 40px !important;
+        min-width: 40px !important;
+        height: 40px !important;
+        min-height: 40px !important;
+        padding: 0 !important;
+        border-radius: 50% !important;
+        aspect-ratio: 1;
+        flex: 0 0 40px;
+    }
+
     .admin-header,
     .library-browser-header,
     .discovery-header,
