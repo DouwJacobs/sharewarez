@@ -75,6 +75,65 @@
     background-color: rgba(var(--theme-accent-rgb, 98, 122, 239), .1) !important;
 }
 
+/* Shared table surfaces and links. This layer loads after table-polish.css so
+   page-specific tables cannot fall back to the fixed blue default palette. */
+:is(.table-responsive, .dataTables_wrapper),
+.logs-table-wrap {
+    background: var(--theme-panel-bg, rgba(18, 18, 28, .94)) !important;
+    border-color: rgba(var(--theme-accent-soft-rgb, 154, 177, 255), .2) !important;
+    box-shadow: 0 18px 48px rgba(0, 0, 0, .2), 0 0 28px rgba(var(--theme-accent-rgb, 98, 122, 239), .08) !important;
+}
+
+:is(.table, .table-dark, .dataTable, .simple-jobs-table, .simple-unmatched-table, .logs-table) {
+    --bs-table-bg: transparent !important;
+    --bs-table-hover-bg: rgba(var(--theme-accent-rgb, 98, 122, 239), .07) !important;
+    background: transparent !important;
+}
+
+:is(.table, .table-dark, .dataTable, .simple-jobs-table, .simple-unmatched-table, .logs-table) thead th {
+    background: rgba(var(--theme-accent-rgb, 98, 122, 239), .1) !important;
+    border-color: rgba(var(--theme-accent-soft-rgb, 154, 177, 255), .16) !important;
+    color: rgba(var(--theme-accent-soft-rgb, 154, 177, 255), .82) !important;
+}
+
+:is(.table, .table-dark, .dataTable, .simple-jobs-table, .simple-unmatched-table, .logs-table) tbody td {
+    border-color: rgba(var(--theme-accent-soft-rgb, 154, 177, 255), .1) !important;
+}
+
+:is(.table, .table-dark, .dataTable, .simple-jobs-table, .simple-unmatched-table, .logs-table) tbody tr:hover {
+    background: rgba(var(--theme-accent-rgb, 98, 122, 239), .07) !important;
+}
+
+:is(.table, .table-dark, .dataTable, .simple-jobs-table, .simple-unmatched-table, .logs-table) td a:not(.btn),
+.downloads-game-link {
+    color: rgb(var(--theme-accent-soft-rgb, 154, 177, 255)) !important;
+}
+
+:is(.table, .table-dark, .dataTable, .simple-jobs-table, .simple-unmatched-table, .logs-table) td a:not(.btn):hover,
+.downloads-game-link:hover {
+    color: color-mix(in srgb, rgb(var(--theme-accent-soft-rgb, 154, 177, 255)) 72%, white) !important;
+    text-decoration-color: rgba(var(--theme-accent-soft-rgb, 154, 177, 255), .7) !important;
+}
+
+.downloads-game-link > i:first-child,
+.downloads-game-link-icon {
+    color: rgb(var(--theme-accent-soft-rgb, 154, 177, 255)) !important;
+}
+
+.dataTables_wrapper :is(.dataTables_filter input, .dataTables_length select) {
+    background: color-mix(in srgb, var(--theme-panel-bg, #12121c) 88%, black) !important;
+    border-color: rgba(var(--theme-accent-soft-rgb, 154, 177, 255), .22) !important;
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button:hover,
+.dataTables_wrapper .dataTables_paginate .paginate_button.current,
+.pagination .page-item.active .page-link,
+.pagination .page-link:hover {
+    background: rgba(var(--theme-accent-rgb, 98, 122, 239), .2) !important;
+    border-color: rgba(var(--theme-accent-soft-rgb, 154, 177, 255), .48) !important;
+    color: rgb(var(--theme-accent-soft-rgb, 154, 177, 255)) !important;
+}
+
 /* Theme-aware action controls. Status actions retain their semantic colors. */
 .btn-primary,
 .btn-info,
@@ -129,6 +188,24 @@
 .btn-circle {
     background: linear-gradient(145deg, rgba(var(--theme-accent-rgb, 98, 122, 239), .46), rgba(var(--theme-accent-rgb, 98, 122, 239), .24)) !important;
     border-color: rgba(var(--theme-accent-soft-rgb, 154, 177, 255), .38) !important;
+}
+
+.admin-ui .admin-button-item:hover {
+    background: rgba(var(--theme-accent-rgb, 98, 122, 239), .12) !important;
+    border-color: rgba(var(--theme-accent-soft-rgb, 154, 177, 255), .3) !important;
+}
+
+.admin-ui .btn-circle:hover,
+.admin-ui .btn-circle:focus-visible {
+    background: linear-gradient(145deg, rgba(var(--theme-accent-soft-rgb, 154, 177, 255), .72), rgba(var(--theme-accent-rgb, 98, 122, 239), .58)) !important;
+    border-color: rgba(var(--theme-accent-soft-rgb, 154, 177, 255), .68) !important;
+    box-shadow: 0 10px 26px rgba(var(--theme-accent-rgb, 98, 122, 239), .34), 0 0 18px rgba(var(--theme-accent-soft-rgb, 154, 177, 255), .16) !important;
+    color: rgb(var(--theme-accent-soft-rgb, 154, 177, 255)) !important;
+}
+
+.admin-ui .btn-circle:hover i,
+.admin-ui .btn-circle:focus-visible i {
+    color: inherit !important;
 }
 
 /* Shared card language across user and administrator pages. */
