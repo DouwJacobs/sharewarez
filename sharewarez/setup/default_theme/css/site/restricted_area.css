@@ -1,0 +1,5 @@
+.restricted-area-page { width: min(900px, calc(100% - 48px)); margin: 24px auto; }
+.content-restricted { display: grid; grid-template-columns: minmax(160px, 260px) minmax(0, 1fr); align-items: center; gap: 24px; padding: 24px; border: 1px solid rgba(255,255,255,.08); border-radius: 18px; background: linear-gradient(145deg, rgba(18,18,28,.96), rgba(12,12,20,.98)); }
+.content-restricted .login-logo { width: 100%; height: auto; }
+.content-restricted-textblock { color: rgba(225,229,245,.8); line-height: 1.65; }
+@media (max-width: 768px) { .restricted-area-page { width: calc(100% - 24px); margin: 12px auto; } .content-restricted { grid-template-columns: 1fr; padding: 16px; } .content-restricted .login-logo { width: min(220px, 100%); margin: 0 auto; } }

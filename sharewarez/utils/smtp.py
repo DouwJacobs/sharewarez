@@ -191,20 +191,25 @@ def send_email(to, subject, template):
 
 
 def send_password_reset_email(user_email, token):
-    reset_url = url_for('main.reset_password', token=token, _external=True)
-    html = f'''<p>Ahoy there!</p>
+    from markupsafe import escape
+    from sharewarez.utils.processors import get_global_settings
 
-<p>Ye be wantin' to reset yer password, aye? No worries, we got ye covered! Jus' click on the link below to set a new course for yer password:</p>
+    site_title = get_global_settings()['site_title']
+    escaped_site_title = escape(site_title)
+    reset_url = url_for('login.reset_password', token=token, _external=True)
+    html = f'''<p>Hello,</p>
 
-<p><a href="{reset_url}">Password Reset Link</a></p>
+<p>We received a request to reset your {escaped_site_title} password. Use the link below to choose a new password:</p>
 
-<p>If ye didn't request this, ye can just ignore this message and continue sailin' the digital seas.</p>
+<p><a href="{reset_url}">Reset your password</a></p>
 
-<p>Fair winds and followin' seas,</p>
+<p>If you did not request a password reset, you can safely ignore this email.</p>
 
-<p>Captain Blackbeard</p>'''
+<p>Regards,</p>
 
-    subject = "Ye Password Reset Request Arrr!"
+<p>The {escaped_site_title} team</p>'''
+
+    subject = f"Reset your {site_title} password"
     send_email(user_email, subject, html)
     
     

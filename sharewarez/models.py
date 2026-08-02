@@ -73,6 +73,12 @@ game_player_perspective_association = db.Table(
     db.Column('player_perspective_id', db.Integer, db.ForeignKey('player_perspectives.id'), primary_key=True)
 )
 
+game_tag_association = db.Table(
+    'game_tag_association',
+    db.Column('game_id', db.Integer, db.ForeignKey('games.id', ondelete='CASCADE'), primary_key=True),
+    db.Column('tag_id', db.Integer, db.ForeignKey('game_tags.id', ondelete='CASCADE'), primary_key=True)
+)
+
 game_developer_association = db.Table(
     'game_developer_association',
     db.Column('game_id', db.Integer, db.ForeignKey('games.id'), primary_key=True),
@@ -165,6 +171,7 @@ class Game(db.Model):
     steam_url = db.Column(db.String, nullable=True)
     times_downloaded = db.Column(db.Integer, default=0)
     nfo_content = db.Column(db.Text, nullable=True)
+    install_instructions = db.Column(db.Text, nullable=True)
     # HowLongToBeat integration fields
     hltb_id = db.Column(db.Integer, nullable=True)
     hltb_main_story = db.Column(db.Float, nullable=True)
@@ -178,6 +185,7 @@ class Game(db.Model):
     themes = db.relationship("Theme", secondary=game_theme_association, back_populates="games")
     platforms = db.relationship("Platform", secondary=game_platform_association, back_populates="games")
     player_perspectives = db.relationship("PlayerPerspective", secondary=game_player_perspective_association, back_populates="games")
+    tags = db.relationship('GameTag', secondary=game_tag_association, back_populates='games')
     developer_id = db.Column(db.Integer, db.ForeignKey('developers.id'), nullable=True)
     developer = db.relationship("Developer", back_populates="games")
     publisher = db.relationship("Publisher", back_populates="games")
@@ -324,6 +332,7 @@ class DownloadRequest(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    user = db.relationship('User', foreign_keys=[user_id])
     game_uuid = db.Column(db.String(36), db.ForeignKey('games.uuid', ondelete='CASCADE'), nullable=False)
     status = db.Column(db.String(50), default='pending')
     zip_file_path = db.Column(db.String, nullable=True)
@@ -367,6 +376,12 @@ class Genre(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(50), unique=True)
     games = db.relationship("Game", secondary="game_genre_association", back_populates="genres")
+
+class GameTag(db.Model):
+    __tablename__ = 'game_tags'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(50), unique=True, nullable=False)
+    games = db.relationship('Game', secondary=game_tag_association, back_populates='tags')
 
 class Developer(db.Model):
     __tablename__ = 'developers'

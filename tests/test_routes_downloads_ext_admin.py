@@ -125,6 +125,8 @@ class TestManageDownloadsRoute:
 
         response = client.get('/admin/manage-downloads')
         assert response.status_code == 200
+        assert b'Test Game' in response.data
+        assert f'/game_details/{sample_download_request.game_uuid}'.encode() in response.data
 
     def test_manage_downloads_unauthenticated(self, client):
         """Test that unauthenticated users are redirected."""

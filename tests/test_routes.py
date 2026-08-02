@@ -220,6 +220,20 @@ class TestMainBlueprint:
         data = json.loads(response.data)
         assert data['current_page'] == 1
 
+    @patch('flask_login.current_user')
+    def test_browse_games_caps_large_pages(self, mock_current_user, client, app, db_session, test_user, test_game):
+        mock_current_user.is_authenticated = True
+        mock_current_user.name = test_user.name
+
+        with client.session_transaction() as sess:
+            sess['_user_id'] = str(test_user.id)
+
+        response = client.get('/browse_games?page=999999&per_page=1000')
+        assert response.status_code == 200
+        data = response.get_json()
+        assert data['per_page'] == 100
+        assert data['current_page'] <= max(data['pages'], 1)
+
     def test_scan_folder_unauthenticated(self, client):
         """Test scan_folder route requires authentication."""
         response = client.get('/scan_manual_folder')

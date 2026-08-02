@@ -1,13 +1,15 @@
 {% extends "base.html" %}
 {% block content %}
 
-<link rel="stylesheet" href="{{ 'css/login/confirmation_expired.css'|theme_asset }}">
 <div class="container-login">
     <div class="content-login">
-        <img src="{{ url_for('static', filename='newstyle/sharewarez_logo.png') }}" alt="ShareWareZ Logo" class="login-logo">
-                <h1>Link Expired</h1>
-                <p>The confirmation link is invalid or has expired. Please request a new activation link.</p>
-                <!-- Add a link to request a new activation link if necessary -->
+        <img src="{{ url_for('static', filename=brand_logo_path) }}" alt="{{ site_title }} logo" class="login-logo">
+        <h2>Link Expired</h2>
+        <p>The confirmation link is invalid or has expired. Please request a new activation link.</p>
+        <div class="container-buttons-login">
+            <a href="{{ url_for('login.reset_password_request') }}" class="btn btn-primary button-login">Request New Link</a>
+            <a href="{{ url_for('login.login') }}" class="btn btn-primary button-login">Back to Login</a>
+        </div>
     </div>
 </div>
 {% endblock %}

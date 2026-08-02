@@ -30,18 +30,6 @@
 
 
 
-.modal-backdrop {
-    position: inherit;
-}
-
-.modal-backdrop.show {
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    background-color: var(--shadow-dark);
-}
-
 .rating-slider {
     
     max-width: 100%;
@@ -129,6 +117,7 @@
     border-radius: 50%;
     background: var(--color-gray-888); 
     cursor: pointer; 
+    margin-top: -7.5px;
 }
 
 .rating-slider::-webkit-slider-runnable-track {

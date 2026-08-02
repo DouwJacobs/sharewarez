@@ -4,11 +4,6 @@
 {% block content %}
 
 
-<div class="container">
-    <div class="glass-panel">
-        <a href="{{ url_for('site.admin_dashboard') }}" class="btn btn-secondary">Back to Dashboard</a>
-    </div>
-</div>
     <div class="container mt-4">
 <div class="admin_manage_filters-panel">
     <div class="admin_manage_filters-header">
@@ -50,6 +45,7 @@
 
     <hr>
     <h3>Existing Filters</h3>
+    <div class="table-responsive">
     <table class="admin_manage_filters-table table table-dark table-striped table-hover">
         <thead>
             <tr>
@@ -74,6 +70,7 @@
         {% endfor %}
         </tbody>
     </table>
+    </div>
 </div>
 
 <script src="{{ 'js/admin_manage_filters.js'|theme_asset }}"></script>

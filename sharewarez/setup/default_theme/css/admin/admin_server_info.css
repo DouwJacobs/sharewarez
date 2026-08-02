@@ -1,0 +1,99 @@
+.server-info-page {
+    width: min(1440px, calc(100% - 48px));
+    margin: 24px auto 48px;
+}
+
+.server-info-panel {
+    padding: 24px;
+    background: linear-gradient(145deg, rgba(18, 18, 28, 0.96), rgba(12, 12, 20, 0.98));
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    border-radius: 18px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5), 0 0 60px rgba(80, 120, 255, 0.06);
+}
+
+.server-info-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px 24px;
+    margin: 0;
+    padding: 0 0 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.server-info-header h1 {
+    margin: 0;
+    color: #fff;
+    font-size: 1.65rem;
+}
+
+.server-info-header > div:last-child {
+    flex-basis: 100%;
+    color: rgba(205, 214, 235, 0.68);
+}
+
+.server-info-content {
+    margin-top: 22px;
+}
+
+.server-info-content .info-block {
+    margin: 0 0 18px;
+    padding: 20px;
+    background: rgba(5, 6, 13, 0.32);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 14px;
+}
+
+.server-info-content .info-block h3 {
+    margin: 0 0 16px;
+    color: rgba(235, 240, 255, 0.96);
+    font-size: 1.05rem;
+}
+
+.server-info-content .resource-cards > [class*="col-"] {
+    margin-bottom: 12px;
+    padding: 16px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 12px;
+}
+
+.server-info-content .resource-cards h4,
+.server-info-content .info-block h4 {
+    margin: 0 0 12px;
+    color: rgba(225, 229, 245, 0.88);
+    font-size: 0.9rem;
+}
+
+.server-info-content .progress {
+    height: 12px !important;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.server-info-content .progress-bar {
+    background: linear-gradient(90deg, #426ee8, #7554d6);
+}
+
+.server-info-content .table {
+    margin: 0;
+}
+
+@media (max-width: 768px) {
+    .server-info-page {
+        width: calc(100% - 24px);
+        margin-top: 12px;
+    }
+
+    .server-info-panel {
+        padding: 16px;
+        border-radius: 14px;
+    }
+
+    .server-info-content .info-block {
+        padding: 16px;
+    }
+}

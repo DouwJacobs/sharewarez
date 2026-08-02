@@ -1,52 +1,291 @@
 .game-library-container {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    align-items: start;
+    justify-content: center;
+    justify-items: center;
+    gap: 18px;
 }
+
+.library-browser-page {
+    margin: 24px;
+}
+
+.library-browser-page .library-browser-panel {
+    width: min(1440px, 100%);
+    margin: 0 auto;
+    padding: 0 32px 32px;
+}
+
+/* Filters live with the library content rather than in the global sidebar. */
+.library-browser-panel .container-filtersandsort {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    margin: 18px 0 6px;
+    padding: 12px 14px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.025);
+}
+
+.library-browser-panel .filters-heading {
+    justify-content: space-between;
+    border: 0;
+    padding: 0;
+    background: transparent;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    width: 100%;
+    color: rgba(226, 231, 255, 0.9);
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+.library-browser-panel .filters-heading > span {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+}
+
+.library-browser-panel .filters-toggle-icon {
+    transition: transform 0.2s ease;
+}
+
+.library-browser-panel .filters-heading[aria-expanded="false"] .filters-toggle-icon {
+    transform: rotate(180deg);
+}
+
+.library-browser-panel .library-filters-body {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 12px;
+    width: 100%;
+}
+
+.library-browser-panel .sorting-dropdown,
+.library-browser-panel .library-filters,
+.library-browser-panel #filterForm,
+.library-browser-panel .library-filters .form-group,
+.library-browser-panel .button-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+}
+
+.library-browser-panel #filterForm {
+    align-items: flex-end;
+}
+
+.library-browser-panel .sorting-dropdown {
+    flex: 0 0 auto;
+}
+
+.library-browser-panel .library-filters {
+    flex: 1 1 auto;
+}
+
+.library-browser-panel .library-filters .form-group {
+    flex: 1 1 150px;
+    flex-direction: column;
+    align-items: stretch;
+    min-width: 0;
+}
+
+.library-browser-panel .container-filtersandsort select.form-control,
+.library-browser-panel .container-filtersandsort #sortSelect,
+.library-browser-panel .container-filtersandsort button {
+    height: 34px;
+    margin: 0;
+    border-radius: 8px;
+}
+
+.library-browser-panel .container-filtersandsort select.form-control,
+.library-browser-panel .container-filtersandsort #sortSelect {
+    line-height: 1.2;
+    padding: 6px 28px 6px 9px;
+}
+
+.library-browser-panel .container-filtersandsort label {
+    display: block;
+    margin: 0;
+    color: rgba(226, 231, 255, 0.66);
+    font-size: 0.72rem;
+    font-weight: 600;
+}
+
+.library-browser-panel .rating-slider {
+    width: 150px;
+    height: 34px;
+    margin: 0 auto 0 0;
+    align-self: flex-start;
+}
+
+.library-browser-panel .rating-slider::-webkit-slider-runnable-track {
+    margin-bottom: 0;
+}
+
+.library-browser-panel .library-filters .filter-rating-group {
+    flex: 0 1 170px;
+    align-items: flex-start;
+}
+
+.library-browser-panel .button-group .btn {
+    min-width: 72px;
+    padding: 0 12px;
+    line-height: 1;
+}
+
+@media (max-width: 900px) {
+    .library-browser-panel .library-filters,
+    .library-browser-panel #filterForm {
+        flex-wrap: wrap;
+    }
+}
+
+@media (max-width: 768px) {
+    .library-browser-panel .container-filtersandsort {
+        padding: 10px;
+    }
+
+    .library-browser-panel .library-filters-body,
+    .library-browser-panel .library-filters,
+    .library-browser-panel #filterForm {
+        width: 100%;
+    }
+
+    .library-browser-panel .sorting-dropdown,
+    .library-browser-panel .library-filters .form-group,
+    .library-browser-panel .library-filters .filter-rating-group,
+    .library-browser-panel .button-group {
+        flex: 1 1 100%;
+        width: 100%;
+    }
+
+    .library-browser-panel .rating-slider {
+        width: 100%;
+    }
+
+    .library-browser-panel .button-group .btn {
+        flex: 1;
+    }
+}
+
+.library-browser-header {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 28px 0 22px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.library-browser-header h1 {
+    margin: 0;
+    color: #fff;
+    font-size: clamp(1.65rem, 3vw, 2.15rem);
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    text-shadow: 0 0 28px rgba(120, 160, 255, 0.34);
+}
+
+.library-browser-eyebrow {
+    margin: 0 0 7px;
+    color: rgba(176, 191, 255, 0.86);
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+.library-browser-count {
+    margin: 0;
+    padding: 7px 11px;
+    border: 1px solid rgba(154, 177, 255, 0.22);
+    border-radius: 999px;
+    background: rgba(98, 122, 239, 0.1);
+    color: rgba(226, 231, 255, 0.92);
+    font-size: 0.85rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.library-browser-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.library-filter-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 18px;
+    height: 18px;
+    margin-left: 6px;
+    padding: 0 5px;
+    border-radius: 999px;
+    background: rgba(98, 122, 239, 0.22);
+    color: #fff;
+    font-size: 0.68rem;
+    letter-spacing: 0;
+}
+
+.game-grid-loading,
+.game-grid-empty {
+    display: flex;
+    grid-column: 1 / -1;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 240px;
+    gap: 12px;
+    padding: 24px;
+    border: 1px dashed rgba(154, 177, 255, 0.24);
+    border-radius: 16px;
+    color: rgba(225, 229, 245, 0.72);
+    text-align: center;
+}
+
+.game-grid-loading > i,
+.game-grid-empty > i { color: rgba(154, 177, 255, 0.9); font-size: 1.5rem; }
+.game-grid-empty p { margin: 0; }
+.game-grid-error { border-color: rgba(231, 106, 120, 0.35); }
 
 .game-discovery-container {
     display: flex;
     flex-direction: row;
 }
 
-.modal-content-search button.close {
-    background-color: var(--btn-secondary);
-    color: var(--text-white);
-    border: 1px solid var(--btn-secondary);
-    border-radius: 4px;
-}
-
-.modal-content-search button.close:hover {
-    background-color: var(--btn-dark);
-}
-
-.search-result {
-    padding: 5px;
-    cursor: pointer;
-    transition: background-color 0.3s ease, color 0.3s ease;
-}
-
-.search-result:hover, .search-result.selected {
-    background-color: var(--btn-secondary);
-    color: var(--text-white);
-}
-
 /* Modern Pagination Styles */
 .pagination-header {
     display: flex;
+    flex-wrap: wrap;
     justify-content: space-between;
     align-items: center;
+    gap: 10px;
     margin-bottom: 20px;
     padding: 15px 0;
-    border-bottom: 1px solid var(--border-light);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    place-content: center;
 }
 
 .pagination-footer {
     display: flex;
+    flex-direction: column;
     justify-content: center;
     align-items: center;
     margin-top: 30px;
     padding: 15px 0;
-    border-top: 1px solid var(--border-light);
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    gap: 20px;
 }
 
 .pagination-controls-left {
@@ -70,22 +309,23 @@
 .pagination-nav {
     display: flex;
     align-items: center;
+    margin-left: 2px;
 }
 
 .pagination-controls {
     display: flex;
     align-items: center;
     gap: 8px;
-    background: var(--container-glass-primary);
-    backdrop-filter: blur(10px);
+    background: rgba(255, 255, 255, 0.035);
+    backdrop-filter: blur(16px);
     padding: 8px 12px;
     border-radius: 12px;
-    border: 1px solid var(--border-light);
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .btn-pagination {
-    background: var(--bg-light-overlay);
-    border: 1px solid var(--border-light-strong);
+    background: rgba(255, 255, 255, 0.055);
+    border: 1px solid rgba(255, 255, 255, 0.12);
     color: var(--color-gray-ddd);
     border-radius: 8px;
     padding: 8px 12px;
@@ -100,10 +340,10 @@
 }
 
 .btn-pagination:hover:not(:disabled) {
-    background: var(--bg-light-overlay-hover);
-    border-color: var(--border-light-30);
-    transform: translateY(-1px);
-    box-shadow: var(--shadow-card);
+    background: rgba(98, 122, 239, 0.22);
+    border-color: rgba(154, 177, 255, 0.5);
+    transform: translateY(-2px);
+    box-shadow: 0 7px 18px rgba(52, 72, 185, 0.25);
 }
 
 .btn-pagination:disabled {
@@ -114,20 +354,21 @@
 
 .page-info {
     padding: 8px 16px;
-    background: var(--bg-white-05);
+    background: rgba(98, 122, 239, 0.12);
     border-radius: 8px;
     color: var(--text-white);
     font-size: 14px;
     font-weight: 500;
-    var(--text-white)-space: nowrap;
+    white-space: nowrap;
     min-width: 80px;
     text-align: center;
+    margin: 2px auto;
 }
 
 .dropdown-perpage {
-    background: var(--container-glass-primary);
+    background: rgba(255, 255, 255, 0.055);
     backdrop-filter: blur(10px);
-    border: 1px solid var(--border-light-strong);
+    border: 1px solid rgba(255, 255, 255, 0.12);
     color: var(--color-gray-ddd);
     border-radius: 8px;
     padding: 8px 12px;
@@ -183,4 +424,88 @@
 
 .hidden {
     display: none;
+}
+
+@media (max-width: 768px) {
+
+    .library-browser-page {
+        margin: 12px;
+    }
+
+    .library-browser-page .library-browser-panel {
+        width: calc(100% - 24px);
+        margin: 0 12px 20px;
+        padding: 0 0 22px;
+        overflow: visible;
+        background: transparent;
+        border: 0;
+        border-radius: 0;
+        box-shadow: none;
+    }
+
+    .library-browser-header {
+        align-items: flex-start;
+        flex-direction: column;
+        padding: 22px 0 18px;
+    }
+
+    .library-browser-actions { width: 100%; justify-content: space-between; }
+    /* A single generous card column remains easier to browse and tap. */
+    .game-library-container {
+        grid-template-columns: minmax(0, 320px) !important;
+        justify-items: center;
+        justify-content: center;
+        gap: 18px;
+        padding: 0;
+    }
+
+    .game-library-container .game-card-container {
+        display: flex;
+        justify-content: center;
+        width: 100%;
+    }
+
+    .game-library-container .game-card {
+        margin-right: auto;
+        margin-left: auto;
+    }
+
+    /* Pagination header stacks on mobile */
+    .pagination-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .pagination-controls-right {
+        align-self: center;
+        width: 100%;
+        justify-content: center;
+    }
+
+    .pagination-controls {
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 6px;
+        padding: 6px 8px;
+    }
+
+    .pagination-label {
+        font-size: 12px;
+        margin: 2px auto;
+    }
+
+    .dropdown-perpage {
+        padding: 5px 8px;
+        font-size: 13px;
+    }
+}
+
+@media (max-width: 520px) {
+    .game-library-container {
+        grid-template-columns: minmax(0, 260px);
+        justify-content: center;
+        gap: 16px;
+        padding: 0;
+    }
 }

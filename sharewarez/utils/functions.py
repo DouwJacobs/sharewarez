@@ -8,7 +8,7 @@ from wtforms.validators import ValidationError
 from sharewarez import db
 from sharewarez.models import ReleaseGroup, Library, Game
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sharewarez.models import GlobalSettings
 from flask import url_for, current_app
 from sharewarez.utils.security import is_safe_path, get_allowed_base_directories
@@ -392,33 +392,14 @@ def load_scanning_filter_patterns():
 
 
 def get_library_count():
-    # Direct query to the Library model
-    libraries_query = db.session.execute(select(Library)).scalars().all()
-    libraries = [
-        {
-            'uuid': lib.uuid,
-            'name': lib.name,
-            'image_url': lib.image_url if lib.image_url else url_for('static', filename='newstyle/default_library.jpg')
-        } for lib in libraries_query
-    ]
-
-    # Logging the count of libraries returned
-    print(f"Returning {len(libraries)} libraries.")
-    return len(libraries)
+    count = db.session.execute(select(func.count(Library.uuid))).scalar_one()
+    print(f"Returning {count} libraries.")
+    return count
 
 def get_games_count():
-    # Direct query to the Games model
-    games_query = db.session.execute(select(Game)).scalars().all()
-    games = [
-        {
-            'uuid': game.uuid,
-            'name': game.name,
-        } for game in games_query
-    ]
-
-    # Logging the count of games returned
-    print(f"Returning {len(games)} games.")
-    return len(games)
+    count = db.session.execute(select(func.count(Game.id))).scalar_one()
+    print(f"Returning {count} games.")
+    return count
 
 def delete_associations_for_game(game_to_delete):
     associations = [game_to_delete.genres, game_to_delete.platforms, game_to_delete.game_modes,

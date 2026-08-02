@@ -1,9 +1,12 @@
 .discovery-library-label, .discovery-latest-games-label, .discovery-last-updated-label, .discovery-most-downloaded-label, .discovery-highest-rated-label  {
-    font-size: 20px;
-    font-weight: bold;
-    margin-top: 10px;
-    margin-bottom: 10px;
-    text-align: center;
+    font-size: 1.05rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    margin: 32px 0 16px;
+    padding-bottom: 10px;
+    text-align: left;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    color: #fff;
 }
 
 .discovery-latest-games-container {
@@ -43,11 +46,13 @@
 }
 
 .discovery-most-favorited-label {
-    font-size: 20px;
-    font-weight: bold;
-    margin-top: 10px;
-    margin-bottom: 10px;
-    text-align: center;
+    font-size: 1.05rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    margin: 32px 0 16px;
+    padding-bottom: 10px;
+    text-align: left;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 
@@ -79,17 +84,24 @@
 
 .library-name {
     display: block;
-    background-color: black;
+    background: linear-gradient(145deg, rgba(28, 29, 45, 0.96), rgba(16, 16, 27, 0.98));
     color: white;
-    border: 1px solid white;
-    border-radius: var(--border-radius-lg);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
     padding: 5px 5px;
     margin-top: 8px;
     max-width: calc(100% - 20px);
+    margin-left: auto;
+    margin-right: auto;
     box-sizing: border-box;
     white-space: normal;
     overflow-wrap: break-word; 
     font-size: 1.3em; 
+}
+
+.library-link {
+    width: min(250px, 100%);
+    text-align: center;
 }
 
 
@@ -99,15 +111,17 @@
     object-fit: contain;
     display: block;
     margin: 0 auto;
-    padding: 5px;
-    border: 1px solid rgb(49, 49, 49);
-    border-radius: var(--border-radius-lg);
-    background-color: #2a2c35;
+    padding: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.04);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.42);
 }
 
 .library-cover:hover {
     transition: transform 0.3s ease, box-shadow 0.3s ease;
-    transform: scale(1.1);
+    transform: translateY(-5px) scale(1.03);
+    box-shadow: 0 16px 35px rgba(0, 0, 0, 0.55), 0 0 26px rgba(94, 125, 255, 0.18);
 }
 
 
@@ -146,26 +160,178 @@
     background-color: rgba(0, 0, 0, 0.8);
 }
 
+/* Favorites uses the same discovery surface, with a dedicated empty state. */
+.favorites-page {
+    width: min(1440px, calc(100% - 48px));
+    margin: 24px auto 48px;
+}
+
+.favorites-page-header {
+    margin-bottom: 24px;
+}
+
+.favorites-page-description {
+    margin: 8px 0 0;
+    color: rgba(205, 214, 235, 0.68);
+}
+
+.favorites-empty-state {
+    display: flex;
+    grid-column: 1 / -1;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 300px;
+    padding: 36px;
+    text-align: center;
+    background: linear-gradient(145deg, rgba(28, 29, 45, 0.72), rgba(12, 12, 20, 0.82));
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+}
+
+.favorites-empty-state > i {
+    margin-bottom: 14px;
+    color: rgba(255, 130, 170, 0.88);
+    font-size: 2.25rem;
+}
+
+.favorites-empty-state h2 {
+    margin: 0;
+    color: #fff;
+    font-size: 1.25rem;
+}
+
+.favorites-empty-state p {
+    max-width: 360px;
+    margin: 8px 0 20px;
+    color: rgba(205, 214, 235, 0.68);
+}
+
+@media (max-width: 768px) {
+    .favorites-page {
+        width: calc(100% - 24px);
+        margin-top: 12px;
+    }
+}
+
 .discovery-header {
-	text-align: center;
+	text-align: left;
+    margin: 0;
+    padding: 0;
+    font-size: clamp(1.65rem, 3vw, 2.15rem);
+    text-shadow: 0 0 28px rgba(120, 160, 255, 0.34);
+}
+
+.discovery-page-header {
+    padding-bottom: 24px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.discovery-eyebrow {
+    margin: 0 0 7px;
+    color: rgba(176, 191, 255, 0.86);
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+.discovery-latest-games-container,
+.discovery-most-downloaded-container,
+.discovery-highest-rated-container,
+.discovery-last-updated-container,
+.discovery-most-favorited-container {
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 16px;
+    padding: 2px;
+}
+
+.discovery-panel .game-card-container {
+    width: 100%;
+    max-width: 220px;
+}
+
+.discovery-panel .game-card {
+    width: 100%;
+    max-width: none;
+    max-height: none;
+    margin: 0;
+}
+
+.discovery-panel .game-cover {
+    width: 100%;
+    max-width: none;
+    max-height: none;
+    aspect-ratio: 3 / 4;
+    object-fit: cover;
 }
 
 .discovery-panel {
     display: flex;
     flex-direction: column;
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(10px);
-    border-radius: var(--border-radius-lg);
-    padding: 20px;
-    margin: 20px;
+    background: linear-gradient(145deg, rgba(18, 18, 28, 0.96), rgba(12, 12, 20, 0.98));
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 20px;
+    padding: 28px 32px 42px;
+    width: min(1440px, calc(100% - 48px));
+    margin: 24px auto;
+    box-sizing: border-box;
     grid-template-columns: auto 1fr auto;
     gap: 10px;
     justify-content: space-between;
-    box-shadow: 0 9px 16px rgba(17, 2, 2, 2);
-    padding-bottom: 50px;
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.025), 0 20px 60px rgba(0, 0, 0, 0.58), 0 0 70px rgba(80, 120, 255, 0.06);
 }
 
 .game-cover-container {
     position: relative;
     display: inline-block;
+}
+
+@media (max-width: 768px) {
+    .discovery-panel {
+        width: calc(100% - 24px);
+        margin: 12px auto;
+        /* The global mobile shell is flattened, but Discover still needs an
+           inset so section headings and grids do not touch its edges. */
+        padding: 22px 16px 30px !important;
+        border-radius: 16px;
+    }
+
+    .discovery-libraries-container {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .discovery-library-label,
+    .discovery-latest-games-label,
+    .discovery-last-updated-label,
+    .discovery-most-downloaded-label,
+    .discovery-highest-rated-label,
+    .discovery-most-favorited-label {
+        margin-top: 24px;
+    }
+
+    .discovery-latest-games-container,
+    .discovery-most-downloaded-container,
+    .discovery-highest-rated-container,
+    .discovery-last-updated-container,
+    .discovery-most-favorited-container {
+        grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+        gap: 10px;
+    }
+}
+
+@media (max-width: 520px) {
+    .discovery-latest-games-container,
+    .discovery-most-downloaded-container,
+    .discovery-highest-rated-container,
+    .discovery-last-updated-container,
+    .discovery-most-favorited-container {
+        grid-template-columns: minmax(0, 260px);
+        justify-content: center;
+        gap: 16px;
+    }
+
+    .discovery-panel .game-card-container { max-width: 260px; }
 }

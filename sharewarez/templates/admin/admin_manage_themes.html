@@ -1,73 +1,80 @@
 {% extends "base.html" %}
-{% block content %}
+{% from "partials/ui_components.html" import admin_page_header %}
 
+{% block styles %}
+{{ super() }}
 <link rel="stylesheet" href="{{ 'css/admin/admin_manage_themes.css'|theme_asset }}">
+{% endblock %}
 
-<div class="container">
-    <div class="glass-panel">
-        <a href="{{ url_for('site.admin_dashboard') }}" class="btn btn-secondary">Back to Dashboard</a>
-    </div>
-</div>
+{% block content %}
+<main class="admin-page themes-page">
+    {% call admin_page_header('Themes', 'Install and manage visual themes for ' ~ site_title ~ '.', 'Appearance', 'fa-palette') %}
+        <a href="{{ url_for('admin2.theme_readme') }}" class="btn btn-secondary">
+            <i class="fas fa-book-open" aria-hidden="true"></i> Theme guide
+        </a>
+        <a href="{{ url_for('admin2.theme_builder') }}" class="btn btn-primary">
+            <i class="fas fa-wand-magic-sparkles" aria-hidden="true"></i> Build a theme
+        </a>
+        <a href="{{ url_for('admin2.download_default_theme') }}" class="btn btn-primary">
+            <i class="fas fa-download" aria-hidden="true"></i> Download reference
+        </a>
+    {% endcall %}
 
-{% with messages = get_flashed_messages(with_categories=true) %}
-{% if messages %}
-    <div class="flash-messages">
-        {% for category, message in messages %}
-            <div class="alert alert-{{ category }}" role="alert">
-                {{ message }}
+    <section class="admin-surface themes-operations" aria-labelledby="theme-operations-title">
+        <div class="admin-section-header">
+            <div>
+                <h2 id="theme-operations-title">Theme operations</h2>
+                <p>Upload a theme package or restore all themes shipped with the application.</p>
             </div>
-        {% endfor %}
-    </div>
-{% endif %}
-{% endwith %}
-
-<div class="container-settings">
-    <div class="card">
-        <h1 class="page-title">Manage Themes</h1>
-        <a href="{{ url_for('admin2.theme_readme') }}" class="btn btn-info mt-3">How to Create a Theme</a>
-        <div class="theme-upload-section">
-            <h2>Upload New Theme</h2>
-            <form method="POST" enctype="multipart/form-data" class="theme-upload-form">
+        </div>
+        <div class="themes-operation-grid">
+            <form method="POST" enctype="multipart/form-data" class="theme-operation-card theme-upload-form">
                 {{ form.hidden_tag() }}
-                <div class="form-group">
-                    {{ form.theme_zip.label(class="form-label") }}
-                    {{ form.theme_zip(class="form-control-file") }}
+                <div class="theme-operation-copy">
+                    <i class="fas fa-file-zipper" aria-hidden="true"></i>
+                    <div><h3>Install a theme</h3><p>Select a valid theme ZIP package.</p></div>
                 </div>
-                {{ form.submit(class="btn btn-primary") }}
+                <div class="theme-operation-controls">
+                    {{ form.theme_zip.label(class="visually-hidden") }}
+                    {{ form.theme_zip(class="form-control", accept=".zip") }}
+                    {{ form.submit(class="btn btn-primary") }}
+                </div>
             </form>
-            
-            <form method="POST" action="{{ url_for('admin2.reset_default_themes') }}" 
-                  onsubmit="return confirm('Are you sure you want to reset all default themes? This will overwrite any modifications to default themes.');">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                <button type="submit" class="btn btn-warning">Reset Default Themes</button>
+
+            <form method="POST" action="{{ url_for('admin2.reset_default_themes') }}" class="theme-operation-card theme-reset-form" onsubmit="return confirm('Restore all bundled themes? Local modifications to bundled theme files will be overwritten.');">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="theme-operation-copy">
+                    <i class="fas fa-arrow-rotate-left" aria-hidden="true"></i>
+                    <div><h3>Restore bundled themes</h3><p>Replace modified built-in theme files with the shipped versions.</p></div>
+                </div>
+                <button type="submit" class="btn btn-warning"><i class="fas fa-arrow-rotate-left" aria-hidden="true"></i> Restore themes</button>
             </form>
         </div>
+    </section>
 
-        <div class="installed-themes-section">
-            <h2>Installed Themes</h2>
-            <div class="themes-grid">
-                <div class="theme-card default-theme">
-                    <h3>{{ default_theme.name }} (Default)</h3>
-                    <p><strong>Author:</strong> {{ default_theme.author }}</p>
-                    <p><strong>Release Date:</strong> {{ default_theme.release_date }}</p>
-                    <p><strong>Description:</strong> {{ default_theme.description }}</p>
-                </div>
-                {% for theme in themes %}
-                {% if theme.name != default_theme.name %}
-                <div class="theme-card">
-                    <h3>{{ theme.name }}</h3>
-                    <p><strong>Author:</strong> {{ theme.author }}</p>
-                    <p><strong>Release Date:</strong> {{ theme.release_date }}</p>
-                    <p><strong>Description:</strong> {{ theme.description }}</p>
-                    <form action="{{ url_for('admin2.delete_theme', theme_name=theme.name) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this theme?');">
-                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                        <button type="submit" class="btn btn-danger btn-sm">Delete</button>
-                    </form>
-                </div>
-                {% endif %}
-                {% endfor %}
+    <section class="admin-surface installed-themes-section" aria-labelledby="installed-themes-title">
+        <div class="admin-section-header">
+            <div>
+                <h2 id="installed-themes-title">Installed themes</h2>
+                <p>{{ themes|length }} theme{% if themes|length != 1 %}s{% endif %} available.</p>
             </div>
         </div>
-    </div>
-</div>
+        <div class="themes-grid">
+            {% for theme in themes %}
+            <article class="theme-card{% if theme.id == 'default' %} default-theme{% endif %}">
+                <div class="theme-card-heading"><h3>{{ theme.name }}</h3><span class="badge {% if theme.id == 'default' %}bg-primary{% elif theme.source == 'bundled' %}bg-info{% elif theme.source == 'builder' %}bg-success{% else %}bg-secondary{% endif %}">{% if theme.id == 'default' %}Default{% elif theme.source == 'bundled' %}Bundled{% elif theme.source == 'builder' %}Created in app{% else %}Uploaded{% endif %}</span></div>
+                <dl class="theme-meta"><div><dt>Author</dt><dd>{{ theme.author }}</dd></div><div><dt>Released</dt><dd>{{ theme.release_date }}</dd></div></dl>
+                <p>{{ theme.description }}</p>
+                {% if theme.editable or not theme.bundled %}<div class="theme-card-actions">
+                    {% if theme.editable %}<a href="{{ url_for('admin2.theme_builder', theme_id=theme.id) }}" class="btn btn-secondary btn-sm"><i class="fas fa-pen" aria-hidden="true"></i> Edit</a>{% endif %}
+                    {% if not theme.bundled %}<form action="{{ url_for('admin2.delete_theme', theme_name=theme.id) }}" method="POST" onsubmit="return confirm('Delete this theme?');">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-danger btn-sm"><i class="fas fa-trash" aria-hidden="true"></i> Delete</button>
+                    </form>{% endif %}
+                </div>{% endif %}
+            </article>
+            {% endfor %}
+        </div>
+    </section>
+</main>
 {% endblock %}

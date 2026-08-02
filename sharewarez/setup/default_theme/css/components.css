@@ -12,22 +12,43 @@
 /* Game Card Component */
 .game-card-container {
     position: relative;
+    width: 100%;
     transition: transform var(--transition-normal);
 }
 
 .game-card {
+    box-sizing: border-box;
     cursor: pointer;
     transition: transform var(--transition-normal);
     position: relative;
     margin: var(--spacing-xs);
+    width: calc(100% - (2 * var(--spacing-xs)));
     max-width: 250px;
-    max-height: 332px;
+    max-height: none;
+    border-radius: 16px;
+    overflow: visible;
+    background: linear-gradient(145deg, rgba(18, 18, 28, 0.96), rgba(12, 12, 20, 0.98));
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.05), 0 0 40px rgba(80, 120, 255, 0.1);
 }
 
 .game-card:hover {
-    transform: scale(1.2);
+    transform: translateY(-3px) scale(1.015);
     z-index: 6;
-    box-shadow: 10px 10px 15px var(--shadow-dark-strong);
+    box-shadow: 0 16px 34px rgba(0, 0, 0, 0.58), 0 0 28px rgba(94, 125, 255, 0.18), 0 0 0 1px rgba(164, 183, 255, 0.22);
+}
+
+/* An expanded card menu must sit above later grid items and their controls. */
+.game-card-container.menu-open {
+    z-index: 100;
+}
+
+.game-card.menu-open {
+    z-index: 101;
+}
+
+.game-card.menu-open .popup-menu {
+    z-index: 102;
 }
 
 .game-cover {
@@ -38,7 +59,8 @@
     transition: transform var(--transition-normal), box-shadow var(--transition-normal);
     box-shadow: 5px 5px 9px var(--shadow-dark-strong);
     border: 1px solid var(--game-border-gray);
-    border-radius: var(--border-radius-xs);
+    border-radius: 15px;
+    object-fit: cover;
     max-width: 250px;
     max-height: 332px;
 }
@@ -84,8 +106,13 @@
     z-index: 13;
     background-color: var(--btn-hamburger-bg);
     border-radius: 50%;
-    padding: 1px 6px;
-    border: none;
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(255, 255, 255, 0.15);
     cursor: pointer;
     opacity: 0;
     transition: opacity 0.3s ease;
@@ -103,6 +130,18 @@
     opacity: 1; 
 }
 
+.game-card .popup-menu,
+.game-card-coverimage .popup-menu {
+    top: 50px;
+    left: 8px;
+    min-width: 210px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    background: linear-gradient(145deg, rgba(28, 29, 45, 0.98), rgba(12, 12, 20, 0.98));
+    backdrop-filter: blur(16px);
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.58), 0 0 24px rgba(80, 120, 255, 0.14);
+}
+
 /* Favorite Button */
 .favorite-btn {
     position: absolute;
@@ -112,7 +151,7 @@
     height: 30px;
     background-color: var(--btn-hamburger-bg);
     border-radius: 50%;
-    border: none;
+    border: 1px solid rgba(255, 255, 255, 0.15);
     cursor: pointer;
     opacity: 0;
     transition: opacity 0.3s ease;
@@ -139,6 +178,14 @@
 .favorite-btn.processing {
     pointer-events: none;
     opacity: 0.7;
+}
+
+@media (max-width: 768px) {
+    /* Touch screens do not expose hover-only card actions. */
+    .game-card .button-glass-hamburger,
+    .game-card .favorite-btn {
+        opacity: 1;
+    }
 }
 
 /* Local Metadata Badge */
@@ -197,6 +244,23 @@
 .game-name, .game-size, .game-genres {
     margin-bottom: 5px;
     margin-left: 0px;
+}
+
+.game-card-hover-tags {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 5px;
+    margin-top: 8px;
+}
+
+.game-card-hover-label {
+    width: 100%;
+    color: rgba(180, 190, 220, 0.72);
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
 }
 
 .chip {

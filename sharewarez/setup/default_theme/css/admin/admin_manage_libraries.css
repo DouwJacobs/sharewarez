@@ -1,0 +1,83 @@
+.admin_manage_libraries-library-container {
+    width: min(1440px, calc(100% - 48px));
+    margin: 24px auto 48px;
+}
+
+.admin_manage_libraries-library-container .container-settings {
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    background: transparent;
+    box-shadow: none;
+}
+
+.admin_manage_libraries-library-container .card {
+    padding: 24px;
+}
+
+.libraries-management-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    margin-bottom: 22px;
+    padding-bottom: 18px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.libraries-management-eyebrow {
+    margin: 0 0 5px;
+    color: rgba(130, 165, 255, 0.9);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+.libraries-management-header h1 {
+    margin: 0;
+    color: #fff;
+    font-size: 1.65rem;
+}
+
+.libraries-management-header p:not(.libraries-management-eyebrow) {
+    margin: 6px 0 0;
+    color: rgba(205, 214, 235, 0.68);
+}
+
+.libraries-table-wrapper {
+    overflow: auto;
+}
+
+.libraries-table-wrapper .table {
+    margin: 0;
+}
+
+.libraries-table-wrapper .drag-handle {
+    color: rgba(167, 187, 255, 0.7);
+    cursor: grab !important;
+}
+
+.libraries-table-wrapper .drag-handle:active {
+    cursor: grabbing !important;
+}
+
+@media (max-width: 768px) {
+    .admin_manage_libraries-library-container {
+        width: calc(100% - 24px);
+        margin-top: 12px;
+    }
+
+    .admin_manage_libraries-library-container .card {
+        padding: 16px;
+    }
+
+    .libraries-management-header {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .libraries-management-header .btn {
+        width: 100%;
+    }
+}

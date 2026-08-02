@@ -8,7 +8,7 @@ from flask import (
 )
 from flask_login import current_user, login_required
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import selectinload
 from sqlalchemy import func, select, delete, and_
 from werkzeug.utils import secure_filename
 from werkzeug.exceptions import NotFound
@@ -16,6 +16,7 @@ from sharewarez import db, cache
 from datetime import datetime, timezone
 from PIL import Image as PILImage
 from itsdangerous import URLSafeTimedSerializer
+from jinja2 import pass_context
 
 from sharewarez.forms import (
     ScanFolderForm, CsrfProtectForm,
@@ -24,7 +25,7 @@ from sharewarez.forms import (
 )
 from sharewarez.models import (
     Game, Image, ScanJob, UnmatchedFolder,
-    Genre, Theme, GameMode, PlayerPerspective,
+    Genre, Theme, GameMode, PlayerPerspective, GameTag,
     Category, Library,
     ReleaseGroup, AllowedFileType
 )
@@ -37,6 +38,7 @@ from sharewarez.utils.game_core import delete_game
 from sharewarez.utils.security import is_safe_path, get_allowed_base_directories
 from sharewarez.utils.unmatched import handle_delete_unmatched
 from sharewarez.utils.processors import get_global_settings
+from sharewarez.utils.pagination import normalize_library_pagination
 bp = Blueprint('main', __name__)
 
 def get_serializer():
@@ -62,6 +64,7 @@ def browse_games():
     print(f"Route: /browse_games - {current_user.name}")
     page = request.args.get('page', 1, type=int)
     per_page = request.args.get('per_page', 20, type=int)
+    page, per_page = normalize_library_pagination(page, per_page)
     library_uuid = request.args.get('library_uuid')
     category = request.args.get('category')
     genre = request.args.get('genre')
@@ -69,9 +72,14 @@ def browse_games():
     game_mode = request.args.get('game_mode')
     player_perspective = request.args.get('player_perspective')
     theme = request.args.get('theme')
+    tag = request.args.get('tag')
     sort_by = request.args.get('sort_by', 'name')
     sort_order = request.args.get('sort_order', 'asc')
-    query = select(Game).options(joinedload(Game.genres))
+    query = select(Game).options(
+        selectinload(Game.genres),
+        selectinload(Game.tags),
+        selectinload(Game.favorited_by),
+    )
     # Get current user ID for favorite status
     current_user_id = current_user.id if current_user.is_authenticated else None
     if library_uuid:
@@ -88,6 +96,8 @@ def browse_games():
         query = query.filter(Game.player_perspectives.any(PlayerPerspective.name == player_perspective))
     if theme:
         query = query.filter(Game.themes.any(Theme.name == theme))
+    if tag:
+        query = query.filter(Game.tags.any(GameTag.name == tag))
     if sort_by == 'name':
         query = query.order_by(Game.name.asc() if sort_order == 'asc' else Game.name.desc())
     elif sort_by == 'rating':
@@ -101,10 +111,21 @@ def browse_games():
 
     # Pagination
     pagination = db.paginate(query, page=page, per_page=per_page, error_out=False)
+    if pagination.pages and page > pagination.pages:
+        pagination = db.paginate(query, page=pagination.pages, per_page=per_page, error_out=False)
     games = pagination.items
 
     # Get all user statuses for games in this page (batch query for performance)
     game_uuids = [game.uuid for game in games]
+    cover_urls = {}
+    if game_uuids:
+        cover_rows = db.session.execute(
+            select(Image.game_uuid, Image.url)
+            .where(Image.game_uuid.in_(game_uuids), Image.image_type == 'cover')
+            .order_by(Image.id)
+        ).all()
+        for game_uuid, image_url in cover_rows:
+            cover_urls.setdefault(game_uuid, image_url)
     user_statuses = {}
     if current_user_id and game_uuids:
         from sharewarez.models import user_game_status
@@ -121,9 +142,9 @@ def browse_games():
     # Get game data
     game_data = []
     for game in games:
-        cover_image = db.session.execute(select(Image).filter_by(game_uuid=game.uuid, image_type='cover')).scalars().first()
-        cover_url = cover_image.url if cover_image else 'newstyle/default_cover.jpg'
+        cover_url = cover_urls.get(game.uuid, 'newstyle/default_cover.jpg')
         genres = [genre.name for genre in game.genres]
+        tags = [tag.name for tag in game.tags]
         game_size_formatted = format_size(game.size)
 
         # Get user status for this game
@@ -138,6 +159,7 @@ def browse_games():
             'url': game.url,
             'size': game_size_formatted,
             'genres': genres,
+            'tags': tags,
             'library_uuid': game.library_uuid,
             'is_favorite': current_user_id in [user.id for user in game.favorited_by],
             'user_status': user_status
@@ -147,7 +169,8 @@ def browse_games():
         'games': game_data,
         'total': pagination.total,
         'pages': pagination.pages,
-        'current_page': page
+        'current_page': pagination.page,
+        'per_page': per_page,
     })
 
 
@@ -222,6 +245,7 @@ def scan_folder():
 
 
 @bp.route('/scan_management', methods=['GET', 'POST'])
+@bp.route('/admin/scan_management', methods=['GET', 'POST'], endpoint='admin_scan_management')
 @login_required
 @admin_required
 def scan_management():
@@ -1041,7 +1065,8 @@ def verify_file(full_path):
         return False
 
 @bp.app_template_filter('theme_asset')
-def theme_asset_filter(path):
+@pass_context
+def theme_asset_filter(_template_context, path):
     """Convert a relative theme path to the correct themed URL with fallback to default"""
     from flask_login import current_user
 
@@ -1051,8 +1076,13 @@ def theme_asset_filter(path):
     else:
         current_theme = 'default'
 
+    # Older preferences stored the display name rather than the filesystem-safe
+    # theme id. Normalizing here keeps those selections working.
+    from werkzeug.utils import secure_filename
+    current_theme = secure_filename(current_theme) or 'default'
+
     # Check if themed asset exists
-    full_path = f'./sharewarez/static/library/themes/{current_theme}/{path}'
+    full_path = os.path.join(current_app.static_folder, 'library', 'themes', current_theme, path)
     if os.path.exists(full_path):
         return url_for('static', filename=f'library/themes/{current_theme}/{path}')
 

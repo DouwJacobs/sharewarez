@@ -10,7 +10,6 @@
 
 <script src="{{ 'js/favorites_manager.js'|theme_asset }}"></script>
 
-<script src="{{ url_for('static', filename='library/themes/default/js/csrf_utils.js') }}"></script>
 
 <style>
 .favorite-count .favorite-btn {
@@ -69,12 +68,13 @@
 }
 </style>
 
-<body>
-    <div class="discovery-panel">
-        <h1 class="discovery-header">    
-            <p>My Favorites</p>
-        </h1>
-        <div class="discovery-favorites-container discovery-panel">
+<main class="discovery-panel favorites-page">
+        <header class="discovery-page-header favorites-page-header">
+            <p class="discovery-eyebrow">Your collection</p>
+            <h1 class="discovery-header">My Favorites</h1>
+            <p class="favorites-page-description">The games you have saved for quick access.</p>
+        </header>
+        <div class="discovery-favorites-container">
             {% if favorites %}
                 <div class="discovery-favorites-games game-library-container">
                     {% for game in favorites %}
@@ -107,10 +107,15 @@
                     {% endfor %}
                 </div>
             {% else %}
-                <p>You haven't added any favorites yet!</p>
+                <div class="favorites-empty-state">
+                    <i class="fas fa-heart" aria-hidden="true"></i>
+                    <h2>No favorites yet</h2>
+                    <p>Save games from your library to keep them close at hand.</p>
+                    <a href="{{ url_for('library.library') }}" class="btn btn-primary">Browse your library</a>
+                </div>
             {% endif %}
         </div>
-    </div>
+    </main>
 
     <!-- Remove Favorite Confirmation Modal -->
     <div id="removeFavoriteModal" class="modal remove-favorite-modal" style="display:none; z-index: 15;">
@@ -120,9 +125,8 @@
             <p>Are you sure you want to remove "<span id="gameNameToRemove"></span>" from your favorites?</p>
             <div class="modal-buttons">
                 <button type="button" class="confirm-remove btn btn-danger">Remove</button>
-                <button type="button" class="cancel-remove btn btn-success">Cancel</button>
+                <button type="button" class="cancel-remove btn btn-secondary">Cancel</button>
             </div>
         </div>
     </div>
-</body>
 {% endblock %}

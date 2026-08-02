@@ -14,6 +14,8 @@ def get_global_settings():
     """Helper function to get global settings with defaults"""
     settings_record = db.session.execute(select(GlobalSettings)).scalars().first()
     default_settings = {
+        'siteTitle': 'SharewareZ',
+        'brandLogoPath': 'newstyle/sharewarez_logo.png',
         'showSystemLogo': True,
         'showHelpButton': True,
         'allowUsersToInviteOthers': False,
@@ -43,6 +45,8 @@ def get_global_settings():
     if settings_record and settings_record.settings:
         settings.update(settings_record.settings)
         return {
+            'site_title': settings.get('siteTitle') or 'SharewareZ',
+            'brand_logo_path': settings.get('brandLogoPath') or 'newstyle/sharewarez_logo.png',
             'show_logo': settings.get('showSystemLogo'),
             'show_help_button': settings.get('showHelpButton'),
             'enable_web_links': settings.get('enableWebLinksOnDetailsPage'),
@@ -63,6 +67,8 @@ def get_global_settings():
     
     # Return default values if no settings_record is found
     return {
+        'site_title': 'SharewareZ',
+        'brand_logo_path': 'newstyle/sharewarez_logo.png',
         'show_logo': True,
         'show_help_button': True,
         'enable_web_links': True,

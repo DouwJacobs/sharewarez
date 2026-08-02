@@ -162,12 +162,6 @@
 
 {% if game %}
     <div class="glass-panel-gamecard">
-        <head>
-            <meta name="csrf-token" content="{{ csrf_token() }}">
-            <title>{{ game.name or 'Game Details' }}</title>
-        </head>
-
-        <body>
             {# NFO Modal #}
             {% if game.nfo_content and game.nfo_content.lower() != 'none' %}
                 <div id="nfoModal" class="modal-nfo">
@@ -184,6 +178,10 @@
             {% endif %}
 
             <div class="game-card-gamename">
+                <a href="{{ back_url }}" class="game-details-back" aria-label="Back to library">
+                    <i class="fas fa-arrow-left" aria-hidden="true"></i>
+                    <span>Back</span>
+                </a>
                 <h1>{{ game.name or 'Game Name Not Available' }}</h1>
             </div>
 
@@ -205,7 +203,7 @@
                             {% for image in game.images if 'cover' in image.url %}
                                 <img src="{{ url_for('static', filename='library/images/' + image.url) }}"
                                      alt="{{ game.name }} Cover Image"
-                                     class="game-card-coverimage animated-entry">
+                                     class="game-card-cover-image animated-entry">
                             {% endfor %}
 
                             {# Favorite button on cover #}
@@ -249,17 +247,6 @@
                             {% endif %}
                         </div>
                     {% endif %}
-
-                    {# Summary #}
-                    <div class="game-card-text-summary">
-                        {% if game.summary and game.summary|length > 340 %}
-                            <span class="summary-short">{{ game.summary[:340] }}...</span>
-                            <a href="#" class="read-more-link">Read More</a>
-                            <span class="summary-full" style="display: none;">{{ game.summary }}</span>
-                        {% else %}
-                            <span>{{ game.summary or 'Summary Not Available' }}</span>
-                        {% endif %}
-                    </div>
                 </div>
 
                 <div class="game-card-q2">
@@ -288,6 +275,9 @@
                         {{ list_items(game.themes, "Themes", "theme") }}
                         {{ list_items(game.game_modes, "Game Modes", "game_mode") }}
                         {{ list_items(game.player_perspectives, "Player Perspectives", "player_perspective") }}
+                        {% if game.tags %}
+                            {{ list_items(game.tags, "Tags", "tag") }}
+                        {% endif %}
 
                         <div class="flex-row-horiz">
                             {{ detail_item("Category", game.category) }}
@@ -441,11 +431,32 @@
                             </div>
                         {% endif %}
                     </div>
+                </div>
+            </div>
 
-                    
+            {# Full width content section #}
+            <div class="game-card-bottom-info">
+                {# Summary #}
+                <div class="game-card-text-summary">
+                    <div class="game-card-labels" style="margin-top:0; margin-bottom:10px;"><i class="fas fa-align-left"></i> Summary</div>
+                    {% if game.summary and game.summary|length > 340 %}
+                        <span class="summary-short">{{ game.summary[:340] }}...</span>
+                        <a href="#" class="read-more-link">Read More</a>
+                        <span class="summary-full" style="display: none;">{{ game.summary }}</span>
+                    {% else %}
+                        <span>{{ game.summary or 'Summary Not Available' }}</span>
+                    {% endif %}
                 </div>
 
-
+                {# How to Install Section #}
+                {% if game.install_instructions and game.install_instructions.strip() %}
+                    <div class="install-instructions-section">
+                        <div class="install-instructions-header">
+                            <i class="fas fa-wrench"></i> How to Install
+                        </div>
+                        <div class="install-instructions-content">{{ game.install_instructions }}</div>
+                    </div>
+                {% endif %}
             </div>
 
             {# Screenshots Gallery #}
@@ -468,7 +479,6 @@
                     {% endfor %}
                 </div>
             {% endif %}
-        </body>
     </div>
 {% else %}
     <div class="alert alert-warning" role="alert">

@@ -41,14 +41,21 @@ def smtp_settings():
             if not data.get('smtp_default_sender'):
                 return jsonify({'status': 'error', 'message': 'Default sender email is required when SMTP is enabled'}), 400
             
-            # Validate port number
+            pass
+        
+        # Validate and save port number if provided, even if smtp is disabled
+        smtp_port_raw = data.get('smtp_port')
+        if smtp_port_raw is not None and smtp_port_raw != '':
             try:
-                port = int(data.get('smtp_port', 587))
+                port = int(smtp_port_raw)
                 if port <= 0 or port > 65535:
                     return jsonify({'status': 'error', 'message': 'Invalid port number. Must be between 1 and 65535'}), 400
                 settings.smtp_port = port
             except ValueError:
                 return jsonify({'status': 'error', 'message': 'SMTP port must be a valid number'}), 400
+        else:
+            if not data.get('smtp_enabled'):
+                settings.smtp_port = None
         
         settings.smtp_enabled = data.get('smtp_enabled', False)
         settings.smtp_server = data.get('smtp_server')
@@ -81,13 +88,30 @@ def smtp_test():
     # Create SMTPTester instance
     tester = SMTPTester(debug=False)
     print(f"Testing SMTP connection using settings: {settings.smtp_server}:{settings.smtp_port}")
+    
+    # Safely convert port to int
+    port = None
+    if settings.smtp_port is not None:
+        try:
+            port = int(settings.smtp_port)
+        except (ValueError, TypeError):
+            pass
+
+    # Convert use_tls to boolean safely
+    use_tls = True
+    if settings.smtp_use_tls is not None:
+        if isinstance(settings.smtp_use_tls, str):
+            use_tls = settings.smtp_use_tls.lower() in ('true', '1', 'yes', 'on')
+        else:
+            use_tls = bool(settings.smtp_use_tls)
+
     # Test the connection using settings from database
     success, result = tester.test_connection(
         host=settings.smtp_server,
-        port=settings.smtp_port,
+        port=port,
         username=settings.smtp_username,
         password=settings.smtp_password,
-        use_tls=settings.smtp_use_tls,
+        use_tls=use_tls,
         timeout=10
     )
 

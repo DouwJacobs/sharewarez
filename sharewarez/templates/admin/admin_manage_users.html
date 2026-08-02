@@ -7,17 +7,17 @@
 {% endblock %}
 
 <link rel="stylesheet" href="{{ 'css/admin/admin_manage_users.css'|theme_asset }}">
-<div class="container">
-    <div class="glass-panel">
-        <a href="{{ url_for('site.admin_dashboard') }}" class="btn btn-secondary">Back to Dashboard</a>
-    </div>
-</div>
+<main class="users-management-page">
 
-<div class="card">
-<div class="d-flex justify-content-between align-items-center">
-    <h2>User Management</h2>
-    <button class="btn btn-primary" id="addNewUserBtn">Add New User</button>
-</div>
+<section class="users-management-panel">
+    <header class="users-management-header">
+        <div>
+            <p class="users-management-eyebrow">Administration</p>
+            <h2>User Management</h2>
+            <p>Manage user access, roles, and account status.</p>
+        </div>
+        <button class="btn btn-primary" id="addNewUserBtn"><i class="fas fa-user-plus" aria-hidden="true"></i> Add User</button>
+    </header>
     <div class="table-responsive">
         <table id="usersTable" class="table table-dark table-hover display responsive nowrap">
             <thead>
@@ -72,7 +72,8 @@
             </tbody>
         </table>
     </div>
-</div>
+</section>
+</main>
 
 
 

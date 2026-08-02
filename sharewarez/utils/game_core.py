@@ -128,6 +128,7 @@ def create_game_instance(game_data, full_disk_path, folder_size_bytes, library_u
             name=game_data['name'],
             summary=game_data.get('summary'),
             storyline=game_data.get('storyline'),
+            install_instructions=game_data.get('install_instructions'),
             url=game_data.get('url'),
             first_release_date=datetime.fromtimestamp(game_data.get('first_release_date', 0), UTC) if game_data.get('first_release_date') else None,
             aggregated_rating=game_data.get('aggregated_rating'),
@@ -498,6 +499,9 @@ def retrieve_and_save_game(game_name, full_disk_path, scan_job_id=None, library_
                 if new_game is None:
                     print(f"Failed to create game instance from local metadata for {game_name}. Skipping further processing.")
                     return None
+
+                if 'install_instructions' in local_metadata:
+                    new_game.install_instructions = local_metadata['install_instructions']
 
                 # Process genres, themes, etc. (same as existing code from line 481 onward)
                 if 'genres' in response_json[0]:
@@ -881,13 +885,13 @@ def delete_game(game_identifier):
         game_uuid_str = game_to_delete.uuid
     else:
         try:
-            # Parse without forcing version=4: uuid.UUID(x, version=4) rewrites the
-            # version/variant bits, so a non-v4 UUID would be looked up under a
-            # different string and never be found.
+            # Do not force UUIDv4: doing so rewrites valid non-v4 identifiers
+            # before lookup and can leave otherwise deletable games stranded.
             game_uuid_str = str(uuid.UUID(game_identifier))
         except (ValueError, AttributeError, TypeError):
             print(f"Invalid UUID format: {game_identifier}")
             abort(404)
+
         game_to_delete = db.session.execute(select(Game).filter_by(uuid=game_uuid_str)).scalar_one_or_none()
         if game_to_delete is None:
             print(f"No game found with UUID {game_uuid_str}")
@@ -897,9 +901,8 @@ def delete_game(game_identifier):
         print(f"Found game to delete: {game_to_delete}")
         db.session.execute(delete(GameURL).filter_by(game_uuid=game_uuid_str))
         delete_associations_for_game(game_to_delete)
-        # game_developer_association has a FK to games but no relationship on the
-        # Game model, so the ORM never clears it. Rows left here (from older
-        # schema versions) block the delete with a FK violation.
+        # This association has no relationship on Game, so older rows are not
+        # removed by ORM cascades and can otherwise block deletion.
         db.session.execute(
             game_developer_association.delete().where(
                 game_developer_association.c.game_id == game_to_delete.id
@@ -914,10 +917,33 @@ def delete_game(game_identifier):
         print(f'Error deleting game with UUID {game_uuid_str}: {e}')
         if has_request_context():
             flash(f'Error deleting game: {e}', 'error')
-        # Re-raise so the caller reports the real failure. Swallowing this made
-        # /delete_game return "success" while the game was still in the library.
+        # Let routes and background callers report the real failure instead of
+        # returning a false success while the database entry still exists.
         raise
 
+def heal_image_download_url(image):
+    """Attempts to fetch and set a missing download_url for an image using its IGDB ID."""
+    if image.download_url or not image.igdb_image_id:
+        return False
+        
+    try:
+        endpoint = 'https://api.igdb.com/v4/covers' if image.image_type == 'cover' else 'https://api.igdb.com/v4/screenshots'
+        query = f'fields url; where id={image.igdb_image_id};'
+        response = make_igdb_api_request(endpoint, query)
+        
+        if response and isinstance(response, list) and len(response) > 0 and 'error' not in response:
+            url = response[0].get('url')
+            if url:
+                if not url.startswith(('http://', 'https://')):
+                    url = 'https:' + url
+                image.download_url = url.replace('/t_thumb/', '/t_original/')
+                # Persist within the caller's transaction; committing here can
+                # accidentally commit unrelated pending session changes.
+                db.session.flush()
+                return True
+    except Exception as e:
+        print(f"Error healing download URL for image {image.id}: {e}")
+    return False
 
 def download_pending_images(batch_size=10, delay_between_downloads=1, app=None):
     """Download images that are queued but not yet downloaded."""
@@ -937,8 +963,9 @@ def download_pending_images(batch_size=10, delay_between_downloads=1, app=None):
             for image in pending_images:
                 try:
                     if not image.download_url:
-                        print(f"No download URL for image {image.id}, skipping.")
-                        continue
+                        if not heal_image_download_url(image):
+                            print(f"No download URL for image {image.id}, skipping.")
+                            continue
                     
                     # Download the image
                     save_path = os.path.join(app.config['IMAGE_SAVE_PATH'], image.url)
@@ -1016,7 +1043,8 @@ def download_images_for_game(game_uuid, app=None):
             for image in pending_images:
                 try:
                     if not image.download_url:
-                        continue
+                        if not heal_image_download_url(image):
+                            continue
                     
                     save_path = os.path.join(app.config['IMAGE_SAVE_PATH'], image.url)
                     
@@ -1047,7 +1075,8 @@ def download_single_image_worker(image, app):
     """Worker function to download a single image - designed for parallel execution."""
     try:
         if not image.download_url:
-            return {'success': False, 'image_id': image.id, 'error': 'No download URL'}
+            if not heal_image_download_url(image):
+                return {'success': False, 'image_id': image.id, 'error': 'No download URL'}
         
         save_path = os.path.join(app.config['IMAGE_SAVE_PATH'], image.url)
         

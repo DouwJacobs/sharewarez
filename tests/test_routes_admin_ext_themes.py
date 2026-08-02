@@ -641,6 +641,9 @@ class TestThemeRoutesIntegration:
         with app.test_request_context():
             assert url_for('admin2.manage_themes') == '/admin/themes'
             assert url_for('admin2.theme_readme') == '/admin/themes/readme'
+            assert url_for('admin2.theme_builder') == '/admin/themes/builder'
+            assert url_for('admin2.theme_builder', theme_id='custom') == '/admin/themes/builder/custom'
+            assert url_for('admin2.download_default_theme') == '/admin/themes/default/download'
             assert url_for('admin2.delete_theme', theme_name='test') == '/admin/themes/delete/test'
             assert url_for('admin2.reset_default_themes') == '/admin/themes/reset'
 
@@ -649,6 +652,8 @@ class TestThemeRoutesIntegration:
         routes = [
             '/admin/themes',
             '/admin/themes/readme',
+            '/admin/themes/builder',
+            '/admin/themes/default/download',
             '/admin/themes/reset'
         ]
         

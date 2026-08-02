@@ -71,6 +71,7 @@ $(document).ready(function() {
             $('#libraryNameSelect').val(savedFilters.library_uuid || '');
             $('#genreSelect').val(savedFilters.genre || '');
             $('#themeSelect').val(savedFilters.theme || '');
+            $('#tagSelect').val(savedFilters.tag || '');
             $('#gameModeSelect').val(savedFilters.game_mode || '');
             $('#playerPerspectiveSelect').val(savedFilters.player_perspective || '');
             $('#ratingSlider').val(savedFilters.rating || 0);
@@ -91,6 +92,7 @@ $(document).ready(function() {
             'library_uuid': 'library_uuid',
             'genre': 'genre', 
             'theme': 'theme',
+            'tag': 'tag',
             'game_mode': 'game_mode',
             'player_perspective': 'player_perspective',
             'rating': 'rating'
@@ -116,6 +118,8 @@ $(document).ready(function() {
     // Initialize pagination from server data
     var currentPage = currentPageFromServer;
     var totalPages = totalPagesFromServer;
+    var activeGamesRequest = null;
+    var gamesRequestSequence = 0;
     
     // Initialize pagination display
     if (totalPages > 0) {
@@ -226,6 +230,18 @@ $(document).ready(function() {
         });
     }
 
+    function populateTags(callback) {
+        populateDropdown({
+            apiUrl: '/api/tags',
+            elementId: '#tagSelect',
+            defaultText: 'All Tags',
+            valueField: 'name',
+            textField: 'name',
+            paramName: 'tag',
+            callback: callback
+        });
+    }
+
     function getUrlParams() {
         var params = {};
         var queryString = window.location.search.substring(1);
@@ -251,6 +267,7 @@ $(document).ready(function() {
             game_mode: $('#gameModeSelect').val() || urlParams.gameMode,
             player_perspective: $('#playerPerspectiveSelect').val() || urlParams.playerPerspective,
             theme: $('#themeSelect').val() || urlParams.theme,
+            tag: $('#tagSelect').val() || urlParams.tag,
             rating: $('#ratingSlider').val() !== '0' ? $('#ratingSlider').val() : undefined, 
             sort_by: $('#sortSelect').val(),
             sort_order: sortOrder,
@@ -259,11 +276,20 @@ $(document).ready(function() {
         var queryString = $.param(filters);
         console.log(`Full query URL: /browse_games?${queryString}`);
 
-        $.ajax({
+        if (activeGamesRequest) {
+            activeGamesRequest.abort();
+        }
+        const requestSequence = ++gamesRequestSequence;
+        const paginationButtons = $('#firstPage, #firstPageBottom, #prevPage, #prevPageBottom, #nextPage, #nextPageBottom, #lastPage, #lastPageBottom');
+        paginationButtons.prop('disabled', true);
+        $('#gamesContainer').attr('aria-busy', 'true').html('<div class="game-grid-loading" role="status"><i class="fas fa-circle-notch fa-spin" aria-hidden="true"></i><span>Loading games…</span></div>');
+        activeGamesRequest = $.ajax({
             url: '/browse_games',
             data: filters,
             method: 'GET',
+            timeout: 20000,
             success: function(response) {
+                if (requestSequence !== gamesRequestSequence) return;
                 totalPages = response.pages;
                 currentPage = response.current_page;
                 $('#currentPageInfo, #currentPageInfoBottom').text(currentPage + '/' + totalPages);
@@ -271,7 +297,17 @@ $(document).ready(function() {
                 updatePaginationControls();
             },
             error: function(xhr, status, error) {
+                if (status === 'abort' || requestSequence !== gamesRequestSequence) return;
                 console.error("AJAX error:", error);
+                const message = status === 'timeout' ? 'The library request timed out. Try a smaller page size or narrower filter.' : 'Games could not be loaded. Please try again.';
+                $('#gamesContainer').html(`<div class="game-grid-empty game-grid-error" role="alert"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i><p>${message}</p><button type="button" class="btn btn-secondary" id="retryGamesRequest">Retry</button></div>`);
+                $('#retryGamesRequest').on('click', function() { fetchFilteredGames(currentPage); });
+            },
+            complete: function() {
+                if (requestSequence !== gamesRequestSequence) return;
+                activeGamesRequest = null;
+                $('#gamesContainer').attr('aria-busy', 'false');
+                updatePaginationControls();
             }
         });
     }
@@ -285,16 +321,16 @@ $(document).ready(function() {
                 success: function(response) {
                     let message;
                     if (response.role === 'admin') {
-                        message = `<p>You have no Libraries!<br><br> Go to <a href="${libraryManagerUrl}">Library Manager</a> and create one.</p>`;
+                        message = `<div class="game-grid-empty"><i class="fas fa-book" aria-hidden="true"></i><p>You have no libraries yet.</p><a class="btn btn-primary" href="${libraryManagerUrl}">Create a library</a></div>`;
                     } else {
-                        message = '<p>No games or libraries found. Complain to the Captain of this vessel!</p>';
+                        message = '<div class="game-grid-empty"><i class="fas fa-gamepad" aria-hidden="true"></i><p>No games or libraries are available yet.</p></div>';
                     }
                     if ($('#gamesContainer').empty()) {
                         $('#gamesContainer').append(message);
                     }
                 },
                 error: function() {
-                    $('#gamesContainer').append('<p>Error fetching user role. Please try again later.</p>');
+                    $('#gamesContainer').append('<div class="game-grid-empty game-grid-error"><p>Unable to load this library state. Please try again.</p></div>');
                 }
             });
             return;
@@ -309,7 +345,7 @@ $(document).ready(function() {
                     if (response.role === 'admin') {
                         message = `<p>You have no games!<br> <br>Go to <a href="${libraryScanUrl}">Scan Manager</a> and add some games.</p>`;
                     } else {
-                        message = '<p>No games or libraries found. Complain to the Captain of this vessel!</p>';
+                        message = '<p>No games or libraries are available. Contact an administrator for help.</p>';
                     }
                     if ($('#gamesContainer').empty()) {
                         $('#gamesContainer').append(message);
@@ -331,7 +367,7 @@ $(document).ready(function() {
                     if (response.role === 'admin') {
                         message = `<p>You have no games in this library!<br> <br>Go to <a href="${libraryScanUrl}">Scan Manager</a> and add some games to the library.</p>`;
                     } else {
-                        message = '<p>No games or libraries found. Complain to the Captain of this vessel!</p>';
+                        message = '<p>No games or libraries are available. Contact an administrator for help.</p>';
                     }
                     if ($('#gamesContainer').empty()) {
                         $('#gamesContainer').append(message);
@@ -412,6 +448,7 @@ $(document).ready(function() {
 
     function createGameCardHtml(game) {
         var genres = game.genres ? game.genres.join(', ') : 'No Genres';
+        var tags = game.tags ? game.tags.join(', ') : '';
         var defaultCover = 'newstyle/default_cover.jpg';
         var fullCoverUrl = !game.cover_url || game.cover_url === defaultCover ? '/static/' + defaultCover : '/static/library/images/' + game.cover_url;
         var popupMenuHtml = createPopupMenuHtml(game);
@@ -471,7 +508,7 @@ $(document).ready(function() {
 
         var gameCardHtml = `
     <div class="game-card-container">
-        <div class="game-card" onmouseover="showDetails(this, '${game.uuid}')" onmouseout="hideDetails()" data-name="${game.name}" data-size="${game.size}" data-genres="${genres}">
+        <div class="game-card" onmouseover="showDetails(this, '${game.uuid}')" onmouseout="hideDetails()" data-name="${game.name}" data-size="${game.size}" data-genres="${genres}" data-tags="${tags}">
             <button id="menuButton-${game.uuid}" class="button-glass-hamburger"><i class="fas fa-bars"></i></button>
             <button class="favorite-btn" data-game-uuid="${game.uuid}" data-is-favorite="${game.is_favorite}">
                 <i class="fas fa-heart"></i>
@@ -479,11 +516,9 @@ $(document).ready(function() {
             ${popupMenuHtml}
             ${statusButtonHtml}
 
-            <div class="game-cover">
-                <a href="/game_details/${game.uuid}">
+            <a href="/game_details/${game.uuid}">
                 <img src="${fullCoverUrl}" alt="${game.name}" class="game-cover">
-                </a>
-            </div>
+            </a>
             <div id="details-${game.uuid}" class="popup-game-details hidden">
                 <!-- Details and screenshots will be injected here by JavaScript -->
             </div>
@@ -558,6 +593,7 @@ $(document).ready(function() {
             library_uuid: $('#libraryNameSelect').val(),
             genre: $('#genreSelect').val(),
             theme: $('#themeSelect').val(),
+            tag: $('#tagSelect').val(),
             game_mode: $('#gameModeSelect').val(),
             player_perspective: $('#playerPerspectiveSelect').val(),
             rating: $('#ratingSlider').val()
@@ -572,7 +608,7 @@ $(document).ready(function() {
     });
 
     $('#clearFilters').click(function() {
-        $('#libraryNameSelect, #genreSelect, #themeSelect, #gameModeSelect, #playerPerspectiveSelect').val('');
+        $('#libraryNameSelect, #genreSelect, #themeSelect, #tagSelect, #gameModeSelect, #playerPerspectiveSelect').val('');
         $('#ratingSlider').val(0);
         $('#ratingValue').text('0');
         $('#sortSelect').val('name');
@@ -587,6 +623,7 @@ $(document).ready(function() {
     populateLibraries(function() {
         populateGenres(function() {
             populateThemes(function() {
+                populateTags(function() {
                 populateGameModes(function() {
                     populatePlayerPerspectives(function() {
                         // restore filters from cookie
@@ -596,6 +633,7 @@ $(document).ready(function() {
                             $('#libraryNameSelect').val(savedFilters.library_uuid || '');
                             $('#genreSelect').val(savedFilters.genre || '');
                             $('#themeSelect').val(savedFilters.theme || '');
+                            $('#tagSelect').val(savedFilters.tag || '');
                             $('#gameModeSelect').val(savedFilters.game_mode || '');
                             $('#playerPerspectiveSelect').val(savedFilters.player_perspective || '');
                             $('#ratingSlider').val(savedFilters.rating || 0);
@@ -618,6 +656,7 @@ $(document).ready(function() {
                             }
                         }
                     });
+                });
                 });
             });
         });
@@ -707,6 +746,9 @@ window.addEventListener('click', function() {
         // Show favorite button and game status elements when menu closes
         var gameCard = menu.closest('.game-card');
         if (gameCard) {
+            gameCard.classList.remove('menu-open');
+            var cardContainer = gameCard.closest('.game-card-container');
+            if (cardContainer) cardContainer.classList.remove('menu-open');
             showCardButtons(gameCard);
         }
     });

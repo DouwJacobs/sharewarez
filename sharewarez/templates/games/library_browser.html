@@ -6,79 +6,32 @@
 <link rel="stylesheet" href="{{ 'css/games/library_browser.css'|theme_asset }}">
 <link rel="stylesheet" href="{{ 'css/games/game_status.css'|theme_asset }}">
 
-<head>
-    <meta charset="UTF-8">
-    <title>Browse Games</title>
-    <script src="{{ 'js/popup_menu.js'|theme_asset }}"></script>
-    <script src="{{ 'js/library_slideshow.js'|theme_asset }}"></script>
-    <script src="{{ 'js/library_pagination.js'|theme_asset }}"></script>
-    <script src="{{ 'js/library_search.js'|theme_asset }}"></script>
-    <script src="{{ 'js/favorites_manager.js'|theme_asset }}"></script>
-    <script src="{{ 'js/game_status_manager.js'|theme_asset }}"></script>
-</head>
-<body data-user-per-page="{{ user_per_page }}" data-user-default-sort="{{ user_default_sort }}" data-user-default-sort-order="{{ user_default_sort_order }}" data-enable-delete-game-on-disk="{{ enable_delete_game_on_disk|lower }}" data-discord-configured="{{ discord_configured|lower }}" data-discord-manual-trigger="{{ discord_manual_trigger_enabled|lower }}" data-is-admin="{{ is_admin|lower }}" data-show-play-status="{{ show_play_status|lower }}" data-current-filters="{{ filters|tojson|e }}" data-current-page="{{ current_page }}" data-total-pages="{{ pages }}">
+<script src="{{ 'js/popup_menu.js'|theme_asset }}"></script>
+<script src="{{ 'js/library_slideshow.js'|theme_asset }}"></script>
+<script src="{{ 'js/library_pagination.js'|theme_asset }}"></script>
+<script src="{{ 'js/favorites_manager.js'|theme_asset }}"></script>
+<script src="{{ 'js/game_status_manager.js'|theme_asset }}"></script>
 
+<main class="library-browser-page">
 
-    <div class="glass-panel">
-        <!-- Top Pagination Bar -->
-        <div class="pagination-header">
-            <div class="pagination-controls-left">
-                <span class="pagination-label">Items per page:</span>
-                <select id="perPageSelect" class="dropdown-perpage">
-                    <option value="16" {% if user_per_page == 16 %}selected{% endif %}>16</option>
-                    <option value="20" {% if user_per_page == 20 %}selected{% endif %}>20</option>
-                    <option value="50" {% if user_per_page == 50 %}selected{% endif %}>50</option>
-                    <option value="100" {% if user_per_page == 100 %}selected{% endif %}>100</option>
-                    <option value="500" {% if user_per_page == 500 %}selected{% endif %}>500</option>
-                    <option value="1000" {% if user_per_page == 1000 %}selected{% endif %}>1000</option>
-                </select>
+    <div class="glass-panel library-browser-panel">
+        <header class="library-browser-header">
+            <div>
+                <p class="library-browser-eyebrow">Your collection</p>
+                <h1>Browse games</h1>
             </div>
-            <div class="pagination-controls-right">
-                <nav aria-label="Page navigation" class="pagination-nav">
-                    <div class="pagination-controls">
-                        <button class="btn-pagination" id="firstPage" aria-label="First page">
-                            <i class="fas fa-angle-double-left"></i>
-                        </button>
-                        <button class="btn-pagination" id="prevPage" aria-label="Previous page">
-                            <i class="fas fa-angle-left"></i>
-                        </button>
-                        <div class="page-info" id="currentPageInfo">Loading...</div>
-                        <button class="btn-pagination" id="nextPage" aria-label="Next page">
-                            <i class="fas fa-angle-right"></i>
-                        </button>
-                        <button class="btn-pagination" id="lastPage" aria-label="Last page">
-                            <i class="fas fa-angle-double-right"></i>
-                        </button>
-                    </div>
-                </nav>
+            <div class="library-browser-actions">
+                <p class="library-browser-count">{{ total }} game{% if total != 1 %}s{% endif %}</p>
             </div>
-        </div>
-        
-        
-        <!-- Search Modal -->
-        <div class="modal fade" id="searchModal" tabindex="-1" aria-labelledby="searchModalLabel" aria-hidden="true">
-            <div class="modal-dialog">
-            <div class="modal-content modal-content-search">
-                <div class="modal-header">
-                <h5 class="modal-title" id="searchModalLabel">Search</h5>
-                <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-                </div>
-                <div class="modal-body">
-                <input type="text" class="form-control" id="searchInput" placeholder="Start typing...">
-                <div id="searchResults"></div>
-                </div>
-            </div>
-            </div>
-        </div>
+        </header>
+        {% include 'games/library_filters.html' %}
   
         <!-- The deleteGameModal is now included globally in base.html -->
 
         <div class="game-library-container" id="gamesContainer">
             {% for game in games %}
             <div class="game-card-container">
-                <div class="game-card" onmouseover="showDetails(this, '{{ game.uuid }}')" onmouseout="hideDetails()" data-name="{{ game.name }}" data-size="{{ game.size }}" data-genres="{{ game.genres|join(', ') }}">
+                <div class="game-card" onmouseover="showDetails(this, '{{ game.uuid }}')" onmouseout="hideDetails()" data-name="{{ game.name }}" data-size="{{ game.size }}" data-genres="{{ game.genres|join(', ') }}" data-tags="{{ game.tags|join(', ') }}">
                     <button id="menuButton-{{ game.uuid }}" class="button-glass-hamburger"><i class="fas fa-bars"></i></button>
                     <button class="favorite-btn" data-game-uuid="{{ game.uuid }}"
                            data-is-favorite="{{ game.is_favorite|lower }}">
@@ -172,6 +125,15 @@
                     </button>
                 </div>
             </nav>
+            <div class="perpage-footer">
+                <span class="pagination-label">Items per page:</span>
+                <select id="perPageSelect" class="dropdown-perpage">
+                    <option value="16" {% if user_per_page == 16 %}selected{% endif %}>16</option>
+                    <option value="20" {% if user_per_page == 20 %}selected{% endif %}>20</option>
+                    <option value="50" {% if user_per_page == 50 %}selected{% endif %}>50</option>
+                    <option value="100" {% if user_per_page == 100 %}selected{% endif %}>100</option>
+                </select>
+            </div>
         </div>
 
     </div>
@@ -186,6 +148,5 @@
 
     </script>
 
-</body>
-</html>
+</main>
 {% endblock %}

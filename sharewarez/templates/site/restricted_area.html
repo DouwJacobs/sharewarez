@@ -1,49 +1,53 @@
 {% extends 'base.html' %}
+{% block styles %}
+{{ super() }}
+<link rel="stylesheet" href="{{ 'css/site/restricted_area.css'|theme_asset }}">
+{% endblock %}
 
 {% block content %}
-
-<link rel="stylesheet" href="{{ 'css/site/restricted_area.css'|theme_asset }}">
-
-<div class="container-base">
-
-</div>
+<main class="restricted-area-page">
 {% if current_user.is_authenticated %}
 <div class="content-restricted">
-    <img src="{{ url_for('static', filename='newstyle/sharewarez_gamer.png') }}" alt="ShareWareZ Logo" class="login-logo">
+    <img src="{{ url_for('static', filename=brand_logo_path) }}" alt="{{ site_title }} logo" class="login-logo">
 
     <div class="content-restricted-textblock">
-        {{ current_user.name }}, welcome to ShareWareZ!<br>
-        <br>
+        <p>{{ current_user.name }}, welcome to {{ site_title }}!</p>
+        <p>
         Step into a vast gaming universe where endless adventures await at every turn. 
         Here, you can easily browse through extensive libraries packed with the best games, each complete with screenshots and detailed descriptions.
-        <br><br>
+        </p><p>
         Find exactly what you're looking for with our powerful search tools and filters, discovering games that match your style.
-        Every game is thoroughly tested and ready to play on your system. Join our gaming community and level up your gaming experience!<br>
+        Every game is thoroughly tested and ready to play on your system. Join our gaming community and level up your gaming experience!
+        </p>
     </div>
     {% else %}
     <div class="content-restricted">
-        <img src="{{ url_for('static', filename='newstyle/sharewarez_gamer.png') }}" alt="ShareWareZ Logo" class="login-logo">
+        <img src="{{ url_for('static', filename=brand_logo_path) }}" alt="{{ site_title }} logo" class="login-logo">
         <div class="content-restricted-textblock">
-        Welcome to ShareWareZ!<br>
-        Please login or register.
+        <p>Welcome to {{ site_title }}!</p>
+        <p>Please login or register.</p>
     </div>
 </div>
 
     <h1></h1>
 
     <div class="container-login">
-        <form action="/login" method="post">
-            <label for="username">Username:</label><br>
-            <input type="text" class="input-glass" id="username" name="username" autocomplete="username"><br>
-            <label for="password">Password:</label><br>
-            <input type="password" class="input-glass" id="password" name="password" autocomplete="current-password"><br>
-            <div class="button-container">
-                <input type="submit" value="LOGIN" class="btn btn-success">
-                <a href="/register" class="btn btn-primary">REGISTER</a>
+        <div class="content-login">
+            <div class="container-content">
+                <form action="/login" method="post">
+                    <label for="username" class="label-large-text">Username</label>
+                    <input type="text" class="input-glass" id="username" name="username" autocomplete="username">
+                    <label for="password" class="label-large-text">Password</label>
+                    <input type="password" class="input-glass" id="password" name="password" autocomplete="current-password">
+                    <div class="container-buttons-login">
+                        <input type="submit" value="Login" class="btn btn-primary button-login">
+                        <a href="/register" class="btn btn-primary button-login">Register</a>
+                    </div>
+                </form>
             </div>
-        </form>
+        </div>
     </div>
     {% endif %}
-</div>
+</main>
 
 {% endblock %}

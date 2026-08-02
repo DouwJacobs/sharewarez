@@ -1,0 +1,479 @@
+/* =====================================================
+   SHAREWAREZ - GLOBAL MOBILE RESPONSIVE STYLES
+   Applies to all pages at max-width: 768px
+   ===================================================== */
+
+@media (max-width: 768px) {
+
+    /* ---- GLOBAL LAYOUT ---- */
+    body {
+        overflow-x: hidden;
+    }
+
+    /* Prevent horizontal overflow on major containers */
+    .container,
+    .discovery-panel,
+    .discovery-view-panel,
+    .container-settings {
+        box-sizing: border-box;
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+        padding-left: 12px !important;
+        padding-right: 12px !important;
+        border-radius: 8px !important;
+    }
+
+    /* Glass panel: only prevent overflow, don't force padding */
+    .glass-panel {
+        box-sizing: border-box;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        overflow-x: hidden;
+    }
+
+    /* Mobile pages read better as a continuous surface. Flatten only page-level
+       shells; nested cards and controls retain their visual hierarchy. */
+    #content > .glass-panel,
+    #content > .container > .glass-panel,
+    #content > .container-settings,
+    #content > .container-settings > .card,
+    #content > .container > .card,
+    #content > .admin-section,
+    #content > .admin-panel,
+    #content > main > .glass-panel,
+    #content > main > .container-settings,
+    #content > main > .admin-section,
+    #content > main > .admin-panel,
+    .discovery-panel,
+    .favorites-page > .glass-panel,
+    .users-management-panel,
+    .extensions-management-page,
+    .image-queue-page,
+    .newsletter-page,
+    .settings-panel-page,
+    .restricted-area-page {
+        background: transparent !important;
+        border: 0 !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+    }
+
+    #content > .glass-panel,
+    #content > .container > .glass-panel,
+    #content > .container-settings,
+    #content > main > .glass-panel,
+    #content > main > .container-settings,
+    .discovery-panel,
+    .users-management-panel,
+    .newsletter-page,
+    .settings-panel-page,
+    .restricted-area-page {
+        width: calc(100% - 24px) !important;
+        margin: 8px 12px 20px !important;
+        padding-right: 0 !important;
+        padding-left: 0 !important;
+    }
+
+    .discovery-panel,
+    .discovery-view-panel,
+    .admin-content,
+    .game-discovery-container,
+    .config-path-row {
+        flex-direction: column !important;
+    }
+
+    /* ---- GAME DETAILS PAGE ---- */
+    .glass-panel-gamecard {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        padding: 12px !important;
+        margin: 8px auto !important;
+        box-sizing: border-box;
+    }
+
+    .game-card-topq {
+        flex-direction: column !important;
+        min-height: unset !important;
+    }
+
+    .game-card-gamename {
+        width: 100% !important;
+        font-size: 1.2rem !important;
+    }
+
+    .game-card-q1,
+    .game-card-q2,
+    .game-card-q3 {
+        width: 100% !important;
+        margin: 8px 0 !important;
+    }
+
+    .game-card-coverimage img {
+        max-width: 100% !important;
+        height: auto !important;
+    }
+
+    .summary-modal-content {
+        width: 95% !important;
+        margin: 10% auto !important;
+        padding: 16px !important;
+    }
+
+    /* ---- ADMIN PAGES ---- */
+    .container-settings {
+        padding: 12px !important;
+        margin: 8px auto !important;
+    }
+
+    .nav-tabs,
+    .nav-pills {
+        flex-wrap: wrap !important;
+        gap: 4px;
+    }
+
+    .nav-tabs .nav-link,
+    .nav-pills .nav-link {
+        font-size: 13px !important;
+        padding: 6px 10px !important;
+    }
+
+    .table-responsive,
+    .dataTables_wrapper {
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* Admin dashboard stat cards */
+    .admin-stat-cards,
+    .stat-cards-container {
+        grid-template-columns: 1fr 1fr !important;
+        gap: 8px !important;
+    }
+
+    /* ---- SETTINGS / PROFILE ---- */
+    .settings-container,
+    .profile-container,
+    .profile-card {
+        flex-direction: column !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+    }
+
+    /* ---- LOGIN / REGISTER ---- */
+    .login-container,
+    .register-container,
+    .auth-card {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        padding: 20px 16px !important;
+        margin: 8px !important;
+    }
+
+    /* ---- DISCOVER PAGE ---- */
+    .discover-grid,
+    .discovery-grid {
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)) !important;
+        gap: 8px !important;
+    }
+
+    /* ---- GAME LIBRARY ---- */
+    .game-library-container {
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)) !important;
+        gap: 8px !important;
+    }
+
+    /* ---- DOWNLOADS PAGE ---- */
+    .download-item {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 8px !important;
+    }
+
+    /* ---- FORMS (all pages) ---- */
+    .form-group {
+        margin-bottom: 12px !important;
+    }
+
+    /* Prevent iOS auto-zoom on focus by keeping font >= 16px */
+    .form-control,
+    .form-select,
+    input[type="text"],
+    input[type="email"],
+    input[type="password"],
+    input[type="search"],
+    input[type="number"],
+    select,
+    textarea {
+        font-size: 16px !important;
+        width: 100% !important;
+    }
+
+    /* ---- BUTTONS ---- */
+    .btn-group,
+    .button-group {
+        flex-wrap: wrap !important;
+        gap: 6px !important;
+    }
+
+    /* Controls stay comfortably tappable without forcing a desktop-width row. */
+    .btn,
+    .btn-sm,
+    button,
+    input[type="submit"],
+    input[type="button"] {
+        min-height: 40px;
+    }
+
+    /* Card action buttons are compact circles, not full-size form controls. */
+    .game-card :is(.button-glass-hamburger, .favorite-btn, .game-status-btn) {
+        width: 40px !important;
+        min-width: 40px !important;
+        height: 40px !important;
+        min-height: 40px !important;
+        padding: 0 !important;
+        border-radius: 50% !important;
+        aspect-ratio: 1;
+        flex: 0 0 40px;
+    }
+
+    .admin-header,
+    .library-browser-header,
+    .discovery-header,
+    .game-edit-heading,
+    .libraries-management-header,
+    .extensions-management-header,
+    .image-queue-header,
+    .statistics-header,
+    .server-info-header,
+    .user-invites-header,
+    .admin_manage_invites-header {
+        align-items: stretch !important;
+        flex-direction: column !important;
+        gap: 14px !important;
+    }
+
+    .admin-header > .btn,
+    .library-browser-header > .btn,
+    .discovery-header > .btn,
+    .libraries-management-header > .btn,
+    .extensions-management-header > .btn,
+    .image-queue-header > .btn,
+    .statistics-header > .btn,
+    .server-info-header > .btn,
+    .user-invites-header > .btn,
+    .admin_manage_invites-header > .btn {
+        width: 100%;
+    }
+
+    .input-group,
+    .field-actions,
+    .game-edit-actions,
+    .scan-controls-group {
+        align-items: stretch !important;
+        flex-wrap: wrap;
+        gap: 8px !important;
+    }
+
+    .input-group > .form-control,
+    .input-group > .form-select,
+    .input-group > .btn,
+    .field-actions > .btn,
+    .game-edit-actions > .btn,
+    .scan-controls-group > .btn {
+        flex: 1 1 100%;
+        width: 100%;
+    }
+
+    /* ---- MODALS ---- */
+    .modal-dialog {
+        margin: 8px !important;
+        max-width: calc(100vw - 16px) !important;
+    }
+
+    .modal-content {
+        border-radius: 12px !important;
+    }
+
+    .modal-body {
+        max-height: calc(100vh - 150px);
+        overflow-y: auto;
+    }
+
+    /* ---- FLASH TOASTS ---- */
+    .toast-container,
+    .sw-toast-container {
+        left: 8px !important;
+        right: 8px !important;
+        bottom: 16px !important;
+        top: auto !important;
+        max-width: calc(100vw - 16px) !important;
+        width: calc(100vw - 16px) !important;
+        z-index: 12000 !important;
+        align-items: stretch !important;
+    }
+
+    .sw-toast {
+        min-width: 0 !important;
+        max-width: 100% !important;
+        width: 100% !important;
+    }
+
+    /* ---- SCAN JOBS ---- */
+    .scanjob-container,
+    .scan-card {
+        flex-direction: column !important;
+        min-width: 0 !important;
+    }
+    
+    .search-container {
+        min-width: 0 !important;
+    }
+
+    .jobs-controls,
+    .filter-controls,
+    .search-container,
+    .image-queue-actions,
+    .libraries-table-wrapper td:last-child {
+        width: 100%;
+    }
+
+    .libraries-table-wrapper td:last-child,
+    .table td:last-child .btn-group,
+    .table td:last-child .inline-form {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+
+    .table td:last-child .btn,
+    .table td:last-child .inline-form .btn {
+        flex: 1 1 auto;
+    }
+
+    .library-browser-count {
+        align-self: flex-start;
+        white-space: normal;
+    }
+
+    .admin-breadcrumb {
+        margin: 8px 12px 0;
+        min-width: 0;
+        overflow: hidden;
+    }
+
+    .admin-breadcrumb-current {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    /* ---- TRAILERS PAGE ---- */
+    .trailers-container,
+    .trailer-card,
+    .random-trailers-layout {
+        width: 100% !important;
+        min-width: 0 !important;
+        flex-direction: column !important;
+    }
+
+    /* ---- TYPOGRAPHY ---- */
+    h1 { font-size: 1.4rem !important; }
+    h2 { font-size: 1.2rem !important; }
+    h3 { font-size: 1.1rem !important; }
+
+    .discovery-header {
+        font-size: 1.2rem !important;
+        padding: 8px !important;
+    }
+
+    /* ---- SIDEBAR FILTERS (when sidebar is open on mobile) ---- */
+    #sidebar .container-filtersandsort {
+        visibility: visible !important;
+        padding: 0 8px !important;
+    }
+
+    /* ---- MOBILE LOGIN / AUTH PAGE ---- */
+    .container-login {
+        padding: 10px !important;
+        box-sizing: border-box !important;
+        width: 100% !important;
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+    }
+
+    .content-login {
+        padding: 20px 16px !important;
+        width: 100% !important;
+        max-width: 400px !important;
+        box-sizing: border-box !important;
+    }
+
+    .container-content {
+        width: 100% !important;
+        box-sizing: border-box !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        background: transparent !important;
+        background-color: transparent !important;
+    }
+
+    .login-logo {
+        max-width: 120px !important;
+        width: 100% !important;
+        height: auto !important;
+        margin: 0 auto 15px auto !important;
+        display: block !important;
+    }
+
+    .input-glass {
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    .container-buttons-login {
+        flex-direction: column !important;
+        gap: 12px !important;
+        padding: 15px 0 !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    .button-login {
+        font-size: 15px !important;
+        height: auto !important;
+        min-height: 45px !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        text-align: center !important;
+        padding: 8px 16px !important;
+        margin: 0 !important;
+    }
+}
+
+/* Extra small screens (< 400px) */
+@media (max-width: 400px) {
+    .game-library-container {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+
+    .admin-stat-cards,
+    .stat-cards-container {
+        grid-template-columns: 1fr !important;
+    }
+
+    .glass-panel,
+    .discovery-panel {
+        padding: 8px !important;
+    }
+}

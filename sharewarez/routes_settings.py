@@ -205,6 +205,21 @@ def settings_panel():
             return jsonify({'success': False, 'message': str(e)}), 500
     
     if request.method == 'GET':
+        preferences = current_user.preferences
+        if preferences:
+            form.items_per_page.data = preferences.items_per_page
+            form.default_sort.data = preferences.default_sort
+            form.default_sort_order.data = preferences.default_sort_order
+
+            saved_theme = preferences.theme or 'default'
+            theme_ids = {value for value, _label in form.theme.choices}
+            if saved_theme not in theme_ids:
+                installed_themes = ThemeManager(current_app).get_installed_themes()
+                saved_theme = next(
+                    (theme['id'] for theme in installed_themes if theme['name'] == saved_theme),
+                    'default'
+                )
+            form.theme.data = saved_theme
         return render_template('settings/modal_preferences.html', form=form)
     
     return jsonify({

@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% from "partials/ui_components.html" import admin_page_header %}
+{% block content %}
+<link rel="stylesheet" href="{{ 'css/admin/admin_branding.css'|theme_asset }}">
+
+<main class="admin-page branding-page" aria-labelledby="branding-title">
+    {{ admin_page_header('Branding', 'Choose the name and logo shown throughout your game library.', 'Appearance', 'fa-signature') }}
+
+    <form class="branding-layout" method="post" enctype="multipart/form-data">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <section class="admin-panel branding-form-panel">
+            <div class="admin-panel-heading">
+                <div><p class="admin-panel-kicker">Identity</p><h2 id="branding-title">Product branding</h2></div>
+            </div>
+
+            <div class="branding-field">
+                <label for="site_title">Site title</label>
+                <input class="form-control" id="site_title" name="site_title" value="{{ branding_title }}" maxlength="60" required>
+                <p>Used in the browser title, mobile header, help content, emails, and system labels.</p>
+            </div>
+
+            <div class="branding-field">
+                <label for="brand_logo">Logo image</label>
+                <input class="form-control" id="brand_logo" name="brand_logo" type="file" accept="image/png,image/jpeg,image/webp">
+                <p>PNG, WebP, or JPEG up to 5 MB. A transparent, roughly square image works best.</p>
+            </div>
+
+            <label class="branding-reset{% if branding_logo == default_logo %} is-disabled{% endif %}">
+                <input type="checkbox" name="reset_logo" value="1"{% if branding_logo == default_logo %} disabled{% endif %}>
+                <span><strong>Restore the original logo</strong><small>Removes the current custom upload when you save.</small></span>
+            </label>
+
+            <div class="branding-actions">
+                <button class="btn btn-primary" type="submit"><i class="fas fa-check" aria-hidden="true"></i> Save branding</button>
+                <a class="btn btn-secondary" href="{{ url_for('site.admin_dashboard') }}">Cancel</a>
+            </div>
+        </section>
+
+        <aside class="admin-panel branding-preview" aria-label="Brand preview">
+            <p class="admin-panel-kicker">Preview</p>
+            <div class="branding-preview-logo"><img id="brandingPreviewImage" src="{{ url_for('static', filename=branding_logo) }}" alt=""></div>
+            <strong id="brandingPreviewTitle">{{ branding_title }}</strong>
+            <span>Game library</span>
+        </aside>
+    </form>
+</main>
+
+<script>
+(() => {
+    const title = document.getElementById('site_title');
+    const previewTitle = document.getElementById('brandingPreviewTitle');
+    const input = document.getElementById('brand_logo');
+    const previewImage = document.getElementById('brandingPreviewImage');
+    title.addEventListener('input', () => previewTitle.textContent = title.value.trim() || 'Site title');
+    input.addEventListener('change', () => {
+        const file = input.files[0];
+        if (file) previewImage.src = URL.createObjectURL(file);
+    });
+})();
+</script>
+{% endblock %}

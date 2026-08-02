@@ -4,75 +4,71 @@
 
 <link rel="stylesheet" href="{{ 'css/games/game_edit_images.css'|theme_asset }}">
 
-<html>
-    <head>
-        <title>Edit Game Images</title>
-    </head>
-
-    <body>
-        <!-- Error Modal -->
-        <div class="modal fade" id="errorModal" tabindex="-1" aria-labelledby="errorModalLabel" aria-hidden="true">
-            <div class="modal-dialog" role="document">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="errorModalLabel">Upload Error</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                        <p id="errorModalMessage">An unexpected error occurred. Please try again.</p>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    </div>
-                </div>
+<div class="modal fade" id="errorModal" tabindex="-1" aria-labelledby="errorModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="errorModalLabel">Upload Error</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
+            <div class="modal-body"><p id="errorModalMessage">An unexpected error occurred. Please try again.</p></div>
+            <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button></div>
         </div>
+    </div>
+</div>
 
-        <h3>Edit Images for Game: </h3>
-        <h2>{{ game.name }}</h2>
-        <div class="glass-panel glass-panel-image-editor-cover">
-            <h3>Cover Image</h3>
-            <div id="cover-image-editor" class="image-editor-image">
-                <div class="cover-image-container">
-                    <div class="spinner" id="coverSpinner"></div>
-                    {% if cover_image %}
-                        <img src="{{ url_for('static', filename='library/images/' + cover_image.url) }}" 
-                             alt="Cover Image"
-                             data-image-id="{{ cover_image.id }}">
-                    <div class="delete-cover-image-container">
-                        <button class="btn btn-danger" onclick="deleteImage({{ cover_image.id }})">Delete Cover Image</button>
-                    </div>                    
+<main class="image-editor-page">
+    <header class="image-editor-header">
+        <p class="image-editor-eyebrow">Game media</p>
+        <h1>Edit images</h1>
+        <p class="image-editor-game-name">{{ game.name }}</p>
+    </header>
+
+    <div class="image-editor-layout">
+        <section class="glass-panel image-editor-card image-editor-cover-card">
+            <div class="image-editor-card-header">
+                <div><h2>Cover image</h2><p>Choose the artwork used across your library.</p></div>
+            </div>
+            <div id="cover-image-editor" class="cover-image-container">
+                <div class="spinner" id="coverSpinner"></div>
+                {% if cover_image %}
+                    <img src="{{ url_for('static', filename='library/images/' + cover_image.url) }}" alt="Cover image" data-image-id="{{ cover_image.id }}">
+                    <button class="image-delete-button image-delete-cover" type="button" onclick="deleteImage({{ cover_image.id }})" aria-label="Delete cover image" title="Delete cover image"><i class="fas fa-trash"></i></button>
                 {% else %}
-                    <img src="{{ url_for('static', filename='newstyle/default_cover.jpg') }}" alt="Default Cover Image">
+                    <img src="{{ url_for('static', filename='newstyle/default_cover.jpg') }}" alt="Default cover image">
                 {% endif %}
             </div>
-            <div class="glass-panel glass-panel-image-editor-upload">
-                <input type="file" id="cover-image-input" class="form-control mt-3">
-            </div>
-        </div>
+            <label class="image-file-input" for="cover-image-input"><i class="fas fa-image"></i> Replace cover</label>
+            <input type="file" id="cover-image-input" accept="image/*">
+        </section>
 
-        <div class="glass-panel glass-panel-image-editor">
-            <div id="image-editor-list" class="image-editor-list">
-                {% for image in images %}
-                <div class="image-editor-image" id="image-{{ image.id }}">
-                    <button class="btn btn-danger" onclick="deleteImage({{ image.id }})">Delete</button>
-                    <img src="{{ url_for('static', filename='library/images/' + image.url) }}" alt="Image">
-                    
-                </div>
-                {% endfor %}
+        <section class="glass-panel image-editor-card image-editor-upload-card">
+            <div class="image-editor-card-header">
+                <div><h2>Screenshots</h2><p>Add one or more images to the game gallery.</p></div>
             </div>
-        </div>
-        <div class="glass-panel glass-panel-image-editor-upload">
-            <h3>Upload Screenshot(s)</h3>
-            <div id="upload-area" data-game-uuid="{{ game.uuid }}" class="border p-3">Drag and Drop Images Here</div>
-            <input type="file" id="file-input" multiple class="form-control mt-3">
-            <script>
-                var gameUuid = "{{ game.uuid }}";
-            </script>
-            <script src="{{ 'js/game_edit_images.js'|theme_asset }}"></script>
-            <button id="upload-button" class="btn btn-primary">Upload</button>
-        </div>
-    </body>
-</html>
+            <div id="upload-area" data-game-uuid="{{ game.uuid }}" class="upload-dropzone">
+                <i class="fas fa-cloud-arrow-up"></i><span>Drag and drop screenshots here</span><small>or choose files below</small>
+            </div>
+            <input type="file" id="file-input" multiple accept="image/*" class="form-control">
+            <button id="upload-button" class="btn btn-primary" type="button"><i class="fas fa-upload"></i> Upload screenshots</button>
+        </section>
+    </div>
 
+    <section class="glass-panel image-editor-gallery-card">
+        <div class="image-editor-card-header"><div><h2>Current screenshots</h2><p>Remove individual images from the gallery.</p></div></div>
+        <div id="image-editor-list" class="image-editor-list">
+            {% for image in images %}
+                <figure class="image-editor-image" id="image-{{ image.id }}">
+                    <img src="{{ url_for('static', filename='library/images/' + image.url) }}" alt="Screenshot">
+                    <button class="image-delete-button" type="button" onclick="deleteImage({{ image.id }})" aria-label="Delete screenshot" title="Delete screenshot"><i class="fas fa-trash"></i></button>
+                </figure>
+            {% else %}
+                <p class="image-editor-empty">No screenshots have been added yet.</p>
+            {% endfor %}
+        </div>
+    </section>
+</main>
+
+<script>var gameUuid = "{{ game.uuid }}";</script>
+<script src="{{ 'js/game_edit_images.js'|theme_asset }}"></script>
 {% endblock %}

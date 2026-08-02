@@ -2,7 +2,7 @@
 from typing import Tuple, List, Dict, Any, Type
 from flask import jsonify, Response
 from flask_login import login_required
-from sharewarez.models import Genre, Theme, GameMode, PlayerPerspective
+from sharewarez.models import Genre, Theme, GameMode, PlayerPerspective, GameTag
 from sharewarez import db
 from sharewarez.utils.event_logging import log_system_event
 from sqlalchemy import select
@@ -95,3 +95,10 @@ def get_player_perspectives() -> Tuple[Response, int]:
         On error: Error object with appropriate status code
     """
     return _get_filter_data(PlayerPerspective, 'player_perspectives')
+
+
+@apis_bp.route('/tags')
+@login_required
+def get_tags() -> Tuple[Response, int]:
+    """Get custom tags available for library filtering."""
+    return _get_filter_data(GameTag, 'tags')

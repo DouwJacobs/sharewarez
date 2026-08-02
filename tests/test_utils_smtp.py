@@ -684,7 +684,7 @@ class TestSendPasswordResetEmail:
         send_password_reset_email('user@example.com', 'abc123')
         
         # Verify URL generation
-        mock_url_for.assert_called_once_with('main.reset_password', token='abc123', _external=True)
+        mock_url_for.assert_called_once_with('login.reset_password', token='abc123', _external=True)
         
         # Verify send_email was called
         mock_send_email.assert_called_once()
@@ -692,13 +692,13 @@ class TestSendPasswordResetEmail:
         
         # Check arguments
         assert args[0] == 'user@example.com'
-        assert args[1] == "Ye Password Reset Request Arrr!"
+        assert args[1] == "Reset your SharewareZ password"
         
         # Check that HTML content contains the reset URL
         html_content = args[2]
         assert 'https://example.com/reset/abc123' in html_content
-        assert 'Password Reset Link' in html_content
-        assert 'Captain Blackbeard' in html_content
+        assert 'Reset your password' in html_content
+        assert 'The SharewareZ team' in html_content
 
 
 class TestSendInviteEmail:

@@ -2,7 +2,15 @@ from sharewarez import db
 from sharewarez.models import SystemEvents
 from datetime import datetime, timezone
 from typing import Optional, Union
+from flask import current_app, has_app_context
 from flask_login import current_user
+
+
+LEVEL_ALIASES = {
+    'info': 'information',
+    'informational': 'information',
+    'warn': 'warning',
+}
 
 def log_system_event(
     event_text: str,
@@ -24,7 +32,12 @@ def log_system_event(
         bool: True if logging was successful, False otherwise
     """
     try:
-        # Truncate strings if they exceed maximum lengths
+        event_text = str(event_text or '').strip() or 'No event details provided'
+        event_type = str(event_type or 'log').strip().lower().replace(' ', '_') or 'log'
+        event_level = str(event_level or 'information').strip().lower() or 'information'
+        event_level = LEVEL_ALIASES.get(event_level, event_level)
+
+        # Keep values within the current schema limits.
         event_text = event_text[:256]
         event_type = event_type[:32]
         event_level = event_level[:32]
@@ -50,6 +63,8 @@ def log_system_event(
         return True
         
     except Exception as e:
-        print(f"Error logging system event: {str(e)}")
         db.session.rollback()
+        print(f"Error logging system event: {str(e)}")
+        if has_app_context():
+            current_app.logger.error('Unable to persist system event: %s', e)
         return False

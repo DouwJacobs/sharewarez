@@ -1,0 +1,7 @@
+/*
+ * Theme customization layer.
+ *
+ * This file loads after the application's other stylesheets. Override design
+ * tokens or component rules here to create a lightweight custom theme while
+ * retaining all default assets through the theme fallback system.
+ */

@@ -78,6 +78,19 @@ class DatabaseManager:
         -- Create index on user_game_status for performance
         CREATE INDEX IF NOT EXISTS idx_user_game_status_lookup ON user_game_status(user_id, game_uuid);
 
+        -- Custom tags are reusable and are assigned to games through a
+        -- many-to-many association table.
+        CREATE TABLE IF NOT EXISTS game_tags (
+            id SERIAL PRIMARY KEY,
+            name VARCHAR(50) UNIQUE NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS game_tag_association (
+            game_id INTEGER REFERENCES games(id) ON DELETE CASCADE,
+            tag_id INTEGER REFERENCES game_tags(id) ON DELETE CASCADE,
+            PRIMARY KEY (game_id, tag_id)
+        );
+
         CREATE TABLE IF NOT EXISTS game_updates (
             id SERIAL PRIMARY KEY,
             uuid VARCHAR(36) UNIQUE NOT NULL,
@@ -277,6 +290,10 @@ class DatabaseManager:
 
         ALTER TABLE games
         ADD COLUMN IF NOT EXISTS hltb_last_updated TIMESTAMP;
+
+        -- Add install instructions field to games table
+        ALTER TABLE games
+        ADD COLUMN IF NOT EXISTS install_instructions TEXT;
 
         -- Add HowLongToBeat settings to global_settings table
         ALTER TABLE global_settings

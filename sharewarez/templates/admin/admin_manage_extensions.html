@@ -5,12 +5,15 @@
 
 <link rel="stylesheet" href="{{ 'css/admin/admin_manage_extensions.css'|theme_asset }}">
 
-<div class="container">
-    <div class="glass-panel">
-        <a href="{{ url_for('site.admin_dashboard') }}" class="btn btn-secondary">Back to Dashboard</a>
-    </div>
-</div>
-<div class="container-settings">
+<main class="extensions-management-page">
+<section class="extensions-management-panel">
+    <header class="extensions-management-header">
+        <div>
+            <p class="extensions-management-eyebrow">Scan configuration</p>
+            <h1>File Extensions</h1>
+            <p>Choose which file types are recognized when scanning your libraries.</p>
+        </div>
+    </header>
     <div class="extensions-table">
         <div class="card">
             <div class="card-header">
@@ -20,6 +23,7 @@
                 </button>
             </div>
             <div class="card-body">
+                <div class="table-responsive">
                 <table class="table table-dark table-hover" id="allowedTypesTable">
                     <thead>
                         <tr>
@@ -43,6 +47,7 @@
                         {% endfor %}
                     </tbody>
                 </table>
+                </div>
             </div>
         </div>
     </div>
@@ -55,7 +60,8 @@
             <p class="mb-0">Add or remove extensions as needed to match the types of game files in your collection.</p>
         </div>
     </div>
-</div>
+</section>
+</main>
 
 <!-- Add/Edit Modal -->
 <div class="modal fade" id="fileTypeModal" tabindex="-1">

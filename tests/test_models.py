@@ -13,7 +13,7 @@ from sharewarez.models import (
     Whitelist, ReleaseGroup, Newsletter, ScanJob, UnmatchedFolder,
     UserPreference, GlobalSettings, DiscoverySection, InviteToken,
     AllowedFileType, IgnoredFileType, SystemEvents,
-    JSONEncodedDict, Category, Status,
+    JSONEncodedDict, Category, Status, GameTag,
     user_favorites, game_genre_association
 )
 from sharewarez.platform import LibraryPlatform
@@ -27,7 +27,7 @@ def safe_cleanup_database(db_session):
         SystemEvents, InviteToken, Image, GameURL, ScanJob,
         UnmatchedFolder, GameUpdate, GameExtra, GlobalSettings,
         AllowedFileType, IgnoredFileType, Genre, Platform, Developer,
-        Publisher, Theme, GameMode, PlayerPerspective, MultiplayerMode
+        Publisher, Theme, GameMode, PlayerPerspective, MultiplayerMode, GameTag
     )
     
     try:
@@ -41,7 +41,8 @@ def safe_cleanup_database(db_session):
         # Delete all junction table data first
         junction_tables = ['user_favorites', 'game_genre_association', 'game_platform_association', 
                           'game_game_mode_association', 'game_theme_association', 
-                          'game_player_perspective_association', 'game_multiplayer_mode_association']
+                          'game_player_perspective_association', 'game_multiplayer_mode_association',
+                          'game_tag_association']
         
         for table in junction_tables:
             try:
@@ -54,7 +55,7 @@ def safe_cleanup_database(db_session):
                       'scan_jobs', 'download_requests', 'newsletters', 'system_events', 
                       'invite_tokens', 'games', 'users', 'libraries', 'genres', 'platforms', 
                       'developers', 'publishers', 'themes', 'game_modes', 'player_perspectives',
-                      'multiplayer_modes', 'global_settings', 'allowed_file_types', 'ignored_file_types']
+                      'multiplayer_modes', 'game_tags', 'global_settings', 'allowed_file_types', 'ignored_file_types']
         
         for table in main_tables:
             try:
@@ -362,6 +363,27 @@ class TestGameModel:
         assert game.size == 1000000
         assert game.times_downloaded == 0  # Default value
         assert game.date_created is not None
+
+    def test_create_game_with_install_instructions(self, db_session):
+        library = Library(
+            name='Test Library',
+            platform=LibraryPlatform.PCWIN
+        )
+        db_session.add(library)
+        db_session.flush()
+        
+        game = Game(
+            name='Test Game Installation',
+            library_uuid=library.uuid,
+            full_disk_path='/path/to/game',
+            size=1000000,
+            install_instructions='1. Extract ZIP\n2. Run setup.exe'
+        )
+        
+        db_session.add(game)
+        db_session.flush()
+        
+        assert game.install_instructions == '1. Extract ZIP\n2. Run setup.exe'
     
     def test_game_library_relationship(self, db_session):
         """Test game-library relationship."""
@@ -485,6 +507,19 @@ class TestGameRelationships:
         
         assert game.developer == developer
         assert game in developer.games
+
+    def test_game_tags_relationship(self, db_session):
+        """Games can use reusable custom tags."""
+        library = Library(name='Tag Test Library', platform=LibraryPlatform.PCWIN)
+        tag = GameTag(name=f'Portable-{uuid4().hex[:8]}')
+        game = Game(name='Tagged Game', library=library, full_disk_path='/path/to/tagged-game')
+        game.tags = [tag]
+
+        db_session.add(game)
+        db_session.flush()
+
+        assert game.tags == [tag]
+        assert game in tag.games
     
     def test_user_favorites_relationship(self, db_session):
         """Test user-game favorites relationship."""

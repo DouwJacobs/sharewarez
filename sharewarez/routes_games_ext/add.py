@@ -10,6 +10,7 @@ from sharewarez.utils.event_logging import log_system_event
 from sharewarez.utils.security import is_safe_path, get_allowed_base_directories, sanitize_path_for_logging
 from sharewarez.utils.functions import sanitize_string_input
 from sharewarez.utils.game_core import check_existing_game_by_igdb_id
+from sharewarez.utils.tags import assign_game_tags
 from sharewarez import db
 from threading import Thread
 from sqlalchemy.exc import SQLAlchemyError
@@ -101,6 +102,7 @@ def add_game_manual():
             name=form.name.data,
             summary=form.summary.data,
             storyline=form.storyline.data,
+            install_instructions=form.install_instructions.data,
             url=form.url.data,
             full_disk_path=form.full_disk_path.data,
             # Set default cover for custom games
@@ -116,6 +118,12 @@ def add_game_manual():
         new_game.themes = form.themes.data
         new_game.platforms = form.platforms.data
         new_game.player_perspectives = form.player_perspectives.data
+
+        try:
+            assign_game_tags(new_game, form.tags.data)
+        except ValueError as e:
+            flash(str(e), 'error')
+            return render_template('admin/admin_game_identify.html', form=form, library_uuid=library_uuid, library_name=library_name, platform_name=platform_name, platform_id=platform_id)
 
         # Handle developer with input sanitization
         if form.developer.data and form.developer.data != 'Not Found':
@@ -167,7 +175,8 @@ def add_game_manual():
                     igdb_id=form.igdb_id.data,
                     game_title=form.name.data,
                     manually_verified=True,
-                    filename=metadata_filename
+                    filename=metadata_filename,
+                    install_instructions=form.install_instructions.data
                 )
 
                 if success:

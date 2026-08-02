@@ -200,11 +200,11 @@ class TestLogSystemEvent:
             
             assert result is True
             
-            event = db_session.query(SystemEvents).filter_by(event_text="").first()
+            event = db_session.query(SystemEvents).filter_by(event_text="No event details provided").first()
             assert event is not None
-            assert event.event_text == ""
-            assert event.event_type == ""
-            assert event.event_level == ""
+            assert event.event_text == "No event details provided"
+            assert event.event_type == "log"
+            assert event.event_level == "information"
     
     @patch('sharewarez.utils.event_logging.db')
     def test_log_system_event_with_integer_audit_user(self, mock_db, app):

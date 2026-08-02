@@ -1,16 +1,34 @@
 {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
-        <div class="container-flash-messages">
+        <div class="sw-toast-container" aria-live="polite" aria-atomic="true">
             {% for category, message in messages %}
-                <div class="alert alert-{{ category or 'info' }} alert-dismissible fade show" role="alert"
+                {% set bs_class = 'danger' if category == 'error' else (category or 'info') %}
+                {% set icon = 'fa-check-circle' if bs_class == 'success' else ('fa-exclamation-triangle' if bs_class in ('warning', 'danger') else 'fa-info-circle') %}
+                <div class="toast sw-toast sw-toast-{{ bs_class }} show {% if category == 'image-refresh' %}sw-toast-image-refresh{% endif %}"
+                     role="alert"
+                     aria-live="assertive"
+                     aria-atomic="true"
+                     data-bs-autohide="true"
+                     data-bs-delay="6000"
                      {% if category == 'image-refresh' and session.get('image_refresh_game_uuid') %}
                      data-game-uuid="{{ session.get('image_refresh_game_uuid') }}"
                      {% endif %}>
-                    {{ message }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    <div class="toast-header sw-toast-header sw-toast-header-{{ bs_class }}">
+                        <i class="fas {{ icon }} me-2"></i>
+                        <strong class="me-auto">
+                            {% if bs_class == 'success' %}Success
+                            {% elif bs_class == 'danger' %}Error
+                            {% elif bs_class == 'warning' %}Warning
+                            {% elif bs_class == 'image-refresh' %}Image Refresh
+                            {% else %}Notice{% endif %}
+                        </strong>
+                        <button type="button" class="btn-close btn-close-white ms-2" data-bs-dismiss="toast" aria-label="Close"></button>
+                    </div>
+                    <div class="toast-body sw-toast-body">
+                        {{ message }}
+                    </div>
                 </div>
                 {% if category == 'image-refresh' and session.get('image_refresh_game_uuid') %}
-                    {# Clear the session variable after displaying #}
                     {% set _ = session.pop('image_refresh_game_uuid', None) %}
                 {% endif %}
             {% endfor %}

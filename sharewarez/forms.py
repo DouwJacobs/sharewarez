@@ -13,6 +13,7 @@ from urllib.parse import urlparse
 from sharewarez.utils.functions import comma_separated_urls
 from sharewarez.utils.themes import ThemeManager
 from flask import current_app
+from werkzeug.utils import secure_filename
 
 
 def safe_url_validator(form, field):
@@ -182,6 +183,7 @@ class AddGameForm(FlaskForm):
     name = StringField('Name', validators=[DataRequired()])
     summary = TextAreaField('Summary', validators=[Optional()])
     storyline = TextAreaField('Storyline', validators=[Optional()])
+    install_instructions = TextAreaField('How to Install', validators=[Optional()])
     url = StringField('URL', validators=[Optional(), URL(), safe_url_validator])
     full_disk_path = StringField('Full Disk Path', validators=[DataRequired()], widget=TextInput())
     video_urls = StringField('Video URLs', validators=[Optional(), comma_separated_urls])
@@ -196,6 +198,7 @@ class AddGameForm(FlaskForm):
     player_perspectives = QuerySelectMultipleField('Player Perspectives', query_factory=player_perspective_choices, get_label='name', widget=ListWidget(prefix_label=False), option_widget=CheckboxInput())
     developer = StringField('Developer', validators=[Optional()])
     publisher = StringField('Publisher', validators=[Optional()])
+    tags = StringField('Tags', validators=[Optional()])
     library_uuid = SelectField('Library', coerce=str, validators=[DataRequired()])
     submit = SubmitField('Save')    
     
@@ -257,7 +260,11 @@ class UserPreferencesForm(FlaskForm):
         super(UserPreferencesForm, self).__init__(*args, **kwargs)
         theme_manager = ThemeManager(current_app)
         installed_themes = theme_manager.get_installed_themes()
-        self.theme.choices = [('default', 'Default')] + [(theme['name'], theme['name']) for theme in installed_themes if theme['name'] != 'Default']
+        self.theme.choices = [('default', 'Default')] + [
+            (theme.get('id', secure_filename(theme['name'])), theme['name'])
+            for theme in installed_themes
+            if theme.get('id', secure_filename(theme['name'])) != 'default'
+        ]
 
 
 class LibraryForm(FlaskForm):

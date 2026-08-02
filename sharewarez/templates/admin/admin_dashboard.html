@@ -5,9 +5,7 @@
 
 <div class="container-settings-dashboard">
 
-    <div class="hackplanet_titles">
-        <!--  <h1>SharewareZ Admin Panel</h1> -->
-    </div>
+    <div class="hackplanet_titles"></div>
     
     <div class="container">
         <!-- Library Management Section -->
@@ -15,13 +13,13 @@
             <h3><i class="fas fa-book"></i> Library Management</h3>
             <div class="admin-buttons">
                 <div class="admin-button-item" data-toggle="tooltip" title="Manage your game libraries">
-                    <a href="{{ url_for('library.libraries') }}" class="btn btn-circle">
+                    <a href="{{ url_for('library.admin_libraries') }}" class="btn btn-circle">
                         <i class="fas fa-book"></i>
                     </a>
                     <span class="button-label">Libraries</span>
                 </div>
                 <div class="admin-button-item" data-toggle="tooltip" title="Manage scanning, filters, extensions, and image queue">
-                    <a href="{{ url_for('main.scan_management') }}" class="btn btn-circle">
+                    <a href="{{ url_for('main.admin_scan_management') }}" class="btn btn-circle">
                         <i class="fas fa-search"></i>
                     </a>
                     <span class="button-label">Scan Manager</span>
@@ -110,6 +108,12 @@
         <div class="admin-section">
             <h3><i class="fas fa-tools"></i> Admin Tools</h3>
             <div class="admin-buttons">
+                <div class="admin-button-item" data-toggle="tooltip" title="Configure the site title and logo">
+                    <a href="{{ url_for('admin2.branding') }}" class="btn btn-circle">
+                        <i class="fas fa-signature"></i>
+                    </a>
+                    <span class="button-label">Branding</span>
+                </div>
                 <div class="admin-button-item" data-toggle="tooltip" title="Manage user downloads">
                     <a href="{{ url_for('download.manage_downloads') }}" class="btn btn-circle">
                         <i class="fas fa-download"></i>

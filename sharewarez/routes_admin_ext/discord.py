@@ -1,6 +1,7 @@
 from flask import render_template, request, redirect, url_for, flash, jsonify
 from flask_login import login_required
 from sharewarez.utils.auth import admin_required
+from sharewarez.utils.processors import get_global_settings
 from sharewarez.models import GlobalSettings
 from sharewarez import db
 from sqlalchemy import select
@@ -64,7 +65,8 @@ def discord_settings():
 
     # Set default values if no settings exist or if fields are None
     webhook_url = (settings.discord_webhook_url if settings and settings.discord_webhook_url else 'insert_webhook_url_here')
-    bot_name = (settings.discord_bot_name if settings and settings.discord_bot_name else 'SharewareZ Bot')
+    site_title = get_global_settings()['site_title']
+    bot_name = (settings.discord_bot_name if settings and settings.discord_bot_name else f'{site_title} Bot')
     bot_avatar_url = (settings.discord_bot_avatar_url if settings and settings.discord_bot_avatar_url else 'insert_bot_avatar_url_here')
 
     return render_template('admin/admin_manage_discord_settings.html',
@@ -101,7 +103,7 @@ def test_discord_webhook():
     try:
         embed = handler.create_embed(
             title="Discord Webhook Test",
-            description="This is a test message from your SharewareZ instance.",
+            description=f"This is a test message from your {get_global_settings()['site_title']} instance.",
             color="03b2f8"
         )
         success = handler.send_webhook(embed)

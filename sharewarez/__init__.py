@@ -19,7 +19,7 @@ login_manager = LoginManager()
 mail = Mail()
 cache = Cache(config={'CACHE_TYPE': 'SimpleCache'})
 app_start_time = datetime.now()
-app_version = '2.9.8'
+app_version = '2.10'
 
 
 def create_app():
@@ -76,12 +76,14 @@ def create_app():
 
     @app.context_processor
     def inject_current_theme():
-        """Injects the current user's theme into all templates."""
+        """Inject the active theme and instance branding into every template."""
+        from sharewarez.utils.processors import get_global_settings
+
         if current_user.is_authenticated and hasattr(current_user, 'preferences') and current_user.preferences:
             current_theme = current_user.preferences.theme or 'default'
         else:
             current_theme = 'default'
-        return dict(current_theme=current_theme)
+        return dict(current_theme=current_theme, **get_global_settings())
 
     @app.before_request
     def check_setup_status():

@@ -8,6 +8,27 @@ document.addEventListener('DOMContentLoaded', function() {
     const submitButton = document.querySelector('button[type="submit"]');
     const igdbIdFeedback = document.querySelector('#igdb_id_feedback');
     const fullPathFeedback = document.createElement('small');
+    const igdbIdSearchButton = document.querySelector('#search-igdb-btn');
+    const igdbNameSearchButton = document.querySelector('#search-igdb');
+    const igdbIdSearchStatus = document.querySelector('#igdb-id-search-status');
+    const igdbNameSearchStatus = document.querySelector('#igdb-name-search-status');
+
+    function setSearchLoading(button, statusElement, isLoading, message = '') {
+        if (isLoading) {
+            button.dataset.defaultContent = button.innerHTML;
+            button.disabled = true;
+            button.setAttribute('aria-busy', 'true');
+            button.innerHTML = `<span class="button-spinner" aria-hidden="true"></span>${message}`;
+            statusElement.textContent = '';
+            statusElement.classList.add('is-loading');
+            return;
+        }
+
+        button.disabled = false;
+        button.removeAttribute('aria-busy');
+        button.innerHTML = button.dataset.defaultContent || button.innerHTML;
+        statusElement.classList.remove('is-loading');
+    }
 
     // Function to fetch the next available custom IGDB ID
     async function fetchNextCustomIgdbId() {
@@ -92,56 +113,23 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function updateFormWithGameData(gameData) {
         console.log("Received game data:", gameData); // Print out the gameData object
-        // Update genres
-        const genreCheckboxes = document.querySelectorAll('#genres-container .form-check-input');
-        console.log("Genres:", genreCheckboxes);
-        genreCheckboxes.forEach(checkbox => {
-            const checkboxLabel = checkbox.nextElementSibling ? checkbox.nextElementSibling.textContent.trim().toLowerCase() : "";
-            // Check if genres exist in gameData and then if current genre matches any of those genres
-            const isGenreMatched = gameData.genres ? gameData.genres.some(genre => genre.name.toLowerCase() === checkboxLabel) : false;
-            checkbox.checked = isGenreMatched;
-        });
-    
-        // Update game modes
-        const gameModeCheckboxes = document.querySelectorAll('#gamemodes-container input[type="checkbox"]');
-        gameModeCheckboxes.forEach((checkbox) => {
-            const checkboxLabel = checkbox.nextElementSibling ? checkbox.nextElementSibling.textContent.trim().toLowerCase() : "";
-            // Check if game_modes exist in gameData and then if current game mode matches any of those game modes
-            const isGameModeMatched = gameData.game_modes ? gameData.game_modes.some(mode => mode.name.toLowerCase() === checkboxLabel) : false;
-            checkbox.checked = isGameModeMatched;
-        });
-    
-        // Update themes
-        const themeCheckboxes = document.querySelectorAll('#themes-container .form-check-input');
-        themeCheckboxes.forEach(checkbox => {
-            const label = document.querySelector(`label[for="${checkbox.id}"]`);
-            const labelText = label ? label.textContent.trim() : "";
-            // Check if themes exist in gameData and then if current theme matches any of those themes
-            const isThemeMatched = gameData.themes ? gameData.themes.some(theme => theme.name === labelText) : false;
-            checkbox.checked = isThemeMatched;
-        });
-    
-        // Update platforms
-        const platformCheckboxes = document.querySelectorAll('#platforms-container .form-check-input');
-        platformCheckboxes.forEach(checkbox => {
-            const label = document.querySelector(`label[for="${checkbox.id}"]`);
-            const labelText = label ? label.textContent.trim() : "";
-            // Check if platforms exist in gameData and then if current platform matches any of those platforms
-            const isPlatformMatched = gameData.platforms ? gameData.platforms.some(platform => platform.name === labelText) : false;
-            checkbox.checked = isPlatformMatched;
-        });
+        function updateMultiSelect(containerId, values) {
+            const checkboxes = document.querySelectorAll(`${containerId} input[type="checkbox"]`);
+            const selectedNames = new Set((values || []).map(value =>
+                (typeof value === 'string' ? value : value.name || '').trim().toLowerCase()
+            ));
+            checkboxes.forEach(checkbox => {
+                const label = checkbox.closest('label');
+                const name = label ? label.textContent.trim().toLowerCase() : '';
+                checkbox.checked = selectedNames.has(name);
+            });
+        }
 
-
-        // Update player perspectives
-        const perspectiveCheckboxes = document.querySelectorAll('#perspectives-container input[type="checkbox"]');
-        console.log("Found perspective checkboxes: ", perspectiveCheckboxes.length);
-        perspectiveCheckboxes.forEach(checkbox => {
-            // Since the label text is directly after the checkbox, we use the checkbox ID to match the label text.
-            const labelText = checkbox.nextSibling.textContent.trim();
-            // Check if player_perspectives exist in gameData and then if current perspective matches any of those perspectives
-            const isPerspectiveMatched = gameData.player_perspectives ? gameData.player_perspectives.some(perspective => perspective.name === labelText) : false;
-            checkbox.checked = isPerspectiveMatched;
-        });
+        updateMultiSelect('#genres-container', gameData.genres);
+        updateMultiSelect('#gamemodes-container', gameData.game_modes);
+        updateMultiSelect('#themes-container', gameData.themes);
+        updateMultiSelect('#platforms-container', gameData.platforms);
+        updateMultiSelect('#perspectives-container', gameData.player_perspectives);
 
         // Update Category select field - using original field names to match scanning code
         const categorySelect = document.querySelector('#category'); // Assuming #category is the ID of the select
@@ -256,9 +244,10 @@ document.addEventListener('DOMContentLoaded', function() {
         triggerClickOnEnter(event, document.querySelector('#search-igdb'));
     });
 
-    document.querySelector('#search-igdb-btn').addEventListener('click', function() {
+    igdbIdSearchButton.addEventListener('click', function() {
         const igdbId = igdbIdInput.value;
         if (igdbId) {
+            setSearchLoading(igdbIdSearchButton, igdbIdSearchStatus, true, 'Looking up game…');
             fetch(`/api/search_igdb_by_id?igdb_id=${igdbId}`)
                 .then(response => response.json())
                 .then(data => {
@@ -270,6 +259,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             className: 'error',
                             position: 'top center'
                         });
+                        igdbIdSearchStatus.textContent = 'No game was found for that IGDB ID.';
                     } else {
                         const gameDetailsCollapse = document.querySelector('#gameDetails');
                         if (gameDetailsCollapse) {
@@ -283,23 +273,32 @@ document.addEventListener('DOMContentLoaded', function() {
                             nameInput.value = data.name;
                             document.querySelector('#summary').value = data.summary || '';
                             document.querySelector('#storyline').value = data.storyline || '';
+                    const instInput1 = document.querySelector('#install_instructions'); if (instInput1) instInput1.value = data.install_instructions || '';
                             urlInput.value = data.url || '';
                             document.querySelector('#video_urls').value = data.video_urls || '';
                             
                             checkFieldsAndToggleSubmit();
+                            igdbIdSearchStatus.textContent = 'Game details loaded.';
                         }, 300);
                     }
                 })
-                .catch(error => console.error('Error:', error));
+                .catch(error => {
+                    console.error('Error:', error);
+                    igdbIdSearchStatus.textContent = 'Unable to look up that IGDB ID. Please try again.';
+                })
+                .finally(() => setSearchLoading(igdbIdSearchButton, igdbIdSearchStatus, false));
+        } else {
+            igdbIdSearchStatus.textContent = 'Enter an IGDB ID to look up a game.';
         }
     });
 
-    document.querySelector('#search-igdb').addEventListener('click', function() {
+    igdbNameSearchButton.addEventListener('click', function() {
         const gameName = nameInput.value;
         const platformId = document.querySelector('#platform_id').textContent; // Retrieve the platform ID from the HTML
 
         console.log(`Initiating IGDB search for name: ${gameName}`);
         if (gameName) {
+            setSearchLoading(igdbNameSearchButton, igdbNameSearchStatus, true, 'Searching IGDB…');
             fetch(`/api/search_igdb_by_name?name=${encodeURIComponent(gameName)}&platform_id=${encodeURIComponent(platformId)}`)
                 .then(response => response.json())
                 .then(data => {
@@ -358,6 +357,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                 nameInput.value = game.name;
                                 document.querySelector('#summary').value = game.summary || '';
                                 document.querySelector('#storyline').value = game.storyline || '';
+                         const instInput2 = document.querySelector('#install_instructions'); if (instInput2) instInput2.value = game.install_instructions || '';
                                 document.querySelector('#url').value = game.url || '';
                                 checkFieldsAndToggleSubmit();
                                 resultsContainer.innerHTML = ''; // Clear results after selection
@@ -368,10 +368,17 @@ document.addEventListener('DOMContentLoaded', function() {
                     } else {
                         resultsContainer.textContent = 'No results found';
                     }
+                    igdbNameSearchStatus.textContent = data.results && data.results.length > 0
+                        ? `${data.results.length} result${data.results.length === 1 ? '' : 's'} found. Choose a game to fill in the form.`
+                        : 'No matching games found.';
                 })
                 .catch(error => {
                     console.error('Error:', error);
-                });
+                    igdbNameSearchStatus.textContent = 'Unable to search IGDB. Please try again.';
+                })
+                .finally(() => setSearchLoading(igdbNameSearchButton, igdbNameSearchStatus, false));
+        } else {
+            igdbNameSearchStatus.textContent = 'Enter a game name to search IGDB.';
         }
     });
     

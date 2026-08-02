@@ -55,40 +55,46 @@
 }
 
 /* Column sizing for jobs table */
-.simple-jobs-table th:nth-child(1), /* ID */
+.simple-jobs-table th:nth-child(1),
+/* ID */
 .simple-jobs-table td:nth-child(1) {
     width: 80px;
     max-width: 80px;
 }
 
-.simple-jobs-table th:nth-child(2), /* Library */
+.simple-jobs-table th:nth-child(2),
+/* Library */
 .simple-jobs-table td:nth-child(2) {
     width: 120px;
     max-width: 120px;
 }
 
-.simple-jobs-table th:nth-child(4), /* Status */
+.simple-jobs-table th:nth-child(4),
+/* Status */
 .simple-jobs-table td:nth-child(4) {
     width: 100px;
     max-width: 100px;
     text-align: center;
 }
 
-.simple-jobs-table th:nth-child(5), /* Progress */
+.simple-jobs-table th:nth-child(5),
+/* Progress */
 .simple-jobs-table td:nth-child(5) {
     width: 150px;
     max-width: 150px;
     text-align: center;
 }
 
-.simple-jobs-table th:nth-child(6), /* Actions */
+.simple-jobs-table th:nth-child(6),
+/* Actions */
 .simple-jobs-table td:nth-child(6) {
     width: 120px;
     max-width: 120px;
     text-align: center;
 }
 
-.simple-jobs-table th:nth-child(3), /* Path - takes remaining space */
+.simple-jobs-table th:nth-child(3),
+/* Path - takes remaining space */
 .simple-jobs-table td:nth-child(3) {
     width: auto;
     min-width: 200px;
@@ -278,7 +284,8 @@
 
 /* Progress bars */
 .scan-progress {
-    --spacing-sm: 0; /* Neutralize the spacing variable for this component */
+    --spacing-sm: 0;
+    /* Neutralize the spacing variable for this component */
 }
 
 .scan-progress .progress {
@@ -327,6 +334,7 @@
 
 /* Responsive design */
 @media (max-width: 992px) {
+
     /* Stack config and path cards vertically on tablets and mobile */
     .config-path-row {
         flex-direction: column;
@@ -344,6 +352,16 @@
 }
 
 @media (max-width: 768px) {
+
+    .config-card,
+    .path-card {
+        padding: 18px;
+    }
+
+    .options-row {
+        grid-template-columns: 1fr;
+    }
+
     .simple-jobs-table,
     .simple-unmatched-table {
         font-size: 0.875rem;
@@ -455,6 +473,35 @@
     height: auto;
 }
 
+.manual-scan-progress {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 14px;
+    padding: 12px 14px;
+    color: rgba(225, 233, 255, 0.92);
+    background: rgba(37, 99, 235, 0.12);
+    border: 1px solid rgba(100, 150, 255, 0.3);
+    border-radius: 10px;
+}
+
+.manual-scan-progress[hidden] {
+    display: none;
+}
+
+.manual-scan-spinner {
+    width: 18px;
+    height: 18px;
+    border: 2px solid rgba(210, 225, 255, 0.36);
+    border-top-color: #9fc0ff;
+    border-radius: 50%;
+    animation: manual-scan-spin 0.7s linear infinite;
+}
+
+@keyframes manual-scan-spin {
+    to { transform: rotate(360deg); }
+}
+
 /* Auto scan styling */
 .auto-scan-header {
     text-align: center;
@@ -484,29 +531,33 @@
 .config-card,
 .path-card,
 .action-card {
-    background: var(--bg-light-overlay);
-    backdrop-filter: blur(10px);
-    border: 1px solid var(--border-light-strong);
-    border-radius: var(--border-radius-lg);
-    padding: 20px;
-    margin-bottom: 0; /* Remove bottom margin when in side-by-side layout */
+    background: linear-gradient(145deg, rgba(28, 29, 45, 0.9), rgba(13, 14, 25, 0.95));
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 0;
+    box-shadow: 0 16px 38px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 
 /* When cards are in the side-by-side row, they should take equal width */
 .config-path-row .config-card,
 .config-path-row .path-card {
     flex: 1;
-    min-width: 0; /* Allows flex items to shrink below their content size */
+    min-width: 0;
+    /* Allows flex items to shrink below their content size */
 }
 
-.card-header {
-    border-bottom: 1px solid var(--border-light-strong);
-    padding-bottom: 15px;
+.config-card .card-header,
+.path-card .card-header {
+    background: transparent;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 0 0 16px;
     margin-bottom: 20px;
 }
 
 .card-title {
-    color: #fff;
+    color: rgba(235, 240, 255, 0.96);
     margin: 0;
     font-size: 1.1rem;
     display: flex;
@@ -531,15 +582,18 @@
 }
 
 .config-label {
-    color: #fff;
-    font-weight: bold;
+    color: rgba(190, 205, 240, 0.8);
+    font-weight: 600;
+    font-size: 0.78rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
     margin-bottom: 8px;
 }
 
 .config-input,
 .form-control {
-    background: var(--bg-light-overlay);
-    border: 1px solid var(--border-light-30);
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: 8px;
     padding: 10px;
     color: #fff;
@@ -565,9 +619,11 @@
 }
 
 .options-row {
-    display: flex;
-    flex-direction: column; /* Changed to vertical layout */
-    gap: 12px; /* Reduced gap for vertical spacing */
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px 16px;
+    padding-top: 16px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .option-item {
@@ -579,6 +635,8 @@
     display: flex;
     align-items: center;
     gap: 8px;
+    min-height: 28px;
+    color: rgba(225, 232, 250, 0.86);
 }
 
 /* Path input styling */
@@ -612,9 +670,10 @@
 }
 
 .folder-contents {
-    background: rgba(0, 0, 0, 0.1);
-    border-radius: 8px;
-    padding: 8px;
+    background: rgba(5, 7, 15, 0.38);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 10px;
+    padding: 10px;
     max-height: 400px;
     overflow-y: auto;
 }
@@ -783,6 +842,7 @@
     border-radius: var(--border-radius-lg);
     padding: 0;
     margin-bottom: 30px;
+    width: 100%;
 }
 
 .container-settings {
@@ -815,7 +875,7 @@
     border: 1px solid var(--border-light-strong);
     border-bottom: 3px solid #007bff;
     border-radius: 8px 8px 0 0;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
 }
 
 .admin_manage_scanjobs-tab-content {
@@ -890,4 +950,221 @@
     border-radius: var(--border-radius-lg);
     padding: 20px;
     margin-bottom: 20px;
+}
+
+/* ── Scan management UI refresh ───────────────────────────── */
+.admin_manage_scanjobs-nav-panel {
+    width: min(1440px, calc(100% - 48px));
+    margin: 24px auto 48px;
+    overflow: hidden;
+    background: linear-gradient(145deg, rgba(18, 18, 28, 0.96), rgba(12, 12, 20, 0.98));
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    border-radius: 18px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5), 0 0 60px rgba(80, 120, 255, 0.06);
+}
+
+.admin_manage_scanjobs-nav-panel .container-settings {
+    min-width: 0;
+    padding: 24px;
+    background: transparent;
+    border-radius: 0;
+    box-shadow: none;
+}
+
+.admin_manage_scanjobs-nav-tabs {
+    gap: 6px;
+    padding: 0 0 2px;
+    border-bottom-color: rgba(255, 255, 255, 0.1);
+}
+
+.admin_manage_scanjobs-nav-link {
+    color: rgba(225, 229, 245, 0.72);
+    border: 1px solid transparent;
+    border-radius: 9px 9px 0 0;
+    padding: 12px 16px;
+}
+
+.admin_manage_scanjobs-nav-link:hover,
+.admin_manage_scanjobs-nav-link.active {
+    color: #fff;
+    background: rgba(98, 122, 239, 0.14);
+    border-color: rgba(154, 177, 255, 0.24);
+    box-shadow: none;
+}
+
+.admin_manage_scanjobs-nav-link.active {
+    border-bottom-color: rgba(123, 150, 255, 0.9);
+}
+
+.admin_manage_scanjobs-tab-content {
+    padding: 24px 0 0;
+}
+
+.admin_manage_scanjobs-manual-panel,
+.admin_manage_scanjobs-unmatched-panel,
+.admin_manage_scanjobs-filters-panel,
+.admin_manage_scanjobs-extensions-panel,
+.admin_manage_scanjobs-imagequeue-panel {
+    margin: 0;
+    padding: 24px;
+    background: linear-gradient(145deg, rgba(28, 29, 45, 0.9), rgba(13, 14, 25, 0.95));
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    border-radius: 16px;
+    box-shadow: 0 16px 38px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.admin_manage_scanjobs-unmatched-container,
+.admin_manage_scanjobs-filters-container,
+.admin_manage_scanjobs-extensions-container {
+    width: 100%;
+    max-width: none;
+    padding: 0;
+}
+
+.admin_manage_scanjobs-tab-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 16px;
+    margin-bottom: 22px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.admin_manage_scanjobs-tab-header h3 {
+    margin: 0;
+    text-align: left;
+    color: rgba(235, 240, 255, 0.96);
+    font-size: 1.35rem;
+}
+
+.admin_manage_scanjobs-tab-header p {
+    flex-basis: 100%;
+    margin: -4px 0 0;
+    color: rgba(205, 214, 235, 0.68);
+}
+
+.admin_manage_scanjobs-tab-header .btn {
+    margin-left: auto;
+}
+
+.scan-extension-card {
+    overflow: hidden;
+    background: rgba(5, 6, 13, 0.32);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+}
+
+.scan-extension-card .card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 16px;
+    background: rgba(8, 10, 19, 0.75);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.scan-extension-card .card-header h4 {
+    margin: 0;
+    color: rgba(235, 240, 255, 0.96);
+    font-size: 1rem;
+}
+
+.scan-extension-card .card-body {
+    padding: 0;
+}
+
+.scan-extension-card .table {
+    margin: 0;
+}
+
+.scan-queue-toolbar {
+    align-items: center;
+    row-gap: 12px;
+}
+
+.scan-queue-toolbar .btn-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.scan-queue-toolbar .btn {
+    margin: 0;
+}
+
+.scan-queue-toolbar .form-select {
+    min-height: 40px;
+    background-color: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.12);
+    color: var(--text-white);
+}
+
+.scan-queue-table-wrapper {
+    overflow: auto;
+}
+
+.simple-jobs-table th,
+.simple-unmatched-table th {
+    padding: 14px 16px;
+    background: rgba(8, 10, 19, 0.88);
+    color: rgba(205, 217, 247, 0.82);
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+}
+
+.simple-jobs-table td,
+.simple-unmatched-table td {
+    padding: 14px 16px;
+}
+
+@media (max-width: 768px) {
+    .admin_manage_scanjobs-nav-panel {
+        width: calc(100% - 24px);
+        margin-top: 12px;
+        border-radius: 14px;
+    }
+
+    .admin_manage_scanjobs-nav-panel .container-settings,
+    .admin_manage_scanjobs-manual-panel,
+    .admin_manage_scanjobs-unmatched-panel,
+    .admin_manage_scanjobs-filters-panel,
+    .admin_manage_scanjobs-extensions-panel,
+    .admin_manage_scanjobs-imagequeue-panel {
+        padding: 16px;
+    }
+
+    .admin_manage_scanjobs-nav-tabs {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+    }
+
+    .admin_manage_scanjobs-nav-link {
+        flex: 0 0 auto;
+        white-space: nowrap;
+    }
+
+    .admin_manage_scanjobs-tab-header .btn {
+        width: 100%;
+        margin-left: 0;
+    }
+
+    .container-unmatched-buttons,
+    .scan-queue-toolbar .btn-group {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .container-unmatched-buttons form,
+    .scan-queue-toolbar .btn {
+        width: 100%;
+    }
+
+    .scan-extension-card .card-header {
+        align-items: flex-start;
+        flex-direction: column;
+    }
 }

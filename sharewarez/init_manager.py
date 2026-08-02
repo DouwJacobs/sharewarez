@@ -181,6 +181,7 @@ class InitializationManager:
 
             # Handle theme installation
             self._setup_default_theme(themes_path, dev_mode)
+            self._setup_bundled_themes(themes_path, dev_mode)
 
             # Create other required directories
             for path, name in [(images_path, 'images'), (zips_path, 'zips')]:
@@ -371,6 +372,23 @@ class InitializationManager:
                 print("⚠️  Theme source not found")
         else:
             print("ℹ️  Theme already exists")
+
+    def _setup_bundled_themes(self, themes_path, dev_mode):
+        """Install the additional themes shipped with the application."""
+        source_root = os.path.join('sharewarez', 'setup', 'bundled_themes')
+        if not os.path.isdir(source_root):
+            return
+        os.makedirs(themes_path, exist_ok=True)
+        for theme_name in sorted(os.listdir(source_root)):
+            source = os.path.join(source_root, theme_name)
+            target = os.path.join(themes_path, theme_name)
+            if not os.path.isdir(source):
+                continue
+            if dev_mode and os.path.exists(target):
+                shutil.rmtree(target)
+            if dev_mode or not os.path.exists(os.path.join(target, 'theme.json')):
+                shutil.copytree(source, target, dirs_exist_ok=True)
+                print(f"✅ Bundled theme installed: {theme_name}")
 
     def _cleanup_orphaned_scan_jobs(self, session):
         """Clean up scan jobs left in 'Running' or 'Stopping' state after server restart."""

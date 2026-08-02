@@ -264,7 +264,9 @@ class TestGameDetailsRouteResponse:
         
         assert response.status_code == 200
         assert b'Test Game' in response.data
-        
+        assert test_game.developer.name.encode() in response.data
+        assert b'<Developer ' not in response.data
+
         # Verify audit logging of successful access
         mock_log.assert_any_call(
             f"User {test_user.name} accessed game 'Test Game' with 1 updates and 1 extras",
@@ -290,6 +292,25 @@ class TestGameDetailsRouteResponse:
         assert 'full_disk_path' not in game_data
         # Verify the sensitive path isn't exposed anywhere
         assert '/sensitive/path/to/game/folder' not in str(game_data)
+
+    def test_game_details_deduplicates_web_links(self, client, db_session, test_user, test_game):
+        """Duplicate website records should produce only one details-page link."""
+        db_session.add_all([
+            GameURL(game_uuid=test_game.uuid, url='https://example.com/official', url_type='official'),
+            GameURL(game_uuid=test_game.uuid, url='https://example.com/official/', url_type='official'),
+        ])
+        db_session.commit()
+
+        with client.session_transaction() as sess:
+            sess['_user_id'] = str(test_user.id)
+            sess['_fresh'] = True
+
+        with patch('sharewarez.routes_games_ext.details.render_template') as mock_render:
+            mock_render.return_value = 'mocked response'
+            response = client.get(f'/game_details/{test_game.uuid}')
+
+        assert response.status_code == 200
+        assert len(mock_render.call_args.kwargs['game']['urls']) == 1
     
     def test_game_details_nfo_content_sanitized(self, client, test_user, test_game):
         """Test that NFO content is sanitized before being sent to template."""
@@ -478,6 +499,23 @@ class TestGameDetailsTemplateSecurity:
         assert 'form' in kwargs
         assert 'library_uuid' in kwargs
         assert kwargs['library_uuid'] == test_game.library_uuid
+        assert kwargs['back_url'] == '/library'
+
+    def test_game_details_uses_same_host_referrer_for_back_link(self, client, test_user, test_game):
+        """The details back link preserves the originating in-app page."""
+        with client.session_transaction() as sess:
+            sess['_user_id'] = str(test_user.id)
+            sess['_fresh'] = True
+
+        with patch('sharewarez.routes_games_ext.details.render_template') as mock_render:
+            mock_render.return_value = 'mocked response'
+            response = client.get(
+                f'/game_details/{test_game.uuid}',
+                headers={'Referer': 'http://localhost/library?tag=Portable'}
+            )
+
+        assert response.status_code == 200
+        assert mock_render.call_args.kwargs['back_url'] == '/library?tag=Portable'
 
 
 class TestGameDetailsErrorHandling:

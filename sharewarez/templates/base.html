@@ -7,7 +7,12 @@
     <meta charset="utf-8">
     
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Sharewarez</title>
+    <title>{% block title %}{{ site_title }}{% endblock %}</title>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename=brand_logo_path) }}">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename=brand_logo_path) }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     {% block styles %}
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"/>
     <script src="https://code.jquery.com/jquery-3.7.1.js" integrity="sha256-eKhayi8LEQwp4NKxN+CfCh+3qOVUtJn3QNZ0TciWLP4=" crossorigin="anonymous"></script>
@@ -16,6 +21,83 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">    
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/notify/0.4.2/notify.min.js"></script>
+    <script>
+        // Override jQuery notify to use Bootstrap toasts
+        (function($) {
+            if ($) {
+                $.notify = function(message, options) {
+                    let type = 'info';
+                    if (typeof options === 'string') {
+                        type = options;
+                    } else if (options && typeof options === 'object') {
+                        type = options.className || options.style || 'info';
+                    }
+                    
+                    // Map notify types to bootstrap classes
+                    let bsClass = type;
+                    if (type === 'error') bsClass = 'danger';
+                    if (type === 'warn' || type === 'warning') bsClass = 'warning';
+                    if (type === 'success') bsClass = 'success';
+                    if (type === 'info') bsClass = 'info';
+                    
+                    // Select or create container
+                    let container = document.querySelector('.sw-toast-container');
+                    if (!container) {
+                        container = document.createElement('div');
+                        container.className = 'sw-toast-container';
+                        container.setAttribute('aria-live', 'polite');
+                        container.setAttribute('aria-atomic', 'true');
+                        document.body.appendChild(container);
+                    }
+                    
+                    // Determine icon
+                    let icon = 'fa-info-circle';
+                    if (bsClass === 'success') icon = 'fa-check-circle';
+                    else if (bsClass === 'warning' || bsClass === 'danger') icon = 'fa-exclamation-triangle';
+                    
+                    // Determine title
+                    let title = 'Notice';
+                    if (bsClass === 'success') title = 'Success';
+                    else if (bsClass === 'danger') title = 'Error';
+                    else if (bsClass === 'warning') title = 'Warning';
+                    
+                    // Create toast element
+                    const toastEl = document.createElement('div');
+                    toastEl.className = `toast sw-toast sw-toast-${bsClass}`;
+                    toastEl.setAttribute('role', 'alert');
+                    toastEl.setAttribute('aria-live', 'assertive');
+                    toastEl.setAttribute('aria-atomic', 'true');
+                    toastEl.setAttribute('data-bs-autohide', 'true');
+                    toastEl.setAttribute('data-bs-delay', '6000');
+                    
+                    toastEl.innerHTML = `
+                        <div class="toast-header sw-toast-header sw-toast-header-${bsClass}">
+                            <i class="fas ${icon} me-2"></i>
+                            <strong class="me-auto">${title}</strong>
+                            <button type="button" class="btn-close btn-close-white ms-2" data-bs-dismiss="toast" aria-label="Close"></button>
+                        </div>
+                        <div class="toast-body sw-toast-body">
+                            ${message}
+                        </div>
+                    `;
+                    
+                    container.appendChild(toastEl);
+                    
+                    // Initialize and show
+                    const bsToast = new bootstrap.Toast(toastEl, { delay: 6000, autohide: true });
+                    
+                    toastEl.addEventListener('hide.bs.toast', function () {
+                        toastEl.classList.add('hiding');
+                    });
+                    toastEl.addEventListener('hidden.bs.toast', function () {
+                        toastEl.remove();
+                    });
+                    
+                    bsToast.show();
+                };
+            }
+        })(window.jQuery);
+    </script>
 
     <!-- Cropper.js for image editing -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css" />
@@ -34,6 +116,9 @@
 
     <link rel="stylesheet" href="{{ 'css/site/sidebar.css'|theme_asset }}">
     <link rel="stylesheet" href="{{ 'css/components.css'|theme_asset }}">
+    <link rel="stylesheet" href="{{ 'css/global-search.css'|theme_asset }}">
+    <!-- Global mobile responsiveness - loaded last to override all page-specific styles -->
+    <link rel="stylesheet" href="{{ 'css/mobile.css'|theme_asset }}">
     
     <script src="{{ 'js/preferences_modal.js'|theme_asset }}"></script>
     <script src="{{ 'js/delete_game_modal.js'|theme_asset }}"></script>
@@ -41,39 +126,76 @@
 
 
     {% endblock %}
+    <!-- Critical mobile styles embedded to avoid caching issues -->
+    <style>
+        @media (max-width: 768px) {
+            #mobile-header {
+                display: flex !important;
+                position: fixed;
+                top: 0; left: 0; right: 0;
+                height: 64px;
+                background: linear-gradient(135deg, var(--theme-sidebar-top, rgba(18, 19, 31, 0.98)), var(--theme-sidebar-bottom, rgba(10, 11, 20, 0.98)));
+                backdrop-filter: blur(18px);
+                border-bottom: 1px solid rgba(var(--theme-accent-soft-rgb, 154, 177, 255), 0.2);
+                z-index: 1100;
+                align-items: center;
+                padding: 0 14px;
+                gap: 10px;
+                box-sizing: border-box;
+            }
+            #sidebar {
+                transform: translateX(-100%);
+                z-index: 1000;
+                /* Full width on mobile, starts below header */
+                width: 82vw !important;
+                max-width: 320px !important;
+                top: 64px !important;
+                height: calc(100vh - 64px) !important;
+                background: linear-gradient(180deg, var(--theme-sidebar-top, rgba(18, 19, 31, 0.98)), var(--theme-sidebar-bottom, rgba(10, 11, 20, 0.99))) !important;
+                overflow-y: auto;
+                padding-top: 8px !important;
+                transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                box-shadow: 4px 0 20px rgba(0,0,0,0.5), 0 0 32px rgba(var(--theme-accent-rgb, 98, 122, 239), 0.12);
+            }
+            #sidebar.mobile-open {
+                transform: translateX(0) !important;
+            }
+            #content {
+                margin-left: 0 !important;
+                padding-top: 80px !important;
+            }
+            /* Backdrop covers full screen including header area */
+            #sidebarBackdrop {
+                top: 64px !important;
+            }
+        }
+        @media (min-width: 769px) {
+            #mobile-header { display: none !important; }
+        }
+    </style>
 </head>
-<body>
+<body class="{% if request.path.startswith('/admin') or request.endpoint in ['download.manage_downloads', 'library.libraries', 'main.scan_management'] %}admin-ui{% endif %}"{% if request.path == '/library' %} data-user-per-page="{{ user_per_page }}" data-user-default-sort="{{ user_default_sort }}" data-user-default-sort-order="{{ user_default_sort_order }}" data-enable-delete-game-on-disk="{{ enable_delete_game_on_disk|lower }}" data-discord-configured="{{ discord_configured|lower }}" data-discord-manual-trigger="{{ discord_manual_trigger_enabled|lower }}" data-is-admin="{{ is_admin|lower }}" data-show-play-status="{{ show_play_status|lower }}" data-current-filters="{{ filters|tojson|e }}" data-current-page="{{ current_page }}" data-total-pages="{{ pages }}"{% endif %}>
 
 
 
 
 {% if not is_setup_mode %}
+<!-- Mobile Header Bar -->
+<div id="mobile-header" class="mobile-header">
+    <button id="mobileMenuToggle" class="mobile-menu-btn" aria-label="Open menu">
+        <i class="fas fa-bars"></i>
+    </button>
+    <span class="mobile-brand-mark" aria-hidden="true"><img src="{{ url_for('static', filename=brand_logo_path) }}" alt=""></span>
+    <span class="mobile-title">{{ site_title }}</span>
+</div>
+
+<!-- Sidebar Backdrop (mobile only) -->
+<div id="sidebarBackdrop" class="sidebar-backdrop"></div>
+
 <div id="sidebar" class="sidebar">
-    {% if current_user.is_authenticated %}
-    <div class="useraccount-minimenu-container">
-        <!-- User Account Icon at the Bottom Left -->
-        <div id="userAccountIcon" class="user-account-icon">
-            <img src="{{ url_for('static', filename=current_user.avatarpath) }}" alt="User Avatar" class="user-avatar"> <!-- Use the user's avatar if available -->
-            <span class="user-name" style="color: white;">{{ current_user.name | capitalize }}</span>
-
-            <i class="fas fa-chevron-up user-expand-icon" style="color: white;"></i>
-        </div>
-
-        <!-- Expandable User Account Menu -->
-        <div id="userAccountMenu" class="user-account-menu hide">
-            <a href="{{ url_for('settings.settings_profile_view') }}" class="account-menu-option"><i class="fas fa-user"></i> Profile</a>
-            <a href="{{ url_for('login.invites') }}" class="account-menu-option"><i class="fas fa-envelope"></i> Invites</a>
-            <a href="#" class="account-menu-option" data-bs-toggle="modal" data-bs-target="#preferencesModal"><i class="fas fa-gear"></i> Preferences</a>
-            <a href="{{ url_for('settings.account_pw') }}" class="account-menu-option"><i class="fas fa-key"></i> Change Password</a>
-            <a href="{{ url_for('site.logout') }}" class="account-menu-option"><i class="fas fa-right-from-bracket"></i> Logout</a>
-        </div>
-    </div>
-    {% endif %}
     <a href="/discover">
         {% if show_logo %}
-            <div class="menu-logo-image">
-                <!-- Your CSS will apply here, displaying the logo -->
-            </div>
+            <div class="menu-logo-image"><img src="{{ url_for('static', filename=brand_logo_path) }}" alt="{{ site_title }} logo"></div>
         {% endif %}
     </a>
     
@@ -85,44 +207,99 @@
     
     <div class="sidebar-header">
         <button id="toggleSidebar" class="toggle-sidebar">
-            <i class="icon-chevron"><span>&gt;</span></i>
+            <i class="fas fa-chevron-right icon-chevron"></i>
         </button>
     </div>
     <div class="sidebar-menu">
         {% if current_user.is_authenticated %}
+            <p class="sidebar-menu-label">Browse</p>
             {% if show_discovery %}
-                <a href="{{ url_for('discover.discover') }}" class="sidebar-link"><i class="fas fa-compass"></i><span class="link-text">Discover</span></a>
+                <a href="{{ url_for('discover.discover') }}" class="sidebar-link{% if request.path.startswith('/discover') %} active{% endif %}" title="Discover"{% if request.path.startswith('/discover') %} aria-current="page"{% endif %}><i class="fas fa-compass"></i><span class="link-text">Discover</span></a>
             {% endif %}
-            <a href="{{ url_for('library.library') }}" class="sidebar-link"><i class="fas fa-gamepad"></i><span class="link-text">Library</span></a>
-            <a href="{{ url_for('download.downloads') }}" class="sidebar-link"><i class="fas fa-download"></i><span class="link-text">Downloads</span></a>
+            <a href="{{ url_for('library.library') }}" class="sidebar-link{% if request.path.startswith('/library') %} active{% endif %}" title="Library"{% if request.path.startswith('/library') %} aria-current="page"{% endif %}><i class="fas fa-gamepad"></i><span class="link-text">Library</span></a>
+            <a href="{{ url_for('download.downloads') }}" class="sidebar-link{% if request.path.startswith('/downloads') %} active{% endif %}" title="Downloads"{% if request.path.startswith('/downloads') %} aria-current="page"{% endif %}><i class="fas fa-download"></i><span class="link-text">Downloads</span></a>
             {% if show_favorites %}
-                <a href="{{ url_for('site.favorites') }}" class="sidebar-link"><i class="fas fa-heart"></i><span class="link-text">Favorites</span></a>
+                <a href="{{ url_for('site.favorites') }}" class="sidebar-link{% if request.path.startswith('/favorites') %} active{% endif %}" title="Favorites"{% if request.path.startswith('/favorites') %} aria-current="page"{% endif %}><i class="fas fa-heart"></i><span class="link-text">Favorites</span></a>
             {% endif %}
             {% if show_trailers %}
-                <a href="{{ url_for('site.random_trailers') }}" class="sidebar-link"><i class="fas fa-film"></i><span class="link-text">Trailers</span></a>
+                <a href="{{ url_for('site.random_trailers') }}" class="sidebar-link{% if request.path.startswith('/random_trailers') %} active{% endif %}" title="Trailers"{% if request.path.startswith('/random_trailers') %} aria-current="page"{% endif %}><i class="fas fa-film"></i><span class="link-text">Trailers</span></a>
             {% endif %}
 
-            {% if current_user.role == 'admin' %}
-                <a href="/admin/dashboard" class="sidebar-link"><i class="fas fa-cogs"></i><span class="link-text">Settings</span></a>
+            {% if current_user.role == 'admin' or show_help_button %}
+                <p class="sidebar-menu-label sidebar-menu-label-system">System</p>
+                {% if current_user.role == 'admin' %}
+                    <a href="/admin/dashboard" class="sidebar-link{% if request.path.startswith('/admin') %} active{% endif %}" title="Settings"{% if request.path.startswith('/admin') %} aria-current="page"{% endif %}><i class="fas fa-cogs"></i><span class="link-text">Settings</span></a>
+                {% endif %}
+                {% if show_help_button %}
+                    <a href="{{ url_for('site.helpfaq') }}" class="sidebar-link{% if request.path.startswith('/help') %} active{% endif %}" title="Help"{% if request.path.startswith('/help') %} aria-current="page"{% endif %}><i class="fas fa-question-circle"></i><span class="link-text">Help</span></a>
+                {% endif %}
             {% endif %}
-
-            {% if show_help_button %}
-                <a href="{{ url_for('site.helpfaq') }}" class="sidebar-link"><i class="fas fa-question-circle"></i><span class="link-text">Help</span></a>
-            {% endif %}
-            
         {% else %}
             <a href="{{ url_for('login.login') }}" class="sidebar-link"><i class="fas fa-sign-in-alt"></i><span class="link-text">Login</span></a>
             <a href="{{ url_for('login.register') }}" class="sidebar-link"><i class="fas fa-user-plus"></i><span class="link-text">Register</span></a>
         {% endif %}
-        {% include 'games/library_filters.html' %}
     </div>
-    
+
+    {% if current_user.is_authenticated %}
+    <div class="useraccount-minimenu-container">
+        <!-- Account controls remain pinned at the bottom of the sidebar. -->
+        <div id="userAccountMenu" class="user-account-menu hide">
+            <a href="{{ url_for('settings.settings_profile_view') }}" class="account-menu-option"><i class="fas fa-user"></i> Profile</a>
+            <a href="{{ url_for('login.invites') }}" class="account-menu-option"><i class="fas fa-envelope"></i> Invites</a>
+            <a href="#" class="account-menu-option" data-bs-toggle="modal" data-bs-target="#preferencesModal"><i class="fas fa-gear"></i> Preferences</a>
+            <a href="{{ url_for('settings.account_pw') }}" class="account-menu-option"><i class="fas fa-key"></i> Change Password</a>
+            <a href="{{ url_for('site.logout') }}" class="account-menu-option"><i class="fas fa-right-from-bracket"></i> Logout</a>
+        </div>
+        <div id="userAccountIcon" class="user-account-icon" role="button" tabindex="0" aria-label="Open account menu">
+            <img src="{{ url_for('static', filename=current_user.avatarpath) }}" alt="" class="user-avatar">
+            <span class="user-name">{{ current_user.name | capitalize }}</span>
+            <i class="fas fa-chevron-up user-expand-icon" aria-hidden="true"></i>
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+{% endif %}
+{% if current_user.is_authenticated %}
+<div class="global-search" id="globalSearch" hidden>
+    <div class="global-search-backdrop" data-global-search-close></div>
+    <section class="global-search-dialog" role="dialog" aria-modal="true" aria-labelledby="globalSearchTitle">
+        <h2 id="globalSearchTitle" class="visually-hidden">Search {{ site_title }}</h2>
+        <div class="global-search-input-wrap">
+            <i class="fas fa-magnifying-glass" aria-hidden="true"></i>
+            <input id="globalSearchInput" type="search" autocomplete="off" placeholder="Search games, libraries{% if current_user.role == 'admin' %}, users, and settings{% endif %}…" aria-controls="globalSearchResults">
+            <kbd>Esc</kbd>
+        </div>
+        <div id="globalSearchResults" class="global-search-results" role="listbox"><p class="global-search-hint">Type at least two characters to search.</p></div>
+    </section>
 </div>
 {% endif %}
 <div id="content" class="{% if is_setup_mode %}setup-mode-content{% endif %}">
+    {% if current_user.is_authenticated and not is_setup_mode %}
+    <div class="content-global-search">
+        <i class="fas fa-magnifying-glass" aria-hidden="true"></i>
+        <input type="search" data-global-search-inline autocomplete="off" placeholder="Search games, libraries{% if current_user.role == 'admin' %}, users, and settings{% endif %}…" aria-label="Search {{ site_title }}">
+        <kbd>Ctrl K</kbd>
+    </div>
+    {% endif %}
     {% include 'partials/flash_messages.html' %}
+    {% if (request.path.startswith('/admin') and request.path != '/admin/dashboard') or request.endpoint in ['library.libraries', 'main.scan_management'] %}
+    <nav class="admin-breadcrumb" aria-label="Admin navigation">
+        <a href="{{ url_for('site.admin_dashboard') }}" aria-label="Return to the admin dashboard">
+            <i class="fas fa-arrow-left" aria-hidden="true"></i>
+            <span>Admin dashboard</span>
+        </a>
+        <i class="fas fa-chevron-right admin-breadcrumb-separator" aria-hidden="true"></i>
+        <span class="admin-breadcrumb-current">Administration</span>
+    </nav>
+    {% endif %}
     {% block content %}{% endblock %}
 </div>
+
+<!-- Final table layer loads after page styles so every view shares one table language. -->
+<link rel="stylesheet" href="{{ 'css/table-polish.css'|theme_asset }}">
+<link rel="stylesheet" href="{{ 'css/theme-components.css'|theme_asset }}">
+<link rel="stylesheet" href="{{ 'css/theme-overrides.css'|theme_asset }}">
 
 
 <!-- Add this near the end of base.html -->
@@ -146,36 +323,76 @@
     
         closeAllSubmenus();
     
-        // Toggle sidebar
+        // Toggle sidebar (desktop chevron)
         const toggleSidebar = document.getElementById("toggleSidebar");
         if (toggleSidebar) {
             toggleSidebar.addEventListener("click", function() {
-                console.log("Sidebar toggle clicked.");
                 document.getElementById("sidebar").classList.toggle("collapsed");
                 document.getElementById("content").classList.toggle("collapsed");
                 closeAllSubmenus();
             });
         }
+
+        // Mobile hamburger toggle
+        const mobileMenuToggle = document.getElementById("mobileMenuToggle");
+        const sidebarBackdrop = document.getElementById("sidebarBackdrop");
+        const sidebar = document.getElementById("sidebar");
+
+        function openMobileSidebar() {
+            if (sidebar) sidebar.classList.add("mobile-open");
+            if (sidebarBackdrop) sidebarBackdrop.classList.add("active");
+            document.body.style.overflow = "hidden";
+        }
+
+        function closeMobileSidebar() {
+            if (sidebar) sidebar.classList.remove("mobile-open");
+            if (sidebarBackdrop) sidebarBackdrop.classList.remove("active");
+            document.body.style.overflow = "";
+        }
+
+        if (mobileMenuToggle) {
+            mobileMenuToggle.addEventListener("click", function() {
+                if (sidebar && sidebar.classList.contains("mobile-open")) {
+                    closeMobileSidebar();
+                } else {
+                    openMobileSidebar();
+                }
+            });
+        }
+        if (sidebarBackdrop) {
+            sidebarBackdrop.addEventListener("click", closeMobileSidebar);
+        }
+
+        // Close mobile sidebar when a nav link is clicked
+        document.querySelectorAll("#sidebar .sidebar-link").forEach(function(link) {
+            link.addEventListener("click", function() {
+                if (window.innerWidth <= 768) {
+                    closeMobileSidebar();
+                }
+            });
+        });
     
         // User account icon click event
         const userAccountIcon = document.getElementById('userAccountIcon');
-        if (userAccountIcon) {
-            userAccountIcon.addEventListener('click', function() {
-                console.log("User account icon clicked.");
+        function toggleUserAccountMenu() {
+            const menu = document.getElementById('userAccountMenu');
+            const icon = document.querySelector('.user-expand-icon');
+            if (!menu || !icon) return;
 
-                var menu = document.getElementById('userAccountMenu');
-                var icon = document.querySelector('.user-expand-icon');
-            
-                if (menu.classList.contains('hide')) {
-                    console.log("Menu is hidden, showing now.");
-                    menu.classList.remove('hide');
-                    menu.classList.add('show');
-                    icon.style.transform = 'rotate(180deg)';
-                } else {
-                    console.log("Menu is shown, hiding now.");
-                    menu.classList.remove('show');
-                    menu.classList.add('hide');
-                    icon.style.transform = 'rotate(0deg)';
+            const willOpen = menu.classList.contains('hide');
+            menu.classList.toggle('hide', !willOpen);
+            menu.classList.toggle('show', willOpen);
+            userAccountIcon.setAttribute('aria-expanded', String(willOpen));
+            icon.style.transform = willOpen ? 'rotate(180deg)' : 'rotate(0deg)';
+        }
+
+        if (userAccountIcon) {
+            userAccountIcon.setAttribute('aria-expanded', 'false');
+            userAccountIcon.addEventListener('click', toggleUserAccountMenu);
+            userAccountIcon.addEventListener('keydown', function(event) {
+                if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    toggleUserAccountMenu();
                 }
             });
         }
@@ -193,6 +410,7 @@
                     // If the click is outside the userAccountIcon and userAccountMenu, close the menu
                     userAccountMenu.classList.add('hide');
                     userAccountMenu.classList.remove('show');
+                    userAccountIcon.setAttribute('aria-expanded', 'false');
                     userExpandIcon.style.transform = 'rotate(0deg)';
                 }
             }
@@ -249,9 +467,30 @@ if (prefsToggle) {
 }
 </script>
 
+<script>
+// Initialize all server-rendered flash toasts
+document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('.sw-toast[data-bs-autohide="true"]').forEach(function (toastEl) {
+        const delay = parseInt(toastEl.dataset.bsDelay || '6000', 10);
+        const bsToast = new bootstrap.Toast(toastEl, { delay: delay, autohide: true });
+
+        // Smooth slide-out before BS removes it
+        toastEl.addEventListener('hide.bs.toast', function () {
+            toastEl.classList.add('hiding');
+        });
+        toastEl.addEventListener('hidden.bs.toast', function () {
+            toastEl.remove();
+        });
+
+        bsToast.show();
+    });
+});
+</script>
+
 <!-- Attract Mode Idle Detection -->
 {% if not is_setup_mode %}
 <script src="{{ 'js/attract_mode_idle.js'|theme_asset }}"></script>
+<script src="{{ 'js/global-search.js'|theme_asset }}"></script>
 {% endif %}
 
 </body>

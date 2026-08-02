@@ -1,0 +1,103 @@
+.extensions-management-page {
+    width: min(1440px, calc(100% - 48px));
+    margin: 24px auto 48px;
+}
+
+.extensions-management-back {
+    margin: 0 0 18px;
+    padding: 12px 16px;
+}
+
+.extensions-management-panel {
+    padding: 24px;
+    background: linear-gradient(145deg, rgba(18, 18, 28, 0.96), rgba(12, 12, 20, 0.98));
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    border-radius: 18px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5), 0 0 60px rgba(80, 120, 255, 0.06);
+}
+
+.extensions-management-header {
+    margin-bottom: 22px;
+    padding-bottom: 18px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.extensions-management-eyebrow {
+    margin: 0 0 5px;
+    color: rgba(130, 165, 255, 0.9);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+.extensions-management-header h1 {
+    margin: 0;
+    color: #fff;
+    font-size: 1.65rem;
+}
+
+.extensions-management-header p:not(.extensions-management-eyebrow) {
+    margin: 6px 0 0;
+    color: rgba(205, 214, 235, 0.68);
+}
+
+.extensions-management-panel .extensions-table .card {
+    overflow: hidden;
+}
+
+.extensions-management-panel .extensions-table .card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.extensions-management-panel .extensions-table .card-header h3 {
+    margin: 0;
+    color: rgba(235, 240, 255, 0.96);
+    font-size: 1rem;
+}
+
+.extensions-management-panel .extensions-table .card-body {
+    padding: 0;
+}
+
+.extensions-management-panel .extensions-table .table {
+    margin: 0;
+}
+
+.extensions-info {
+    margin-top: 18px;
+    padding: 16px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+}
+
+.extensions-info h4 {
+    margin: 0 0 8px;
+    color: rgba(235, 240, 255, 0.96);
+    font-size: 1rem;
+}
+
+.extensions-info p {
+    margin: 0 0 8px;
+    color: rgba(205, 214, 235, 0.68);
+}
+
+.extensions-info hr {
+    border-color: rgba(255, 255, 255, 0.08);
+}
+
+@media (max-width: 768px) {
+    .extensions-management-page {
+        width: calc(100% - 24px);
+        margin-top: 12px;
+    }
+
+    .extensions-management-panel {
+        padding: 16px;
+        border-radius: 14px;
+    }
+}

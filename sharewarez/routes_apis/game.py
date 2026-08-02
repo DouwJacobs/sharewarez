@@ -2,7 +2,7 @@
 from flask import jsonify, request, url_for
 from flask_login import login_required, current_user
 from sharewarez import db
-from sharewarez.models import Image, Game, Library, Genre, GameMode, PlayerPerspective, Theme
+from sharewarez.models import Image, Game, Library, Genre, GameMode, PlayerPerspective, Theme, GameTag
 from sharewarez.utils.event_logging import log_system_event
 from sqlalchemy import func, select
 from . import apis_bp
@@ -28,6 +28,7 @@ def search():
         game_mode = request.args.get('game_mode')
         player_perspective = request.args.get('player_perspective')
         theme = request.args.get('theme')
+        tag = request.args.get('tag')
 
         # Apply filter logic matching routes_library.py:get_games()
         if library_uuid:
@@ -42,6 +43,8 @@ def search():
             search_query = search_query.filter(Game.player_perspectives.any(PlayerPerspective.name == player_perspective))
         if theme:
             search_query = search_query.filter(Game.themes.any(Theme.name == theme))
+        if tag:
+            search_query = search_query.filter(Game.tags.any(GameTag.name == tag))
 
         # Execute query and build results
         games = db.session.execute(search_query).scalars().all()

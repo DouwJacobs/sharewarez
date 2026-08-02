@@ -1,6 +1,6 @@
 import uuid
 import os
-from flask import render_template, jsonify, abort
+from flask import render_template, jsonify, abort, request, url_for
 from flask_login import login_required, current_user
 from sharewarez.forms import CsrfForm
 from sharewarez.models import GameUpdate, GameExtra, user_game_status, get_status_info
@@ -10,6 +10,7 @@ from sharewarez.utils.functions import format_size, sanitize_string_input, get_u
 from sharewarez.utils.game_core import get_game_by_uuid
 from sharewarez.utils.security import sanitize_path_for_logging
 from sharewarez.utils.event_logging import log_system_event
+from urllib.parse import urlparse
 
 from . import games_bp
 
@@ -33,6 +34,18 @@ def get_path_size(file_path):
     except (OSError, IOError):
         pass
     return 0
+
+
+def get_safe_back_url():
+    """Return an in-app referrer, falling back to the library."""
+    fallback_url = url_for('library.library')
+    if not request.referrer:
+        return fallback_url
+
+    referrer = urlparse(request.referrer)
+    if referrer.netloc != request.host:
+        return fallback_url
+    return referrer.path + (f'?{referrer.query}' if referrer.query else '')
 
 
 @games_bp.route('/game_details/<string:game_uuid>')
@@ -75,6 +88,7 @@ def game_details(game_uuid):
             "name": game.name,
             "summary": game.summary,
             "storyline": game.storyline,
+            "install_instructions": game.install_instructions,
             "aggregated_rating": game.aggregated_rating,
             "aggregated_rating_count": game.aggregated_rating_count,
             "updates": [{
@@ -98,8 +112,8 @@ def game_details(game_uuid):
             "rating": game.rating,
             "rating_count": game.rating_count,
             "slug": game.slug,
-            "status": game.status.value if game.status else 'Not available',
-            "category": game.category.value if game.category else 'Not available',
+            "status": (game.status.value if hasattr(game.status, 'value') else str(game.status)) if game.status else 'Not available',
+            "category": (game.category.value if hasattr(game.category, 'value') else str(game.category)) if game.category else 'Not available',
             "total_rating": game.total_rating,
             "total_rating_count": game.total_rating_count,
             "url_igdb": game.url_igdb,
@@ -112,11 +126,12 @@ def game_details(game_uuid):
             "themes": [theme.name for theme in game.themes],
             "platforms": [platform.name for platform in game.platforms],
             "player_perspectives": [perspective.name for perspective in game.player_perspectives],
+            "tags": [tag.name for tag in game.tags],
             "developer": game.developer.name if game.developer else 'Not available',
             "publisher": game.publisher.name if game.publisher else 'Not available',
             "multiplayer_modes": [mode.name for mode in game.multiplayer_modes],
             "nfo_content": sanitize_string_input(game.nfo_content, 10000) if game.nfo_content else 'none',
-            "size": format_size(game.size),
+            "size": format_size(game.size if (game.size and game.size > 0) else (get_path_size(game.full_disk_path) if game.full_disk_path else 0)),
             "date_identified": game.date_identified.strftime('%Y-%m-%d %H:%M:%S') if game.date_identified else 'Not available',
             "steam_url": game.steam_url if game.steam_url else 'Not available',
             "times_downloaded": game.times_downloaded,
@@ -132,11 +147,21 @@ def game_details(game_uuid):
         }
         
         # Augment game_data with URLs using smart icon detection
-        game_data['urls'] = [{
-            "type": url.url_type,
-            "url": url.url,
-            "icon": get_url_icon(url.url_type, url.url)
-        } for url in game.urls]
+        # IGDB imports can contain duplicate website records. Keep the first
+        # occurrence of each destination so the details view never renders the
+        # same social/link icon more than once.
+        seen_urls = set()
+        game_data['urls'] = []
+        for game_url in game.urls:
+            normalized_url = (game_url.url or '').strip().rstrip('/').casefold()
+            if not normalized_url or normalized_url in seen_urls:
+                continue
+            seen_urls.add(normalized_url)
+            game_data['urls'].append({
+                "type": game_url.url_type,
+                "url": game_url.url,
+                "icon": get_url_icon(game_url.url_type, game_url.url)
+            })
         
         library_uuid = game.library_uuid
         
@@ -178,7 +203,8 @@ def game_details(game_uuid):
             is_favorite=is_favorite,
             user_status=user_status,
             status_icon=status_icon,
-            status_label=status_label
+            status_label=status_label,
+            back_url=get_safe_back_url()
         )
     else:
         log_system_event(

@@ -84,7 +84,7 @@ def read_local_metadata(full_disk_path, filename='sharewarez.json'):
 
 
 def write_local_metadata(full_disk_path, igdb_id, game_title=None, manually_verified=False,
-                         filename='sharewarez.json'):
+                         filename='sharewarez.json', install_instructions=None):
     """
     Write local metadata file to game folder.
 
@@ -136,6 +136,9 @@ def write_local_metadata(full_disk_path, igdb_id, game_title=None, manually_veri
         # Add optional fields
         if game_title:
             metadata["title"] = sanitize_string_input(game_title, 255)
+
+        if install_instructions:
+            metadata["install_instructions"] = install_instructions
             logger.info(f"💾 [LOCAL METADATA] Game title: {game_title}")
 
         # Write to file

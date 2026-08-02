@@ -1,7 +1,15 @@
 document.addEventListener('DOMContentLoaded', function() {
+    const status = document.getElementById('statisticsStatus');
+    const statisticsGrid = document.querySelector('.statistics-grid');
+
     // Fetch statistics data from the server
     fetch('/admin/statistics/data')
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Unable to load statistics');
+            }
+            return response.json();
+        })
         .then(data => {
             // Downloads per user chart
             createChart('downloadsPerUserChart', 'bar', {
@@ -122,5 +130,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     y: { beginAtZero: true }
                 }
             });
+
+            status.textContent = 'Statistics updated.';
+            statisticsGrid?.setAttribute('aria-busy', 'false');
+        })
+        .catch(error => {
+            console.error('Error loading statistics:', error);
+            status.textContent = 'Statistics could not be loaded. Please try again.';
+            statisticsGrid?.setAttribute('aria-busy', 'false');
         });
 });

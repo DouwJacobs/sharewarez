@@ -1,77 +1,90 @@
-<!-- in templates/games/library_filters.html -->
-
+<!-- Library filter controls -->
 <link rel="stylesheet" href="{{ 'css/games/library_filters.css'|theme_asset }}">
 
-<div class="container-filtersandsort">
-  <!-- Sorting Dropdown -->
-  <div class="sorting-dropdown">
-    <label for="sortSelect"></label>
-    <select id="sortSelect">
-      <option value="name">Name</option>
-      <option value="rating">Rating</option>
-      <option value="first_release_date">Date Released</option>
-      <option value="date_identified">Date Added</option>
+<section class="container-filtersandsort" aria-label="Library filters">
+  <button type="button" class="filters-heading" id="libraryFiltersToggle" aria-expanded="false" aria-controls="libraryFiltersBody">
+    <span><i class="fas fa-sliders"></i> Library filters <span id="libraryFilterCount" class="library-filter-count" hidden>0</span></span>
+    <i class="fas fa-chevron-up filters-toggle-icon" aria-hidden="true"></i>
+  </button>
 
-      <option value="size">Filesize</option>
-    </select>
-    <button id="sortOrderToggle" class="btn btn-secondary"><i class="fas fa-sort-up"></i></button>
-</div>
+  <div id="libraryFiltersBody" class="library-filters-body" hidden>
+    <div class="sorting-dropdown">
+      <label for="sortSelect">Sort</label>
+      <select id="sortSelect">
+        <option value="name">Name</option>
+        <option value="rating">Rating</option>
+        <option value="first_release_date">Date Released</option>
+        <option value="date_identified">Date Added</option>
+        <option value="size">Filesize</option>
+      </select>
+      <button id="sortOrderToggle" class="btn btn-secondary" type="button" aria-label="Toggle sort order">
+        <i class="fas fa-sort-up"></i>
+      </button>
+    </div>
 
-    
-  <div id="library-filters" class="library-filters">
-    <form id="filterForm">
-
-      <div class="form-group">
-        <label for="libraryNameSelect"></label>
-        <select class="form-control" id="libraryNameSelect">
-          <option value="">All Libraries</option>
-          <!-- Library names will be populated dynamically -->
-        </select>
-      </div>
-      
-
-
-      <div class="form-group">
-        <label for="genreSelect"></label>
-        <select class="form-control" id="genreSelect">
-          <option value="">All Genres</option>
-          <!-- Genres will be populated here -->
-        </select>
-      </div>
-      <div class="form-group">
-        <label for="themeSelect"></label>
-        <select class="form-control" id="themeSelect">
-          <option value="">All Themes</option>
-          <!-- Themes will be populated here -->
-        </select>
-      </div>
-      <div class="form-group">
-        <label for="gameModeSelect"></label>
-        <select class="form-control" id="gameModeSelect">
-          <option value="">All Game Modes</option>
-          <!-- Game Modes will be populated here -->
-        </select>
-      </div>
-      <div class="form-group">
-        <label for="playerPerspectiveSelect"></label>
-        <select class="form-control" id="playerPerspectiveSelect">
-          <option value="">All Perspectives</option>
-          <!-- Perspectives will be populated here -->
-        </select>
-      </div>
-      <div class="">
+    <div id="library-filters" class="library-filters">
+      <form id="filterForm">
         <div class="form-group">
+          <label for="libraryNameSelect">Library</label>
+          <select class="form-control" id="libraryNameSelect">
+            <option value="">All Libraries</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="genreSelect">Genre</label>
+          <select class="form-control" id="genreSelect">
+            <option value="">All Genres</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="themeSelect">Theme</label>
+          <select class="form-control" id="themeSelect">
+            <option value="">All Themes</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="tagSelect">Tag</label>
+          <select class="form-control" id="tagSelect">
+            <option value="">All Tags</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="gameModeSelect">Mode</label>
+          <select class="form-control" id="gameModeSelect">
+            <option value="">All Game Modes</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="playerPerspectiveSelect">Perspective</label>
+          <select class="form-control" id="playerPerspectiveSelect">
+            <option value="">All Perspectives</option>
+          </select>
+        </div>
+
+        <div class="form-group filter-rating-group">
           <label for="ratingSlider">Rating: <span id="ratingValue">0</span></label>
           <input type="range" class="form-control-range rating-slider" id="ratingSlider" min="0" max="100" value="0">
-          <div class="button-group">
-            <button type="submit" class="btn btn-primary">Apply</button>
-            <button type="button" id="clearFilters" class="btn btn-secondary">Clear</button>
-          </div>
-      </div>
-    </form>
+        </div>
+
+        <div class="button-group">
+          <button type="submit" class="btn btn-primary">Apply</button>
+          <button type="button" id="clearFilters" class="btn btn-secondary">Clear</button>
+        </div>
+      </form>
+    </div>
   </div>
-</div>
-</div>
+</section>
 
-
-  
+<script>
+  document.getElementById('libraryFiltersToggle')?.addEventListener('click', function () {
+    const body = document.getElementById('libraryFiltersBody');
+    const expanded = this.getAttribute('aria-expanded') === 'true';
+    this.setAttribute('aria-expanded', String(!expanded));
+    body.hidden = expanded;
+  });
+</script>

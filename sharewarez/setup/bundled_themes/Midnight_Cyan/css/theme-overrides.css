@@ -1,0 +1,24 @@
+:root {
+    --theme-accent-rgb: 6, 182, 212;
+    --theme-accent-soft-rgb: 34, 211, 238;
+    --theme-sidebar-top: rgba(7, 28, 43, .99);
+    --theme-sidebar-bottom: rgba(3, 15, 27, .99);
+    --theme-card-top: rgba(10, 35, 51, .97);
+    --theme-card-bottom: rgba(5, 20, 34, .98);
+    --theme-panel-bg: rgba(8, 29, 43, .94);
+    --btn-primary: #06b6d4;
+    --btn-primary-hover: #0891b2;
+    --form-focus-border: #22d3ee;
+    --form-focus-shadow: 0 0 0 .25rem rgba(6, 182, 212, .22);
+    --primary-brand-10: rgba(6, 182, 212, .10);
+    --primary-brand-20: rgba(6, 182, 212, .20);
+    --primary-brand-30: rgba(6, 182, 212, .30);
+    --primary-brand-50: rgba(6, 182, 212, .50);
+    --container-dark-primary: rgba(8, 20, 36, .96);
+    --modal-bg: rgba(8, 20, 36, .97);
+    --table-header-bg: rgba(6, 182, 212, .09);
+}
+
+body { background-color: #06111f; background-image: radial-gradient(circle at 75% 0%, rgba(6,182,212,.12), transparent 35%); }
+a { color: #67e8f9; }
+.admin-surface, .glass-panel { border-color: rgba(34, 211, 238, .14); }

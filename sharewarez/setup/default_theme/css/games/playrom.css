@@ -1,0 +1,9 @@
+.emulator-container {
+    min-height: min(72vh, 800px);
+    margin: 24px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 18px;
+    background: linear-gradient(145deg, rgba(18, 18, 28, 0.96), rgba(12, 12, 20, 0.98));
+}
+
+@media (max-width: 768px) { .emulator-container { min-height: 60vh; margin: 12px; } }

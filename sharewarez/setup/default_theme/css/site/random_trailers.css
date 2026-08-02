@@ -815,3 +815,81 @@
         display: none;
     }
 }
+
+/* Modern trailers surface — scoped so it cannot leak into other pages. */
+.trailers-page {
+    width: min(1240px, calc(100% - 48px));
+    margin: 24px auto 48px;
+    padding: 0;
+}
+
+.trailers-page .trailer-header-section {
+    margin-bottom: 16px;
+    padding: 24px 0 18px;
+    border: 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 0;
+    background: transparent;
+    backdrop-filter: none;
+}
+
+.trailers-page .trailer-eyebrow {
+    margin: 0 0 7px;
+    color: rgba(176, 191, 255, 0.86);
+    font-size: 0.76rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+.trailers-page .game-title-link { padding: 0; margin: 0; }
+.trailers-page .game-title-link:hover { background: transparent; transform: none; }
+.trailers-page .trailer-title { font-size: clamp(1.65rem, 3vw, 2.3rem); letter-spacing: -0.03em; text-shadow: 0 0 28px rgba(120, 160, 255, 0.28); }
+
+.trailers-page .filter-toggle-btn,
+.trailers-page .filter-panel {
+    border-color: rgba(255, 255, 255, 0.08);
+    border-radius: 14px;
+    background: linear-gradient(145deg, rgba(28, 29, 45, 0.72), rgba(16, 16, 27, 0.78));
+}
+
+.trailers-page .filter-toggle-btn { min-height: 48px; font-size: 0.9rem; }
+.trailers-page .filter-panel { padding: 20px; }
+.trailers-page .filter-panel.collapsed { background: transparent; }
+.trailers-page .video-wrapper { overflow: hidden; border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 18px; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.42); }
+.trailers-page .btn-next,
+.trailers-page .btn-settings,
+.trailers-page .btn-exit-attract { border-radius: 12px; }
+
+.trailers-page .btn-next {
+    width: auto;
+    min-width: 96px;
+    height: 42px;
+    padding: 0 15px;
+    border: 1px solid rgba(154, 177, 255, 0.44);
+    border-radius: 11px;
+    background: linear-gradient(135deg, #426ee8, #7554d6);
+    box-shadow: 0 6px 18px rgba(62, 80, 202, 0.26);
+    font-size: 0.88rem;
+    font-weight: 650;
+}
+
+.trailers-page .btn-next:hover {
+    background: linear-gradient(135deg, #527df4, #8763e8);
+    box-shadow: 0 9px 24px rgba(79, 92, 222, 0.36);
+    transform: translateY(-1px);
+}
+
+.trailers-page .btn-next i { font-size: 0.84rem; }
+.trailers-page .btn-settings { width: 42px; height: 42px; padding: 0; border: 1px solid rgba(255, 255, 255, 0.12); background: rgba(255, 255, 255, 0.05); }
+.trailers-page .btn-settings:hover { background: rgba(98, 122, 239, 0.16); border-color: rgba(154, 177, 255, 0.32); box-shadow: none; transform: translateY(-1px); }
+
+@media (max-width: 768px) {
+    .trailers-page { width: calc(100% - 24px); margin: 8px 12px 24px; }
+    .trailers-page .trailer-header-section { align-items: stretch; padding: 14px 0 16px; gap: 14px; }
+    .trailers-page .action-buttons-top { justify-content: flex-start; }
+    .trailers-page .btn-next { min-width: 96px; height: 44px; }
+    .trailers-page .btn-settings { width: 44px; height: 44px; }
+    .trailers-page .filter-panel { padding: 16px; }
+    .trailers-page .video-wrapper { border-radius: 12px; box-shadow: 0 12px 32px rgba(0, 0, 0, 0.36); }
+}

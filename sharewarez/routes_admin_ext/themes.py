@@ -1,5 +1,5 @@
-from flask import render_template, request, redirect, url_for, flash, current_app
-from flask_login import login_required
+from flask import render_template, request, redirect, url_for, flash, current_app, send_file
+from flask_login import login_required, current_user
 from sharewarez.utils.auth import admin_required
 from sharewarez.forms import ThemeUploadForm
 from sharewarez.utils.themes import ThemeManager
@@ -189,6 +189,87 @@ def theme_readme():
     """
     return render_template('admin/admin_manage_themes_readme.html')
 
+
+@admin2_bp.route('/admin/themes/builder', defaults={'theme_id': None}, methods=['GET', 'POST'])
+@admin2_bp.route('/admin/themes/builder/<theme_id>', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def theme_builder(theme_id):
+    """Create or edit themes using a safe visual palette builder."""
+    manager = ThemeManager(current_app)
+    existing = manager.get_theme(theme_id) if theme_id else None
+    if theme_id and (not existing or existing.get('source') != 'builder'):
+        flash('Only themes created in the visual builder can be edited.', 'error')
+        return redirect(url_for('admin2.manage_themes'))
+
+    defaults = {
+        'name': '',
+        'description': '',
+        'accent': '#557cf4',
+        'accent_soft': '#9ab1ff',
+        'background': '#0a0b14',
+        'sidebar': '#12131f',
+        'card': '#12121c',
+        'panel': '#181925'
+    }
+    if existing:
+        defaults.update(existing.get('palette', {}))
+        defaults['name'] = existing.get('name', '')
+        defaults['description'] = existing.get('description', '')
+
+    if request.method == 'POST':
+        values = {key: request.form.get(key, '').strip() for key in defaults}
+        values['author'] = current_user.name
+        try:
+            saved_id, metadata = manager.save_builder_theme(values, theme_id=theme_id)
+            action = 'updated' if theme_id else 'created'
+            log_system_event(
+                f"Theme '{metadata['name']}' {action} in visual builder by admin",
+                event_type='themes',
+                event_level='information'
+            )
+            flash(f"Theme '{metadata['name']}' {action} successfully.", 'success')
+            return redirect(url_for('admin2.manage_themes'))
+        except ValueError as error:
+            defaults.update(values)
+            flash(str(error), 'error')
+
+    return render_template(
+        'admin/admin_theme_builder.html',
+        theme=defaults,
+        theme_id=theme_id,
+        editing=bool(theme_id)
+    )
+
+
+@admin2_bp.route('/admin/themes/default/download')
+@login_required
+@admin_required
+def download_default_theme():
+    """Download the bundled default theme as an upload-compatible ZIP."""
+    source = Path(current_app.root_path) / 'setup' / 'default_theme'
+    try:
+        archive = ThemeManager.create_theme_archive(source)
+        log_system_event(
+            "Default theme reference downloaded by admin",
+            event_type='themes',
+            event_level='information'
+        )
+        return send_file(
+            archive,
+            mimetype='application/zip',
+            as_attachment=True,
+            download_name='default-theme-reference.zip'
+        )
+    except (OSError, ValueError) as error:
+        log_system_event(
+            f"Default theme download failed: {error}",
+            event_type='themes',
+            event_level='error'
+        )
+        flash('The default theme package could not be created.', 'error')
+        return redirect(url_for('admin2.manage_themes'))
+
 @admin2_bp.route('/admin/themes/delete/<theme_name>', methods=['POST'])
 @login_required
 @admin_required
@@ -242,7 +323,7 @@ def delete_theme(theme_name: str):
 @login_required
 @admin_required
 def reset_default_themes():
-    """Reset themes to default by copying from source directory.
+    """Restore the default and bundled themes from source directories.
 
     Returns:
         Response: Redirect to themes management page
@@ -293,7 +374,12 @@ def reset_default_themes():
                 event_type='themes',
                 event_level='information'
             )
-            flash('Default themes have been reset successfully!', 'success')
+            bundled_source = Path('sharewarez') / 'setup' / 'bundled_themes'
+            if bundled_source.exists():
+                for source in bundled_source.iterdir():
+                    if source.is_dir():
+                        shutil.copytree(source, default_theme_target.parent / source.name, dirs_exist_ok=True)
+            flash('Bundled themes have been restored successfully!', 'success')
         except Exception as e:
             error_message = f"Failed to copy default theme: {str(e)}"
             flash(error_message, 'error')

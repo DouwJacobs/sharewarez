@@ -7,6 +7,7 @@ from sharewarez.utils.auth import admin_required
 from sharewarez.utils.scanning import is_scan_job_running, refresh_images_in_background
 from sharewarez.utils.security import is_safe_path, get_allowed_base_directories, sanitize_path_for_logging
 from sharewarez.utils.event_logging import log_system_event
+from sharewarez.utils.tags import assign_game_tags
 from sharewarez import db
 from threading import Thread
 from datetime import datetime, timezone
@@ -24,6 +25,13 @@ from . import games_bp
 def game_edit(game_uuid):
     game = db.session.execute(select(Game).filter_by(uuid=game_uuid)).scalars().first() or abort(404)
     form = AddGameForm(obj=game)
+    # WTForms copies a relationship object verbatim when populating a
+    # StringField from ``obj``. Supply the display values explicitly so the
+    # edit form never renders SQLAlchemy's ``<Developer …>`` representation.
+    if request.method == 'GET':
+        form.developer.data = game.developer.name if game.developer else ''
+        form.publisher.data = game.publisher.name if game.publisher else ''
+        form.tags.data = ', '.join(tag.name for tag in game.tags)
     form.library_uuid.choices = [(str(lib.uuid), lib.name) for lib in db.session.execute(select(Library).order_by(Library.name)).scalars().all()]
     platform_id = PLATFORM_IDS.get(game.library.platform.value.upper(), None)
     platform_name = game.library.platform.value
@@ -95,6 +103,12 @@ def game_edit(game_uuid):
             storyline = storyline[:4096]
             flash('Storyline was truncated to 4096 characters', 'warning')
         game.storyline = storyline
+
+        install_instructions = form.install_instructions.data or ""
+        if len(install_instructions) > 10000:
+            install_instructions = install_instructions[:10000]
+            flash('Install instructions were truncated to 10000 characters', 'warning')
+        game.install_instructions = install_instructions
         
         video_urls = form.video_urls.data or ""
         if len(video_urls) > 4096:
@@ -229,6 +243,13 @@ def game_edit(game_uuid):
         game.themes = form.themes.data
         game.platforms = form.platforms.data
         game.player_perspectives = form.player_perspectives.data
+
+        try:
+            assign_game_tags(game, form.tags.data)
+        except ValueError as e:
+            flash(str(e), 'error')
+            db.session.rollback()
+            return render_template('admin/admin_game_identify.html', form=form, game_uuid=game_uuid, action="edit")
         
         # Updating size with error handling
         try:
@@ -263,6 +284,21 @@ def game_edit(game_uuid):
         try:
             db.session.commit()
             log_system_event(f"Game {game.name} updated by admin {current_user.name}", event_type='game', event_level='information')
+
+            # Update local metadata file if enabled
+            from sharewarez.utils.local_metadata import write_local_metadata
+            from sharewarez.models import GlobalSettings
+            settings = db.session.execute(select(GlobalSettings)).scalar_one_or_none()
+            if settings and settings.write_local_metadata:
+                metadata_filename = settings.local_metadata_filename or 'sharewarez.json'
+                write_local_metadata(
+                    full_disk_path=game.full_disk_path,
+                    igdb_id=game.igdb_id,
+                    game_title=game.name,
+                    manually_verified=True,
+                    filename=metadata_filename,
+                    install_instructions=game.install_instructions
+                )
 
             if igdb_id_changed:
                 # Single flash message that will show progress spinner via JavaScript

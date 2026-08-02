@@ -16,7 +16,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Define save settings function
-    window.saveSettings = function() {
+    window.saveIgdbSettings = function() {
         const clientId = document.getElementById('igdb_client_id').value;
         const clientSecret = document.getElementById('igdb_client_secret').value;
 
@@ -52,7 +52,7 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 
     // Define test settings function
-    window.testSettings = function() {
+    window.testIgdbSettings = function() {
         const testButton = document.querySelector('button.btn-secondary');
         const spinner = document.getElementById('loadingSpinner');
         spinner.style.display = 'flex';  // Changed from 'block' to 'flex'

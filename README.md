@@ -1,7 +1,24 @@
-# 🎮 SharewareZ v2.9.8
+# Self-hosted game library
 
-SharewareZ transforms any game folder into a searchable library with IGDB integration, adding cover images, screenshots, and metadata for enhanced filtering.
-Invite your friends securely and share your favorite games!
+A modern interface for turning game folders and archives into a searchable, shareable library with cover art, screenshots, metadata, downloads, and user management.
+
+> This project was forked from [SharewareZ](https://github.com/axewater/sharewarez).
+
+## Screenshots
+
+### Library
+
+![Library overview](docs/screenshots/library.png)
+
+<table>
+  <tr>
+    <td><strong>Discover</strong><br><img src="docs/screenshots/discover.png" alt="Discovery page"></td>
+    <td><strong>Game details</strong><br><img src="docs/screenshots/game-details.png" alt="Game details page"></td>
+  </tr>
+  <tr>
+    <td colspan="2"><strong>Visual theme builder</strong><br><img src="docs/screenshots/theme-builder.png" alt="Visual theme builder"></td>
+  </tr>
+</table>
 
 ## 📢 Important Notes
 
@@ -15,6 +32,8 @@ Invite your friends securely and share your favorite games!
 
 ### 📚 Game Library Management
 - 🔍 Smart folder scanning & cataloging with multi-threaded processing (4 threads by default)
+- 🔎 Global search across games and authorized settings pages
+- 📄 Server-side pagination for responsive large libraries
 - ⚡ Multi-threaded image downloading and processing for faster library building
 - 🖼️ Steam-style popup with screenshot galleries
 - 🏷️ Advanced filtering (genre, rating, gameplay modes)
@@ -36,6 +55,8 @@ Invite your friends securely and share your favorite games!
 - 🛡️ Role-based access control
 - 📨 Invitation system (admin-controlled)
 - 🔑 Self-service password reset (requires SMTP)
+- 🎨 User-selectable themes with a built-in visual theme builder
+- 🖌️ Configurable site title, logo, and favicon
 
 ### ⚡ Performance Features
 - 🚀 Multi-threaded game scanning (4 threads by default, configurable)
@@ -365,117 +386,3 @@ PORT=3000
 ## 📝 3rd party code
 - 💭 Thanks to BinBashBanana's webretro we can now run ROMs in the browser.
 - 🌐 Check out his project here: https://github.com/BinBashBanana/webretro
-
-
-## Changelog
-
-  Version 2.9.8
-
-  - 🐳 Docker: Library storage path no longer defaults to /app on host root. New LIBRARY_HOST_PATH variable defaults to ./data/library relative to the project
-  - 📝 Updated .env examples to clarify host vs container paths
-
-  Version 2.9.6
-
-  - 🎮 Play Status Feature: Per-user game completion tracking with status badges
-  
-  Version 2.9.3
-
-  - 📝 Local Metadata: Added support for local metadata storage
-  - 📊 Progress Indicators: Added image update progress indicator
-  - 🔄 Auto Scan: Improved auto scan page layout with better scan spinner
-  - 🔧 Settings: Updated default visibility settings for libraries on discovery page
-  - ❤️ Bug Fixes: Fixed favorite hearts not showing on all pages, fixed library_uuid overwrite issue
-  - 🔒 Security: CSRF token in URL removed
-
-  Version 2.9.2
-
-  - 🔧 Minor version update with infrastructure improvements
-
-  Version 2.9.1
-
-  - 🔍 Filter aware search on library page (search within selected library + filters)
-
-  Version 2.9.0
-
-  - 🎮 How Long To Beat Integration: Added HLTB (HowLongToBeat) integration for displaying game completion times
-  - ⏱️ Scan Job Control: HLTB data collection configurable via scan jobs (adds to scan time when enabled)
-  - 📊 Game Details Enhancement: Completion time estimates displayed on game detail pages
-
-  Version 2.8.2
-
-  - 🎬 Attract Mode: Full-featured screensaver mode with automatic trailer playback
-
-  Version 2.8.1
-
-  - 🎥 Random Trailers: New feature to browse and watch game trailers randomly
-  - 🎛️ Trailer Controls: Filter options, autoplay controls, and auto-next functionality
-
-  Version 2.8.0
-
-  - 🔧 Port Standardization: Docker now uses port 5006 consistently (matches non-Docker installs)
-  - 🗄️ PostgreSQL Update: Updated to secure PostgreSQL version in Docker Compose
-  - 🧹 Code Cleanup: Removed legacy zip-related code (streaming downloads now standard)
-  - 📝 Environment Updates: Improved .env.docker.example configuration
-
-  Version 2.7.7
-
-  - 🐳 Docker fixed and Updated to 277
-  
-
-  Version 2.7.6
-
-  - 🪟 Windows Support: Updated Windows startup scripts for better compatibility
-  - 🐧 Linux Installer: Enhanced auto-installer with sudo checks and interactive prompts
-  - 🔒 Git Hooks: Added hooks to preserve executable permissions on .sh scripts
-  - 📁 File Permissions: Comprehensive fix for shell script execute permissions
-  - 📖 Documentation: Updated README with improved installation instructions
-
-  Version 2.7.5
-
-  - 🎨 CSS Architecture Improvements: Comprehensive CSS optimization with centralized color management system for better consistency and maintainability
-  - ⚡ Startup Process Enhancement: Streamlined initialization routine with reduced duplicate initialization calls for faster startup times
-  - 🛠️ Automated Installation: Added comprehensive auto-install script with distribution detection and dependency management
-
-  Version 2.7.x
-
-  - 🎨 Theme System Overhaul: Complete refactoring using macros for more efficient code, eliminated themes.zip dependency
-  - ⚡ Streaming ZIP Downloads: Major implementation of asynchronous streaming downloads for better performance
-  - 🔄 Download System Rewrite: All download systems redesigned with new download mechanism for updates and extras
-  - 📊 Library UI Modernization: Pagination modernized, improved image upload support (.webp), better filtering with server-side persistence
-  - 🎮 Game Management: Enhanced game details page UI, smooth animations for game removal, better popup menu functionality
-
-  Version 2.6.x
-
-  - 🚀 ASGI Implementation: Upgraded from Flask to ASGI (uvicorn) for production readiness and async support
-  - 🔧 Major Code Refactoring:
-    - Modularized routes into separate API modules (routes_apis/)
-    - Consolidated CSRF handling across JavaScript files
-    - Extracted JavaScript from templates for maintainability
-  - 📈 Performance Improvements:
-    - Scan speed dramatically improved (99% reduction in DB queries via caching)
-    - Async image downloading with TURBO mode for parallel processing
-    - Optimized database queries using SQLAlchemy 2.0 constructs
-  - 🧪 Comprehensive Unit Testing: Added extensive test coverage across all modules
-  - 🔒 Security Enhancements:
-    - SQL injection fixes with multithreaded scanning
-    - Enhanced input validation and CSRF protection
-    - Secure file handling improvements
-  - 📬 Discord Integration: Full Discord webhook notifications and manual notification system
-  - 👥 User Management: Enhanced invite system with timezone-aware structure
-  - ⚙️ Setup & Configuration: Improved setup wizard, better startup processes, enhanced SMTP handling
-
-  Version 2.5.x
-
-  - 🎯 IGDB API Updates: Support for new IGDB field names and API changes
-  - 🎮 Platform Support: Enhanced ROM browser play support for multiple platforms (PSX, Sega systems)
-  - 🔍 Game Identification: Custom IGDB ID support and improved game matching
-  - 📱 UI Improvements: Better responsive design, enhanced game details display
-  - 🗄️ Database Optimization: Schema updates and relationship improvements
-
-  Key Infrastructure Changes
-
-  - Database: Migrated to SQLAlchemy 2.0, timezone-aware datetime handling
-  - Frontend: Bootstrap 5.3 adoption, jQuery modernization, improved DataTables integration
-  - Backend: Flask app factory pattern, better blueprint organization
-  - Development: Comprehensive testing framework, improved Docker support
-  - Performance: Async processing, streaming capabilities, optimized scanning algorithms

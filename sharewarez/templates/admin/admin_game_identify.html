@@ -1,19 +1,10 @@
 {% extends "base.html" %}
+{% block styles %}
+{{ super() }}
+<link rel="stylesheet" href="{{ 'css/admin/admin_game_identify.css'|theme_asset }}">
+{% endblock %}
 {% block content %}
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    {% if action == "edit" %}
-    <title>Edit Game Entry (identify)</title>
-    {% elif from_unmatched %}
-    <title>Edit Unmatched Folder Entry</title>
-    {% else %}
-    <title>(re-)Identify Game</title>
-    {% endif %}
-  
-</head>
-<body>
+<main class="game-identify-page">
     <!-- Loading Spinner -->
     <div id="saveSpinner" class="spinner-overlay" style="display: none;">
         <div class="spinner-container">
@@ -26,8 +17,8 @@
 
         
         <form method="POST" action="" class="game_edit-form">
-            <div class="glass-panel-addgame-top d-flex justify-content-between align-items-center">
-                <div>
+            <div class="glass-panel-addgame-top">
+                <div class="game-edit-heading">
                     {% if action == "edit" %}
                     <h2>Edit Game Entry</h2>
                     {% elif from_unmatched %}
@@ -48,17 +39,28 @@
                         {% endif %}
                     </div>
                 </div>
-                <div class="game-edit-savebutton">
-                    <button type="submit" class="btn btn-primary">Save</button>
+                <div class="game-edit-actions" aria-label="Game entry actions">
+                    <a href="{{ url_for('library.library') }}" class="btn btn-secondary">Cancel</a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-floppy-disk" aria-hidden="true"></i> Save changes
+                    </button>
                 </div>
             </div>
             {{ form.hidden_tag() }}
             <!-- Essential Information Section -->
             <div class="essential-info">
+            <div class="essential-info-grid">
             <div class="game_edit-form-group-id">
                 <label for="igdb_id">IGDB ID#</label>
                 {{ form.igdb_id(class="form-control", id="igdb_id") }}
-                <button type="button" class="btn btn-info mb-3" id="search-igdb-btn">Search IGDB</button>
+                <div class="field-actions">
+                    <button type="button" class="btn btn-primary" id="search-igdb-btn">
+                        <i class="fas fa-magnifying-glass" aria-hidden="true"></i> Look up ID
+                    </button>
+                    <button type="button" class="btn btn-secondary" id="add-non-existing-game">
+                        <i class="fas fa-plus" aria-hidden="true"></i> Custom game
+                    </button>
+                </div>
                 {% if form.igdb_id.errors %}
                     <div class="alert alert-danger" role="alert">
                         {% for error in form.igdb_id.errors %}
@@ -67,11 +69,8 @@
                     </div>
                 {% endif %}
                 <small id="igdb_id_feedback" class="form-text-muted">Enter the IGDB ID of the game.</small>
+                <p id="igdb-id-search-status" class="search-status" role="status" aria-live="polite"></p>
             </div>
-            <!-- Add Non-Existing Game Button -->
-            <button type="button" class="btn btn-secondary" id="add-non-existing-game">
-                Add Non-Existing Game
-            </button>
             <div class="game_edit-form-group-name">
                 <label for="name">Name</label>
                 {{ form.name(class="form-control", id="name") }}
@@ -83,7 +82,12 @@
                     </div>
                 {% endif %}
     
-                <button type="button" id="search-igdb" class="btn btn-info mb-3">Search IGDB</button>
+                <div class="field-actions">
+                    <button type="button" id="search-igdb" class="btn btn-primary">
+                        <i class="fas fa-magnifying-glass" aria-hidden="true"></i> Search IGDB
+                    </button>
+                </div>
+                <p id="igdb-name-search-status" class="search-status" role="status" aria-live="polite"></p>
                 
                 <div id="search-results" style="margin-top: 10px;">
                 <!-- Container for search results -->
@@ -101,6 +105,7 @@
                 {% endif %}
             </div>
             </div>
+            </div>
             
             <!-- Collapsible Details Section -->
             <div class="details-section">
@@ -108,6 +113,7 @@
                     Details <i class="fas fa-chevron-down"></i>
                 </button>
                 <div class="collapse" id="gameDetails">
+                    <div class="details-fields-grid">
                     <div class="game_edit-form-group-summary">
                         <label for="summary">Summary</label>
                         {{ form.summary(class="form-control", id="summary") }}
@@ -115,6 +121,10 @@
                     <div class="game_edit-form-group-storyline">
                         <label for="storyline">Storyline</label>
                         {{ form.storyline(class="form-control", id="storyline") }}
+                    </div>
+                    <div class="game_edit-form-group-install-instructions">
+                        <label for="install_instructions">How to Install</label>
+                        {{ form.install_instructions(class="form-control", id="install_instructions", rows="4", placeholder="Optional special installation instructions...") }}
                     </div>
                     <div class="game_edit-form-group-url">
                         <label for="url">URL</label>
@@ -148,61 +158,73 @@
                         <label for="category">Release Type</label>
                         {{ form.category(class="form-control", id="category") }}
                     </div>
+                    </div>
 
                     <div class="group-game-details">
 
                         <div class="game_edit-form-group-genres" id="genres-container">
                             <label>Genres</label>
-                            {% for subfield in form.genres %}
-                            <div class="checkbox">
-                                {{ subfield(class="form-check-input") }}
-                                {{ subfield.label(class="form-check-label") }}
-                            </div>
-                            {% endfor %}
+                            <details class="metadata-multiselect-dropdown">
+                                <summary>Select genres</summary>
+                                <div class="metadata-multiselect-options">
+                                    {% for subfield in form.genres %}
+                                        <label>{{ subfield(class="form-check-input") }} {{ subfield.label.text }}</label>
+                                    {% endfor %}
+                                </div>
+                            </details>
                         </div>
 
                         <div class="game_edit-form-group-modes" id="gamemodes-container">
                             <label>Game Modes</label>
-                            {% for subfield in form.game_modes %}
-                            <div class="checkbox">
-                                {{ subfield(class="form-check-input") }}
-                                {{ subfield.label(class="form-check-label") }}
-                            </div>
-                            {% endfor %}
+                            <details class="metadata-multiselect-dropdown">
+                                <summary>Select game modes</summary>
+                                <div class="metadata-multiselect-options">
+                                    {% for subfield in form.game_modes %}
+                                        <label>{{ subfield(class="form-check-input") }} {{ subfield.label.text }}</label>
+                                    {% endfor %}
+                                </div>
+                            </details>
                         </div>
                         
                         <div class="game_edit-form-group-themes" id="themes-container">
                             <label>Themes</label>
-                            {% for subfield in form.themes %}
-                                <div class="checkbox">
-                                    {{ subfield(class="form-check-input") }}
-                                    {{ subfield.label(class="form-check-label") }}
+                            <details class="metadata-multiselect-dropdown">
+                                <summary>Select themes</summary>
+                                <div class="metadata-multiselect-options">
+                                    {% for subfield in form.themes %}
+                                        <label>{{ subfield(class="form-check-input") }} {{ subfield.label.text }}</label>
+                                    {% endfor %}
                                 </div>
-                            {% endfor %}
+                            </details>
                         </div>
                         
 
                         <div class="game_edit-form-group-platforms" id="platforms-container">
                             <label>Platforms</label>
-                            {% for subfield in form.platforms %}
-                                <div class="checkbox">
-                                    {{ subfield(class="form-check-input") }}
-                                    {{ subfield.label(class="form-check-label") }}
+                            <details class="metadata-multiselect-dropdown">
+                                <summary>Select platforms</summary>
+                                <div class="metadata-multiselect-options">
+                                    {% for subfield in form.platforms %}
+                                        <label>{{ subfield(class="form-check-input") }} {{ subfield.label.text }}</label>
+                                    {% endfor %}
                                 </div>
-                            {% endfor %}
+                            </details>
                         </div>
                         
                     
                         <div class="game_edit-form-group-perspectives" id="perspectives-container">
                             <label>Player Perspectives</label>
-                            {% for subfield in form.player_perspectives %}
-                                <div class="checkbox">
-                                    {{ subfield(class="form-check-input") }}
-                                    {{ subfield.label(class="form-check-label") }}
+                            <details class="metadata-multiselect-dropdown">
+                                <summary>Select player perspectives</summary>
+                                <div class="metadata-multiselect-options">
+                                    {% for subfield in form.player_perspectives %}
+                                        <label>{{ subfield(class="form-check-input") }} {{ subfield.label.text }}</label>
+                                    {% endfor %}
                                 </div>
-                            {% endfor %}
+                            </details>
                         </div>
                     </div>
+                    <div class="details-credits-grid">
                     <div class="game_edit-form-group-developer" id="developer-container">
                         <label class="game_edit-form-group-developer-text" for="developer">Developer</label>
                         <input class="game_edit-form-group-developer-data" type="text" id="developer" name="developer" value="{{ form.developer.data }}">
@@ -212,7 +234,13 @@
                         <label class="game_edit-form-group-publisher-text" for="publisher">Publisher</label>
                         <input class="game_edit-form-group-publisher-data" type="text" id="publisher" name="publisher" value="{{ form.publisher.data }}">
                     </div>
-                    
+                    <div class="game_edit-form-group-tags" id="tags-container">
+                        <label for="tags">Tags</label>
+                        {{ form.tags(class="form-control", id="tags", placeholder="e.g. Hypervisor, Portable") }}
+                        <small class="form-text-muted">Comma-separated tags. Only admins can manage tags.</small>
+                    </div>
+                    </div>
+
                 </div> <!-- End of collapse div -->
             </div> <!-- End of details-section -->
 
@@ -223,6 +251,5 @@
     <script src="{{ 'js/admin_game_identify.js'|theme_asset }}"></script>
     
     {% endblock %}
-</body>
-</html>
+</main>
 {% endblock %}

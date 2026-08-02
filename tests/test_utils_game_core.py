@@ -27,7 +27,8 @@ from sharewarez.utils.game_core import (
     delete_game, download_pending_images, start_background_image_downloader,
     turbo_download_images, start_turbo_background_downloader,
     find_missing_images_for_library, queue_missing_images_for_download,
-    process_missing_images_for_scan, get_or_create_entity
+    process_missing_images_for_scan, get_or_create_entity,
+    heal_image_download_url
 )
 
 
@@ -603,6 +604,25 @@ class TestGameManagementFunctions:
 
 class TestBackgroundImageProcessing:
     """Test background image processing functions."""
+
+    @patch('sharewarez.utils.game_core.make_igdb_api_request')
+    def test_heal_image_download_url_flushes_without_committing(self, mock_igdb, db_session):
+        """Recovered image URLs stay inside the caller-owned transaction."""
+        mock_igdb.return_value = [{'url': '//images.igdb.com/igdb/image/upload/t_thumb/example.jpg'}]
+        image = MagicMock(
+            id=1,
+            download_url=None,
+            igdb_image_id=123,
+            image_type='cover'
+        )
+
+        with patch.object(db.session, 'flush') as mock_flush, \
+             patch.object(db.session, 'commit') as mock_commit:
+            assert heal_image_download_url(image) is True
+
+        assert image.download_url == 'https://images.igdb.com/igdb/image/upload/t_original/example.jpg'
+        mock_flush.assert_called_once_with()
+        mock_commit.assert_not_called()
     
     def test_download_pending_images(self, app, sample_global_settings):
         """Test download_pending_images function."""

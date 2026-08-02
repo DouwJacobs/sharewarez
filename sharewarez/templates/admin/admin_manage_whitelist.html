@@ -3,11 +3,6 @@
 
 <link rel="stylesheet" href="{{ 'css/admin/admin_manage_whitelist.css'|theme_asset }}">
 
-<div class="container">
-    <div class="glass-panel">
-        <a href="{{ url_for('site.admin_dashboard') }}" class="btn btn-secondary">Back to Dashboard</a>
-    </div>
-</div>
 
 <div class="container-settings">
 
@@ -37,7 +32,7 @@
             {{ form.hidden_tag() }}
             <div class="input-group">
                 {{ form.email(size=30, class="form-control", placeholder="Enter email address") }}
-                {{ form.submit(class="btn btn-success") }}
+                {{ form.submit(class="btn btn-primary") }}
             </div>
             {% for error in form.email.errors %}
                 <span class="error-message">{{ error }}</span>
@@ -46,6 +41,7 @@
     </div>
 
     <div class="whitelist-table">
+        <div class="table-responsive">
         <table class="table table-dark table-striped table-hover">
             <thead>
                 <tr>
@@ -76,6 +72,7 @@
                 {% endfor %}
             </tbody>
         </table>
+        </div>
     </div>
 </div>
 </div>

@@ -1,0 +1,47 @@
+{% macro page_header(title, description='', eyebrow='', icon='', count=None, count_label='item') %}
+<header class="downloads-page-header">
+    <div>
+        {% if eyebrow %}<p class="downloads-page-eyebrow">{% if icon %}<i class="fas {{ icon }}" aria-hidden="true"></i>{% endif %} {{ eyebrow }}</p>{% endif %}
+        <h1 id="downloads-page-title">{{ title }}</h1>
+        {% if description %}<p>{{ description }}</p>{% endif %}
+    </div>
+    {% if count is not none %}<span class="downloads-count">{{ count }} {{ count_label }}{% if count != 1 %}s{% endif %}</span>{% endif %}
+</header>
+{% endmacro %}
+
+{% macro admin_page_header(title, description='', eyebrow='Administration', icon='fa-sliders', actions=None) %}
+<header class="admin-page-header">
+    <div>
+        <p class="admin-page-eyebrow"><i class="fas {{ icon }}" aria-hidden="true"></i> {{ eyebrow }}</p>
+        <h1>{{ title }}</h1>
+        {% if description %}<p class="admin-page-description">{{ description }}</p>{% endif %}
+    </div>
+    {% if caller is defined %}<div class="admin-page-actions">{{ caller() }}</div>{% endif %}
+</header>
+{% endmacro %}
+
+{% macro status_badge(status) %}
+{% set normalized = status|lower|replace(' ', '-') %}
+<span class="download-status download-status--{{ normalized }}">
+    <span class="download-status-dot" aria-hidden="true"></span>{{ status|replace('_', ' ')|title }}
+</span>
+{% endmacro %}
+
+{% macro empty_state(title, description, icon='fa-inbox', action_url=None, action_label=None) %}
+<div class="downloads-empty-state">
+    <i class="fas {{ icon }}" aria-hidden="true"></i>
+    <h2>{{ title }}</h2>
+    <p>{{ description }}</p>
+    {% if action_url and action_label %}<a class="btn btn-primary" href="{{ action_url }}">{{ action_label }}</a>{% endif %}
+</div>
+{% endmacro %}
+
+{% macro pagination(pager, endpoint, query_args={}) %}
+{% if pager.pages > 1 %}
+<nav class="sw-pagination" aria-label="Pagination">
+    <a class="btn btn-secondary btn-sm{% if not pager.has_prev %} disabled{% endif %}" {% if pager.has_prev %}href="{{ url_for(endpoint, page=pager.prev_num, **query_args) }}"{% else %}aria-disabled="true"{% endif %}>Previous</a>
+    <span>Page {{ pager.page }} of {{ pager.pages }}</span>
+    <a class="btn btn-secondary btn-sm{% if not pager.has_next %} disabled{% endif %}" {% if pager.has_next %}href="{{ url_for(endpoint, page=pager.next_num, **query_args) }}"{% else %}aria-disabled="true"{% endif %}>Next</a>
+</nav>
+{% endif %}
+{% endmacro %}

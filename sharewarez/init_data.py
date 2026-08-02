@@ -85,6 +85,16 @@ def initialize_library_folders():
             log_system_event("Warning: default theme source not found in sharewarez/setup/default_theme", event_type='startup', event_level='warning', audit_user='system')
     else:
         print("Default theme found, skipping copy")
+
+    bundled_theme_source = os.path.join('sharewarez', 'setup', 'bundled_themes')
+    if os.path.isdir(bundled_theme_source):
+        os.makedirs(themes_path, exist_ok=True)
+        for theme_name in sorted(os.listdir(bundled_theme_source)):
+            source = os.path.join(bundled_theme_source, theme_name)
+            target = os.path.join(themes_path, theme_name)
+            if os.path.isdir(source) and not os.path.exists(os.path.join(target, 'theme.json')):
+                shutil.copytree(source, target)
+                print(f"Bundled theme copied successfully: {theme_name}")
     # Create images folder if it doesn't exist
     if not os.path.exists(images_path):
         os.makedirs(images_path)

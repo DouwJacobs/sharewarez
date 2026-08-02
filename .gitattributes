@@ -1,5 +1,6 @@
 # Shell scripts should maintain executable permissions and LF line endings
 *.sh text eol=lf
+sharewarez/utils/game_core.py text eol=lf
 
 # Docker and script files should preserve permissions
 Dockerfile text eol=lf

@@ -254,4 +254,42 @@ class TestDeleteDownloadRequest:
         
         assert deletion_logged
         assert success_logged
+
+
+class TestDownloadStatusAndBulkActions:
+    def test_batched_status_requires_login(self, client):
+        response = client.get('/api/downloads/status?ids=1')
+        assert response.status_code == 302
+
+    def test_batched_status_only_returns_owned_requests(self, client, regular_user, admin_user, sample_game, sample_download_request, db_session):
+        other_request = DownloadRequest(user_id=admin_user.id, game_uuid=sample_game.uuid, status='pending')
+        db_session.add(other_request)
+        db_session.commit()
+        with client.session_transaction() as sess:
+            sess['_user_id'] = str(regular_user.id)
+            sess['_fresh'] = True
+        response = client.get(f'/api/downloads/status?ids={sample_download_request.id},{other_request.id}')
+        assert response.status_code == 200
+        assert [item['id'] for item in response.get_json()['downloads']] == [sample_download_request.id]
+
+    def test_bulk_action_requires_admin(self, client, regular_user, sample_download_request):
+        with client.session_transaction() as sess:
+            sess['_user_id'] = str(regular_user.id)
+            sess['_fresh'] = True
+        response = client.post('/api/downloads/bulk', json={'action': 'delete', 'ids': [sample_download_request.id]})
+        assert response.status_code == 302
+
+    @patch('sharewarez.routes_apis.download.log_system_event')
+    def test_admin_can_bulk_cancel_pending_requests(self, mock_log, client, admin_user, sample_download_request, db_session):
+        sample_download_request.status = 'pending'
+        db_session.commit()
+        with client.session_transaction() as sess:
+            sess['_user_id'] = str(admin_user.id)
+            sess['_fresh'] = True
+        response = client.post('/api/downloads/bulk', json={'action': 'cancel', 'ids': [sample_download_request.id]})
+        assert response.status_code == 200
+        db_session.refresh(sample_download_request)
+        assert sample_download_request.status == 'cancelled'
+        assert response.get_json()['changed'] == 1
+        mock_log.assert_called_once()
     

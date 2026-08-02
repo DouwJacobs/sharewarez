@@ -7,30 +7,30 @@
         You must save your settings before testing.
     </div>
 
-    <button type="button" class="btn btn-primary me-2" onclick="saveSettings()">Save Settings</button>
-    <button type="button" class="btn btn-secondary" onclick="testSettings()">Test Settings</button>
+    <button type="button" class="btn btn-primary me-2" onclick="saveSmtpSettings()">Save Settings</button>
+    <button type="button" class="btn btn-secondary" onclick="testSmtpSettings()">Test Settings</button>
 
     <!-- Test results container with improved styling -->
     <div id="testResults" class="mt-4"></div>
     <div class="form-group">
         <label for="smtp_server">SMTP Server *</label>
-        <input type="text" id="smtp_server" value="{{ settings.smtp_server if settings else '' }}" class="form-control" required>
+        <input type="text" id="smtp_server" value="{{ settings.smtp_server if settings else '' }}" class="input-glass" required>
         <div class="invalid-feedback">SMTP server is required when SMTP is enabled</div>
     </div>
 
     <div class="form-group">
         <label for="smtp_port">Port</label>
-        <input type="number" id="smtp_port" value="{{ settings.smtp_port if settings else 587 }}" class="form-control">
+        <input type="number" id="smtp_port" value="{{ settings.smtp_port if settings else 587 }}" class="input-glass">
     </div>
 
     <div class="form-group">
         <label for="smtp_username">Username</label>
-        <input type="text" id="smtp_username" value="{{ settings.smtp_username if settings else '' }}" class="form-control">
+        <input type="text" id="smtp_username" value="{{ settings.smtp_username if settings else '' }}" class="input-glass">
     </div>
 
     <div class="form-group">
         <label for="smtp_password">Password</label>
-        <input type="password" id="smtp_password" value="{{ settings.smtp_password if settings else '' }}" class="form-control" autocomplete="off">
+        <input type="password" id="smtp_password" value="{{ settings.smtp_password if settings else '' }}" class="input-glass" autocomplete="off">
     </div>
 
     <div class="form-group">
@@ -40,7 +40,7 @@
 
     <div class="form-group">
         <label for="smtp_default_sender">Default Sender Email</label>
-        <input type="email" id="smtp_default_sender" value="{{ settings.smtp_default_sender if settings else '' }}" class="form-control" autocomplete="email">
+        <input type="email" id="smtp_default_sender" value="{{ settings.smtp_default_sender if settings else '' }}" class="input-glass" autocomplete="email">
     </div>
 
     {% if settings and settings.smtp_last_tested %}

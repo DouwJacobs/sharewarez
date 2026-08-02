@@ -2,6 +2,9 @@ import os
 import json
 import zipfile
 import shutil
+import re
+from datetime import date
+from io import BytesIO
 from flask import flash
 from werkzeug.utils import secure_filename
 from sharewarez.models import UserPreference
@@ -24,7 +27,11 @@ class ThemeManager:
 
     def get_installed_themes(self):
         themes = []
-        for theme_name in os.listdir(self.theme_folder):
+        try:
+            theme_names = os.listdir(self.theme_folder)
+        except OSError:
+            return themes
+        for theme_name in theme_names:
             theme_path = os.path.join(self.theme_folder, theme_name)
             if os.path.isdir(theme_path):
                 json_path = os.path.join(theme_path, 'theme.json')
@@ -33,14 +40,131 @@ class ThemeManager:
                         with open(json_path, 'r') as json_file:
                             theme_data = json.load(json_file)
                             themes.append({
+                                'id': theme_name,
                                 'name': theme_data.get('name', theme_name),
                                 'author': theme_data.get('author', 'Unknown'),
                                 'release_date': theme_data.get('release_date', 'Unknown'),
-                                'description': theme_data.get('description', 'No description available')
+                                'description': theme_data.get('description', 'No description available'),
+                                'bundled': theme_name == 'default' or bool(theme_data.get('bundled', False)),
+                                'source': ('default' if theme_name == 'default' else
+                                           theme_data.get('source', 'bundled' if theme_data.get('bundled') else 'uploaded')),
+                                'editable': theme_data.get('source') == 'builder'
                             })
                     except Exception as e:
                         print(f"Error reading theme {theme_name}: {str(e)}")
-        return themes
+        return sorted(themes, key=lambda theme: (theme['id'] != 'default', theme['name'].lower()))
+
+    def get_theme(self, theme_id):
+        """Return metadata for one safely resolved installed theme."""
+        safe_id = secure_filename(theme_id)
+        if not safe_id or safe_id != theme_id:
+            return None
+        path = os.path.join(self.theme_folder, safe_id, 'theme.json')
+        try:
+            with open(path, 'r') as json_file:
+                data = json.load(json_file)
+            data['id'] = safe_id
+            return data
+        except (OSError, json.JSONDecodeError):
+            return None
+
+    @staticmethod
+    def _validate_builder_color(value):
+        if not isinstance(value, str) or not re.fullmatch(r'#[0-9a-fA-F]{6}', value):
+            raise ValueError('Theme colors must use the #RRGGBB format.')
+        return value.lower()
+
+    @staticmethod
+    def _rgb(value):
+        value = value.lstrip('#')
+        return tuple(int(value[index:index + 2], 16) for index in (0, 2, 4))
+
+    def save_builder_theme(self, data, theme_id=None):
+        """Create or update a theme produced by the visual builder."""
+        name = str(data.get('name', '')).strip()
+        description = str(data.get('description', '')).strip()
+        if not name or len(name) > 60:
+            raise ValueError('Theme name must be between 1 and 60 characters.')
+        if not description or len(description) > 240:
+            raise ValueError('Description must be between 1 and 240 characters.')
+
+        palette = {
+            key: self._validate_builder_color(data.get(key))
+            for key in ('accent', 'accent_soft', 'background', 'sidebar', 'card', 'panel')
+        }
+        target_id = secure_filename(name) if theme_id is None else secure_filename(theme_id)
+        if not target_id or target_id in ('default', 'Default'):
+            raise ValueError('Choose a different theme name.')
+        target = os.path.join(self.theme_folder, target_id)
+
+        if theme_id is None and os.path.exists(target):
+            raise ValueError(f"A theme named '{name}' already exists.")
+        if theme_id is not None:
+            existing = self.get_theme(target_id)
+            if not existing or existing.get('source') != 'builder':
+                raise ValueError('Only themes created in the visual builder can be edited.')
+
+        os.makedirs(os.path.join(target, 'css'), exist_ok=True)
+        metadata = {
+            'name': name,
+            'author': str(data.get('author') or 'Administrator'),
+            'description': description,
+            'version': '1.0.0',
+            'release_date': date.today().isoformat(),
+            'source': 'builder',
+            'palette': palette
+        }
+        with open(os.path.join(target, 'theme.json'), 'w') as json_file:
+            json.dump(metadata, json_file, indent=2)
+            json_file.write('\n')
+
+        accent = self._rgb(palette['accent'])
+        soft = self._rgb(palette['accent_soft'])
+        css = f""":root {{
+    --theme-accent-rgb: {accent[0]}, {accent[1]}, {accent[2]};
+    --theme-accent-soft-rgb: {soft[0]}, {soft[1]}, {soft[2]};
+    --theme-sidebar-top: {palette['sidebar']};
+    --theme-sidebar-bottom: color-mix(in srgb, {palette['sidebar']} 72%, black);
+    --theme-card-top: {palette['card']};
+    --theme-card-bottom: color-mix(in srgb, {palette['card']} 74%, black);
+    --theme-panel-bg: color-mix(in srgb, {palette['panel']} 94%, transparent);
+    --btn-primary: {palette['accent']};
+    --btn-primary-hover: {palette['accent_soft']};
+    --form-focus-border: {palette['accent_soft']};
+}}
+
+body {{
+    background-color: {palette['background']};
+    background-image: radial-gradient(circle at 75% 0%, rgba({accent[0]}, {accent[1]}, {accent[2]}, .12), transparent 35%);
+}}
+a {{ color: {palette['accent_soft']}; }}
+"""
+        with open(os.path.join(target, 'css', 'theme-overrides.css'), 'w') as css_file:
+            css_file.write(css)
+        return target_id, metadata
+
+    @staticmethod
+    def create_theme_archive(theme_path):
+        """Create an upload-compatible ZIP archive from a theme directory."""
+        theme_path = os.path.realpath(theme_path)
+        if not os.path.isfile(os.path.join(theme_path, 'theme.json')):
+            raise ValueError('Theme source does not contain theme.json.')
+        if not os.path.isdir(os.path.join(theme_path, 'css')):
+            raise ValueError('Theme source does not contain a css directory.')
+
+        archive = BytesIO()
+        with zipfile.ZipFile(archive, 'w', compression=zipfile.ZIP_DEFLATED) as zip_file:
+            for root, dirs, files in os.walk(theme_path):
+                dirs[:] = sorted(directory for directory in dirs if not directory.startswith('.'))
+                for filename in sorted(files):
+                    if filename.startswith('.'):
+                        continue
+                    source = os.path.join(root, filename)
+                    if os.path.islink(source):
+                        continue
+                    zip_file.write(source, os.path.relpath(source, theme_path))
+        archive.seek(0)
+        return archive
 
     def upload_theme(self, theme_zip):
         if not os.path.exists(self.app.config['UPLOAD_FOLDER']):
@@ -96,6 +220,11 @@ class ThemeManager:
             if os.path.exists(theme_path):
                 raise ValueError(f"Theme '{theme_name}' already exists")
 
+            theme_data['source'] = 'uploaded'
+            with open(theme_json_path, 'w') as json_file:
+                json.dump(theme_data, json_file, indent=2)
+                json_file.write('\n')
+
             shutil.move(temp_dir, theme_path)
             flash(f'Theme "{theme_data["name"]}" uploaded successfully.', 'success')
             return theme_data
@@ -128,17 +257,29 @@ class ThemeManager:
         return all(os.path.exists(os.path.join(theme_path, folder)) for folder in required_folders)
 
     def delete_themefile(self, theme_name):
-        if theme_name == 'Default':
+        if theme_name in ('Default', 'default'):
             raise ValueError("Cannot delete the default theme.")
-
         theme_path = os.path.join(self.theme_folder, secure_filename(theme_name))
         if not os.path.exists(theme_path):
             raise ValueError(f"Theme '{theme_name}' does not exist.")
+
+        json_path = os.path.join(theme_path, 'theme.json')
+        try:
+            with open(json_path, 'r') as json_file:
+                theme_data = json.load(json_file)
+        except (OSError, json.JSONDecodeError):
+            theme_data = {}
+        if secure_filename(theme_name) == 'default' or theme_data.get('bundled', False):
+            raise ValueError("Bundled themes cannot be deleted.")
 
         try:
             shutil.rmtree(theme_path)
         except Exception as e:
             raise Exception(f"Error deleting theme: {str(e)}")
 
-        db.session.execute(update(UserPreference).filter_by(theme=theme_name).values(theme='default'))
+        display_name = theme_data.get('name')
+        values = [theme_name]
+        if display_name:
+            values.append(display_name)
+        db.session.execute(update(UserPreference).where(UserPreference.theme.in_(values)).values(theme='default'))
         db.session.commit()
