@@ -9,7 +9,8 @@ from sharewarez import db
 from sharewarez.models import (
     Game, Image, Library, GlobalSettings,
     Developer, Publisher, Genre, Theme, GameMode, Platform, 
-    PlayerPerspective, GameURL, ScanJob, Category, Status
+    PlayerPerspective, GameURL, ScanJob, Category, Status,
+    game_developer_association
 )
 from sharewarez.utils.functions import (
     read_first_nfo_content, delete_associations_for_game,
@@ -884,32 +885,41 @@ def delete_game(game_identifier):
         game_uuid_str = game_to_delete.uuid
     else:
         try:
-            valid_uuid = uuid.UUID(game_identifier, version=4)
-            game_uuid_str = str(valid_uuid)
-            game_to_delete = db.session.execute(select(Game).filter_by(uuid=game_uuid_str)).scalar_one_or_none() or abort(404)
-        except ValueError:
+            # Do not force UUIDv4: doing so rewrites valid non-v4 identifiers
+            # before lookup and can leave otherwise deletable games stranded.
+            game_uuid_str = str(uuid.UUID(game_identifier))
+        except (ValueError, AttributeError, TypeError):
             print(f"Invalid UUID format: {game_identifier}")
             abort(404)
-        except Exception as e:
-            print(f"Error fetching game with UUID {game_uuid_str}: {e}")
+
+        game_to_delete = db.session.execute(select(Game).filter_by(uuid=game_uuid_str)).scalar_one_or_none()
+        if game_to_delete is None:
+            print(f"No game found with UUID {game_uuid_str}")
             abort(404)
 
     try:
         print(f"Found game to delete: {game_to_delete}")
         db.session.execute(delete(GameURL).filter_by(game_uuid=game_uuid_str))
-        delete_associations_for_game(game_to_delete)        
+        delete_associations_for_game(game_to_delete)
+        # This association has no relationship on Game, so older rows are not
+        # removed by ORM cascades and can otherwise block deletion.
+        db.session.execute(
+            game_developer_association.delete().where(
+                game_developer_association.c.game_id == game_to_delete.id
+            )
+        )
         delete_game_images(game_uuid_str)
         db.session.delete(game_to_delete)
         db.session.commit()
-        # flash('Game and its images have been deleted successfully.', 'success')
         print(f'Deleted game with UUID: {game_uuid_str}')
     except Exception as e:
         db.session.rollback()
         print(f'Error deleting game with UUID {game_uuid_str}: {e}')
         if has_request_context():
             flash(f'Error deleting game: {e}', 'error')
-        else:
-            print(f'Error deleting game: {e}')
+        # Let routes and background callers report the real failure instead of
+        # returning a false success while the database entry still exists.
+        raise
 
 def heal_image_download_url(image):
     """Attempts to fetch and set a missing download_url for an image using its IGDB ID."""
@@ -917,7 +927,6 @@ def heal_image_download_url(image):
         return False
         
     try:
-        from sharewarez.utils.functions import make_igdb_api_request
         endpoint = 'https://api.igdb.com/v4/covers' if image.image_type == 'cover' else 'https://api.igdb.com/v4/screenshots'
         query = f'fields url; where id={image.igdb_image_id};'
         response = make_igdb_api_request(endpoint, query)
@@ -928,7 +937,9 @@ def heal_image_download_url(image):
                 if not url.startswith(('http://', 'https://')):
                     url = 'https:' + url
                 image.download_url = url.replace('/t_thumb/', '/t_original/')
-                db.session.commit()
+                # Persist within the caller's transaction; committing here can
+                # accidentally commit unrelated pending session changes.
+                db.session.flush()
                 return True
     except Exception as e:
         print(f"Error healing download URL for image {image.id}: {e}")
