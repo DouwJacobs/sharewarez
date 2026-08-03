@@ -935,7 +935,7 @@ main() {
     if [ ! -f "$SCRIPT_DIR/startweb.sh" ] || [ ! -f "$SCRIPT_DIR/requirements.txt" ]; then
         print_error "This script must be run from the application directory"
         print_info "Please clone the repository first:"
-        print_info "  git clone https://github.com/axewater/sharewarez.git"
+        print_info "  git clone https://github.com/DouwJacobs/sharewarez.git"
         print_info "  cd sharewarez"
         print_info "  ./install-linux.sh"
         exit 1

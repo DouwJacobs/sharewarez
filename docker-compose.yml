@@ -2,7 +2,7 @@
 #
 # Setup Instructions:
 # 1. Copy .env.docker.example to .env and customize your settings
-# 2. Run: docker-compose up -d
+# 2. Run: docker compose pull && docker compose up -d
 #
 # Volume Mounts:
 # - DATA_FOLDER_WAREZ: Your games directory, mounted read-only to /storage
@@ -10,11 +10,8 @@
 
 services:
   app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    image: kapitanczarnobrod/sharewarez:latest
-    container_name: sharewarez-app
+    image: ${GAME_LIBRARY_IMAGE:-douwjacobs/gamelibrary:latest}
+    container_name: gamelibrary-app
     restart: unless-stopped
     ports:
       - "5006:5006"
@@ -42,7 +39,7 @@ services:
 
   db:
     image: postgres:17.6
-    container_name: sharewarez-db
+    container_name: gamelibrary-db
     restart: unless-stopped
     shm_size: 128mb
     environment:

@@ -68,7 +68,7 @@ A modern interface for turning game folders and archives into a searchable, shar
 
 **One-Command Installation:**
 ```bash
-git clone --depth 1 https://github.com/axewater/sharewarez.git
+git clone --depth 1 https://github.com/DouwJacobs/sharewarez.git
 cd sharewarez
 # IMPORTANT: Make install script executable first
 chmod +x install-linux.sh
@@ -144,7 +144,7 @@ GRANT ALL PRIVILEGES ON DATABASE sharewarez TO sharewarezuser;
 **Step 3: Clone and set up the application**
 ```bash
 # Clone the repository
-git clone --depth 1 https://github.com/axewater/sharewarez.git
+git clone --depth 1 https://github.com/DouwJacobs/sharewarez.git
 cd sharewarez
 
 # IMPORTANT: Make shell scripts executable first
@@ -229,7 +229,7 @@ Open pgAdmin (installed with PostgreSQL):
 Open PowerShell and run:
 ```powershell
 # Clone the repository
-git clone --depth 1 https://github.com/axewater/sharewarez.git
+git clone --depth 1 https://github.com/DouwJacobs/sharewarez.git
 cd sharewarez
 
 # Create and activate virtual environment
@@ -281,10 +281,12 @@ notepad .env
 
 ## 🐳 Docker Install
 
+The published image is [`douwjacobs/gamelibrary`](https://hub.docker.com/r/douwjacobs/gamelibrary). The Compose configuration uses `latest` by default; set `GAME_LIBRARY_IMAGE=douwjacobs/gamelibrary:v1` in `.env` to remain on the v1 release line.
+
 **Quick Docker Setup:**
 ```bash
 # Clone the repository
-git clone https://github.com/axewater/sharewarez.git
+git clone https://github.com/DouwJacobs/sharewarez.git
 cd sharewarez
 
 # Copy and configure environment file
@@ -292,8 +294,9 @@ cp .env.docker.example .env
 # Edit .env file with your game directory path:
 # DATA_FOLDER_WAREZ=/path/to/your/games
 
-# Start with Docker Compose
-docker-compose up -d
+# Pull and start GameLibrary
+docker compose pull
+docker compose up -d
 ```
 
 **What it includes:**
@@ -307,23 +310,23 @@ docker-compose up -d
 2. Copy `.env.docker.example` to `.env`
 3. Edit `.env` file - set `DATA_FOLDER_WAREZ` to your games directory
 4. Optionally set `LIBRARY_HOST_PATH` to change where cover images and themes are stored (defaults to `./data/library`)
-5. Run `docker-compose up -d`
+5. Run `docker compose pull && docker compose up -d`
 6. Open browser to `http://localhost:5006`
 7. Complete setup wizard and create admin account
 
 **Management commands:**
 ```bash
 # View logs
-docker-compose logs -f
+docker compose logs -f
 
 # Stop containers
-docker-compose down
+docker compose down
 
-# Update to latest version
-git pull && docker-compose down && docker-compose up -d --build
+# Update to the latest published GameLibrary image
+docker compose pull && docker compose up -d
 
 # Reset database (if needed)
-docker-compose exec web /app/startweb-docker.sh --force-setup
+docker compose exec app /app/startweb-docker.sh --force-setup
 ```
 
 ---
