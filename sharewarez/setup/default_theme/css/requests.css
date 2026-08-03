@@ -42,8 +42,8 @@
 }
 .request-search-wrap:not(.admin-request-search) { position: relative; display: grid; grid-template-columns: 1fr; }
 .request-search-wrap:not(.admin-request-search) .request-search-icon { position: absolute; top: 50%; left: .9rem; z-index: 1; transform: translateY(-50%); }
-.request-search-wrap:not(.admin-request-search) input { padding: 0 2rem; text-align: center; }
-.request-search-wrap:not(.admin-request-search) input::placeholder { text-align: center; }
+.request-search-wrap:not(.admin-request-search) input { padding: 0 1rem 0 2.5rem; text-align: left; }
+.request-search-wrap:not(.admin-request-search) input::placeholder { text-align: left; }
 .request-search-wrap > i {
     display: inline-flex;
     width: 1rem;
@@ -126,18 +126,16 @@
 /* Admin request library */
 .admin-request-filters form { display: grid; gap: 1rem; }
 .admin-request-search {
-    position: relative;
-    display: grid;
-    grid-template-columns: 1fr;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: .75rem;
     width: min(680px, 100%);
-    min-height: 46px;
-    height: 46px;
     margin: 0 auto;
-    padding: .4rem .8rem;
 }
-.admin-request-search > i { position: absolute; top: 50%; left: .9rem; z-index: 1; transform: translateY(-50%); }
-.admin-request-search input { padding: 0 2rem; text-align: center; }
-.admin-request-search input::placeholder { text-align: center; }
+.admin-request-search > i { flex: none; color: var(--theme-primary, #03b2f8); }
+.admin-request-search input { flex: 1; padding: 0; text-align: left; height: 100%; }
+.admin-request-search input::placeholder { text-align: left; }
 .request-filter-chips { display: flex; flex-wrap: wrap; justify-content: center; gap: .45rem; }
 .request-filter-chip { display: inline-flex; align-items: center; gap: .4rem; padding: .45rem .65rem; border: 1px solid var(--theme-border-color, rgba(255,255,255,.1)); border-radius: 999px; color: var(--theme-text-secondary, #b9c0d0); text-decoration: none; }
 .request-filter-chip span { min-width: 1.35rem; padding: .08rem .35rem; border-radius: 999px; background: var(--theme-inner-card-bg, rgba(255,255,255,.08)); text-align: center; font-size: .7rem; }
