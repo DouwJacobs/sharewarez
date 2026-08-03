@@ -23,7 +23,7 @@ DEFAULT_DOWNLOAD_THREADS = 8
 
 # Default settings configuration
 DEFAULT_SETTINGS = {
-    'siteTitle': 'SharewareZ',
+    'siteTitle': 'Game Library',
     'brandLogoPath': 'newstyle/sharewarez_logo.png',
     'showSystemLogo': True,
     'showHelpButton': True,

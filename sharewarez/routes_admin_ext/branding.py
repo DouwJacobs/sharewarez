@@ -12,7 +12,7 @@ from sharewarez.utils.event_logging import log_system_event
 from . import admin2_bp
 
 
-DEFAULT_TITLE = 'SharewareZ'
+DEFAULT_TITLE = 'Game Library'
 DEFAULT_LOGO = 'newstyle/sharewarez_logo.png'
 MAX_LOGO_SIZE = 5 * 1024 * 1024
 IMAGE_SIGNATURES = {

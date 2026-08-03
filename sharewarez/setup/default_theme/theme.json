@@ -1,7 +1,7 @@
 {
     "name": "Default Theme",
-    "author": "SharewareZ",
-    "description": "The default theme for SharewareZ",
+    "author": "Built-in",
+    "description": "The default application theme",
     "version": "2.0.0",
     "release_date": "2024-12-12"
 }

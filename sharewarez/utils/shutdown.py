@@ -1,5 +1,5 @@
 """
-Graceful shutdown handling for SharewareZ.
+Graceful application shutdown handling.
 Provides signal handlers and shutdown state management for clean application exit.
 """
 

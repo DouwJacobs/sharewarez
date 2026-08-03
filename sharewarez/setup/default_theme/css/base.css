@@ -1161,7 +1161,7 @@ form textarea:focus {
     }
 }
 
-/* === SHAREWAREZ BUTTON SYSTEM ===
+/* === APPLICATION BUTTON SYSTEM ===
    Loaded after legacy rules so Bootstrap classes share one product language. */
 .btn {
     --sw-btn-bg: linear-gradient(145deg, rgba(48, 52, 70, 0.92), rgba(30, 33, 48, 0.96));

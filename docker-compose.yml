@@ -1,4 +1,4 @@
-# SharewareZ Docker Compose Configuration
+# Application Docker Compose configuration
 #
 # Setup Instructions:
 # 1. Copy .env.docker.example to .env and customize your settings

@@ -22,11 +22,9 @@ A modern interface for turning game folders and archives into a searchable, shar
 
 ## 📢 Important Notes
 
-- 🔄 Updating from older versions: Automatic update supported - simply overwrite files and run 'pip install -r requirements.txt' again.
-- ⚠️ For versions below 2.0: Database reset required
-- Run `./startweb.sh --force-setup` to recreate database and run setup wizard
-- ⚖️ SharewareZ promotes and encourages the legal use of software. We do not condone or support any unauthorized distribution or use of copyrighted material.
-- 📝 You must install version >2.5.2 before August 2025 or lose the ability to connect to IGDB for any lookups.
+- 🔄 To update a source installation, pull the latest changes and run `pip install -r requirements.txt` again.
+- Run `./startweb.sh --force-setup` only when you intentionally want to recreate the database and rerun the setup wizard.
+- ⚖️ This project is intended for the legal use of software and does not condone or support unauthorized distribution of copyrighted material.
 
 ## ✨ Core Features
 
@@ -143,7 +141,7 @@ GRANT ALL PRIVILEGES ON DATABASE sharewarez TO sharewarezuser;
 \q
 ```
 
-**Step 3: Clone and Set up SharewareZ**
+**Step 3: Clone and set up the application**
 ```bash
 # Clone the repository
 git clone --depth 1 https://github.com/axewater/sharewarez.git
@@ -188,7 +186,7 @@ nano .env
 > key per deployment, and never commit it to version control. (The test suite is
 > exempt and auto-generates a throwaway key when running under `pytest`.)
 
-**Step 5: Start SharewareZ**
+**Step 5: Start the application**
 ```bash
 # IMPORTANT: Make all shell scripts executable first
 chmod +x *.sh
@@ -227,7 +225,7 @@ Open pgAdmin (installed with PostgreSQL):
 2. Right-click "Databases" → "Create" → "Database"
 3. Name: `sharewarez` → Click "Save"
 
-**Step 3: Clone and Set up SharewareZ**
+**Step 3: Clone and set up the application**
 Open PowerShell and run:
 ```powershell
 # Clone the repository
@@ -269,7 +267,7 @@ notepad .env
 > key per deployment, and never commit it to version control. (The test suite is
 > exempt and auto-generates a throwaway key when running under `pytest`.)
 
-**Step 5: Start SharewareZ**
+**Step 5: Start the application**
 ```powershell
 # Start the application
 .\startweb_windows.cmd
@@ -336,7 +334,7 @@ docker-compose exec web /app/startweb-docker.sh --force-setup
 - Linux: `./startweb.sh --force-setup`
 - Windows: `.\startweb_windows.cmd --force-setup`
 
-**Updating SharewareZ:**
+**Updating the application:**
 1. Stop the application (Ctrl+C)
 2. `git pull` → `pip install -r requirements.txt`
 3. Restart with startup script
@@ -352,12 +350,12 @@ docker-compose exec web /app/startweb-docker.sh --force-setup
 
 ## 🌐 Changing the Port Number
 
-SharewareZ runs on port `5006` by default. To change this:
+The application runs on port `5006` by default. To change this:
 
 **For Linux/Windows installations:**
 1. Edit your `.env` file
 2. Add or modify: `PORT=8080` (replace 8080 with your desired port)
-3. Restart SharewareZ
+3. Restart the application
 
 **For Docker installations:**
 - Docker containers always use port `5006` internally
@@ -377,7 +375,7 @@ PORT=3000
 - Most 8, 16 and 32 bit retro consoles work, see webretro repo for more full list
 - PSX, Sega MS, Sega 32x not working at the moment
 - Sega Saturn working on single file games and some audio issues
-- Files must be unzipped. ZIP, 7z and RAR are not (yet) supported. This is not a webretro issues, so it will be fixed in a future Sharewarez update.
+- Files must be unzipped. ZIP, 7z, and RAR are not yet supported by the browser-based emulator integration.
 
 ## 💬 Support
 - 📝 Open an issue on GitHub

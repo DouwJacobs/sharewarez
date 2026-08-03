@@ -75,14 +75,14 @@ if [[ "$RELOAD_MODE" == "auto" ]]; then
 fi
 RELOAD_MODE="$(printf '%s' "$RELOAD_MODE" | tr '[:upper:]' '[:lower:]')"
 
-echo "Starting SharewareZ with uvicorn..."
+echo "Starting application with uvicorn..."
 
 # Run complete startup initialization once before starting workers
 python3 -c "
 from sharewarez.init_manager import run_complete_startup_initialization
 import sys
 
-print('🚀 Starting SharewareZ initialization...')
+print('🚀 Starting application initialization...')
 if not run_complete_startup_initialization():
     print('❌ Startup initialization failed!')
     sys.exit(1)
