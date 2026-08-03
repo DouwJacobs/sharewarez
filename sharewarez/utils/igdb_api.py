@@ -4,9 +4,40 @@
 import requests
 import time
 import threading
+import re
 from sharewarez import db
 from sharewarez.models import GlobalSettings
 from sqlalchemy import select
+
+
+_steam_app_id_cache: dict = {}
+
+def get_steam_app_id_from_igdb(igdb_id):
+    if not igdb_id:
+        return None
+    try:
+        igdb_id_int = int(igdb_id)
+    except (ValueError, TypeError):
+        return None
+
+    if igdb_id_int in _steam_app_id_cache:
+        return _steam_app_id_cache[igdb_id_int]
+
+    res = make_igdb_api_request('https://api.igdb.com/v4/external_games', f'fields uid, url, category; where game = {igdb_id_int};')
+    steam_app_id = None
+    if isinstance(res, list):
+        for item in res:
+            if item.get('category') == 1 and item.get('uid'):
+                steam_app_id = str(item.get('uid'))
+                break
+            url = item.get('url') or ''
+            match = re.search(r'/app/(\d+)', url)
+            if match:
+                steam_app_id = match.group(1)
+                break
+
+    _steam_app_id_cache[igdb_id_int] = steam_app_id
+    return steam_app_id
 
 
 

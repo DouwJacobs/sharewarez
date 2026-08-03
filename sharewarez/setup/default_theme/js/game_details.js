@@ -330,8 +330,9 @@ function nfoEscapeKeyHandler(event) {
 function toggleRequestUpdateModal() {
     const modal = document.getElementById("requestUpdateModal");
     if (!modal) return;
-    const isVisible = modal.style.display === "flex";
-    modal.style.display = isVisible ? "none" : "flex";
+    const isOpening = !modal.classList.contains("is-open");
+    modal.classList.toggle("is-open", isOpening);
+    document.body.style.overflow = isOpening ? "hidden" : "";
 }
 
 document.addEventListener('DOMContentLoaded', () => {

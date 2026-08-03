@@ -121,13 +121,20 @@
 <script src="{{ 'js/game_status_manager.js'|theme_asset }}"></script>
 
 
-{# Modals #}
+{% block modals %}
 {% if enable_game_requests and not has_pending_update_request %}
-<div id="requestUpdateModal" class="modal-request-update" style="display: none;">
+<div id="requestUpdateModal" class="modal-request-update">
     <div class="modal-request-update-content">
-        <span class="close cursor" onclick="toggleRequestUpdateModal()">&times;</span>
-        <h3>Request Update for {{ game.name }}</h3>
+        <div class="modal-request-update-header">
+            <h3>Request Update for {{ game.name }}</h3>
+            <span class="close" onclick="toggleRequestUpdateModal()">&times;</span>
+        </div>
         <p class="request-update-intro">Request a game update, patch, or new content release from administrators.</p>
+        {% if steamdb_patchnotes_url %}
+        <a href="{{ steamdb_patchnotes_url }}" target="_blank" rel="noopener noreferrer" class="steamdb-helper-link">
+            <i class="fas fa-external-link-alt"></i> Browse available versions &amp; build IDs on SteamDB
+        </a>
+        {% endif %}
         <form id="requestUpdateForm" data-game-uuid="{{ game.uuid }}">
             <div class="form-group mb-3">
                 <label for="targetVersion">Requested Version / Build ID <small>(Optional)</small></label>
@@ -149,6 +156,7 @@
     </div>
 </div>
 {% endif %}
+{% endblock %}
 <div id="summaryModal" class="summary-modal">
     <div class="summary-modal-content">
         <span class="summary-close">&times;</span>

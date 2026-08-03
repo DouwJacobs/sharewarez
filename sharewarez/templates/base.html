@@ -306,11 +306,10 @@
 <link rel="stylesheet" href="{{ 'css/theme-components.css'|theme_asset }}">
 <link rel="stylesheet" href="{{ 'css/theme-overrides.css'|theme_asset }}">
 
-
 <!-- Add this near the end of base.html -->
 {% include 'partials/delete_game_modal.html' %}
 <div id="preferencesModalContainer"></div>
-
+{% block modals %}{% endblock %}
 
 <script>
     document.addEventListener("DOMContentLoaded", function() {
