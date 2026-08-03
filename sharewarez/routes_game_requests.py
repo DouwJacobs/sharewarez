@@ -107,7 +107,9 @@ def submit_update_request(game_uuid):
         game_request, _ = create_update_request(
             current_user,
             game,
-            data.get('note'),
+            note=data.get('note'),
+            target_version=data.get('target_version'),
+            reference_url=data.get('reference_url'),
         )
         log_system_event(
             f'{current_user.name} requested update for {game.name}',

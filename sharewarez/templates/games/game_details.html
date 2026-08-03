@@ -129,9 +129,17 @@
         <h3>Request Update for {{ game.name }}</h3>
         <p class="request-update-intro">Request a game update, patch, or new content release from administrators.</p>
         <form id="requestUpdateForm" data-game-uuid="{{ game.uuid }}">
-            <div class="form-group">
+            <div class="form-group mb-3">
+                <label for="targetVersion">Requested Version / Build ID <small>(Optional)</small></label>
+                <input type="text" id="targetVersion" name="target_version" class="form-control" maxlength="100" placeholder="e.g. v1.0.5, Build 1459201, or Latest Patch">
+            </div>
+            <div class="form-group mb-3">
+                <label for="referenceUrl">SteamDB or Patch Link <small>(Optional)</small></label>
+                <input type="url" id="referenceUrl" name="reference_url" class="form-control" maxlength="500" placeholder="https://steamdb.info/app/... or patch notes link">
+            </div>
+            <div class="form-group mb-3">
                 <label for="updateNote">Note for Administrator <small>(Optional)</small></label>
-                <textarea id="updateNote" name="note" class="form-control" rows="3" maxlength="1000" placeholder="Specify version, patch notes, DLC, or details..."></textarea>
+                <textarea id="updateNote" name="note" class="form-control" rows="3" maxlength="1000" placeholder="Specify DLC, patch details, or additional info..."></textarea>
             </div>
             <div class="modal-request-update-actions">
                 <button type="button" class="btn btn-secondary" onclick="toggleRequestUpdateModal()">Cancel</button>

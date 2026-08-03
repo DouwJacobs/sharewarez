@@ -341,6 +341,8 @@ document.addEventListener('DOMContentLoaded', () => {
     updateForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const gameUuid = updateForm.dataset.gameUuid;
+        const targetVersion = document.getElementById('targetVersion')?.value || '';
+        const referenceUrl = document.getElementById('referenceUrl')?.value || '';
         const note = document.getElementById('updateNote')?.value || '';
         const submitBtn = document.getElementById('submitUpdateReqBtn');
         if (submitBtn) {
@@ -352,7 +354,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const response = await fetch(`/game_details/${gameUuid}/request-update`, {
                 method: 'POST',
                 headers: CSRFUtils.getHeaders({ 'Content-Type': 'application/json' }),
-                body: JSON.stringify({ note: note })
+                body: JSON.stringify({
+                    target_version: targetVersion,
+                    reference_url: referenceUrl,
+                    note: note
+                })
             });
 
             const data = await response.json();

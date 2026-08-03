@@ -200,10 +200,24 @@ def create_or_join_request(user, igdb_id, note=None, accept_any_edition=False):
     return game_request, link
 
 
-def create_update_request(user, game, note=None):
+def create_update_request(user, game, note=None, target_version=None, reference_url=None):
     settings = get_request_settings()
     if not settings['enableGameRequests']:
         raise ValueError('Game requests are disabled.')
+
+    version_str = (target_version or '').strip()[:100]
+    ref_url_str = (reference_url or '').strip()[:500]
+    user_note_str = (note or '').strip()[:1000]
+
+    note_parts = []
+    if version_str:
+        note_parts.append(f"Target Version/Build: {version_str}")
+    if ref_url_str:
+        note_parts.append(f"Reference: {ref_url_str}")
+    if user_note_str:
+        note_parts.append(f"Note: {user_note_str}")
+
+    combined_note = "\n".join(note_parts) if note_parts else None
 
     game_request = db.session.execute(
         select(GameRequest).where(
@@ -245,6 +259,8 @@ def create_update_request(user, game, note=None):
             else:
                 cover_url = f'/static/library/images/{raw_cover}'
 
+        edition_label = f"Update to {version_str}" if version_str else (f"Update for {game.version}" if game.version else "Game Update")
+
         game_request = GameRequest(
             request_type='update',
             source_game_uuid=game.uuid,
@@ -252,7 +268,7 @@ def create_update_request(user, game, note=None):
             parent_igdb_id=game.igdb_id,
             parent_game_name=game.name,
             game_name=game.name,
-            edition_name=f"Update for {game.version}" if game.version else "Game Update",
+            edition_name=edition_label,
             cover_url=cover_url,
             summary=game.summary,
             status='pending',
@@ -260,7 +276,7 @@ def create_update_request(user, game, note=None):
         db.session.add(game_request)
         db.session.flush()
 
-    clean_note = ((note or '').strip()[:1000] or None) if settings['allowRequestNotes'] else None
+    clean_note = combined_note if settings['allowRequestNotes'] else None
     if link:
         link.withdrawn_at = None
         link.satisfied_at = None
