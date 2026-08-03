@@ -3,23 +3,44 @@
 <link rel="stylesheet" href="{{ 'css/requests.css'|theme_asset }}">
 <main class="requests-page admin-request-details-page">
     <nav class="request-detail-toolbar" aria-label="Request navigation">
-        <a class="btn btn-secondary request-back-link" href="{{ url_for('game_requests.admin_requests', status=return_status, q=return_search, page=return_page) }}"><i class="fas fa-arrow-left"></i><span>All requests</span></a>
-        <span class="request-detail-toolbar-label"><i class="fas fa-paper-plane"></i> Game request</span>
+        <a class="btn btn-secondary request-back-link" href="{{ url_for('game_requests.admin_requests', status=return_status, type=return_type, q=return_search, page=return_page) }}"><i class="fas fa-arrow-left"></i><span>All requests</span></a>
+        <span class="request-detail-toolbar-label">
+            {% if game_request.request_type == 'update' %}
+                <i class="fas fa-rotate"></i> Update request
+            {% else %}
+                <i class="fas fa-paper-plane"></i> New game request
+            {% endif %}
+        </span>
     </nav>
 
     <header class="request-detail-hero request-panel">
-        <div class="request-detail-cover">{% if game_request.cover_url %}<img src="{{ game_request.cover_url }}" alt="">{% else %}<span><i class="fas fa-gamepad"></i></span>{% endif %}</div>
+        <div class="request-detail-cover">{% if game_request.formatted_cover_url %}<img src="{{ game_request.formatted_cover_url }}" alt="">{% else %}<span><i class="fas fa-gamepad"></i></span>{% endif %}</div>
         <div class="request-detail-intro">
-            <div class="request-history-title"><div><p class="eyebrow">{{ game_request.edition_name or 'Base game' }}</p><h1>{{ game_request.game_name }}</h1></div><span class="request-chip status-{{ game_request.status }}">{{ game_request.status|replace('_', ' ')|title }}</span></div>
+            <div class="request-history-title">
+                <div>
+                    <p class="eyebrow">
+                        {% if game_request.request_type == 'update' %}<i class="fas fa-rotate"></i> Game Update Request{% else %}{{ game_request.edition_name or 'Base game' }}{% endif %}
+                    </p>
+                    <h1>{{ game_request.game_name }}</h1>
+                </div>
+                <span class="request-chip status-{{ game_request.status }}">{{ game_request.status|replace('_', ' ')|title }}</span>
+            </div>
             {% if game_request.summary %}<p>{{ game_request.summary }}</p>{% endif %}
-            <div class="request-detail-facts"><span><i class="fas fa-users"></i> {{ game_request.interested_requesters|length }} interested</span>{% if game_request.platforms %}<span><i class="fas fa-display"></i> {{ game_request.platforms|join(', ') }}</span>{% endif %}<span><i class="fas fa-database"></i> IGDB {{ game_request.igdb_id }}</span></div>
+            <div class="request-detail-facts">
+                <span><i class="fas fa-users"></i> {{ game_request.interested_requesters|length }} interested</span>
+                {% if game_request.source_game %}
+                    <span><i class="fas fa-gamepad"></i> Library Game: <a href="{{ url_for('games.game_details', game_uuid=game_request.source_game.uuid) }}" style="color:var(--theme-primary,#03b2f8);">{{ game_request.source_game.name }}</a></span>
+                {% endif %}
+                {% if game_request.platforms %}<span><i class="fas fa-display"></i> {{ game_request.platforms|join(', ') }}</span>{% endif %}
+                {% if game_request.igdb_id %}<span><i class="fas fa-database"></i> IGDB {{ game_request.igdb_id }}</span>{% endif %}
+            </div>
         </div>
     </header>
 
     <div class="request-detail-layout">
         <section class="request-panel">
-            <div class="request-section-heading"><div><p class="eyebrow">Workflow</p><h2>Update request</h2></div></div>
-            <form method="post" action="{{ url_for('game_requests.admin_update_request', request_id=game_request.id, status=return_status, q=return_search, page=return_page) }}" class="admin-request-form">
+            <div class="request-section-heading"><div><p class="eyebrow">Workflow</p><h2>Update request status</h2></div></div>
+            <form method="post" action="{{ url_for('game_requests.admin_update_request', request_id=game_request.id, status=return_status, type=return_type, q=return_search, page=return_page) }}" class="admin-request-form">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <label>Status<select class="form-select" name="status">{% for status in statuses %}<option value="{{ status }}"{% if game_request.status == status %} selected{% endif %}>{{ status|replace('_', ' ')|title }}</option>{% endfor %}</select></label>
                 <label class="library-game-picker">Fulfilled by

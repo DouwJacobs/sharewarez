@@ -23,9 +23,9 @@
         <div class="request-history">
             {% for link in pagination.items %}{% set item = link.game_request %}
             <article class="request-history-card">
-                {% if item.cover_url %}<img src="{{ item.cover_url }}" alt="">{% endif %}
+                {% if item.formatted_cover_url %}<img src="{{ item.formatted_cover_url }}" alt="">{% endif %}
                 <div class="request-history-content">
-                    <div class="request-history-title"><div class="request-history-title-copy"><h3>{{ item.game_name }}</h3>{% if item.edition_name %}<span class="request-edition-chip">{{ item.edition_name }}</span>{% endif %}</div><span class="request-chip status-{{ item.status }}">{{ item.status|replace('_', ' ')|title }}</span></div>
+                    <div class="request-history-title"><div class="request-history-title-copy"><h3>{{ item.game_name }}</h3>{% if item.request_type == 'update' %}<span class="request-edition-chip" style="background: rgba(3, 178, 248, 0.2); color: #03b2f8;"><i class="fas fa-rotate"></i> Update Request</span>{% elif item.edition_name %}<span class="request-edition-chip">{{ item.edition_name }}</span>{% endif %}</div><span class="request-chip status-{{ item.status }}">{{ item.status|replace('_', ' ')|title }}</span></div>
                     {% if link.accept_any_edition %}<p><i class="fas fa-layer-group"></i> Any related edition is acceptable</p>{% endif %}
                     {% if item.public_response %}<div class="admin-response"><strong>Admin response</strong><p>{{ item.public_response }}</p></div>{% endif %}
                     {% if link.satisfied_by_game %}<a class="btn btn-primary" href="{{ url_for('games.game_details', game_uuid=link.satisfied_by_game.uuid) }}">View available edition</a>{% elif item.fulfilled_game %}<a class="btn btn-primary" href="{{ url_for('games.game_details', game_uuid=item.fulfilled_game.uuid) }}">View available game</a>{% endif %}

@@ -325,3 +325,89 @@ function nfoEscapeKeyHandler(event) {
         closeNfoModal();
     }
 }
+
+// Update Request Modal functionality
+function toggleRequestUpdateModal() {
+    const modal = document.getElementById("requestUpdateModal");
+    if (!modal) return;
+    const isVisible = modal.style.display === "flex";
+    modal.style.display = isVisible ? "none" : "flex";
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const updateForm = document.getElementById('requestUpdateForm');
+    if (!updateForm) return;
+
+    updateForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const gameUuid = updateForm.dataset.gameUuid;
+        const note = document.getElementById('updateNote')?.value || '';
+        const submitBtn = document.getElementById('submitUpdateReqBtn');
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
+        }
+
+        try {
+            const response = await fetch(`/game_details/${gameUuid}/request-update`, {
+                method: 'POST',
+                headers: CSRFUtils.getHeaders({ 'Content-Type': 'application/json' }),
+                body: JSON.stringify({ note: note })
+            });
+
+            const data = await response.json();
+            if (!response.ok) {
+                throw new Error(data.error || 'Failed to submit update request.');
+            }
+
+            if (window.jQuery && window.jQuery.notify) {
+                window.jQuery.notify(data.message || 'Update request submitted!', 'success');
+            } else if (typeof Notify !== 'undefined') {
+                Notify.create({
+                    title: 'Success',
+                    text: data.message || 'Update request submitted!',
+                    status: 'success'
+                });
+            } else {
+                alert(data.message || 'Update request submitted!');
+            }
+
+            toggleRequestUpdateModal();
+            const btn = document.getElementById('requestUpdateBtn');
+            if (btn) {
+                btn.className = 'menu-button';
+                btn.disabled = true;
+                btn.title = 'You have already requested an update for this game';
+                btn.innerHTML = 'Update Requested';
+                btn.style.opacity = '0.65';
+                btn.style.cursor = 'default';
+                btn.removeAttribute('onclick');
+            }
+        } catch (err) {
+            if (window.jQuery && window.jQuery.notify) {
+                window.jQuery.notify(err.message, 'error');
+            } else if (typeof Notify !== 'undefined') {
+                Notify.create({
+                    title: 'Error',
+                    text: err.message,
+                    status: 'error'
+                });
+            } else {
+                alert(err.message);
+            }
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Submit Request';
+            }
+        }
+    });
+
+    const updateModal = document.getElementById("requestUpdateModal");
+    if (updateModal) {
+        updateModal.addEventListener('click', (e) => {
+            if (e.target.id === 'requestUpdateModal') {
+                toggleRequestUpdateModal();
+            }
+        });
+    }
+});

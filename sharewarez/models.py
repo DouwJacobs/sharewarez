@@ -358,9 +358,10 @@ class GameRequest(db.Model):
     __tablename__ = 'game_requests'
 
     id = db.Column(db.Integer, primary_key=True)
-    igdb_id = db.Column(db.Integer, unique=True, nullable=False, index=True)
-    parent_igdb_id = db.Column(db.Integer, nullable=False, index=True)
-    parent_game_name = db.Column(db.String(255), nullable=False)
+    request_type = db.Column(db.String(16), nullable=False, default='new_game', index=True)
+    igdb_id = db.Column(db.Integer, nullable=True, index=True)
+    parent_igdb_id = db.Column(db.Integer, nullable=True, index=True)
+    parent_game_name = db.Column(db.String(255), nullable=True)
     game_name = db.Column(db.String(255), nullable=False)
     edition_name = db.Column(db.String(255), nullable=True)
     cover_url = db.Column(db.String(512), nullable=True)
@@ -370,6 +371,7 @@ class GameRequest(db.Model):
     status = db.Column(db.String(32), nullable=False, default='pending', index=True)
     public_response = db.Column(db.Text, nullable=True)
     internal_note = db.Column(db.Text, nullable=True)
+    source_game_uuid = db.Column(db.String(36), db.ForeignKey('games.uuid', ondelete='SET NULL'), nullable=True)
     fulfilled_game_uuid = db.Column(db.String(36), db.ForeignKey('games.uuid', ondelete='SET NULL'), nullable=True)
     handled_by_user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'), nullable=True)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
@@ -377,8 +379,21 @@ class GameRequest(db.Model):
     resolved_at = db.Column(db.DateTime, nullable=True)
 
     requesters = db.relationship('GameRequestUser', back_populates='game_request', cascade='all, delete-orphan')
+    source_game = db.relationship('Game', foreign_keys=[source_game_uuid])
     fulfilled_game = db.relationship('Game', foreign_keys=[fulfilled_game_uuid])
     handled_by = db.relationship('User', foreign_keys=[handled_by_user_id])
+
+    @property
+    def formatted_cover_url(self):
+        if not self.cover_url:
+            return None
+        if self.cover_url.startswith(('http://', 'https://', '//')):
+            if self.cover_url.startswith('//'):
+                return f'https:{self.cover_url}'
+            return self.cover_url
+        if self.cover_url.startswith('/'):
+            return self.cover_url
+        return f'/static/library/images/{self.cover_url}'
 
     @property
     def active_requesters(self):

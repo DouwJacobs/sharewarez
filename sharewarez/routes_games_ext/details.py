@@ -216,6 +216,24 @@ def game_details(game_uuid):
                 status_icon = status_info['icon']
                 status_label = status_info['label']
 
+        has_pending_update_request = False
+        if current_user_id:
+            from sharewarez.models import GameRequest, GameRequestUser
+            from sharewarez.utils.game_requests import RESOLVED_STATUSES
+            req_link = db.session.execute(
+                select(GameRequestUser)
+                .join(GameRequest)
+                .where(
+                    GameRequest.source_game_uuid == game.uuid,
+                    GameRequest.request_type == 'update',
+                    GameRequestUser.user_id == current_user_id,
+                    GameRequestUser.withdrawn_at.is_(None),
+                    GameRequestUser.satisfied_at.is_(None),
+                    ~GameRequest.status.in_(RESOLVED_STATUSES)
+                )
+            ).scalars().first()
+            has_pending_update_request = req_link is not None
+
         return render_template(
             'games/game_details.html',
             game=game_data,
@@ -226,6 +244,7 @@ def game_details(game_uuid):
             user_status=user_status,
             status_icon=status_icon,
             status_label=status_label,
+            has_pending_update_request=has_pending_update_request,
             back_url=get_safe_back_url()
         )
     else:

@@ -173,7 +173,7 @@ def create_or_join_request(user, igdb_id, note=None, accept_any_edition=False):
         snapshot = fetch_igdb_game(igdb_id)
         if not snapshot or not snapshot['game_name']:
             raise ValueError('The selected IGDB game could not be verified.')
-        game_request = GameRequest(**snapshot)
+        game_request = GameRequest(request_type='new_game', **snapshot)
         db.session.add(game_request)
         db.session.flush()
 
@@ -191,6 +191,88 @@ def create_or_join_request(user, igdb_id, note=None, accept_any_edition=False):
             user_id=user.id,
             requester_note=clean_note,
             accept_any_edition=accepts_any,
+        )
+        db.session.add(link)
+    if game_request.status == 'cancelled':
+        game_request.status = 'pending'
+        game_request.resolved_at = None
+    db.session.commit()
+    return game_request, link
+
+
+def create_update_request(user, game, note=None):
+    settings = get_request_settings()
+    if not settings['enableGameRequests']:
+        raise ValueError('Game requests are disabled.')
+
+    game_request = db.session.execute(
+        select(GameRequest).where(
+            GameRequest.source_game_uuid == game.uuid,
+            GameRequest.request_type == 'update',
+            ~GameRequest.status.in_(RESOLVED_STATUSES)
+        )
+    ).scalars().first()
+
+    link = None
+    if game_request:
+        link = db.session.execute(
+            select(GameRequestUser).filter_by(request_id=game_request.id, user_id=user.id)
+        ).scalars().first()
+
+    if link and link.withdrawn_at is None:
+        raise ValueError('You have already requested an update for this game.')
+
+    active_count = db.session.execute(
+        select(func.count(GameRequestUser.id)).join(GameRequest).where(
+            GameRequestUser.user_id == user.id,
+            GameRequestUser.withdrawn_at.is_(None),
+            GameRequestUser.satisfied_at.is_(None),
+            ~GameRequest.status.in_(RESOLVED_STATUSES),
+        )
+    ).scalar_one()
+    if active_count >= int(settings['maxActiveRequestsPerUser']):
+        raise ValueError('You have reached the active game request limit.')
+
+    if not game_request:
+        cover_image = game.images.filter_by(image_type='cover').first() if hasattr(game.images, 'filter_by') else None
+        raw_cover = cover_image.url if cover_image else game.cover
+        cover_url = None
+        if raw_cover:
+            if raw_cover.startswith(('http://', 'https://', '//')):
+                cover_url = raw_cover if not raw_cover.startswith('//') else f'https:{raw_cover}'
+            elif raw_cover.startswith('/'):
+                cover_url = raw_cover
+            else:
+                cover_url = f'/static/library/images/{raw_cover}'
+
+        game_request = GameRequest(
+            request_type='update',
+            source_game_uuid=game.uuid,
+            igdb_id=game.igdb_id,
+            parent_igdb_id=game.igdb_id,
+            parent_game_name=game.name,
+            game_name=game.name,
+            edition_name=f"Update for {game.version}" if game.version else "Game Update",
+            cover_url=cover_url,
+            summary=game.summary,
+            status='pending',
+        )
+        db.session.add(game_request)
+        db.session.flush()
+
+    clean_note = ((note or '').strip()[:1000] or None) if settings['allowRequestNotes'] else None
+    if link:
+        link.withdrawn_at = None
+        link.satisfied_at = None
+        link.satisfied_by_game_uuid = None
+        link.requester_note = clean_note
+        link.accept_any_edition = False
+    else:
+        link = GameRequestUser(
+            request_id=game_request.id,
+            user_id=user.id,
+            requester_note=clean_note,
+            accept_any_edition=False,
         )
         db.session.add(link)
     if game_request.status == 'cancelled':

@@ -224,3 +224,50 @@
     .admin-request-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .7rem; }
     .admin-request-tile-meta { display: grid; }
 }
+
+.type-filters { margin-bottom: 0.5rem; }
+
+.admin-request-tile-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.35rem;
+    margin-bottom: 0.25rem;
+    min-width: 0;
+}
+
+.admin-request-tile-header .edition-label {
+    min-width: 0;
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    margin: 0;
+}
+
+.request-type-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 0.18rem 0.45rem;
+    border-radius: 6px;
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.request-type-badge.type-update {
+    background: rgba(3, 178, 248, 0.18);
+    color: #03b2f8;
+    border: 1px solid rgba(3, 178, 248, 0.3);
+}
+
+.request-type-badge.type-new-game {
+    background: rgba(150, 104, 255, 0.18);
+    color: #bda7ff;
+    border: 1px solid rgba(150, 104, 255, 0.3);
+}
+

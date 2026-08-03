@@ -358,6 +358,27 @@ class DatabaseManager:
         ALTER TABLE game_request_users ADD COLUMN IF NOT EXISTS satisfied_at TIMESTAMP;
         ALTER TABLE game_request_users ADD COLUMN IF NOT EXISTS satisfied_by_game_uuid VARCHAR(36) REFERENCES games(uuid) ON DELETE SET NULL;
 
+        -- Update request feature: add request_type and source_game_uuid columns
+        ALTER TABLE game_requests ADD COLUMN IF NOT EXISTS request_type VARCHAR(16) NOT NULL DEFAULT 'new_game';
+        ALTER TABLE game_requests ADD COLUMN IF NOT EXISTS source_game_uuid VARCHAR(36) REFERENCES games(uuid) ON DELETE SET NULL;
+        CREATE INDEX IF NOT EXISTS idx_game_requests_type ON game_requests(request_type);
+        CREATE INDEX IF NOT EXISTS idx_game_requests_source ON game_requests(source_game_uuid);
+
+        -- Make igdb_id nullable and drop the unique constraint for update requests
+        ALTER TABLE game_requests ALTER COLUMN igdb_id DROP NOT NULL;
+        ALTER TABLE game_requests ALTER COLUMN parent_igdb_id DROP NOT NULL;
+        ALTER TABLE game_requests ALTER COLUMN parent_game_name DROP NOT NULL;
+        DO $$
+        BEGIN
+            IF EXISTS (
+                SELECT 1 FROM pg_constraint
+                WHERE conname = 'game_requests_igdb_id_key'
+                  AND conrelid = 'game_requests'::regclass
+            ) THEN
+                ALTER TABLE game_requests DROP CONSTRAINT game_requests_igdb_id_key;
+            END IF;
+        END $$;
+
         -- Add HowLongToBeat settings to global_settings table
         ALTER TABLE global_settings
         ADD COLUMN IF NOT EXISTS enable_hltb_integration BOOLEAN DEFAULT TRUE;

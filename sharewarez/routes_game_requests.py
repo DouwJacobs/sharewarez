@@ -9,7 +9,9 @@ from sharewarez.utils.auth import admin_required
 from sharewarez.utils.event_logging import log_system_event
 from sharewarez.utils.game_requests import (
     REQUEST_STATUSES,
+    RESOLVED_STATUSES,
     create_or_join_request,
+    create_update_request,
     enrich_request_search,
     fetch_related_editions,
     get_request_settings,
@@ -88,6 +90,36 @@ def submit_request():
         return jsonify({'error': str(error)}), 400
 
 
+@game_requests_bp.route('/game_details/<game_uuid>/request-update', methods=['POST'])
+@login_required
+def submit_update_request(game_uuid):
+    _require_enabled()
+    game = db.session.execute(select(Game).filter_by(uuid=game_uuid)).scalars().first() or abort(404)
+    data = request.get_json(silent=True) or request.form
+    existing = db.session.execute(
+        select(GameRequest).where(
+            GameRequest.source_game_uuid == game.uuid,
+            GameRequest.request_type == 'update',
+            ~GameRequest.status.in_(RESOLVED_STATUSES)
+        )
+    ).scalars().first()
+    try:
+        game_request, _ = create_update_request(
+            current_user,
+            game,
+            data.get('note'),
+        )
+        log_system_event(
+            f'{current_user.name} requested update for {game.name}',
+            event_type='game_request', event_level='information'
+        )
+        notify_new_request(game_request, joined_existing=existing is not None)
+        return jsonify({'message': 'Your update request was submitted.', 'request_id': game_request.id}), 201
+    except ValueError as error:
+        db.session.rollback()
+        return jsonify({'error': str(error)}), 400
+
+
 @game_requests_bp.route('/requests/<int:request_id>/withdraw', methods=['POST'])
 @login_required
 def withdraw(request_id):
@@ -106,11 +138,20 @@ def withdraw(request_id):
 @admin_required
 def admin_requests():
     page = max(request.args.get('page', 1, type=int), 1)
-    status = (request.args.get('status') or '').strip()
+    status_param = request.args.get('status')
+    if status_param is None:
+        status = 'pending'
+    elif status_param == 'all':
+        status = ''
+    else:
+        status = status_param.strip()
+    req_type = (request.args.get('type') or '').strip()
     search_term = (request.args.get('q') or '').strip()[:100]
     query = select(GameRequest).options(selectinload(GameRequest.requesters))
     if status in REQUEST_STATUSES:
         query = query.where(GameRequest.status == status)
+    if req_type in {'new_game', 'update'}:
+        query = query.where(GameRequest.request_type == req_type)
     if search_term:
         pattern = f'%{search_term}%'
         query = query.where(
@@ -119,10 +160,11 @@ def admin_requests():
     query = query.order_by(GameRequest.created_at.desc())
     pagination = db.paginate(query, page=page, per_page=24, error_out=False)
     counts = dict(db.session.execute(select(GameRequest.status, func.count(GameRequest.id)).group_by(GameRequest.status)).all())
+    type_counts = dict(db.session.execute(select(GameRequest.request_type, func.count(GameRequest.id)).group_by(GameRequest.request_type)).all())
     return render_template(
         'admin/admin_game_requests.html', pagination=pagination,
-        statuses=REQUEST_STATUSES, selected_status=status, search_term=search_term,
-        status_counts=counts,
+        statuses=REQUEST_STATUSES, selected_status=status, selected_type=req_type, search_term=search_term,
+        status_counts=counts, type_counts=type_counts,
     )
 
 
@@ -136,24 +178,28 @@ def admin_request_details(request_id):
             selectinload(GameRequest.requesters).selectinload(GameRequestUser.user),
             selectinload(GameRequest.requesters).selectinload(GameRequestUser.satisfied_by_game),
             selectinload(GameRequest.fulfilled_game),
+            selectinload(GameRequest.source_game),
         )
         .where(GameRequest.id == request_id)
     ).scalars().first() or abort(404)
-    alternatives = db.session.execute(
-        select(GameRequest)
-        .options(selectinload(GameRequest.requesters))
-        .where(
-            GameRequest.parent_igdb_id == game_request.parent_igdb_id,
-            GameRequest.id != game_request.id,
-        )
-        .order_by(GameRequest.game_name)
-    ).scalars().all()
+    alternatives = []
+    if game_request.parent_igdb_id:
+        alternatives = db.session.execute(
+            select(GameRequest)
+            .options(selectinload(GameRequest.requesters))
+            .where(
+                GameRequest.parent_igdb_id == game_request.parent_igdb_id,
+                GameRequest.id != game_request.id,
+            )
+            .order_by(GameRequest.game_name)
+        ).scalars().all()
     return render_template(
         'admin/admin_game_request_details.html',
         game_request=game_request,
         alternatives=alternatives,
         statuses=REQUEST_STATUSES,
         return_status=request.args.get('status', ''),
+        return_type=request.args.get('type', ''),
         return_search=request.args.get('q', ''),
         return_page=max(request.args.get('page', 1, type=int), 1),
     )

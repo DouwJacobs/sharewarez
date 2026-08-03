@@ -538,7 +538,8 @@ body.modal-open {
 .chip-size,
 .button-glass-download,
 .button-glass-play,
-.button-glass-extras {
+.button-glass-extras,
+.button-glass-request-update {
     box-sizing: border-box;
     min-height: 36px;
     height: 36px;
@@ -660,6 +661,115 @@ body.modal-open {
 
 .button-glass-extras:active {
     transform: translateY(0);
+}
+
+.button-glass-request-update {
+    padding: 8px 14px;
+    background: rgba(3, 178, 248, 0.12);
+    border: 1px solid rgba(3, 178, 248, 0.35);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 0.82rem;
+    color: #03b2f8;
+    font-weight: 600;
+    user-select: none;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.button-glass-request-update:hover:not(:disabled) {
+    background: rgba(3, 178, 248, 0.25);
+    border-color: rgba(3, 178, 248, 0.6);
+    color: #ffffff;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(3, 178, 248, 0.3);
+}
+
+.button-glass-request-update.requested,
+.button-glass-request-update:disabled {
+    background: rgba(45, 190, 110, 0.15);
+    border-color: rgba(45, 190, 110, 0.35);
+    color: #70e3a4;
+    cursor: default;
+    transform: none;
+    opacity: 0.85;
+}
+
+/* Modal for Request Update */
+.modal-request-update {
+    display: none;
+    position: fixed;
+    z-index: 99999;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-request-update-content {
+    background: linear-gradient(145deg, rgba(20, 22, 34, 0.98), rgba(12, 14, 24, 0.98));
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 16px;
+    width: min(520px, 90vw);
+    padding: 24px 28px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+    position: relative;
+    color: #ffffff;
+}
+
+.modal-request-update-content h3 {
+    margin-top: 0;
+    margin-bottom: 8px;
+    font-size: 1.3rem;
+    color: #ffffff;
+}
+
+.request-update-intro {
+    font-size: 0.88rem;
+    color: rgba(200, 210, 230, 0.8);
+    margin-bottom: 18px;
+}
+
+.modal-request-update-content label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 0.85rem;
+    color: rgba(220, 230, 250, 0.9);
+}
+
+.modal-request-update-content textarea {
+    width: 100%;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 10px;
+    color: #ffffff;
+    padding: 10px 12px;
+    box-sizing: border-box;
+    font-family: inherit;
+    resize: vertical;
+}
+
+.modal-request-update-content textarea:focus {
+    border-color: #03b2f8;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(3, 178, 248, 0.2);
+}
+
+.modal-request-update-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 18px;
 }
 
 /* ── NFO Button ──────────────────────────────────────────── */

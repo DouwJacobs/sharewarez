@@ -122,6 +122,25 @@
 
 
 {# Modals #}
+{% if enable_game_requests and not has_pending_update_request %}
+<div id="requestUpdateModal" class="modal-request-update" style="display: none;">
+    <div class="modal-request-update-content">
+        <span class="close cursor" onclick="toggleRequestUpdateModal()">&times;</span>
+        <h3>Request Update for {{ game.name }}</h3>
+        <p class="request-update-intro">Request a game update, patch, or new content release from administrators.</p>
+        <form id="requestUpdateForm" data-game-uuid="{{ game.uuid }}">
+            <div class="form-group">
+                <label for="updateNote">Note for Administrator <small>(Optional)</small></label>
+                <textarea id="updateNote" name="note" class="form-control" rows="3" maxlength="1000" placeholder="Specify version, patch notes, DLC, or details..."></textarea>
+            </div>
+            <div class="modal-request-update-actions">
+                <button type="button" class="btn btn-secondary" onclick="toggleRequestUpdateModal()">Cancel</button>
+                <button type="submit" class="btn btn-primary" id="submitUpdateReqBtn"><i class="fas fa-paper-plane"></i> Submit Request</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
 <div id="summaryModal" class="summary-modal">
     <div class="summary-modal-content">
         <span class="summary-close">&times;</span>

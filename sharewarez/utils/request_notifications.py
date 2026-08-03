@@ -39,16 +39,20 @@ def _send_discord(record, title, description, admin_link=True):
 
 def notify_new_request(record, joined_existing=False):
     preferences = get_request_settings()
+    is_update = (getattr(record, 'request_type', 'new_game') == 'update')
+    req_label = 'Game update request' if is_update else 'Game request'
     try:
         if preferences['notifyDiscordNewRequests']:
             action = 'joined' if joined_existing else 'created'
-            _send_discord(record, f'Game request {action}: {record.game_name}', 'A user submitted interest in this edition.')
+            desc = 'A user requested an update for this game.' if is_update else 'A user submitted interest in this edition.'
+            _send_discord(record, f'{req_label} {action}: {record.game_name}', desc)
         if preferences['notifyAdminRequestEmail']:
+            action_text = f'requested an update for' if is_update else 'requested'
             for admin in db.session.execute(select(User).where(User.role == 'admin', User.state.is_(True))).scalars():
                 send_email(
                     admin.email,
-                    f'Game request: {record.game_name}',
-                    f'<p>A user requested <strong>{escape(record.game_name)}</strong>.</p><p><a href="{_request_url(record, admin=True)}">Review request</a></p>',
+                    f'{req_label}: {record.game_name}',
+                    f'<p>A user {action_text} <strong>{escape(record.game_name)}</strong>.</p><p><a href="{_request_url(record, admin=True)}">Review request</a></p>',
                     show_feedback=False,
                 )
     except Exception as error:
