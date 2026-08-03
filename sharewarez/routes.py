@@ -718,18 +718,22 @@ def refresh_game_metadata_updates(game_uuid):
         return jsonify({'status': 'error', 'message': 'The game path is not currently available.'}), 409
 
     game_name = game.name
+    try:
+        refreshed_name = refresh_game_metadata_and_updates(game_uuid)
+        current_app.logger.info(
+            "Metadata and updates refreshed for %s (%s)", refreshed_name, game_uuid
+        )
+    except Exception as exc:
+        current_app.logger.exception(
+            "Metadata and updates refresh failed for %s (%s)", game_name, game_uuid
+        )
+        message = f"Could not refresh metadata and updates: {exc}"
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({'status': 'error', 'message': message}), 502
+        flash(message, 'error')
+        return redirect(request.referrer or url_for('library.library'))
 
-    @copy_current_request_context
-    def refresh_in_thread():
-        try:
-            refresh_game_metadata_and_updates(game_uuid)
-            current_app.logger.info("Metadata and updates refreshed for %s (%s)", game_name, game_uuid)
-        except Exception:
-            current_app.logger.exception("Metadata and updates refresh failed for %s (%s)", game_name, game_uuid)
-
-    Thread(target=refresh_in_thread, daemon=True).start()
-
-    message = f"Metadata and updates refresh started for {game_name}."
+    message = f"Metadata and updates refreshed for {refreshed_name}."
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         return jsonify({'status': 'info', 'message': message})
     flash(message, 'info')

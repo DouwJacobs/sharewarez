@@ -1,5 +1,6 @@
 #/sharewarez/utilities.py
 import os
+import re
 from datetime import datetime, timezone
 from threading import Thread
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -11,10 +12,14 @@ from sharewarez.utils.functions import (
     read_first_nfo_content,
 )
 from sharewarez.models import (
-    Game, Library, AllowedFileType, ScanJob, GlobalSettings, UnmatchedFolder
+    Game, Library, AllowedFileType, ScanJob, GlobalSettings, UnmatchedFolder,
+    Genre, Theme, GameMode, Platform, PlayerPerspective,
 )
 from sharewarez import db
-from sharewarez.utils.game_core import remove_from_lib
+from sharewarez.utils.game_core import (
+    remove_from_lib, fetch_game_by_igdb_id, enumerate_companies,
+    get_or_create_entity, category_mapping, status_mapping,
+)
 from sharewarez.utils.gamenames import get_game_names_from_folder, get_game_names_from_files
 from sharewarez.utils.scanning import process_game_with_fallback, process_game_updates, process_game_extras, is_scan_job_running
 from sharewarez.utils.igdb_api import IGDBRateLimiter
@@ -47,7 +52,7 @@ def _scan_enabled_supplemental_content(game_name, full_disk_path, library_uuid,
 
 
 def refresh_game_metadata_and_updates(game_uuid):
-    """Refresh filesystem metadata and enabled supplemental content for one game."""
+    """Refresh IGDB, HLTB, filesystem, and supplemental metadata for one game."""
     game = db.session.execute(select(Game).filter_by(uuid=game_uuid)).scalar_one_or_none()
     if not game:
         raise ValueError('Game not found')
@@ -64,6 +69,66 @@ def refresh_game_metadata_and_updates(game_uuid):
     enable_game_updates = bool(settings and settings.enable_game_updates)
     enable_game_extras = bool(settings and settings.enable_game_extras)
 
+    if not game.igdb_id or game.igdb_id >= 2000000420:
+        raise ValueError('This game does not have a refreshable IGDB ID')
+
+    response = fetch_game_by_igdb_id(game.igdb_id)
+    if not response:
+        raise RuntimeError('IGDB returned no metadata for this game')
+    metadata = response[0]
+
+    scalar_fields = (
+        'name', 'summary', 'storyline', 'url', 'slug',
+        'aggregated_rating', 'aggregated_rating_count',
+        'rating', 'rating_count', 'total_rating', 'total_rating_count',
+    )
+    for field in scalar_fields:
+        if field in metadata:
+            setattr(game, field, metadata.get(field))
+
+    if metadata.get('first_release_date'):
+        game.first_release_date = datetime.fromtimestamp(
+            metadata['first_release_date'], timezone.utc
+        )
+    if metadata.get('category') in category_mapping:
+        game.category = category_mapping[metadata['category']]
+    if metadata.get('status') in status_mapping:
+        game.status = status_mapping[metadata['status']]
+
+    relationship_fields = (
+        ('genres', Genre),
+        ('themes', Theme),
+        ('game_modes', GameMode),
+        ('platforms', Platform),
+        ('player_perspectives', PlayerPerspective),
+    )
+    for field, model in relationship_fields:
+        if field in metadata:
+            values = [
+                get_or_create_entity(model, name=item['name'])
+                for item in metadata.get(field, [])
+                if isinstance(item, dict) and item.get('name')
+            ]
+            setattr(game, field, values)
+
+    if 'videos' in metadata:
+        game.video_urls = ','.join(
+            f"https://www.youtube.com/embed/{video['video_id']}"
+            for video in metadata.get('videos', [])
+            if video.get('video_id')
+        )
+
+    involved_companies = metadata.get('involved_companies') or []
+    if involved_companies:
+        # Older edit forms could accidentally save SQLAlchemy's display value
+        # (for example ``<Developer 6>``) as the company name. Clear only
+        # those known placeholders before resolving the real IGDB company.
+        if game.developer and re.fullmatch(r'<Developer \d+>', game.developer.name or ''):
+            game.developer = None
+        if game.publisher and re.fullmatch(r'<Publisher \d+>', game.publisher.name or ''):
+            game.publisher = None
+        enumerate_companies(game, game.igdb_id, involved_companies)
+
     game.nfo_content = read_first_nfo_content(game.full_disk_path) if os.path.isdir(game.full_disk_path) else None
     game.size = get_folder_size_in_bytes_updates(game.full_disk_path)
     game.last_updated = datetime.now(timezone.utc)
@@ -74,6 +139,11 @@ def refresh_game_metadata_and_updates(game_uuid):
         enable_game_updates, update_folder_name,
         enable_game_extras, extras_folder_name
     )
+
+    if settings and settings.enable_hltb_integration:
+        from sharewarez.utils.hltb import update_game_hltb_sync
+        update_game_hltb_sync(game.uuid, game.name)
+
     return game.name
 
 

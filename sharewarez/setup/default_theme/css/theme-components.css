@@ -233,6 +233,99 @@
     background: transparent !important;
 }
 
+/* Game details and its detached Updates & Extras dialog must use the same
+   root-level palette tokens as cards elsewhere in the application. */
+.glass-panel-gamecard,
+.modal-extras-content {
+    background: linear-gradient(145deg, var(--theme-card-top, rgba(18, 18, 28, .96)), var(--theme-card-bottom, rgba(12, 12, 20, .98))) !important;
+    border-color: rgba(var(--theme-accent-soft-rgb, 154, 177, 255), .18) !important;
+    box-shadow: 0 0 0 1px rgba(var(--theme-accent-soft-rgb, 154, 177, 255), .04), 0 20px 60px rgba(0, 0, 0, .52), 0 0 70px rgba(var(--theme-accent-rgb, 98, 122, 239), .09) !important;
+}
+
+.glass-panel-gamecard::before {
+    background: linear-gradient(90deg, transparent, rgba(var(--theme-accent-soft-rgb, 154, 177, 255), .68), rgba(var(--theme-accent-rgb, 98, 122, 239), .62), transparent) !important;
+}
+
+.game-card-gamename,
+.extras-tabs {
+    border-color: rgba(var(--theme-accent-soft-rgb, 154, 177, 255), .14) !important;
+}
+
+.game-card-gamename h1,
+.modal-extras-header h3,
+.extras-single-title {
+    color: var(--text-white, #fff) !important;
+    text-shadow: 0 0 28px rgba(var(--theme-accent-rgb, 98, 122, 239), .28) !important;
+}
+
+.game-details-back,
+.chip,
+.chip-size,
+.rating-row,
+.button-glass-extras,
+.update-notes {
+    background: rgba(var(--theme-accent-rgb, 98, 122, 239), .1) !important;
+    border-color: rgba(var(--theme-accent-soft-rgb, 154, 177, 255), .2) !important;
+}
+
+.game-details-back:hover,
+.chip-detailspage:hover,
+.button-glass-extras:hover {
+    background: rgba(var(--theme-accent-rgb, 98, 122, 239), .2) !important;
+    border-color: rgba(var(--theme-accent-soft-rgb, 154, 177, 255), .42) !important;
+}
+
+.game-card-meta,
+.game-card-downloads,
+.game-card-text-summary,
+.modal-extras-header,
+.modal-extras-body {
+    background: var(--theme-panel-bg, linear-gradient(145deg, var(--theme-card-top, rgba(28, 28, 45, .94)), var(--theme-card-bottom, rgba(20, 20, 35, .97)))) !important;
+    border-color: rgba(var(--theme-accent-soft-rgb, 154, 177, 255), .16) !important;
+}
+
+.modal-extras-header {
+    border-bottom-color: rgba(var(--theme-accent-soft-rgb, 154, 177, 255), .18) !important;
+}
+
+.game-card-labels,
+.game-card-labels-rating,
+.game-card-meta > .fas,
+.game-version-label,
+.extras-table i.fas,
+.modal-extras .close {
+    color: rgba(var(--theme-accent-soft-rgb, 154, 177, 255), .86) !important;
+}
+
+.chip-detailspage,
+.extras-table a,
+.update-notes summary,
+.extras-tab-button.active {
+    color: rgb(var(--theme-accent-soft-rgb, 154, 177, 255)) !important;
+}
+
+.chip-detailspage,
+.extras-tab-button.active {
+    background: rgba(var(--theme-accent-rgb, 98, 122, 239), .12) !important;
+    border-color: rgba(var(--theme-accent-soft-rgb, 154, 177, 255), .28) !important;
+}
+
+.extras-tab-button.active {
+    border-bottom-color: rgb(var(--theme-accent-soft-rgb, 154, 177, 255)) !important;
+}
+
+.extras-table.table tbody,
+.extras-table.table tr,
+.extras-table.table th,
+.extras-table.table td {
+    border-color: rgba(var(--theme-accent-soft-rgb, 154, 177, 255), .1) !important;
+}
+
+.extras-table.table-hover tbody tr:hover,
+.extras-table td:hover {
+    background-color: rgba(var(--theme-accent-rgb, 98, 122, 239), .08) !important;
+}
+
 /* Nested cards use a lighter accent surface instead of repeating the parent box. */
 :is(.admin-surface, .admin-panel, .glass-panel, .discovery-panel, .library-browser-panel)
     :is(.card, .theme-card, .theme-operation-card, .stat-card, .info-block, .section-item, .game-card, .favorites-empty-state, .library-name),
@@ -393,6 +486,12 @@ input[type="radio"] {
         background: transparent !important;
         border: 0 !important;
         border-radius: 0 !important;
+        box-shadow: none !important;
+    }
+
+    .glass-panel-gamecard {
+        background: transparent !important;
+        border: 0 !important;
         box-shadow: none !important;
     }
 

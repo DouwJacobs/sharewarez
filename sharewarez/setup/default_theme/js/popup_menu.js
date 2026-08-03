@@ -28,6 +28,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (!response.ok) throw new Error(data.message || 'Refresh request failed');
                 $.notify(data.message, 'success');
                 if (popupMenu) popupMenu.style.display = 'none';
+                setTimeout(() => window.location.reload(), 700);
             })
             .catch(error => {
                 console.error('Metadata and updates refresh failed:', error);
