@@ -43,7 +43,26 @@ body {
     width: 100px;
 }
 
+.admin-count-badge {
+    position: absolute;
+    top: -0.35rem;
+    right: -0.35rem;
+    min-width: 1.45rem;
+    height: 1.45rem;
+    padding: 0 0.35rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    background: var(--theme-danger, #ef5a67);
+    color: #fff;
+    font-size: 0.72rem;
+    font-weight: 800;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.28);
+}
+
 .btn-circle {
+    position: relative;
     width: 60px;
     height: 60px;
     padding: 0;

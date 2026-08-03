@@ -24,12 +24,21 @@
                     </a>
                     <span class="button-label">Scan Manager</span>
                 </div>
-                                <div class="admin-button-item" data-toggle="tooltip" title="Manage discovery sections">
+                <div class="admin-button-item" data-toggle="tooltip" title="Manage discovery sections">
                     <a href="{{ url_for('admin2.discovery_sections') }}" class="btn btn-circle">
                         <i class="fas fa-compass"></i>
                     </a>
                     <span class="button-label">Discovery</span>
                 </div>
+                {% if enable_game_requests %}
+                <div class="admin-button-item" data-toggle="tooltip" title="Review user game requests">
+                    <a href="{{ url_for('game_requests.admin_requests') }}" class="btn btn-circle">
+                        <i class="fas fa-paper-plane"></i>
+                        {% if pending_request_count %}<span class="admin-count-badge">{{ pending_request_count }}</span>{% endif %}
+                    </a>
+                    <span class="button-label">Requests</span>
+                </div>
+                {% endif %}
             </div>
         </div>
 

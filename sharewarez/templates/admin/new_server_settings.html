@@ -238,6 +238,27 @@
                         </div>
                     </div>
                 </div>
+                <div class="settings-section mt-3">
+                    <h5 class="section-header"><i class="fas fa-paper-plane"></i> Game Requests</h5>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-check mb-2"><input class="form-check-input" type="checkbox" id="enableGameRequests"><label class="form-check-label" for="enableGameRequests">Enable game requests</label></div>
+                            <div class="form-check mb-2"><input class="form-check-input" type="checkbox" id="allowRequestNotes"><label class="form-check-label" for="allowRequestNotes">Allow requester notes</label></div>
+                            <div class="form-check mb-2"><input class="form-check-input" type="checkbox" id="allowRequestAnyEdition"><label class="form-check-label" for="allowRequestAnyEdition">Allow “any edition” requests</label></div>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="maxActiveRequestsPerUser" class="form-label">Maximum active requests per user</label>
+                            <input type="number" class="form-control form-control-sm" id="maxActiveRequestsPerUser" min="1" max="100" value="20">
+                            <div class="form-check mt-2"><input class="form-check-input" type="checkbox" id="notifyRequesterRequestEmail"><label class="form-check-label" for="notifyRequesterRequestEmail">Email users on status changes</label></div>
+                            <div class="form-check mt-2"><input class="form-check-input" type="checkbox" id="notifyAdminRequestEmail"><label class="form-check-label" for="notifyAdminRequestEmail">Email admins about new requests</label></div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-check mb-2"><input class="form-check-input" type="checkbox" id="notifyDiscordNewRequests"><label class="form-check-label" for="notifyDiscordNewRequests">Discord channel: new requests</label></div>
+                            <div class="form-check mb-2"><input class="form-check-input" type="checkbox" id="notifyDiscordRequestUpdates"><label class="form-check-label" for="notifyDiscordRequestUpdates">Discord channel: status changes</label></div>
+                            <small class="form-text text-info">Discord uses the configured webhook channel; direct user messages require a bot integration.</small>
+                        </div>
+                    </div>
+                </div>
             </form>
         </div>
     </div>

@@ -140,6 +140,7 @@ def create_app():
     from sharewarez.routes_info import info_bp
     from sharewarez.routes_admin_ext import admin2_bp
     from sharewarez.routes_apis import apis_bp
+    from sharewarez.routes_game_requests import game_requests_bp
 
     # Register all blueprints
     app.register_blueprint(routes.bp)
@@ -155,6 +156,7 @@ def create_app():
     app.register_blueprint(smtp_bp)
     app.register_blueprint(info_bp)
     app.register_blueprint(apis_bp)
+    app.register_blueprint(game_requests_bp)
 
     with app.app_context():
         # Database initialization is handled by the InitializationManager before workers start

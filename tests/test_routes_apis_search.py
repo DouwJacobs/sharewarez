@@ -3,7 +3,7 @@ from uuid import uuid4
 import pytest
 
 from sharewarez import db
-from sharewarez.models import Game, Library, User
+from sharewarez.models import Game, GameRequest, Library, User
 from sharewarez.platform import LibraryPlatform
 
 
@@ -46,3 +46,24 @@ def test_search_returns_game_and_library_results(client, search_records):
     library_results = client.get('/api/global-search?q=Arcade').get_json()['results']
     assert any(result['title'] == game.name and result['type'] == 'Game' for result in game_results)
     assert any(result['title'] == library.name and result['type'] == 'Library' for result in library_results)
+
+
+def test_admin_search_returns_request_results(client, search_records, db_session):
+    user, _, _ = search_records
+    suffix = str(uuid4())[:8]
+    game_request = GameRequest(
+        igdb_id=1_700_000_000 + (uuid4().int % 300_000_000),
+        parent_igdb_id=1_400_000_000 + (uuid4().int % 300_000_000),
+        parent_game_name=f'Requested Adventure {suffix}',
+        game_name=f'Requested Adventure Gold {suffix}',
+        edition_name='Gold Edition',
+    )
+    db_session.add(game_request)
+    db_session.commit()
+
+    results = client.get('/api/global-search?q=Requested Adventure').get_json()['results']
+    assert any(
+        result['type'] == 'Request' and result['title'] == game_request.game_name
+        and result['url'] == f'/admin/game-requests/{game_request.id}'
+        for result in results
+    )

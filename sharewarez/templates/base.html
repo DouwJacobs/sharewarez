@@ -219,6 +219,9 @@
                 <a href="{{ url_for('discover.discover') }}" class="sidebar-link{% if request.path.startswith('/discover') %} active{% endif %}" title="Discover"{% if request.path.startswith('/discover') %} aria-current="page"{% endif %}><i class="fas fa-compass"></i><span class="link-text">Discover</span></a>
             {% endif %}
             <a href="{{ url_for('library.library') }}" class="sidebar-link{% if request.path.startswith('/library') %} active{% endif %}" title="Library"{% if request.path.startswith('/library') %} aria-current="page"{% endif %}><i class="fas fa-gamepad"></i><span class="link-text">Library</span></a>
+            {% if enable_game_requests %}
+                <a href="{{ url_for('game_requests.requests_page') }}" class="sidebar-link{% if request.path.startswith('/requests') %} active{% endif %}" title="Requests"{% if request.path.startswith('/requests') %} aria-current="page"{% endif %}><i class="fas fa-paper-plane"></i><span class="link-text">Requests</span></a>
+            {% endif %}
             <a href="{{ url_for('download.downloads') }}" class="sidebar-link{% if request.path.startswith('/downloads') %} active{% endif %}" title="Downloads"{% if request.path.startswith('/downloads') %} aria-current="page"{% endif %}><i class="fas fa-download"></i><span class="link-text">Downloads</span></a>
             {% if show_favorites %}
                 <a href="{{ url_for('site.favorites') }}" class="sidebar-link{% if request.path.startswith('/favorites') %} active{% endif %}" title="Favorites"{% if request.path.startswith('/favorites') %} aria-current="page"{% endif %}><i class="fas fa-heart"></i><span class="link-text">Favorites</span></a>
@@ -269,7 +272,7 @@
         <h2 id="globalSearchTitle" class="visually-hidden">Search {{ site_title }}</h2>
         <div class="global-search-input-wrap">
             <i class="fas fa-magnifying-glass" aria-hidden="true"></i>
-            <input id="globalSearchInput" type="search" autocomplete="off" placeholder="Search games, libraries{% if current_user.role == 'admin' %}, users, and settings{% endif %}…" aria-controls="globalSearchResults">
+            <input id="globalSearchInput" type="search" autocomplete="off" placeholder="Search games, libraries{% if current_user.role == 'admin' %}, requests, users, and settings{% endif %}…" aria-controls="globalSearchResults">
             <kbd>Esc</kbd>
         </div>
         <div id="globalSearchResults" class="global-search-results" role="listbox"><p class="global-search-hint">Type at least two characters to search.</p></div>
@@ -280,7 +283,7 @@
     {% if current_user.is_authenticated and not is_setup_mode %}
     <div class="content-global-search">
         <i class="fas fa-magnifying-glass" aria-hidden="true"></i>
-        <input type="search" data-global-search-inline autocomplete="off" placeholder="Search games, libraries{% if current_user.role == 'admin' %}, users, and settings{% endif %}…" aria-label="Search {{ site_title }}">
+        <input type="search" data-global-search-inline autocomplete="off" placeholder="Search games, libraries{% if current_user.role == 'admin' %}, requests, users, and settings{% endif %}…" aria-label="Search {{ site_title }}">
         <kbd>Ctrl K</kbd>
     </div>
     {% endif %}

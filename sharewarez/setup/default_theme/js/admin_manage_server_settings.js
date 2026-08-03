@@ -53,7 +53,15 @@ document.addEventListener('DOMContentLoaded', function() {
             useLocalMetadata: document.getElementById('useLocalMetadata').checked,
             writeLocalMetadata: document.getElementById('writeLocalMetadata').checked,
             useLocalImages: document.getElementById('useLocalImages').checked,
-            localMetadataFilename: document.getElementById('localMetadataFilename').value
+            localMetadataFilename: document.getElementById('localMetadataFilename').value,
+            enableGameRequests: document.getElementById('enableGameRequests').checked,
+            allowRequestNotes: document.getElementById('allowRequestNotes').checked,
+            allowRequestAnyEdition: document.getElementById('allowRequestAnyEdition').checked,
+            maxActiveRequestsPerUser: parseInt(document.getElementById('maxActiveRequestsPerUser').value),
+            notifyRequesterRequestEmail: document.getElementById('notifyRequesterRequestEmail').checked,
+            notifyAdminRequestEmail: document.getElementById('notifyAdminRequestEmail').checked,
+            notifyDiscordNewRequests: document.getElementById('notifyDiscordNewRequests').checked,
+            notifyDiscordRequestUpdates: document.getElementById('notifyDiscordRequestUpdates').checked
         };
         console.log("Settings to be saved:", settings);
 

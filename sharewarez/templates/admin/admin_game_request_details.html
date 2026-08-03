@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block content %}
+<link rel="stylesheet" href="{{ 'css/requests.css'|theme_asset }}">
+<main class="requests-page admin-request-details-page">
+    <nav class="request-detail-toolbar" aria-label="Request navigation">
+        <a class="btn btn-secondary request-back-link" href="{{ url_for('game_requests.admin_requests', status=return_status, q=return_search, page=return_page) }}"><i class="fas fa-arrow-left"></i><span>All requests</span></a>
+        <span class="request-detail-toolbar-label"><i class="fas fa-paper-plane"></i> Game request</span>
+    </nav>
+
+    <header class="request-detail-hero request-panel">
+        <div class="request-detail-cover">{% if game_request.cover_url %}<img src="{{ game_request.cover_url }}" alt="">{% else %}<span><i class="fas fa-gamepad"></i></span>{% endif %}</div>
+        <div class="request-detail-intro">
+            <div class="request-history-title"><div><p class="eyebrow">{{ game_request.edition_name or 'Base game' }}</p><h1>{{ game_request.game_name }}</h1></div><span class="request-chip status-{{ game_request.status }}">{{ game_request.status|replace('_', ' ')|title }}</span></div>
+            {% if game_request.summary %}<p>{{ game_request.summary }}</p>{% endif %}
+            <div class="request-detail-facts"><span><i class="fas fa-users"></i> {{ game_request.interested_requesters|length }} interested</span>{% if game_request.platforms %}<span><i class="fas fa-display"></i> {{ game_request.platforms|join(', ') }}</span>{% endif %}<span><i class="fas fa-database"></i> IGDB {{ game_request.igdb_id }}</span></div>
+        </div>
+    </header>
+
+    <div class="request-detail-layout">
+        <section class="request-panel">
+            <div class="request-section-heading"><div><p class="eyebrow">Workflow</p><h2>Update request</h2></div></div>
+            <form method="post" action="{{ url_for('game_requests.admin_update_request', request_id=game_request.id, status=return_status, q=return_search, page=return_page) }}" class="admin-request-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <label>Status<select class="form-select" name="status">{% for status in statuses %}<option value="{{ status }}"{% if game_request.status == status %} selected{% endif %}>{{ status|replace('_', ' ')|title }}</option>{% endfor %}</select></label>
+                <label class="library-game-picker">Fulfilled by
+                    <input type="search" class="form-control library-game-search" value="{{ game_request.fulfilled_game.name if game_request.fulfilled_game else '' }}" placeholder="Search your library…" autocomplete="off" aria-label="Search library games" aria-expanded="false">
+                    <input type="hidden" name="fulfilled_game_uuid" value="{{ game_request.fulfilled_game_uuid or '' }}">
+                    <span class="library-game-results" role="listbox"></span>
+                </label>
+                <label class="wide">Public response<textarea class="form-control" name="public_response" rows="4" placeholder="Shown to everyone following this request">{{ game_request.public_response or '' }}</textarea></label>
+                <label class="wide">Internal note<textarea class="form-control" name="internal_note" rows="4" placeholder="Visible to administrators only">{{ game_request.internal_note or '' }}</textarea></label>
+                <button class="btn btn-primary" type="submit"><i class="fas fa-check"></i> Save update</button>
+            </form>
+        </section>
+
+        <aside class="request-detail-sidebar">
+            <section class="request-panel">
+                <div class="request-section-heading"><div><p class="eyebrow">Community</p><h2>Requesters</h2></div></div>
+                <div class="requester-list">{% for link in game_request.requesters if link.withdrawn_at is none %}<article class="requester-card"><div class="requester-avatar"><i class="fas fa-user"></i></div><div><strong>{{ link.user.name }}</strong>{% if link.satisfied_at %}<p>Satisfied{% if link.satisfied_by_game %} by {{ link.satisfied_by_game.name }}{% endif %}</p>{% elif link.accept_any_edition %}<p>Any edition accepted</p>{% else %}<p>Exact edition requested</p>{% endif %}{% if link.requester_note %}<blockquote>{{ link.requester_note }}</blockquote>{% endif %}</div></article>{% else %}<p>No active requesters.</p>{% endfor %}</div>
+            </section>
+            {% if alternatives %}<section class="request-panel"><div class="request-section-heading"><div><p class="eyebrow">Related</p><h2>Other editions</h2></div></div><div class="request-alternatives">{% for item in alternatives %}<a href="{{ url_for('game_requests.admin_request_details', request_id=item.id, status=return_status, q=return_search, page=return_page) }}"><span><strong>{{ item.edition_name or item.game_name }}</strong><small>{{ item.interested_requesters|length }} interested</small></span><span class="request-chip status-{{ item.status }}">{{ item.status|replace('_', ' ')|title }}</span></a>{% endfor %}</div></section>{% endif %}
+        </aside>
+    </div>
+</main>
+<script src="{{ 'js/admin_game_requests.js'|theme_asset }}"></script>
+{% endblock %}

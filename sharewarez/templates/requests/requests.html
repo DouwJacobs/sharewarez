@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block content %}
+<link rel="stylesheet" href="{{ 'css/requests.css'|theme_asset }}">
+
+<main class="requests-page">
+    <header class="requests-hero">
+        <div><p class="eyebrow">Community wishlist</p><h1>Game Requests</h1><p>Search IGDB, choose the exact edition, and follow its progress.</p></div>
+    </header>
+
+    <section class="request-panel">
+        <h2>Find a game</h2>
+        <form id="requestSearchForm" class="request-search-wrap" role="search">
+            <i class="fas fa-magnifying-glass request-search-icon" aria-hidden="true"></i>
+            <input id="requestSearch" type="search" maxlength="100" placeholder="Search IGDB for a game or edition…" autocomplete="off" aria-label="Search IGDB games">
+        </form>
+        <p id="requestSearchStatus" class="request-status" aria-live="polite"></p>
+        <div id="requestSearchResults" class="request-results"></div>
+    </section>
+
+    <section class="request-panel">
+        <h2>My requests</h2>
+        {% if pagination.items %}
+        <div class="request-history">
+            {% for link in pagination.items %}{% set item = link.game_request %}
+            <article class="request-history-card">
+                {% if item.cover_url %}<img src="{{ item.cover_url }}" alt="">{% endif %}
+                <div class="request-history-content">
+                    <div class="request-history-title"><div class="request-history-title-copy"><h3>{{ item.game_name }}</h3>{% if item.edition_name %}<span class="request-edition-chip">{{ item.edition_name }}</span>{% endif %}</div><span class="request-chip status-{{ item.status }}">{{ item.status|replace('_', ' ')|title }}</span></div>
+                    {% if link.accept_any_edition %}<p><i class="fas fa-layer-group"></i> Any related edition is acceptable</p>{% endif %}
+                    {% if item.public_response %}<div class="admin-response"><strong>Admin response</strong><p>{{ item.public_response }}</p></div>{% endif %}
+                    {% if link.satisfied_by_game %}<a class="btn btn-primary" href="{{ url_for('games.game_details', game_uuid=link.satisfied_by_game.uuid) }}">View available edition</a>{% elif item.fulfilled_game %}<a class="btn btn-primary" href="{{ url_for('games.game_details', game_uuid=item.fulfilled_game.uuid) }}">View available game</a>{% endif %}
+                    {% if not link.satisfied_at and item.status not in ['fulfilled', 'not_planned', 'cancelled'] %}<form method="post" action="{{ url_for('game_requests.withdraw', request_id=item.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-danger" type="submit">Withdraw</button></form>{% endif %}
+                </div>
+            </article>
+            {% endfor %}
+        </div>
+        {% else %}<div class="empty-state"><i class="fas fa-paper-plane"></i><h3>No requests yet</h3><p>Search above to request your first game.</p></div>{% endif %}
+        {% if pagination.pages > 1 %}<nav class="request-pagination">{% for page in pagination.iter_pages() %}{% if page %}<a class="{% if page == pagination.page %}active{% endif %}" href="{{ url_for('game_requests.requests_page', page=page) }}">{{ page }}</a>{% else %}<span>…</span>{% endif %}{% endfor %}</nav>{% endif %}
+    </section>
+</main>
+<script id="requestSettings" type="application/json">{{ request_settings|tojson }}</script>
+<script src="{{ 'js/game_requests.js'|theme_asset }}"></script>
+{% endblock %}

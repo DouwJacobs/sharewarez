@@ -310,6 +310,54 @@ class DatabaseManager:
         ALTER TABLE game_updates ADD COLUMN IF NOT EXISTS metadata_managed BOOLEAN DEFAULT FALSE NOT NULL;
         CREATE INDEX IF NOT EXISTS idx_game_updates_game_path ON game_updates(game_uuid, file_path);
 
+        -- User-submitted, edition-aware game requests.
+        CREATE TABLE IF NOT EXISTS game_requests (
+            id SERIAL PRIMARY KEY,
+            igdb_id INTEGER UNIQUE NOT NULL,
+            parent_igdb_id INTEGER NOT NULL,
+            parent_game_name VARCHAR(255) NOT NULL,
+            game_name VARCHAR(255) NOT NULL,
+            edition_name VARCHAR(255),
+            cover_url VARCHAR(512),
+            summary TEXT,
+            platforms TEXT,
+            first_release_date TIMESTAMP,
+            status VARCHAR(32) NOT NULL DEFAULT 'pending',
+            public_response TEXT,
+            internal_note TEXT,
+            fulfilled_game_uuid VARCHAR(36) REFERENCES games(uuid) ON DELETE SET NULL,
+            handled_by_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+            created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            resolved_at TIMESTAMP
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_game_requests_parent ON game_requests(parent_igdb_id);
+        CREATE INDEX IF NOT EXISTS idx_game_requests_status ON game_requests(status);
+
+        ALTER TABLE game_requests ADD COLUMN IF NOT EXISTS parent_game_name VARCHAR(255);
+        UPDATE game_requests SET parent_game_name = game_name WHERE parent_game_name IS NULL;
+        ALTER TABLE game_requests ALTER COLUMN parent_game_name SET NOT NULL;
+
+        CREATE TABLE IF NOT EXISTS game_request_users (
+            id SERIAL PRIMARY KEY,
+            request_id INTEGER NOT NULL REFERENCES game_requests(id) ON DELETE CASCADE,
+            user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            requester_note TEXT,
+            accept_any_edition BOOLEAN NOT NULL DEFAULT FALSE,
+            created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            withdrawn_at TIMESTAMP,
+            satisfied_at TIMESTAMP,
+            satisfied_by_game_uuid VARCHAR(36) REFERENCES games(uuid) ON DELETE SET NULL,
+            last_notified_status VARCHAR(32),
+            CONSTRAINT uq_game_request_user UNIQUE (request_id, user_id)
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_game_request_users_request ON game_request_users(request_id);
+        CREATE INDEX IF NOT EXISTS idx_game_request_users_user ON game_request_users(user_id);
+        ALTER TABLE game_request_users ADD COLUMN IF NOT EXISTS satisfied_at TIMESTAMP;
+        ALTER TABLE game_request_users ADD COLUMN IF NOT EXISTS satisfied_by_game_uuid VARCHAR(36) REFERENCES games(uuid) ON DELETE SET NULL;
+
         -- Add HowLongToBeat settings to global_settings table
         ALTER TABLE global_settings
         ADD COLUMN IF NOT EXISTS enable_hltb_integration BOOLEAN DEFAULT TRUE;

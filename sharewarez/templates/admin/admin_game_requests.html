@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block content %}
+<link rel="stylesheet" href="{{ 'css/requests.css'|theme_asset }}">
+<main class="requests-page admin-requests-page">
+    <header class="requests-hero">
+        <div><p class="eyebrow">Administration</p><h1>Game Requests</h1><p>Browse community demand, then open a request to review and update it.</p></div>
+    </header>
+
+    <section class="request-panel admin-request-filters">
+        <form id="adminRequestSearchForm" method="get">
+            <input type="hidden" name="status" value="{{ selected_status }}">
+            <input type="hidden" name="page" value="1">
+            <div class="request-search-wrap admin-request-search"><i class="fas fa-magnifying-glass"></i><input id="requestAdminSearch" type="search" name="q" value="{{ search_term }}" placeholder="Search requests…" autocomplete="off" aria-label="Search requests"></div>
+            <div class="request-filter-chips" aria-label="Filter by status">
+                <a class="request-filter-chip{% if not selected_status %} active{% endif %}" href="{{ url_for('game_requests.admin_requests', q=search_term) }}">All <span>{{ status_counts.values()|sum }}</span></a>
+                {% for status in statuses %}<a class="request-filter-chip{% if selected_status == status %} active{% endif %}" href="{{ url_for('game_requests.admin_requests', status=status, q=search_term) }}">{{ status|replace('_', ' ')|title }} <span>{{ status_counts.get(status, 0) }}</span></a>{% endfor %}
+            </div>
+        </form>
+    </section>
+
+    {% if pagination.items %}
+    <section class="admin-request-grid" aria-label="Game requests">
+        {% for item in pagination.items %}
+        <a class="admin-request-tile" href="{{ url_for('game_requests.admin_request_details', request_id=item.id, status=selected_status, q=search_term, page=pagination.page) }}">
+            <div class="admin-request-cover">
+                {% if item.cover_url %}<img src="{{ item.cover_url }}" alt="">{% else %}<span><i class="fas fa-gamepad"></i></span>{% endif %}
+                <span class="request-chip status-{{ item.status }}">{{ item.status|replace('_', ' ')|title }}</span>
+            </div>
+            <div class="admin-request-tile-body">
+                <p class="edition-label">{{ item.edition_name or 'Base game' }}</p>
+                <h2>{{ item.parent_game_name or item.game_name }}</h2>
+                <div class="admin-request-tile-meta"><span><i class="fas fa-users"></i> {{ item.interested_requesters|length }}</span><span><i class="fas fa-clock"></i> {{ item.created_at.strftime('%d %b %Y') }}</span></div>
+            </div>
+        </a>
+        {% endfor %}
+    </section>
+    {% else %}<section class="request-panel empty-state"><i class="fas fa-inbox"></i><h2>No matching requests</h2><p>Try another search or status filter.</p></section>{% endif %}
+
+    {% if pagination.pages > 1 %}<nav class="request-pagination">{% for page in pagination.iter_pages() %}{% if page %}<a class="{% if page == pagination.page %}active{% endif %}" href="{{ url_for('game_requests.admin_requests', page=page, status=selected_status, q=search_term) }}">{{ page }}</a>{% else %}<span>…</span>{% endif %}{% endfor %}</nav>{% endif %}
+</main>
+<script src="{{ 'js/admin_game_requests.js'|theme_asset }}"></script>
+{% endblock %}

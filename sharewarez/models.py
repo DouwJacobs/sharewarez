@@ -354,6 +354,64 @@ class DownloadRequest(db.Model):
     file_location = db.Column(db.String, nullable=True)
 
 
+class GameRequest(db.Model):
+    __tablename__ = 'game_requests'
+
+    id = db.Column(db.Integer, primary_key=True)
+    igdb_id = db.Column(db.Integer, unique=True, nullable=False, index=True)
+    parent_igdb_id = db.Column(db.Integer, nullable=False, index=True)
+    parent_game_name = db.Column(db.String(255), nullable=False)
+    game_name = db.Column(db.String(255), nullable=False)
+    edition_name = db.Column(db.String(255), nullable=True)
+    cover_url = db.Column(db.String(512), nullable=True)
+    summary = db.Column(db.Text, nullable=True)
+    platforms = db.Column(JSONEncodedDict, nullable=True)
+    first_release_date = db.Column(db.DateTime, nullable=True)
+    status = db.Column(db.String(32), nullable=False, default='pending', index=True)
+    public_response = db.Column(db.Text, nullable=True)
+    internal_note = db.Column(db.Text, nullable=True)
+    fulfilled_game_uuid = db.Column(db.String(36), db.ForeignKey('games.uuid', ondelete='SET NULL'), nullable=True)
+    handled_by_user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'), nullable=True)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), nullable=False)
+    resolved_at = db.Column(db.DateTime, nullable=True)
+
+    requesters = db.relationship('GameRequestUser', back_populates='game_request', cascade='all, delete-orphan')
+    fulfilled_game = db.relationship('Game', foreign_keys=[fulfilled_game_uuid])
+    handled_by = db.relationship('User', foreign_keys=[handled_by_user_id])
+
+    @property
+    def active_requesters(self):
+        return [
+            requester for requester in self.requesters
+            if requester.withdrawn_at is None and requester.satisfied_at is None
+        ]
+
+    @property
+    def interested_requesters(self):
+        return [requester for requester in self.requesters if requester.withdrawn_at is None]
+
+
+class GameRequestUser(db.Model):
+    __tablename__ = 'game_request_users'
+    __table_args__ = (db.UniqueConstraint('request_id', 'user_id', name='uq_game_request_user'),)
+
+    id = db.Column(db.Integer, primary_key=True)
+    request_id = db.Column(db.Integer, db.ForeignKey('game_requests.id', ondelete='CASCADE'), nullable=False, index=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False, index=True)
+    requester_note = db.Column(db.Text, nullable=True)
+    accept_any_edition = db.Column(db.Boolean, nullable=False, default=False)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+    withdrawn_at = db.Column(db.DateTime, nullable=True)
+    satisfied_at = db.Column(db.DateTime, nullable=True)
+    satisfied_by_game_uuid = db.Column(db.String(36), db.ForeignKey('games.uuid', ondelete='SET NULL'), nullable=True)
+    last_notified_status = db.Column(db.String(32), nullable=True)
+
+    game_request = db.relationship('GameRequest', back_populates='requesters')
+    user = db.relationship('User', foreign_keys=[user_id])
+    satisfied_by_game = db.relationship('Game', foreign_keys=[satisfied_by_game_uuid])
+
+
 class Whitelist(db.Model):
     __tablename__ = 'whitelist'
 

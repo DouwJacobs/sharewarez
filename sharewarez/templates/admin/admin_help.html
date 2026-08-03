@@ -14,6 +14,7 @@
         <a href="#quick-start"><i class="fas fa-rocket" aria-hidden="true"></i> Quick start</a>
         <a href="#libraries"><i class="fas fa-layer-group" aria-hidden="true"></i> Libraries</a>
         <a href="#downloads"><i class="fas fa-download" aria-hidden="true"></i> Downloads</a>
+        <a href="#requests"><i class="fas fa-paper-plane" aria-hidden="true"></i> Requests</a>
         <a href="#access"><i class="fas fa-users" aria-hidden="true"></i> Access</a>
         <a href="#integrations"><i class="fas fa-plug" aria-hidden="true"></i> Integrations</a>
         <a href="#maintenance"><i class="fas fa-screwdriver-wrench" aria-hidden="true"></i> Troubleshooting</a>
@@ -30,6 +31,16 @@
                     <li><span>4</span><div><strong>Review the library</strong><p>Confirm artwork, metadata, paths, and download behavior before inviting users.</p></div></li>
                 </ol>
                 <div class="help-callout"><strong>Tip:</strong> Accurate platform selection and clean game names substantially improve automatic matching.</div>
+            </div>
+        </details>
+
+        <details class="admin-surface help-topic" id="requests">
+            <summary><span><i class="fas fa-paper-plane" aria-hidden="true"></i><strong>Game requests</strong><small>Review requested titles, editions, and user demand.</small></span></summary>
+            <div class="help-topic-content help-columns">
+                <div><h3>Edition-aware demand</h3><ul><li>Requests are grouped by their IGDB parent game.</li><li>Standard, deluxe, gold, and other editions retain independent statuses.</li><li>Users requesting the same exact edition are counted together.</li></ul></div>
+                <div><h3>Workflow</h3><ul><li>Move requests through Pending, Reviewing, Planned, Fulfilled, or Not planned.</li><li>Fulfilled requests must link to a game in the local library.</li><li>Public responses are visible to users; internal notes remain administrative.</li></ul></div>
+                <div><h3>Alternative editions</h3><p>When a related edition is fulfilled, users who accepted any edition are satisfied automatically. Exact-edition-only users remain attached to their original request.</p></div>
+                <div><h3>Notifications</h3><p>SMTP can notify individual requesters. The Discord webhook posts to its configured channel and cannot send direct user messages.</p></div>
             </div>
         </details>
 
