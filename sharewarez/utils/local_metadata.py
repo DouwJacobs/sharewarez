@@ -84,7 +84,8 @@ def read_local_metadata(full_disk_path, filename='sharewarez.json'):
 
 
 def write_local_metadata(full_disk_path, igdb_id, game_title=None, manually_verified=False,
-                         filename='sharewarez.json', install_instructions=None):
+                         filename='sharewarez.json', install_instructions=None,
+                         game_version=None):
     """
     Write local metadata file to game folder.
 
@@ -130,6 +131,8 @@ def write_local_metadata(full_disk_path, igdb_id, game_title=None, manually_veri
             "igdb_id": int(igdb_id),
             "identified_at": datetime.now(timezone.utc).isoformat(),
             "manually_verified": bool(manually_verified),
+            "metadata_version": "1.0",
+            # Retained for compatibility with metadata written by older releases.
             "version": "1.0"
         }
 
@@ -140,6 +143,9 @@ def write_local_metadata(full_disk_path, igdb_id, game_title=None, manually_veri
         if install_instructions:
             metadata["install_instructions"] = install_instructions
             logger.info(f"💾 [LOCAL METADATA] Game title: {game_title}")
+
+        if game_version:
+            metadata["game_version"] = sanitize_string_input(game_version, 100)
 
         # Write to file
         metadata_path = os.path.join(full_disk_path, filename)

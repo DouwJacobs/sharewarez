@@ -1,5 +1,6 @@
 #/sharewarez/__init__.py
 import sys, os
+import shutil
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
@@ -23,6 +24,20 @@ app_version = '2.10'
 
 
 def create_app():
+    # The default theme is authored under setup/default_theme but served from
+    # static/library/themes/default. Refresh it whenever Uvicorn recreates the
+    # development app so CSS/JS edits participate in hot reload as expected.
+    if os.getenv('SHAREWAREZ_HOT_RELOAD', 'false').lower() == 'true':
+        default_theme_source = os.path.join(
+            os.path.dirname(__file__), 'setup', 'default_theme'
+        )
+        default_theme_target = os.path.join(
+            os.path.dirname(__file__), 'static', 'library', 'themes', 'default'
+        )
+        if os.path.isdir(default_theme_source):
+            os.makedirs(os.path.dirname(default_theme_target), exist_ok=True)
+            shutil.copytree(default_theme_source, default_theme_target, dirs_exist_ok=True)
+
     app = Flask(__name__)
     app.config.from_object(Config)
     

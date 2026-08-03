@@ -1,5 +1,6 @@
+import json
 import os
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from flask import current_app, flash, has_request_context
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy import select
@@ -123,13 +124,14 @@ def log_unmatched_folder(scan_job_id, folder_path, matched_status, library_uuid=
 
 
 def process_game_updates(game_name, full_disk_path, updates_folder, library_uuid, update_folder_name=None):
+    settings = db.session.execute(select(GlobalSettings)).scalar_one_or_none()
     # Use passed parameter or fallback to database query
     if update_folder_name is None:
-        settings = db.session.execute(select(GlobalSettings)).scalar_one_or_none()
         if not settings or not settings.update_folder_name:
             print("No update folder configuration found in database")
             return
         update_folder_name = settings.update_folder_name
+    metadata_filename = (settings.local_metadata_filename if settings else None) or 'sharewarez.json'
 
     print(f"Processing updates for game: {game_name}")
     print(f"Full disk path: {full_disk_path}")
@@ -143,15 +145,20 @@ def process_game_updates(game_name, full_disk_path, updates_folder, library_uuid
 
     print(f"Game found in database: {game.name} (UUID: {game.uuid})")
 
-    update_folders = [f for f in os.listdir(updates_folder) if os.path.isdir(os.path.join(updates_folder, f))]
-    print(f"Update folders found: {update_folders}")
+    update_items = []
+    for name in os.listdir(updates_folder):
+        path = os.path.join(updates_folder, name)
+        if name.lower().endswith(('.nfo', '.sfv', '.json')):
+            continue
+        if os.path.isdir(path) or os.path.isfile(path):
+            update_items.append(name)
+    print(f"Update items found: {update_items}")
 
-    for update_folder in update_folders:
-        update_path = os.path.join(updates_folder, update_folder)
-        print(f"Processing update: {update_folder}")
-        
-        significant_files = [f for f in os.listdir(update_path) if not f.lower().endswith(('.sfv', '.nfo'))]
-        print(f"Significant files in update folder: {significant_files}")
+    seen_paths = set()
+    for update_item in update_items:
+        update_path = os.path.join(updates_folder, update_item)
+        seen_paths.add(update_path)
+        print(f"Processing update: {update_item}")
 
         # Always store the folder path to display the proper folder name in UI
         file_path = update_path
@@ -164,13 +171,30 @@ def process_game_updates(game_name, full_disk_path, updates_folder, library_uuid
             game_update = GameUpdate(
                 game_uuid=game.uuid,
                 file_path=file_path,
-                nfo_content=read_first_nfo_content(update_path)
+                nfo_content=read_first_nfo_content(update_path) if os.path.isdir(update_path) else None
             )
             db.session.add(game_update)
         else:
             print(f"Updating existing GameUpdate record for {file_path}")
             game_update.file_path = file_path
-            game_update.nfo_content = read_first_nfo_content(update_path)
+            game_update.nfo_content = read_first_nfo_content(update_path) if os.path.isdir(update_path) else None
+
+        game_update.size = _path_size(update_path)
+        if not game_update.metadata_managed:
+            metadata = _read_update_metadata(update_path, metadata_filename)
+            game_update.title = _clean_metadata_text(metadata.get('title'), 255) or update_item
+            game_update.version = _clean_metadata_text(metadata.get('version'), 100)
+            game_update.requires_version = _clean_metadata_text(metadata.get('requires_version'), 100)
+            game_update.install_instructions = _clean_metadata_text(metadata.get('install_instructions'), 10000)
+            game_update.changelog = _clean_metadata_text(metadata.get('changelog'), 20000)
+            game_update.update_number = _optional_nonnegative_int(metadata.get('update_number'))
+            game_update.release_date = _optional_iso_date(metadata.get('release_date'))
+            game_update.is_cumulative = metadata.get('is_cumulative') is True
+
+    # A rescan should reflect the library on disk rather than retaining dead links.
+    for stale_update in db.session.execute(select(GameUpdate).filter_by(game_uuid=game.uuid)).scalars().all():
+        if stale_update.file_path not in seen_paths:
+            db.session.delete(stale_update)
 
     try:
         db.session.commit()
@@ -180,6 +204,56 @@ def process_game_updates(game_name, full_disk_path, updates_folder, library_uuid
         db.session.rollback()
 
     print(f"Finished processing updates for game: {game_name}")
+
+
+def _read_update_metadata(update_path, metadata_filename='sharewarez.json'):
+    """Read optional metadata from an update directory or a file sidecar."""
+    metadata_path = (os.path.join(update_path, metadata_filename) if os.path.isdir(update_path)
+                     else f"{update_path}.{metadata_filename}")
+    if not os.path.isfile(metadata_path):
+        return {}
+    try:
+        with open(metadata_path, 'r', encoding='utf-8') as metadata_file:
+            value = json.load(metadata_file)
+        return value if isinstance(value, dict) else {}
+    except (OSError, json.JSONDecodeError) as exc:
+        current_app.logger.warning("Could not read update metadata %s: %s", metadata_path, exc)
+        return {}
+
+
+def _path_size(path):
+    if os.path.isfile(path):
+        return os.path.getsize(path)
+    total = 0
+    for root, _, files in os.walk(path):
+        for filename in files:
+            try:
+                total += os.path.getsize(os.path.join(root, filename))
+            except OSError:
+                continue
+    return total
+
+
+def _clean_metadata_text(value, maximum):
+    if value is None:
+        return None
+    value = str(value).strip()
+    return value[:maximum] or None
+
+
+def _optional_nonnegative_int(value):
+    try:
+        result = int(value)
+        return result if result >= 0 else None
+    except (TypeError, ValueError):
+        return None
+
+
+def _optional_iso_date(value):
+    try:
+        return date.fromisoformat(str(value)) if value else None
+    except ValueError:
+        return None
     
 
 

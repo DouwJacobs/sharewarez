@@ -8,7 +8,7 @@
     <!-- Loading Spinner -->
     <div id="saveSpinner" class="spinner-overlay" style="display: none;">
         <div class="spinner-container">
-            <img src="{{ url_for('static', filename='newstyle/searching_small.gif') }}" alt="Loading...">
+            <div class="app-spinner app-spinner-lg" role="status" aria-label="Saving game"></div>
             <div class="progress-text">Saving game...</div>
         </div>
     </div>
@@ -125,6 +125,11 @@
                     <div class="game_edit-form-group-install-instructions">
                         <label for="install_instructions">How to Install</label>
                         {{ form.install_instructions(class="form-control", id="install_instructions", rows="4", placeholder="Optional special installation instructions...") }}
+                    </div>
+                    <div class="game_edit-form-group-version">
+                        <label for="version">Base Package Version</label>
+                        {{ form.version(class="form-control", id="version", placeholder="Optional, e.g. 1.6.1170 or Build 1436") }}
+                        <small class="form-text text-muted">The version included in this downloadable base package.</small>
                     </div>
                     <div class="game_edit-form-group-url">
                         <label for="url">URL</label>

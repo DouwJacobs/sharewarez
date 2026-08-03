@@ -295,6 +295,21 @@ class DatabaseManager:
         ALTER TABLE games
         ADD COLUMN IF NOT EXISTS install_instructions TEXT;
 
+        ALTER TABLE games
+        ADD COLUMN IF NOT EXISTS version VARCHAR(100);
+
+        ALTER TABLE game_updates ADD COLUMN IF NOT EXISTS title VARCHAR(255);
+        ALTER TABLE game_updates ADD COLUMN IF NOT EXISTS version VARCHAR(100);
+        ALTER TABLE game_updates ADD COLUMN IF NOT EXISTS update_number INTEGER;
+        ALTER TABLE game_updates ADD COLUMN IF NOT EXISTS requires_version VARCHAR(100);
+        ALTER TABLE game_updates ADD COLUMN IF NOT EXISTS install_instructions TEXT;
+        ALTER TABLE game_updates ADD COLUMN IF NOT EXISTS changelog TEXT;
+        ALTER TABLE game_updates ADD COLUMN IF NOT EXISTS release_date DATE;
+        ALTER TABLE game_updates ADD COLUMN IF NOT EXISTS is_cumulative BOOLEAN DEFAULT FALSE NOT NULL;
+        ALTER TABLE game_updates ADD COLUMN IF NOT EXISTS size BIGINT DEFAULT 0 NOT NULL;
+        ALTER TABLE game_updates ADD COLUMN IF NOT EXISTS metadata_managed BOOLEAN DEFAULT FALSE NOT NULL;
+        CREATE INDEX IF NOT EXISTS idx_game_updates_game_path ON game_updates(game_uuid, file_path);
+
         -- Add HowLongToBeat settings to global_settings table
         ALTER TABLE global_settings
         ADD COLUMN IF NOT EXISTS enable_hltb_integration BOOLEAN DEFAULT TRUE;

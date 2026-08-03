@@ -6,8 +6,6 @@
         {% if current_user.is_authenticated %}
         <div class="container">Welcome back, {{ current_user.name }}!</div>
         {% else %}
-        <h1></h1>
-
             <div class="container-base">
                 <div class="container">
                     <img src="{{ url_for('static', filename=brand_logo_path) }}" alt="{{ site_title }} logo" class="login-logo">

@@ -37,13 +37,21 @@ def get_path_size(file_path):
 
 
 def get_safe_back_url():
-    """Return an in-app referrer, falling back to the library."""
+    """Return a game-browsing referrer, falling back to the library.
+
+    Editing and administration pages are deliberately excluded so visiting a
+    game after saving metadata cannot turn the details-page Back button into a
+    link back into an editor.
+    """
     fallback_url = url_for('library.library')
     if not request.referrer:
         return fallback_url
 
     referrer = urlparse(request.referrer)
     if referrer.netloc != request.host:
+        return fallback_url
+    allowed_paths = {'/library', '/discover', '/favorites'}
+    if referrer.path not in allowed_paths:
         return fallback_url
     return referrer.path + (f'?{referrer.query}' if referrer.query else '')
 
@@ -71,7 +79,13 @@ def game_details(game_uuid):
 
     if game:
         # Explicitly load updates and extras
-        updates = db.session.execute(select(GameUpdate).filter_by(game_uuid=game.uuid)).scalars().all()
+        updates = db.session.execute(
+            select(GameUpdate).filter_by(game_uuid=game.uuid).order_by(
+                GameUpdate.update_number.asc().nullslast(),
+                GameUpdate.release_date.asc().nullslast(),
+                GameUpdate.created_at.asc()
+            )
+        ).scalars().all()
         extras = db.session.execute(select(GameExtra).filter_by(game_uuid=game.uuid)).scalars().all()
         
         # Log successful access for audit trail
@@ -89,16 +103,24 @@ def game_details(game_uuid):
             "summary": game.summary,
             "storyline": game.storyline,
             "install_instructions": game.install_instructions,
+            "version": game.version,
             "aggregated_rating": game.aggregated_rating,
             "aggregated_rating_count": game.aggregated_rating_count,
             "updates": [{
                 "id": update.id,
-                "file_path": update.file_path,
+                "display_name": update.title or os.path.basename(update.file_path),
+                "version": update.version,
+                "update_number": update.update_number,
+                "requires_version": update.requires_version,
+                "install_instructions": update.install_instructions,
+                "changelog": update.changelog,
+                "release_date": update.release_date.strftime('%Y-%m-%d') if update.release_date else None,
+                "is_cumulative": update.is_cumulative,
                 "times_downloaded": update.times_downloaded,
                 "created_at": update.created_at.strftime('%Y-%m-%d %H:%M:%S'),
                 "nfo_content": update.nfo_content,
-                "file_size": format_size(get_path_size(update.file_path))
-            } for update in game.updates],
+                "file_size": format_size(update.size or get_path_size(update.file_path))
+            } for update in updates],
             "extras": [{
                 "id": extra.id,
                 "file_path": extra.file_path,

@@ -242,6 +242,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 // Clear the table body
                 scanJobsTableBody.innerHTML = '';
+
+                if (data.length === 0) {
+                    scanJobsTableBody.innerHTML = `
+                        <tr class="scan-empty-state-row">
+                            <td colspan="6"><div class="scan-empty-state"><i class="fas fa-inbox" aria-hidden="true"></i><strong>No scan jobs yet</strong><span>Started scans will appear here.</span></div></td>
+                        </tr>`;
+                    return false;
+                }
                 
                 const isAnyJobRunning = data.some(job => activeScanStatuses.has(job.status));
                 
@@ -354,6 +362,14 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(data => {
                 // Clear the table body
                 unmatchedTableBody.innerHTML = '';
+
+                if (data.length === 0) {
+                    unmatchedTableBody.innerHTML = `
+                        <tr class="scan-empty-state-row">
+                            <td colspan="5"><div class="scan-empty-state"><i class="fas fa-circle-check" aria-hidden="true"></i><strong>No unmatched folders</strong><span>Folders that need identification will appear here.</span></div></td>
+                        </tr>`;
+                    return;
+                }
                 
                 data.forEach(folder => {
                     const actionsColumn = `
@@ -440,7 +456,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function filterUnmatchedRows() {
-        const unmatchedRows = document.querySelectorAll('#unmatchedFoldersTableBody tr');
+        const unmatchedRows = document.querySelectorAll('#unmatchedFoldersTableBody tr:not(.scan-empty-state-row)');
         let visibleCount = 0;
 
         unmatchedRows.forEach(row => {
@@ -483,7 +499,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!resultsInfo) return;
 
         if (visible === null || total === null) {
-            const unmatchedRows = document.querySelectorAll('#unmatchedFoldersTableBody tr');
+            const unmatchedRows = document.querySelectorAll('#unmatchedFoldersTableBody tr:not(.scan-empty-state-row)');
             total = unmatchedRows.length;
             visible = Array.from(unmatchedRows).filter(row => row.style.display !== 'none').length;
         }
@@ -723,6 +739,15 @@ function fetchFolders(path, folderContentsId, spinnerId, upButtonId, inputFieldI
             
             // Check if we're using the new response format or the old one
             const items = data.items || data;
+
+            if (!items.length) {
+                const locationLabel = data.basePath || 'the configured scan location';
+                const emptyState = $('<div class="folder-browser-empty" role="status">');
+                emptyState.append('<i class="fas fa-folder-open" aria-hidden="true"></i>');
+                emptyState.append($('<strong>').text('No folders found'));
+                emptyState.append($('<span>').text(`${locationLabel} is empty or its remote storage is not mounted.`));
+                $(folderContentsId).append(emptyState);
+            }
             
             // Display warning if there were errors
             if (data.hasErrors) {
@@ -777,6 +802,16 @@ function fetchFolders(path, folderContentsId, spinnerId, upButtonId, inputFieldI
         error: function(error) {
             $(spinnerId).hide();
             console.error("Error fetching folders:", error);
+            const response = error.responseJSON || {};
+            const message = response.error || 'Could not browse the scan location.';
+            const detail = response.detail || 'Check that the configured directory is mounted and readable.';
+            const errorState = $('<div class="folder-browser-error" role="alert">');
+            const errorCopy = $('<div>');
+            errorState.append('<i class="fas fa-triangle-exclamation" aria-hidden="true"></i>');
+            errorCopy.append($('<strong>').text(message));
+            errorCopy.append($('<span>').text(detail));
+            errorState.append(errorCopy);
+            $(folderContentsId).empty().append(errorState);
         }
     });
 }

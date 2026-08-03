@@ -111,30 +111,34 @@ def register():
     form = RegistrationForm()
     if form.validate_on_submit():
         try:
+            registration_unavailable_message = (
+                'Registration could not be completed. Check your details or invite, '
+                'or contact an administrator.'
+            )
             email_address = form.email.data.lower()
             existing_user_email = db.session.execute(select(User).filter(func.lower(User.email) == email_address)).scalar_one_or_none()
             if existing_user_email:
                 print(f"/register: Email already in use - {email_address}")
-                flash('This email is already in use. Please use a different email or log in.')
+                flash(registration_unavailable_message, 'warning')
                 return redirect(url_for('login.register'))
                     # Proceed with the whitelist check only if no valid invite token is provided
             if not invite:
                 whitelist = db.session.execute(select(Whitelist).filter(func.lower(Whitelist.email) == email_address)).scalar_one_or_none()
                 if not whitelist:
-                    flash('Your email is not whitelisted.')
+                    flash(registration_unavailable_message, 'warning')
                     return redirect(url_for('login.register'))
 
             existing_user = db.session.execute(select(User).filter_by(name=form.username.data)).scalar_one_or_none()
             if existing_user is not None:
                 print(f"/register: User already exists - {form.username.data}")
-                flash('User already exists. Please Log in.')
+                flash(registration_unavailable_message, 'warning')
                 return redirect(url_for('login.register'))
 
             user_uuid = str(uuid4())
             existing_uuid = db.session.execute(select(User).filter_by(user_id=user_uuid)).scalar_one_or_none()
             if existing_uuid is not None:
                 print("/register: UUID collision detected.")
-                flash('An error occurred while registering. Please try again.')
+                flash('An error occurred while registering. Please try again.', 'error')
                 return redirect(url_for('login.register'))
 
             user = User(
@@ -171,7 +175,7 @@ def register():
         except IntegrityError as e:
             db.session.rollback()
             print(f"IntegrityError occurred: {e}")
-            flash('error while registering. Please try again.')
+            flash('Error while registering. Please try again.', 'error')
 
     return render_template('login/registration.html', title='Register', form=form)
 
@@ -217,12 +221,24 @@ def reset_password_request():
 
             # Send reset email
             print('Calling send password reset email function...')
-            send_password_reset_email(user.email, token)
-            flash('Check your email for instructions to reset your password.')
-            return redirect(url_for('login.login'))
-        else:
-            flash('Email address not found.')
-            return redirect(url_for('login.reset_password_request'))
+            try:
+                send_password_reset_email(user.email, token)
+            except Exception:
+                # Keep the public response indistinguishable from an unknown
+                # address while recording an actionable server-side event.
+                log_system_event(
+                    'Password reset email delivery failed',
+                    event_type='password_reset',
+                    event_level='error'
+                )
+
+        # Use the same response and destination whether or not an account was
+        # found so this public endpoint cannot be used to enumerate users.
+        flash(
+            'If an account exists for that email, password reset instructions have been sent.',
+            'success'
+        )
+        return redirect(url_for('login.login'))
 
     return render_template('login/reset_password_request.html', title='Reset Password', form=form)
 
@@ -233,7 +249,7 @@ def reset_password(token):
 
     user = db.session.execute(select(User).filter_by(password_reset_token=token)).scalar_one_or_none()
     if not user or user.token_creation_time + timedelta(minutes=15) < datetime.now(timezone.utc):
-        flash('The password reset link is invalid or has expired.')
+        flash('The password reset link is invalid or has expired.', 'warning')
         return redirect(url_for('login.login'))
 
     form = UserPasswordForm()
@@ -242,7 +258,7 @@ def reset_password(token):
         user.set_password(form.password.data)
         user.password_reset_token = None
         db.session.commit()
-        flash('Your password has been reset.')
+        flash('Your password has been reset.', 'success')
         return redirect(url_for('login.login'))
 
     return render_template('login/reset_password.html', form=form, token=token)

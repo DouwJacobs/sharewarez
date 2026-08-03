@@ -639,6 +639,20 @@
     color: rgba(225, 232, 250, 0.86);
 }
 
+.supplemental-scan-note {
+    display: flex;
+    align-items: flex-start;
+    gap: 9px;
+    color: var(--text-white-60);
+    font-size: 0.88rem;
+    line-height: 1.45;
+}
+
+.supplemental-scan-note i {
+    margin-top: 3px;
+    color: var(--theme-primary-color, #8da8ff);
+}
+
 /* Path input styling */
 .path-input-group {
     display: flex;
@@ -676,6 +690,83 @@
     padding: 10px;
     max-height: 400px;
     overflow-y: auto;
+}
+
+.folder-browser-empty,
+.folder-browser-error {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    min-height: 110px;
+    padding: 18px;
+    color: var(--text-white-60);
+    text-align: center;
+}
+
+.scan-empty-state-row td {
+    padding: 0 !important;
+    background: transparent !important;
+}
+
+.scan-empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 130px;
+    padding: 24px;
+    color: var(--text-white-60);
+    text-align: center;
+}
+
+.scan-empty-state i {
+    margin-bottom: 4px;
+    color: var(--theme-primary-color, #8da8ff);
+    font-size: 1.55rem;
+}
+
+.scan-empty-state strong {
+    color: var(--text-white);
+}
+
+.scan-empty-state span {
+    max-width: 480px;
+    font-size: 0.88rem;
+}
+
+.scan-empty-state-panel {
+    margin-top: 16px;
+    background: rgba(5, 7, 15, 0.28);
+    border: 1px dashed var(--theme-border-color, rgba(255, 255, 255, 0.12));
+    border-radius: 12px;
+}
+
+.folder-browser-empty {
+    flex-direction: column;
+}
+
+.folder-browser-empty i {
+    color: var(--theme-primary-color, #8da8ff);
+    font-size: 1.5rem;
+}
+
+.folder-browser-empty strong,
+.folder-browser-error strong {
+    color: var(--text-white);
+}
+
+.folder-browser-empty span,
+.folder-browser-error span {
+    display: block;
+    font-size: 0.86rem;
+}
+
+.folder-browser-error {
+    justify-content: flex-start;
+    color: #ffb4bd;
+    text-align: left;
 }
 
 /* Folder and file item styling */
@@ -942,6 +1033,277 @@
     border-radius: 8px;
 }
 
+/* Final layout layer: shared rhythm and responsive behavior across every tab. */
+.scan-management-heading {
+    width: min(1440px, calc(100% - 48px));
+    margin: 28px auto 0;
+}
+
+.scan-management-eyebrow {
+    display: block;
+    margin-bottom: 5px;
+    color: var(--theme-primary-color, #8da8ff);
+    font-size: 0.76rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+.scan-management-heading h1 {
+    margin: 0;
+    color: var(--text-white);
+    font-size: clamp(1.75rem, 3vw, 2.4rem);
+}
+
+.scan-management-heading p {
+    margin: 8px 0 0;
+    color: var(--text-white-60);
+}
+
+.admin_manage_scanjobs-nav-tabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: thin;
+}
+
+.admin_manage_scanjobs-nav-item {
+    flex: 0 0 auto;
+}
+
+.admin_manage_scanjobs-nav-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+}
+
+.config-path-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 18px;
+}
+
+.config-path-row .config-card,
+.config-path-row .path-card {
+    width: 100%;
+}
+
+.config-card,
+.path-card,
+.scan-jobs-card,
+.admin_manage_scanjobs-manual-panel,
+.admin_manage_scanjobs-unmatched-panel,
+.admin_manage_scanjobs-filters-panel,
+.admin_manage_scanjobs-extensions-panel,
+.admin_manage_scanjobs-imagequeue-panel {
+    background: var(--theme-card-background, linear-gradient(145deg, rgba(28, 29, 45, 0.9), rgba(13, 14, 25, 0.95)));
+    border-color: var(--theme-border-color, rgba(255, 255, 255, 0.09));
+}
+
+.path-card .card-content {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 16px 20px;
+    align-items: end;
+}
+
+.path-card .path-input-group,
+.path-card .folder-browser,
+.path-card .loading-spinner {
+    grid-column: 1 / -1;
+}
+
+.field-help {
+    margin: -2px 0 0;
+    color: var(--text-white-60);
+    font-size: 0.86rem;
+}
+
+.folder-contents:empty,
+#folderContentsManual:empty {
+    display: none;
+}
+
+.scan-location-actions {
+    grid-column: 2;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.scan-start-btn {
+    min-width: 150px;
+}
+
+.scan-jobs-card {
+    margin-top: 18px;
+}
+
+.manual-scan-form {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.manual-scan-form .form-group,
+.manual-scan-form .form-check {
+    margin-bottom: 0;
+}
+
+.manual-field-card,
+.manual-location-field,
+.manual-options-panel {
+    padding: 16px;
+    background: rgba(5, 7, 15, 0.28);
+    border: 1px solid var(--theme-border-color, rgba(255, 255, 255, 0.08));
+    border-radius: 12px;
+}
+
+.manual-location-field,
+.manual-options-panel,
+.manual-actions,
+.manual-scan-progress {
+    grid-column: 1 / -1;
+}
+
+.manual-location-field label,
+.manual-field-card > label {
+    display: block;
+    margin-bottom: 8px;
+    color: rgba(190, 205, 240, 0.8);
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.manual-options-panel {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px 16px;
+}
+
+.manual-options-panel > .config-label {
+    grid-column: 1 / -1;
+    margin: 0;
+}
+
+.manual-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+#folderContentsManual:not(:empty) {
+    margin-top: 16px;
+    padding: 10px;
+    max-height: 400px;
+    overflow-y: auto;
+    background: rgba(5, 7, 15, 0.38);
+    border: 1px solid var(--theme-border-color, rgba(255, 255, 255, 0.07));
+    border-radius: 10px;
+}
+
+.container-unmatched-buttons {
+    justify-content: flex-start;
+    flex-wrap: wrap;
+}
+
+.admin_manage_scanjobs-filters-panel > hr {
+    margin: 22px 0;
+    border-color: var(--theme-border-color, rgba(255, 255, 255, 0.08));
+}
+
+.extensions-info .info-panel {
+    padding: 18px;
+    background: rgba(5, 7, 15, 0.28);
+    border: 1px solid var(--theme-border-color, rgba(255, 255, 255, 0.08));
+    border-radius: 12px;
+}
+
+@media (max-width: 768px) {
+    .scan-management-heading,
+    .admin_manage_scanjobs-nav-panel {
+        width: calc(100% - 24px);
+    }
+
+    .admin_manage_scanjobs-nav-panel .container-settings {
+        padding: 14px;
+    }
+
+    .admin_manage_scanjobs-tab-content {
+        padding-top: 16px;
+    }
+
+    .config-card,
+    .path-card,
+    .scan-jobs-card,
+    .admin_manage_scanjobs-manual-panel,
+    .admin_manage_scanjobs-unmatched-panel,
+    .admin_manage_scanjobs-filters-panel,
+    .admin_manage_scanjobs-extensions-panel,
+    .admin_manage_scanjobs-imagequeue-panel {
+        padding: 16px;
+        border-radius: 13px;
+    }
+
+    .config-grid,
+    .manual-scan-form,
+    .manual-options-panel {
+        grid-template-columns: 1fr;
+    }
+
+    .manual-options-panel > *,
+    .manual-location-field,
+    .manual-actions,
+    .manual-scan-progress {
+        grid-column: 1;
+    }
+
+    .input-with-button {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .input-with-button .btn,
+    .scan-location-actions,
+    .scan-start-btn,
+    .manual-actions .btn {
+        width: 100%;
+    }
+
+    .scan-location-actions {
+        grid-column: 1 / -1;
+    }
+
+    .manual-actions {
+        flex-direction: column;
+    }
+
+    .jobs-header-content,
+    .admin_manage_scanjobs-tab-header {
+        align-items: flex-start;
+    }
+
+    .admin_manage_scanjobs-tab-header .btn,
+    .jobs-controls,
+    .jobs-controls .btn {
+        width: 100%;
+        margin-left: 0;
+    }
+
+    .scan-queue-toolbar > div,
+    .scan-queue-toolbar .btn-group,
+    .scan-queue-toolbar .btn,
+    .scan-queue-toolbar .d-flex {
+        width: 100%;
+    }
+
+    .scan-queue-toolbar .d-flex {
+        flex-direction: column;
+    }
+}
+
 /* Glass panel effect */
 .glass-panel {
     background: var(--bg-light-overlay);
@@ -1167,4 +1529,22 @@
         align-items: flex-start;
         flex-direction: column;
     }
+}
+
+/* Keep the refreshed panels driven by the active theme. */
+.config-card,
+.path-card,
+.scan-jobs-card,
+.admin_manage_scanjobs-manual-panel,
+.admin_manage_scanjobs-unmatched-panel,
+.admin_manage_scanjobs-filters-panel,
+.admin_manage_scanjobs-extensions-panel,
+.admin_manage_scanjobs-imagequeue-panel {
+    background: var(--theme-card-background, linear-gradient(145deg, rgba(28, 29, 45, 0.9), rgba(13, 14, 25, 0.95)));
+    border-color: var(--theme-border-color, rgba(255, 255, 255, 0.09));
+}
+
+.config-path-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
 }

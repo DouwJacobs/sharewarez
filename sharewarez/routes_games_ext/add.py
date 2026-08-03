@@ -103,6 +103,7 @@ def add_game_manual():
             summary=form.summary.data,
             storyline=form.storyline.data,
             install_instructions=form.install_instructions.data,
+            version=(form.version.data or '').strip() or None,
             url=form.url.data,
             full_disk_path=form.full_disk_path.data,
             # Set default cover for custom games
@@ -176,7 +177,8 @@ def add_game_manual():
                     game_title=form.name.data,
                     manually_verified=True,
                     filename=metadata_filename,
-                    install_instructions=form.install_instructions.data
+                    install_instructions=form.install_instructions.data,
+                    game_version=(form.version.data or '').strip() or None
                 )
 
                 if success:

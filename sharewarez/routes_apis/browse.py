@@ -29,14 +29,29 @@ def browse_folders_ss():
             print(f'SS folder browser: Access denied: {folder_path} outside of base directory: {base_directory}', file=sys.stderr)
             return jsonify({'error': 'Access denied'}), 403
 
-    if os.path.isdir(folder_path):
-        # List directory contents; distinguish between files and directories
-        contents = [{'name': item, 
+    if not os.path.isdir(folder_path):
+        return jsonify({
+            'error': 'Scan location is unavailable.',
+            'detail': f'The configured base directory does not exist: {base_directory}'
+        }), 404
+
+    try:
+        # List directory contents; distinguish between files and directories.
+        contents = [{'name': item,
                      'isDir': os.path.isdir(os.path.join(folder_path, item)),
                      'ext': os.path.splitext(item)[1][1:].lower() if not os.path.isdir(os.path.join(folder_path, item)) else None,
                      'size': os.path.getsize(os.path.join(folder_path, item)) if not os.path.isdir(os.path.join(folder_path, item)) else None
-                     } 
+                     }
                     for item in sorted(os.listdir(folder_path))]
-        return jsonify(sorted(contents, key=lambda x: (not x['isDir'], x['name'].lower())))
-    else:
-        return jsonify({'error': 'SS folder browser: Folder not found'}), 404
+    except (OSError, PermissionError) as exc:
+        current_app.logger.warning('Could not browse scan directory %s: %s', folder_path, exc)
+        return jsonify({
+            'error': 'Scan location could not be read.',
+            'detail': 'Check that the storage mount is connected and readable by the application.'
+        }), 403
+
+    return jsonify({
+        'items': sorted(contents, key=lambda x: (not x['isDir'], x['name'].lower())),
+        'currentPath': request_path,
+        'basePath': base_directory
+    })

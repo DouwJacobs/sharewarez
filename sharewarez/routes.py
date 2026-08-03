@@ -26,11 +26,14 @@ from sharewarez.forms import (
 from sharewarez.models import (
     Game, Image, ScanJob, UnmatchedFolder,
     Genre, Theme, GameMode, PlayerPerspective, GameTag,
-    Category, Library,
+    Category, Library, GlobalSettings,
     ReleaseGroup, AllowedFileType
 )
 from sharewarez.utils.functions import load_scanning_filter_patterns, format_size, PLATFORM_IDS
-from sharewarez.utilities import handle_auto_scan, handle_manual_scan, scan_and_add_games
+from sharewarez.utilities import (
+    handle_auto_scan, handle_manual_scan, scan_and_add_games,
+    refresh_game_metadata_and_updates,
+)
 from sharewarez.utils.auth import admin_required
 from sharewarez.utils.gamenames import get_game_names_from_folder, get_game_name_by_uuid
 from sharewarez.utils.scanning import refresh_images_in_background, is_scan_job_running
@@ -695,6 +698,42 @@ def refresh_game_images(game_uuid):
         # For non-AJAX requests, perform the usual redirec
         flash(f"Game images refresh process started for {game_name}.", "info")
         return redirect(url_for('library.library'))
+
+
+@bp.route('/refresh_game_metadata_updates/<game_uuid>', methods=['POST'])
+@login_required
+@admin_required
+def refresh_game_metadata_updates(game_uuid):
+    settings = db.session.execute(select(GlobalSettings)).scalars().first()
+    if not settings or not (settings.enable_game_updates or settings.enable_game_extras):
+        return jsonify({
+            'status': 'error',
+            'message': 'Game update and extras scanning are disabled in global settings.'
+        }), 409
+
+    game = db.session.execute(select(Game).filter_by(uuid=game_uuid)).scalar_one_or_none()
+    if not game:
+        return jsonify({'status': 'error', 'message': 'Game not found.'}), 404
+    if not game.full_disk_path or not os.path.exists(game.full_disk_path):
+        return jsonify({'status': 'error', 'message': 'The game path is not currently available.'}), 409
+
+    game_name = game.name
+
+    @copy_current_request_context
+    def refresh_in_thread():
+        try:
+            refresh_game_metadata_and_updates(game_uuid)
+            current_app.logger.info("Metadata and updates refreshed for %s (%s)", game_name, game_uuid)
+        except Exception:
+            current_app.logger.exception("Metadata and updates refresh failed for %s (%s)", game_name, game_uuid)
+
+    Thread(target=refresh_in_thread, daemon=True).start()
+
+    message = f"Metadata and updates refresh started for {game_name}."
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return jsonify({'status': 'info', 'message': message})
+    flash(message, 'info')
+    return redirect(request.referrer or url_for('library.library'))
 
 
 @bp.route('/check_image_refresh_progress/<game_uuid>', methods=['GET'])

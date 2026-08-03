@@ -164,16 +164,19 @@ function openExtrasModal() {
 
     extrasModalState.originalScrollPosition = window.scrollY;
     extrasModalState.modalOpen = true;
-    
+
+    // Keep the fixed backdrop outside page wrappers that may establish their
+    // own containing block via transforms, filters, or backdrop effects.
+    if (modal.parentElement !== document.body) {
+        document.body.appendChild(modal);
+    }
+
     modal.style.display = "flex";
     document.body.classList.add('modal-open');
-    
+
     // Prevent background scrolling
     extrasModalState.bodyOverflowOriginal = document.body.style.overflow;
-    document.body.style.position = 'fixed';
     document.body.style.overflow = 'hidden';
-    document.body.style.width = '100%';
-    document.body.style.top = `-${extrasModalState.originalScrollPosition}px`;
     
     // Add escape key listener
     addExtrasEscapeKeyListener();
@@ -190,13 +193,9 @@ function closeExtrasModal() {
     modal.style.display = "none";
     document.body.classList.remove('modal-open');
     
-    // Restore body position and scrolling
+    // Restore background scrolling
     removeExtrasEscapeKeyListener();
-    document.body.style.position = '';
     document.body.style.overflow = extrasModalState.bodyOverflowOriginal;
-    document.body.style.width = '';
-    document.body.style.top = '';
-    window.scrollTo(0, extrasModalState.originalScrollPosition);
     
     extrasModalState.modalOpen = false;
 }

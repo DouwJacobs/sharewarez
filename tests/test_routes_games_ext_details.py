@@ -121,6 +121,13 @@ def test_game_update(db_session, test_game):
     update = GameUpdate(
         game_uuid=test_game.uuid,
         file_path='/path/to/update.exe',
+        title='Update 2',
+        version='1.2.0',
+        update_number=2,
+        requires_version='1.1.0',
+        install_instructions='Run the patch installer.',
+        is_cumulative=True,
+        size=1024,
         times_downloaded=5,
         created_at=datetime.now(timezone.utc),
         nfo_content='Update NFO content'
@@ -352,7 +359,14 @@ class TestGameDetailsRouteResponse:
         # Verify updates array exists and contains correct data
         assert 'updates' in game_data
         assert len(game_data['updates']) == 1
-        assert game_data['updates'][0]['file_path'] == '/path/to/update.exe'
+        update_data = game_data['updates'][0]
+        assert update_data['display_name'] == 'Update 2'
+        assert update_data['version'] == '1.2.0'
+        assert update_data['update_number'] == 2
+        assert update_data['requires_version'] == '1.1.0'
+        assert update_data['install_instructions'] == 'Run the patch installer.'
+        assert update_data['is_cumulative'] is True
+        assert 'file_path' not in update_data
         
         # Verify no duplicate updates key by checking data structure
         # Count the number of times 'updates' appears as a key
@@ -516,6 +530,26 @@ class TestGameDetailsTemplateSecurity:
 
         assert response.status_code == 200
         assert mock_render.call_args.kwargs['back_url'] == '/library?tag=Portable'
+
+    def test_game_details_does_not_use_update_editor_as_back_link(self, client, test_user, test_game):
+        """Editor referrers fall back to the library browsing page."""
+        with client.session_transaction() as sess:
+            sess['_user_id'] = str(test_user.id)
+            sess['_fresh'] = True
+
+        with patch('sharewarez.routes_games_ext.details.render_template') as mock_render:
+            mock_render.return_value = 'mocked response'
+            response = client.get(
+                f'/game_details/{test_game.uuid}',
+                headers={
+                    'Referer': (
+                        f'http://localhost/game/{test_game.uuid}/updates/1/edit'
+                    )
+                }
+            )
+
+        assert response.status_code == 200
+        assert mock_render.call_args.kwargs['back_url'] == '/library'
 
 
 class TestGameDetailsErrorHandling:

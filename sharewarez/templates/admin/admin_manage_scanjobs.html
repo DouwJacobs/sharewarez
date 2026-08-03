@@ -12,28 +12,35 @@
 <meta name="active-tab" content="{{ active_tab }}">
 <meta name="selected-library-uuid" content="{{ selected_library_uuid }}">
 
+<header class="scan-management-heading">
+    <div>
+        <span class="scan-management-eyebrow">Library tools</span>
+        <h1>Scan Management</h1>
+        <p>Discover games, review unmatched folders, and manage scan-related settings.</p>
+    </div>
+</header>
 
 <div class="admin_manage_scanjobs-nav-panel mt-3">
     <div class="container-settings">
         <!-- Nav tabs -->
         <ul class="admin_manage_scanjobs-nav-tabs nav nav-tabs">
             <li class="admin_manage_scanjobs-nav-item nav-item">
-                <a class="admin_manage_scanjobs-nav-link nav-link {% if active_tab == 'auto' or not active_tab %}active{% endif %}" id="autoScan-tab" data-bs-toggle="tab" href="#autoScan">Auto Scan</a>
+                <a class="admin_manage_scanjobs-nav-link nav-link {% if active_tab == 'auto' or not active_tab %}active{% endif %}" id="autoScan-tab" data-bs-toggle="tab" href="#autoScan"><i class="fas fa-rotate" aria-hidden="true"></i><span>Auto Scan</span></a>
             </li>
             <li class="admin_manage_scanjobs-nav-item nav-item">
-                <a class="admin_manage_scanjobs-nav-link nav-link {% if active_tab == 'manual' %}active{% endif %}" id="manualScan-tab" data-bs-toggle="tab" href="#manualScan">Manual Scan</a>
+                <a class="admin_manage_scanjobs-nav-link nav-link {% if active_tab == 'manual' %}active{% endif %}" id="manualScan-tab" data-bs-toggle="tab" href="#manualScan"><i class="fas fa-magnifying-glass" aria-hidden="true"></i><span>Manual Scan</span></a>
             </li>
             <li class="admin_manage_scanjobs-nav-item nav-item">
-                <a class="admin_manage_scanjobs-nav-link nav-link {% if active_tab == 'unmatched' %}active{% endif %}" id="unmatchedFolders-tab" data-bs-toggle="tab" href="#unmatchedFolders">Unmatched Folders</a>
+                <a class="admin_manage_scanjobs-nav-link nav-link {% if active_tab == 'unmatched' %}active{% endif %}" id="unmatchedFolders-tab" data-bs-toggle="tab" href="#unmatchedFolders"><i class="fas fa-circle-question" aria-hidden="true"></i><span>Unmatched</span></a>
             </li>
             <li class="admin_manage_scanjobs-nav-item nav-item">
-                <a class="admin_manage_scanjobs-nav-link nav-link {% if active_tab == 'scan_filters' %}active{% endif %}" id="scanFilters-tab" data-bs-toggle="tab" href="#scanFilters">Scan Filters</a>
+                <a class="admin_manage_scanjobs-nav-link nav-link {% if active_tab == 'scan_filters' %}active{% endif %}" id="scanFilters-tab" data-bs-toggle="tab" href="#scanFilters"><i class="fas fa-filter" aria-hidden="true"></i><span>Filters</span></a>
             </li>
             <li class="admin_manage_scanjobs-nav-item nav-item">
-                <a class="admin_manage_scanjobs-nav-link nav-link {% if active_tab == 'file_extensions' %}active{% endif %}" id="fileExtensions-tab" data-bs-toggle="tab" href="#fileExtensions">File Extensions</a>
+                <a class="admin_manage_scanjobs-nav-link nav-link {% if active_tab == 'file_extensions' %}active{% endif %}" id="fileExtensions-tab" data-bs-toggle="tab" href="#fileExtensions"><i class="fas fa-file-code" aria-hidden="true"></i><span>File Types</span></a>
             </li>
             <li class="admin_manage_scanjobs-nav-item nav-item">
-                <a class="admin_manage_scanjobs-nav-link nav-link {% if active_tab == 'image_queue' %}active{% endif %}" id="imageQueue-tab" data-bs-toggle="tab" href="#imageQueue">Image Queue</a>
+                <a class="admin_manage_scanjobs-nav-link nav-link {% if active_tab == 'image_queue' %}active{% endif %}" id="imageQueue-tab" data-bs-toggle="tab" href="#imageQueue"><i class="fas fa-images" aria-hidden="true"></i><span>Image Queue</span></a>
             </li>
         </ul>
 
@@ -106,11 +113,9 @@
                                     </div>
                                 </div>
                                 
-                                <div class="option-item">
-                                    <div class="form-check modern-checkbox">
-                                        {{ auto_form.force_updates_extras_scan(class="form-check-input", id="force-updates-extras-auto") }}
-                                        {{ auto_form.force_updates_extras_scan.label(class="form-check-label", **{"data-toggle": "tooltip", "title": "Force re-scanning of update and extras folders even if previously scanned"}) }}
-                                    </div>
+                                <div class="option-item supplemental-scan-note">
+                                    <i class="fas fa-circle-info" aria-hidden="true"></i>
+                                    <span>Enabled update and extras folders are checked automatically, including for existing games.</span>
                                 </div>
 
                                 <div class="option-item">
@@ -138,20 +143,13 @@
                         <div class="card-content">
                             <div class="path-input-group">
                                 {{ auto_form.folder_path.label(class="config-label", **{"data-toggle": "tooltip", "title": "Browse or enter the path to scan for games"}) }}
-                                <div class="scan-controls-group" style="display: flex; justify-content: flex-end; margin-bottom: 10px;">
-                                    <button type="submit" name="submit" value="AutoScan" class="btn btn-primary browse-btn" style="margin-right: 10px;">
-                                        <i class="fas fa-play"></i> Start Scan
-                                    </button>
-                                    <div id="loadingSpinner" class="loading-spinner" style="display: none;">
-                                        <img src="/static/newstyle/searching_small.gif" alt="Loading...">
-                                    </div>
-                                </div>
                                 <div class="input-with-button">
                                     {{ auto_form.folder_path(class="form-control path-input") }}
                                     <button id="browseFoldersBtn" type="button" class="btn btn-secondary browse-btn" data-browse-url="{{ url_for('apis.browse_folders_ss') }}">
-                                        <i class="fas fa-search"></i> Browse
+                                        <i class="fas fa-folder-open"></i> Browse
                                     </button>
                                 </div>
+                                <p class="field-help">Choose the parent directory containing your game folders or files.</p>
                                 {% if auto_form.folder_path.errors %}
                                     {% for error in auto_form.folder_path.errors %}
                                         <div class="alert alert-danger">{{ error }}</div>
@@ -164,6 +162,17 @@
                                     <i class="fas fa-arrow-up"></i> Up
                                 </button>
                                 <div id="folderContents" class="folder-contents"></div>
+                            </div>
+                            <div id="loadingSpinner" class="loading-spinner" style="display: none;">
+                                <div class="app-loading-indicator" role="status">
+                                    <span class="app-spinner" aria-hidden="true"></span>
+                                    <span>Loading folders…</span>
+                                </div>
+                            </div>
+                            <div class="scan-location-actions">
+                                <button type="submit" name="submit" value="AutoScan" class="btn btn-primary scan-start-btn">
+                                    <i class="fas fa-play"></i> Start Scan
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -230,10 +239,10 @@
                 <div class="admin_manage_scanjobs-tab-header">
                     <h3>Manual Folder Scan</h3>
                 </div>
-                <form id="manualScanForm" action="" method="post">
+                <form id="manualScanForm" class="manual-scan-form" action="" method="post">
                     {{ manual_form.hidden_tag() }}
                     <!-- Library Selection -->
-                    <div class="admin_manage_scanjobs-library form-group">
+                    <div class="admin_manage_scanjobs-library form-group manual-field-card">
                         {{ manual_form.library_uuid.label(**{"data-toggle": "tooltip", "title": "Choose which library to scan games into"}) }}
                         {{ manual_form.library_uuid(class="form-control", id="manualLibraryUuid", onchange='onLibraryChange(this.value, "manual")') }}
                         {% if manual_form.library_uuid.errors %}
@@ -243,7 +252,7 @@
                         {% endif %}
                     </div>
                     <!-- Scan Mode -->
-                    <div class="admin_manage_scanjobs-scanmode form-group">
+                    <div class="admin_manage_scanjobs-scanmode form-group manual-field-card">
                         {{ manual_form.scan_mode.label(**{"data-toggle": "tooltip", "title": "Choose how your games are organized on disk"}) }}
                         {% for subfield in manual_form.scan_mode %}
                             <div class="form-check">
@@ -256,7 +265,7 @@
                             </div>
                         {% endfor %}
                     </div>
-                    <div class="form-group">
+                    <div class="form-group manual-location-field">
                         {{ manual_form.folder_path.label(**{"data-toggle": "tooltip", "title": "Browse or enter the path to scan for games"}) }}
                         {{ manual_form.folder_path(class="form-control", id="manualFolderPath") }}
                         {% if manual_form.folder_path.errors %}
@@ -267,11 +276,11 @@
                     </div>
                     
                     <!-- Options -->
-                    <div class="form-check modern-checkbox">
-                        {{ manual_form.force_updates_extras_scan(class="form-check-input", id="force-updates-extras-manual") }}
-                        {{ manual_form.force_updates_extras_scan.label(class="form-check-label", **{"data-toggle": "tooltip", "title": "Force re-scanning of update and extras folders even if previously scanned"}) }}
+                    <div class="manual-options-panel"><span class="config-label">Scan options</span>
+                    <div class="supplemental-scan-note">
+                        <i class="fas fa-circle-info" aria-hidden="true"></i>
+                        <span>Enabled update and extras folders are checked automatically.</span>
                     </div>
-
                     <div class="form-check modern-checkbox">
                         {{ manual_form.fetch_hltb(class="form-check-input", id="fetch-hltb-manual", checked="checked") }}
                         {{ manual_form.fetch_hltb.label(class="form-check-label", **{"data-toggle": "tooltip", "title": "Fetch game completion times from HowLongToBeat during scan"}) }}
@@ -280,9 +289,9 @@
                     <div class="form-check modern-checkbox">
                         {{ manual_form.force_hltb_refetch(class="form-check-input", id="force-hltb-refetch-manual") }}
                         {{ manual_form.force_hltb_refetch.label(class="form-check-label", **{"data-toggle": "tooltip", "title": "Force refetch HLTB data for games that already exist in the database"}) }}
-                    </div>
+                    </div></div>
 
-                    <div class="form-group">
+                    <div class="form-group manual-actions">
                         <button id="browseFoldersBtnManual" type="button" class="admin_manage_scanjobs-browsefolders-btn btn btn-secondary">Browse Folders</button>
                         <button id="manualScanSubmitBtn" type="submit" name="submit" value="ManualScan" class="admin_manage_scanjobs-browsefolders-listgames-btn btn btn-primary">
                             <i class="fas fa-list" aria-hidden="true"></i> List Games
@@ -295,7 +304,10 @@
                     </div>
                 </form>
                 <div id="loadingSpinnerManual" class="loading-spinner">
-                    <img src="/static/newstyle/searching_small.gif" alt="Loading...">
+                    <div class="app-loading-indicator" role="status">
+                        <span class="app-spinner" aria-hidden="true"></span>
+                        <span>Loading folders…</span>
+                    </div>
                 </div>
                 <div id="folderContentsManual"></div>
             
@@ -316,6 +328,12 @@
                         </div>
                     {% endfor %}
                 </div>
+                {% elif active_tab == 'manual' %}
+                <div class="scan-empty-state scan-empty-state-panel" role="status">
+                    <i class="fas fa-folder-open" aria-hidden="true"></i>
+                    <strong>No games found</strong>
+                    <span>No supported game folders or files were found at this location.</span>
+                </div>
             {% endif %}
             
                 </div>
@@ -327,8 +345,11 @@
                         <h3>Resolve Unmatched Folders</h3>
                     </div>
                     <!-- spinner -->
-                    <div id="globalSpinner" style="display: none;">
-                        <img src="{{ url_for('static', filename='/newstyle/searching.gif') }}" alt="Loading...">
+                    <div id="globalSpinner" class="loading-spinner" style="display: none;">
+                        <div class="app-loading-indicator" role="status">
+                            <span class="app-spinner" aria-hidden="true"></span>
+                            <span>Updating unmatched folders…</span>
+                        </div>
                     </div>
 
                     <div class="container-unmatched-buttons mb-3">
@@ -454,6 +475,10 @@
                                     </form>
                                 </td>
                             </tr>
+                        {% else %}
+                            <tr class="scan-empty-state-row">
+                                <td colspan="3"><div class="scan-empty-state"><i class="fas fa-filter" aria-hidden="true"></i><strong>No scan filters</strong><span>Add a filter to exclude release labels or folder-name patterns.</span></div></td>
+                            </tr>
                         {% endfor %}
                         </tbody>
                     </table></div>
@@ -496,6 +521,10 @@
                                                     <i class="fas fa-trash"></i>
                                                 </button>
                                             </td>
+                                        </tr>
+                                        {% else %}
+                                        <tr class="scan-empty-state-row">
+                                            <td colspan="2"><div class="scan-empty-state"><i class="fas fa-file-circle-question" aria-hidden="true"></i><strong>No file types configured</strong><span>Add an extension before using Files scan mode.</span></div></td>
                                         </tr>
                                         {% endfor %}
                                     </tbody>
@@ -838,7 +867,7 @@
         if (!tbody) return;
 
         if (images.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" class="text-center">No images found</td></tr>';
+            tbody.innerHTML = '<tr class="scan-empty-state-row"><td colspan="6"><div class="scan-empty-state"><i class="fas fa-images" aria-hidden="true"></i><strong>No queued images</strong><span>Queued cover and screenshot downloads will appear here.</span></div></td></tr>';
             return;
         }
 

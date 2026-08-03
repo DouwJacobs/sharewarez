@@ -184,6 +184,7 @@ class AddGameForm(FlaskForm):
     summary = TextAreaField('Summary', validators=[Optional()])
     storyline = TextAreaField('Storyline', validators=[Optional()])
     install_instructions = TextAreaField('How to Install', validators=[Optional()])
+    version = StringField('Base Package Version', validators=[Optional(), Length(max=100)])
     url = StringField('URL', validators=[Optional(), URL(), safe_url_validator])
     full_disk_path = StringField('Full Disk Path', validators=[DataRequired()], widget=TextInput())
     video_urls = StringField('Video URLs', validators=[Optional(), comma_separated_urls])
@@ -201,6 +202,18 @@ class AddGameForm(FlaskForm):
     tags = StringField('Tags', validators=[Optional()])
     library_uuid = SelectField('Library', coerce=str, validators=[DataRequired()])
     submit = SubmitField('Save')    
+
+
+class GameUpdateForm(FlaskForm):
+    title = StringField('Update title', validators=[Optional(), Length(max=255)])
+    version = StringField('Resulting game version', validators=[Optional(), Length(max=100)])
+    update_number = IntegerField('Update number', validators=[Optional(), NumberRange(min=0)])
+    requires_version = StringField('Requires version', validators=[Optional(), Length(max=100)])
+    release_date = DateField('Release date', format='%Y-%m-%d', validators=[Optional()])
+    is_cumulative = BooleanField('Cumulative update')
+    install_instructions = TextAreaField('Installation instructions', validators=[Optional(), Length(max=10000)])
+    changelog = TextAreaField('Changelog', validators=[Optional(), Length(max=20000)])
+    submit = SubmitField('Save update')
     
 class CsrfProtectForm(FlaskForm):
     pass

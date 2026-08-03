@@ -2,7 +2,7 @@
     {% if messages %}
         <div class="sw-toast-container" aria-live="polite" aria-atomic="true">
             {% for category, message in messages %}
-                {% set bs_class = 'danger' if category == 'error' else (category or 'info') %}
+                {% set bs_class = 'danger' if category == 'error' else (category if category in ('success', 'warning', 'danger', 'info', 'image-refresh') else 'info') %}
                 {% set icon = 'fa-check-circle' if bs_class == 'success' else ('fa-exclamation-triangle' if bs_class in ('warning', 'danger') else 'fa-info-circle') %}
                 <div class="toast sw-toast sw-toast-{{ bs_class }} show {% if category == 'image-refresh' %}sw-toast-image-refresh{% endif %}"
                      role="alert"

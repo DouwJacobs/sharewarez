@@ -1,12 +1,30 @@
 /* === LOGIN COMPONENTS === */
 
+.content-login .input-glass {
+    width: 100%;
+    margin: 3px 0 !important;
+    box-sizing: border-box;
+}
+
 .container-buttons-login {
     display: flex;
     flex-direction: row;
     justify-content: space-between;
-    padding: var(--spacing-lg);
+    padding: var(--spacing-lg) 0 0;
     font-size: var(--font-size-20px);
     gap: var(--spacing-lg);
+}
+
+.container-buttons-login.registration-actions,
+.content-login form[action^="/register"] .container-buttons-login {
+    justify-content: space-between;
+    padding: var(--spacing-lg) 0 var(--spacing-md);
+    margin-bottom: var(--spacing-md);
+}
+
+.content-login form[action="/login"] .container-buttons-login {
+    padding: var(--spacing-lg) 0 var(--spacing-md);
+    margin-bottom: var(--spacing-md);
 }
 
 /* Game Card Component */

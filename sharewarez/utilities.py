@@ -1,13 +1,14 @@
 #/sharewarez/utilities.py
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 from threading import Thread
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import select
 from flask import current_app, flash, redirect, url_for, session, copy_current_request_context
 from sharewarez.utils.functions import (
-    load_scanning_filter_patterns,
+    load_scanning_filter_patterns, get_folder_size_in_bytes_updates,
+    read_first_nfo_content,
 )
 from sharewarez.models import (
     Game, Library, AllowedFileType, ScanJob, GlobalSettings, UnmatchedFolder
@@ -18,6 +19,62 @@ from sharewarez.utils.gamenames import get_game_names_from_folder, get_game_name
 from sharewarez.utils.scanning import process_game_with_fallback, process_game_updates, process_game_extras, is_scan_job_running
 from sharewarez.utils.igdb_api import IGDBRateLimiter
 from sharewarez.utils.security import is_safe_path, get_allowed_base_directories
+
+
+def _scan_enabled_supplemental_content(game_name, full_disk_path, library_uuid,
+                                       enable_game_updates, update_folder_name,
+                                       enable_game_extras, extras_folder_name):
+    """Scan enabled update/extra directories for both new and existing games."""
+    if enable_game_updates:
+        updates_folder = os.path.join(full_disk_path, update_folder_name)
+        if os.path.isdir(updates_folder):
+            print(f"Updates folder found for game: {game_name}")
+            process_game_updates(game_name, full_disk_path, updates_folder, library_uuid, update_folder_name)
+        else:
+            print(f"No updates folder found for game: {game_name}")
+    else:
+        print(f"Updates scanning disabled, skipping for game: {game_name}")
+
+    if enable_game_extras:
+        extras_folder = os.path.join(full_disk_path, extras_folder_name)
+        if os.path.isdir(extras_folder):
+            print(f"Extras folder found for game: {game_name}")
+            process_game_extras(game_name, full_disk_path, extras_folder, library_uuid, extras_folder_name)
+        else:
+            print(f"No extras folder found for game: {game_name}")
+    else:
+        print(f"Extras scanning disabled, skipping for game: {game_name}")
+
+
+def refresh_game_metadata_and_updates(game_uuid):
+    """Refresh filesystem metadata and enabled supplemental content for one game."""
+    game = db.session.execute(select(Game).filter_by(uuid=game_uuid)).scalar_one_or_none()
+    if not game:
+        raise ValueError('Game not found')
+    if not game.full_disk_path or not os.path.exists(game.full_disk_path):
+        raise FileNotFoundError(f"Game path is unavailable: {game.full_disk_path or 'not configured'}")
+    allowed_bases = get_allowed_base_directories(current_app)
+    is_safe, error_message = is_safe_path(game.full_disk_path, allowed_bases)
+    if not is_safe:
+        raise PermissionError(error_message)
+
+    settings = db.session.execute(select(GlobalSettings)).scalars().first()
+    update_folder_name = settings.update_folder_name if settings else 'updates'
+    extras_folder_name = settings.extras_folder_name if settings else 'extras'
+    enable_game_updates = bool(settings and settings.enable_game_updates)
+    enable_game_extras = bool(settings and settings.enable_game_extras)
+
+    game.nfo_content = read_first_nfo_content(game.full_disk_path) if os.path.isdir(game.full_disk_path) else None
+    game.size = get_folder_size_in_bytes_updates(game.full_disk_path)
+    game.last_updated = datetime.now(timezone.utc)
+    db.session.commit()
+
+    _scan_enabled_supplemental_content(
+        game.name, game.full_disk_path, game.library_uuid,
+        enable_game_updates, update_folder_name,
+        enable_game_extras, extras_folder_name
+    )
+    return game.name
 
 
 def scan_and_add_games(folder_path, scan_mode='folders', library_uuid=None, remove_missing=False, existing_job=None, download_missing_images=False, force_updates_extras_scan=False, fetch_hltb=False, force_hltb_refetch=False):
@@ -154,19 +211,15 @@ def scan_and_add_games(folder_path, scan_mode='folders', library_uuid=None, remo
         full_disk_path = game_info['full_path']
         result = {'game_name': game_name, 'success': False, 'error': None}
         
-        # Fast path - check cached sets BEFORE rate limiting
-        # But if force_updates_extras_scan or force_hltb_refetch is enabled, we need to process existing games
+        # Existing games still need their enabled supplemental content checked.
+        # This is intentionally independent of the legacy per-scan force flag:
+        # enabling update/extras scanning globally is the source of truth.
         if existing_game_paths and full_disk_path in existing_game_paths:
             print(f"Game already exists (cached): {game_name} at {full_disk_path}")
-            # Continue processing if:
-            # 1. force_updates_extras_scan is enabled AND (updates OR extras scanning is enabled), OR
-            # 2. force_hltb_refetch is enabled
-            should_process_existing = False
-            if force_updates_extras_scan and (enable_game_updates or enable_game_extras):
-                should_process_existing = True
-                print(f"Force mode enabled, checking updates/extras for existing game: {game_name}")
+            should_process_existing = enable_game_updates or enable_game_extras or force_hltb_refetch
+            if enable_game_updates or enable_game_extras:
+                print(f"Enabled supplemental scan, checking existing game: {game_name}")
             if force_hltb_refetch:
-                should_process_existing = True
                 print(f"Force HLTB refetch enabled, will update HLTB data for existing game: {game_name}")
 
             if not should_process_existing:
@@ -186,37 +239,21 @@ def scan_and_add_games(folder_path, scan_mode='folders', library_uuid=None, remo
                 # Use rate limiter for IGDB API calls
                 igdb_rate_limiter.acquire()
                 try:
-                    # If game already exists and we're in force mode, skip game processing and go directly to updates/extras
+                    # Existing games skip identification and go directly to enabled supplemental scans.
                     if game_already_exists:
                         success = True
-                        print(f"Skipping game processing for existing game in force mode: {game_name}")
+                        print(f"Skipping identification for existing game: {game_name}")
                     else:
                         success = process_game_with_fallback(game_name, full_disk_path, scan_job_id, library_uuid, fetch_hltb=fetch_hltb, settings=settings)
                     
                     result['success'] = success
                     
                     if success:
-                        # Check for updates folder using the cached setting
-                        if enable_game_updates:
-                            updates_folder = os.path.join(full_disk_path, update_folder_name)
-                            if os.path.exists(updates_folder) and os.path.isdir(updates_folder):
-                                print(f"Updates folder found for game: {game_name}")
-                                process_game_updates(game_name, full_disk_path, updates_folder, library_uuid, update_folder_name)
-                            else:
-                                print(f"No updates folder found for game: {game_name}")
-                        else:
-                            print(f"Updates scanning disabled, skipping for game: {game_name}")
-
-                        # Check for extras folder
-                        if enable_game_extras:
-                            extras_folder = os.path.join(full_disk_path, extras_folder_name)
-                            if os.path.exists(extras_folder) and os.path.isdir(extras_folder):
-                                print(f"Extras folder found for game: {game_name}")
-                                process_game_extras(game_name, full_disk_path, extras_folder, library_uuid, extras_folder_name)
-                            else:
-                                print(f"No extras folder found for game: {game_name}")
-                        else:
-                            print(f"Extras scanning disabled, skipping for game: {game_name}")
+                        _scan_enabled_supplemental_content(
+                            game_name, full_disk_path, library_uuid,
+                            enable_game_updates, update_folder_name,
+                            enable_game_extras, extras_folder_name
+                        )
 
                         # Fetch HLTB data for existing games if force_hltb_refetch is enabled
                         if game_already_exists and force_hltb_refetch:
@@ -357,6 +394,19 @@ def scan_and_add_games(folder_path, scan_mode='folders', library_uuid=None, remo
                 print(f"Game already exists (cached): {game_name} at {full_disk_path}")
                 already_exist_count += 1
                 scan_job_entry.folders_success += 1
+                try:
+                    _scan_enabled_supplemental_content(
+                        game_name, full_disk_path, library_uuid,
+                        enable_game_updates, update_folder_name,
+                        enable_game_extras, extras_folder_name
+                    )
+                except Exception as e:
+                    scan_job_entry.folders_failed += 1
+                    scan_job_entry.folders_success -= 1
+                    scan_job_entry.status = 'Failed'
+                    error_line = f"Failed supplemental scan for '{game_name}': {str(e)}"
+                    scan_job_entry.error_message = (scan_job_entry.error_message or "") + f"{error_line}\n"
+                    print(f"[SCAN EXCEPTION] {error_line}")
             elif existing_unmatched_paths and full_disk_path in existing_unmatched_paths:
                 print(f"Folder already logged as unmatched (cached): {full_disk_path}")
                 already_unmatched_count += 1
@@ -367,28 +417,11 @@ def scan_and_add_games(folder_path, scan_mode='folders', library_uuid=None, remo
                     if success:
                         new_games_count += 1
                         scan_job_entry.folders_success += 1
-                        # Use cached settings instead of querying database again
-                        # Check for updates folder using the cached setting
-                        if enable_game_updates:
-                            updates_folder = os.path.join(full_disk_path, update_folder_name)
-                            if os.path.exists(updates_folder) and os.path.isdir(updates_folder):
-                                print(f"Updates folder found for game: {game_name}")
-                                process_game_updates(game_name, full_disk_path, updates_folder, library_uuid, update_folder_name)
-                            else:
-                                print(f"No updates folder found for game: {game_name}")
-                        else:
-                            print(f"Updates scanning disabled, skipping for game: {game_name}")
-                            
-                        # Check for extras folder
-                        if enable_game_extras:
-                            extras_folder = os.path.join(full_disk_path, extras_folder_name)
-                            if os.path.exists(extras_folder) and os.path.isdir(extras_folder):
-                                print(f"Extras folder found for game: {game_name}")
-                                process_game_extras(game_name, full_disk_path, extras_folder, library_uuid, extras_folder_name)
-                            else:
-                                print(f"No extras folder found for game: {game_name}")
-                        else:
-                            print(f"Extras scanning disabled, skipping for game: {game_name}")
+                        _scan_enabled_supplemental_content(
+                            game_name, full_disk_path, library_uuid,
+                            enable_game_updates, update_folder_name,
+                            enable_game_extras, extras_folder_name
+                        )
                     else:
                         scan_job_entry.folders_failed += 1
                         print(f"[SCAN INFO] Game '{game_name}' could not be matched to IGDB database or was already unmatched.")

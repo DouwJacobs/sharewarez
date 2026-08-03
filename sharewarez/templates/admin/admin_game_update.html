@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="settings-card mx-auto" style="max-width: 900px;">
+    <div class="settings-card-header">
+        <div>
+            <h1>Edit Update</h1>
+            <p>{{ game.name }} · {{ update.title or update.file_path.split('/')[-1] }}</p>
+        </div>
+        <a class="btn btn-secondary" href="{{ url_for('games.game_details', game_uuid=game.uuid) }}">Back to game</a>
+    </div>
+    <form method="post" class="settings-form">
+        {{ form.hidden_tag() }}
+        <div class="row g-3">
+            <div class="col-md-8"><label class="form-label">{{ form.title.label }}</label>{{ form.title(class="form-control") }}</div>
+            <div class="col-md-4"><label class="form-label">{{ form.update_number.label }}</label>{{ form.update_number(class="form-control") }}</div>
+            <div class="col-md-6"><label class="form-label">{{ form.version.label }}</label>{{ form.version(class="form-control") }}</div>
+            <div class="col-md-6"><label class="form-label">{{ form.requires_version.label }}</label>{{ form.requires_version(class="form-control") }}</div>
+            <div class="col-md-6"><label class="form-label">{{ form.release_date.label }}</label>{{ form.release_date(class="form-control") }}</div>
+            <div class="col-md-6 d-flex align-items-end"><div class="form-check mb-2">{{ form.is_cumulative(class="form-check-input") }} <label class="form-check-label">{{ form.is_cumulative.label }}</label></div></div>
+            <div class="col-12"><label class="form-label">{{ form.install_instructions.label }}</label>{{ form.install_instructions(class="form-control", rows="6") }}</div>
+            <div class="col-12"><label class="form-label">{{ form.changelog.label }}</label>{{ form.changelog(class="form-control", rows="8") }}</div>
+        </div>
+        <div class="mt-4">{{ form.submit(class="btn btn-primary") }}</div>
+    </form>
+</div>
+{% endblock %}

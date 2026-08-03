@@ -28,16 +28,52 @@
 {% macro render_file_row(file, game_uuid, file_type) %}
     <tr>
         <td>
-            {% set file_name = file.file_path.split('/')[-1] %}
-            {{ get_file_icon(file_name) }}
-            <a href="{{ url_for('download.download_other', 
-                               file_type=file_type,
-                               game_uuid=game_uuid,
-                               file_id=file.id) }}" 
-               class="download-form">
-                <span class="file-name">{{ file_name }}</span>
-            </a>
-            <span class="file-size">({{ file.file_size|default('0') }})</span>
+            {% if file.display_name is defined and file.display_name %}
+                {% set file_name = file.display_name %}
+            {% elif file.file_path is defined and file.file_path %}
+                {% set file_name = file.file_path.replace('\\', '/').split('/')[-1] %}
+            {% else %}
+                {% set file_name = 'Download' %}
+            {% endif %}
+            {% set download_url = url_for('download.download_other',
+                                          file_type=file_type,
+                                          game_uuid=game_uuid,
+                                          file_id=file.id) %}
+            <div class="extras-file-heading">
+                <div class="extras-file-primary">
+                    {{ get_file_icon(file_name) }}
+                    <a href="{{ download_url }}" class="download-form">
+                        <span class="file-name">{{ file_name }}</span>
+                    </a>
+                    <span class="file-size">{{ file.file_size|default('0') }}</span>
+                </div>
+                <a href="{{ download_url }}"
+                   class="extras-download-button"
+                   aria-label="Download {{ file_name }}">
+                    <i class="fas fa-download" aria-hidden="true"></i>
+                    <span>Download</span>
+                </a>
+            </div>
+            {% if file_type == 'update' %}
+                <div class="update-metadata">
+                    {% if file.update_number is not none %}<span class="chip">Update {{ file.update_number }}</span>{% endif %}
+                    {% if file.version %}<span class="chip">Version {{ file.version }}</span>{% endif %}
+                    {% if file.requires_version %}<span class="chip">Requires {{ file.requires_version }}</span>{% endif %}
+                    {% if file.is_cumulative %}<span class="chip">Cumulative</span>{% endif %}
+                    {% if file.release_date %}<span class="chip">{{ file.release_date }}</span>{% endif %}
+                </div>
+                {% if file.install_instructions or file.changelog or file.nfo_content %}
+                    <details class="update-notes">
+                        <summary>Instructions and release notes</summary>
+                        {% if file.install_instructions %}<h5>Installation</h5><div class="preserve-lines">{{ file.install_instructions }}</div>{% endif %}
+                        {% if file.changelog %}<h5>Changelog</h5><div class="preserve-lines">{{ file.changelog }}</div>{% endif %}
+                        {% if file.nfo_content %}<h5>NFO</h5><pre>{{ file.nfo_content }}</pre>{% endif %}
+                    </details>
+                {% endif %}
+                {% if current_user.role == 'admin' %}
+                    <a class="btn btn-secondary btn-sm" href="{{ url_for('games.game_update_edit', game_uuid=game_uuid, update_id=file.id) }}">Edit update</a>
+                {% endif %}
+            {% endif %}
         </td>
     </tr>
 {% endmacro %}
@@ -115,6 +151,7 @@
     <div class="modal-extras-content">
         <div class="modal-extras-header">
             <h3>Updates & Extras for {{ game.name }}</h3>
+            {% if game.version %}<p>Version: <strong>{{ game.version }}</strong></p>{% endif %}
         </div>
         <div class="modal-extras-body">
             {% if game.updates and game.extras %}
@@ -161,6 +198,8 @@
 {# Game Details #}
 
 {% if game %}
+    {% set cover_images = game.images | selectattr('type', 'equalto', 'cover') | list %}
+    {% set screenshot_images = game.images | rejectattr('type', 'equalto', 'cover') | list %}
     <div class="glass-panel-gamecard">
             {# NFO Modal #}
             {% if game.nfo_content and game.nfo_content.lower() != 'none' %}
@@ -183,12 +222,13 @@
                     <span>Back</span>
                 </a>
                 <h1>{{ game.name or 'Game Name Not Available' }}</h1>
+                {% if game.version %}<span class="chip game-version-badge"><span class="game-version-label">Version</span> {{ game.version }}</span>{% endif %}
             </div>
 
             <div class="game-card-topq">
                 <div class="game-card-q1">
                     {# Cover Image #}
-                    {% if game.images and game.images|length > 0 %}
+                    {% if cover_images %}
                         <div class="game-card-coverimage">
                             {# Hamburger menu button on cover #}
                             <button id="menuButton-{{ game.uuid }}" class="button-glass-hamburger button-glass-hamburger-cover">
@@ -200,7 +240,7 @@
                                 {% include 'games/popup_menu.html' %}
                             {% endwith %}
 
-                            {% for image in game.images if 'cover' in image.url %}
+                            {% for image in cover_images %}
                                 <img src="{{ url_for('static', filename='library/images/' + image.url) }}"
                                      alt="{{ game.name }} Cover Image"
                                      class="game-card-cover-image animated-entry">
@@ -314,7 +354,7 @@
                                                 <i class="fas fa-trophy"></i> {{ "%.1f"|format(game.hltb_completionist) }}h
                                             </div>
                                         {% endif %}
-                                        {% if current_user.is_admin %}
+                                        {% if current_user.role == 'admin' %}
                                             <button class="chip" onclick="refreshHLTB('{{ game.uuid }}')" title="Refresh HLTB data" style="cursor: pointer; background: rgba(100, 100, 255, 0.3);">
                                                 <i class="fas fa-sync-alt"></i>
                                             </button>
@@ -327,9 +367,7 @@
 
                     {# Download Section #}
                     <div class="game-card-downloads">
-                        {% if game.size %}
-                            <div class="chip-size">{{ game.size }}</div>
-                        {% endif %}
+                        <div class="chip-size">{{ game.size or 'Unknown' }}</div>
                         <div class="download-buttons">
                             <form action="{{ url_for('download.download_game', game_uuid=game.uuid) }}" method="get" class="download-form">
                                 <input type="submit" value="Download" class="button-glass-download" data-game-uuid="{{ game.uuid }}">
@@ -460,9 +498,9 @@
             </div>
 
             {# Screenshots Gallery #}
-            {% if game.images and game.images|length > 0 %}
+            {% if screenshot_images %}
                 <div class="screenshot-gallery">
-                    {% for image in game.images if 'cover' not in image.url %}
+                    {% for image in screenshot_images %}
                         <img src="{{ url_for('static', filename='library/images/' + image.url) }}" 
                              alt="{{ game.name }} Screenshot" 
                              class="screenshot-image" 

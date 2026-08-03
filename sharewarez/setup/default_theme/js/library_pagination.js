@@ -392,6 +392,9 @@ $(document).ready(function() {
         const discordConfigured = document.body.getAttribute('data-discord-configured') === 'true';
         const discordManualTrigger = document.body.getAttribute('data-discord-manual-trigger') === 'true';
         const isAdmin = document.body.getAttribute('data-is-admin') === 'true';
+        const supplementalScanningEnabled =
+            document.body.getAttribute('data-enable-game-updates') === 'true' ||
+            document.body.getAttribute('data-enable-game-extras') === 'true';
         let menuHtml = `
     <div id="popupMenu-${game.uuid}" class="popup-menu" style="display: none;">
         <form action="/download_game/${game.uuid}" method="get" class="menu-item">
@@ -420,6 +423,13 @@ $(document).ready(function() {
                 </div>
             </div>
         </div>`;
+        if (isAdmin && supplementalScanningEnabled) {
+            menuHtml += `
+        <form action="/refresh_game_metadata_updates/${game.uuid}" method="post" class="menu-item">
+            <input type="hidden" name="csrf_token" value="${csrfToken}">
+            <button type="submit" class="menu-button refresh-game-metadata-updates" data-game-uuid="${game.uuid}">Refresh Metadata &amp; Updates</button>
+        </form>`;
+        }
         if (enableDeleteGameOnDisk) {
             menuHtml += `
         <div class="menu-item">

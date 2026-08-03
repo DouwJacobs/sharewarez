@@ -3,9 +3,19 @@
 
 # Parse arguments
 FORCE_SETUP=false
-if [[ "$1" == "--force-setup" || "$1" == "-fs" ]]; then
-    FORCE_SETUP=true
-fi
+RELOAD_MODE="auto"
+for arg in "$@"; do
+    case "$arg" in
+        --force-setup|-fs) FORCE_SETUP=true ;;
+        --reload) RELOAD_MODE="true" ;;
+        --no-reload|--production) RELOAD_MODE="false" ;;
+        *)
+            echo "❌ Unknown argument: $arg"
+            echo "Usage: ./startweb.sh [--force-setup] [--reload|--no-reload]"
+            exit 1
+            ;;
+    esac
+done
 
 cd "$(dirname "$0")"
 
@@ -60,6 +70,11 @@ print('Database reset complete. Run ./startweb.sh to start the server.')
     exit 0
 fi
 
+if [[ "$RELOAD_MODE" == "auto" ]]; then
+    RELOAD_MODE="${HOT_RELOAD:-${DEV_MODE:-false}}"
+fi
+RELOAD_MODE="$(printf '%s' "$RELOAD_MODE" | tr '[:upper:]' '[:lower:]')"
+
 echo "Starting SharewareZ with uvicorn..."
 
 # Run complete startup initialization once before starting workers
@@ -81,5 +96,23 @@ export SHAREWAREZ_INITIALIZATION_COMPLETE=true
 # Set port for uvicorn (default 5006, can be overridden by PORT env var)
 export PORT=${PORT:-5006}
 
-# Start uvicorn with workers (migrations already complete)
-uvicorn asgi:asgi_app --host 0.0.0.0 --port $PORT --workers 4
+# Uvicorn cannot combine multiple workers with its reload supervisor. In
+# development, watch Python, templates, and source theme assets. Production
+# keeps the multi-worker configuration and can be selected with --no-reload.
+if [[ "$RELOAD_MODE" == "true" || "$RELOAD_MODE" == "1" || "$RELOAD_MODE" == "yes" ]]; then
+    echo "🔥 Hot reload enabled (single development worker)"
+    export SHAREWAREZ_HOT_RELOAD=true
+    uvicorn asgi:asgi_app \
+        --host 0.0.0.0 \
+        --port "$PORT" \
+        --reload \
+        --reload-dir . \
+        --reload-include '*.py' \
+        --reload-include '*.html' \
+        --reload-include '*.css' \
+        --reload-include '*.js' \
+        --reload-include '*.json'
+else
+    echo "🚀 Hot reload disabled (${WEB_WORKERS:-4} workers)"
+    uvicorn asgi:asgi_app --host 0.0.0.0 --port "$PORT" --workers "${WEB_WORKERS:-4}"
+fi

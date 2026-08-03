@@ -5,6 +5,41 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Adjusted for dynamic content using event delegation
     document.body.addEventListener('click', function(event) {
+        if (event.target.classList.contains('refresh-game-metadata-updates')) {
+            event.preventDefault();
+            event.stopPropagation();
+            const button = event.target;
+            const gameUuid = button.getAttribute('data-game-uuid');
+            const originalText = button.textContent;
+            button.disabled = true;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin" aria-hidden="true"></i> Refreshing…';
+
+            const popupMenu = document.getElementById(`popupMenu-${gameUuid}`);
+            fetch(`/refresh_game_metadata_updates/${gameUuid}`, {
+                method: 'POST',
+                headers: CSRFUtils.getHeaders({
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }),
+                body: JSON.stringify({})
+            })
+            .then(async response => {
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.message || 'Refresh request failed');
+                $.notify(data.message, 'success');
+                if (popupMenu) popupMenu.style.display = 'none';
+            })
+            .catch(error => {
+                console.error('Metadata and updates refresh failed:', error);
+                $.notify(error.message || 'Could not refresh metadata and updates.', 'error');
+            })
+            .finally(() => {
+                button.disabled = false;
+                button.textContent = originalText;
+            });
+            return;
+        }
+
         // Handling deletion of a game (not from disk)
         if (event.target.classList.contains('delete-game')) {
             event.stopPropagation();

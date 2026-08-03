@@ -39,6 +39,7 @@
                     if (type === 'warn' || type === 'warning') bsClass = 'warning';
                     if (type === 'success') bsClass = 'success';
                     if (type === 'info') bsClass = 'info';
+                    if (!['success', 'warning', 'danger', 'info'].includes(bsClass)) bsClass = 'info';
                     
                     // Select or create container
                     let container = document.querySelector('.sw-toast-container');
@@ -123,6 +124,7 @@
     <script src="{{ 'js/preferences_modal.js'|theme_asset }}"></script>
     <script src="{{ 'js/delete_game_modal.js'|theme_asset }}"></script>
     <script src="{{ 'js/image_refresh_progress.js'|theme_asset }}"></script>
+    <script src="{{ 'js/modal_manager.js'|theme_asset }}"></script>
 
 
     {% endblock %}
@@ -174,7 +176,7 @@
         }
     </style>
 </head>
-<body class="{% if request.path.startswith('/admin') or request.endpoint in ['download.manage_downloads', 'library.libraries', 'main.scan_management'] %}admin-ui{% endif %}"{% if request.path == '/library' %} data-user-per-page="{{ user_per_page }}" data-user-default-sort="{{ user_default_sort }}" data-user-default-sort-order="{{ user_default_sort_order }}" data-enable-delete-game-on-disk="{{ enable_delete_game_on_disk|lower }}" data-discord-configured="{{ discord_configured|lower }}" data-discord-manual-trigger="{{ discord_manual_trigger_enabled|lower }}" data-is-admin="{{ is_admin|lower }}" data-show-play-status="{{ show_play_status|lower }}" data-current-filters="{{ filters|tojson|e }}" data-current-page="{{ current_page }}" data-total-pages="{{ pages }}"{% endif %}>
+<body class="{% if request.path.startswith('/admin') or request.endpoint in ['download.manage_downloads', 'library.libraries', 'main.scan_management'] %}admin-ui{% endif %}" data-enable-game-updates="{{ enable_game_updates|lower }}" data-enable-game-extras="{{ enable_game_extras|lower }}"{% if request.path == '/library' %} data-user-per-page="{{ user_per_page }}" data-user-default-sort="{{ user_default_sort }}" data-user-default-sort-order="{{ user_default_sort_order }}" data-enable-delete-game-on-disk="{{ enable_delete_game_on_disk|lower }}" data-discord-configured="{{ discord_configured|lower }}" data-discord-manual-trigger="{{ discord_manual_trigger_enabled|lower }}" data-is-admin="{{ is_admin|lower }}" data-show-play-status="{{ show_play_status|lower }}" data-current-filters="{{ filters|tojson|e }}" data-current-page="{{ current_page }}" data-total-pages="{{ pages }}"{% endif %}>
 
 
 

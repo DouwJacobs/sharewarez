@@ -225,6 +225,14 @@
     border-color: rgba(var(--theme-accent-soft-rgb, 154, 177, 255), .16) !important;
 }
 
+/* Q1 is a layout column around the cover, not a card surface. Keeping it
+   content-height prevents a themed background from extending below short
+   cover artwork to the bottom of the adjacent metadata column. */
+.game-card-q1 {
+    align-self: flex-start;
+    background: transparent !important;
+}
+
 /* Nested cards use a lighter accent surface instead of repeating the parent box. */
 :is(.admin-surface, .admin-panel, .glass-panel, .discovery-panel, .library-browser-panel)
     :is(.card, .theme-card, .theme-operation-card, .stat-card, .info-block, .section-item, .game-card, .favorites-empty-state, .library-name),

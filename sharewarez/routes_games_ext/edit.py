@@ -109,6 +109,7 @@ def game_edit(game_uuid):
             install_instructions = install_instructions[:10000]
             flash('Install instructions were truncated to 10000 characters', 'warning')
         game.install_instructions = install_instructions
+        game.version = (form.version.data or '').strip() or None
         
         video_urls = form.video_urls.data or ""
         if len(video_urls) > 4096:
@@ -297,7 +298,8 @@ def game_edit(game_uuid):
                     game_title=game.name,
                     manually_verified=True,
                     filename=metadata_filename,
-                    install_instructions=game.install_instructions
+                    install_instructions=game.install_instructions,
+                    game_version=game.version
                 )
 
             if igdb_id_changed:
