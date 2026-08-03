@@ -33,6 +33,14 @@
 .request-search-wrap:not(.admin-request-search) .request-search-icon { position: absolute; top: 50%; left: .9rem; z-index: 1; transform: translateY(-50%); }
 .request-search-wrap:not(.admin-request-search) input { padding: 0 2rem; text-align: center; }
 .request-search-wrap:not(.admin-request-search) input::placeholder { text-align: center; }
+.request-search-wrap > i {
+    display: inline-flex;
+    width: 1rem;
+    height: 1rem;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+}
 .request-search-wrap input:focus,
 .request-search-wrap input:focus-visible {
     border: 0 !important;
