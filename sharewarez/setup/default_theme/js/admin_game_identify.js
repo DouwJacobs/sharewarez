@@ -434,19 +434,36 @@ document.addEventListener('DOMContentLoaded', function() {
     checkFieldsAndToggleSubmit();
     console.log("Ready to add a game!.");
 
-    // Show spinner on form submit
+    // Show spinner on form submit — detect which button triggered it
     const gameEditForm = document.querySelector('.game_edit-form');
+    const allSubmitButtons = document.querySelectorAll('.game_edit-form button[type="submit"]');
+    let lastClickedSubmit = null;
+
+    allSubmitButtons.forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            lastClickedSubmit = btn;
+        });
+    });
+
     if (gameEditForm) {
-        gameEditForm.addEventListener('submit', function(e) {
-            // Only show spinner if form is valid (submit button is enabled)
-            if (!submitButton.disabled) {
-                const spinner = document.getElementById('saveSpinner');
-                if (spinner) {
-                    spinner.style.display = 'flex';
+        gameEditForm.addEventListener('submit', function() {
+            if (submitButton.disabled) return; // form is blocked (validation)
+
+            const spinner = document.getElementById('saveSpinner');
+            const spinnerMsg = document.getElementById('spinnerMessage');
+
+            if (spinner) {
+                const isRefresh = lastClickedSubmit && lastClickedSubmit.value === 'save_and_refresh';
+                if (spinnerMsg) {
+                    spinnerMsg.textContent = isRefresh
+                        ? 'Saving and refreshing metadata\u2026'
+                        : 'Saving game\u2026';
                 }
-                // Disable submit button to prevent double submission
-                submitButton.disabled = true;
+                spinner.style.display = 'flex';
             }
+
+            // Disable all submit buttons to prevent double-submit
+            allSubmitButtons.forEach(function(btn) { btn.disabled = true; });
         });
     }
 });

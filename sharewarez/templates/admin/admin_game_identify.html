@@ -9,7 +9,7 @@
     <div id="saveSpinner" class="spinner-overlay" style="display: none;">
         <div class="spinner-container">
             <div class="app-spinner app-spinner-lg" role="status" aria-label="Saving game"></div>
-            <div class="progress-text">Saving game...</div>
+            <div class="progress-text" id="spinnerMessage">Saving game...</div>
         </div>
     </div>
 
@@ -41,8 +41,11 @@
                 </div>
                 <div class="game-edit-actions" aria-label="Game entry actions">
                     <a href="{{ url_for('library.library') }}" class="btn btn-secondary">Cancel</a>
-                    <button type="submit" class="btn btn-primary">
+                    <button type="submit" name="action" value="save" class="btn btn-primary">
                         <i class="fas fa-floppy-disk" aria-hidden="true"></i> Save changes
+                    </button>
+                    <button type="submit" name="action" value="save_and_refresh" class="btn btn-primary">
+                        <i class="fas fa-rotate" aria-hidden="true"></i> Save &amp; Refresh Metadata
                     </button>
                 </div>
             </div>
@@ -131,6 +134,12 @@
                         {{ form.version(class="form-control", id="version", placeholder="Optional, e.g. 1.6.1170 or Build 1436") }}
                         <small class="form-text text-muted">The version included in this downloadable base package.</small>
                     </div>
+                    <div class="game_edit-form-group-edition">
+                        <label for="edition_name">Edition Name</label>
+                        {{ form.edition_name(class="form-control", id="edition_name", placeholder="e.g. Ultimate Edition, Gold Edition, GOTY Edition") }}
+                        <small class="form-text text-muted">Optional display label shown as a badge on the game details page. Point the IGDB ID to the base game for full metadata, then set this label to indicate the edition you have.</small>
+                    </div>
+
                     <div class="game_edit-form-group-url">
                         <label for="url">URL</label>
                         {{ form.url(class="form-control", id="url") }}

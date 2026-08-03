@@ -186,6 +186,7 @@
     <div class="modal-extras-content">
         <div class="modal-extras-header">
             <h3>Updates & Extras for {{ game.name }}</h3>
+            {% if game.edition_name %}<p>Edition: <strong>{{ game.edition_name }}</strong></p>{% endif %}
             {% if game.version %}<p>Version: <strong>{{ game.version }}</strong></p>{% endif %}
         </div>
         <div class="modal-extras-body">
@@ -257,6 +258,7 @@
                     <span>Back</span>
                 </a>
                 <h1>{{ game.name or 'Game Name Not Available' }}</h1>
+                {% if game.edition_name %}<span class="chip game-edition-badge"><i class="fas fa-layer-group" aria-hidden="true"></i> {{ game.edition_name }}</span>{% endif %}
                 {% if game.version %}<span class="chip game-version-badge"><span class="game-version-label">Version</span> {{ game.version }}</span>{% endif %}
             </div>
 

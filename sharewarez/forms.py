@@ -185,6 +185,8 @@ class AddGameForm(FlaskForm):
     storyline = TextAreaField('Storyline', validators=[Optional()])
     install_instructions = TextAreaField('How to Install', validators=[Optional()])
     version = StringField('Base Package Version', validators=[Optional(), Length(max=100)])
+    edition_name = StringField('Edition Name', validators=[Optional(), Length(max=255)])
+
     url = StringField('URL', validators=[Optional(), URL(), safe_url_validator])
     full_disk_path = StringField('Full Disk Path', validators=[DataRequired()], widget=TextInput())
     video_urls = StringField('Video URLs', validators=[Optional(), comma_separated_urls])

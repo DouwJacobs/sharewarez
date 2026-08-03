@@ -173,6 +173,8 @@ class Game(db.Model):
     nfo_content = db.Column(db.Text, nullable=True)
     install_instructions = db.Column(db.Text, nullable=True)
     version = db.Column(db.String(100), nullable=True)
+    edition_name = db.Column(db.String(255), nullable=True)
+
     # HowLongToBeat integration fields
     hltb_id = db.Column(db.Integer, nullable=True)
     hltb_main_story = db.Column(db.Float, nullable=True)

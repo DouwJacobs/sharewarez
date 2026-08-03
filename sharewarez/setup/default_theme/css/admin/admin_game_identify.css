@@ -94,13 +94,27 @@
     to { transform: rotate(360deg); }
 }
 
-/* Form controls */
-
-.form-control:focus {
-    background: rgba(255, 255, 255, 0.15);
-    border-color: rgba(255, 255, 255, 0.3);
+/* Form controls — match base.css and other admin pages exactly */
+.form-control,
+.form-select {
     color: var(--text-white);
-    box-shadow: 0 0 0 0.2rem rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.045);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.24);
+}
+
+.form-control::placeholder {
+    color: rgba(255, 255, 255, 0.32);
+}
+
+.form-control:focus,
+.form-select:focus {
+    background: rgba(255, 255, 255, 0.07);
+    border-color: rgba(126, 157, 255, 0.9);
+    color: var(--text-white);
+    box-shadow: 0 0 0 3px rgba(98, 122, 239, 0.18), inset 0 1px 2px rgba(0, 0, 0, 0.24);
+    outline: none;
 }
 
 /* Labels */
@@ -108,7 +122,10 @@ label {
     color: var(--text-white);
     margin-bottom: var(--spacing-8);
     display: block;
-    font-size: 1.1em;
+    font-size: 0.88em;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
 }
 
 /* Search results */
@@ -285,12 +302,25 @@ label {
 
 .details-fields-grid .game_edit-form-group-summary,
 .details-fields-grid .game_edit-form-group-storyline,
-.details-fields-grid .game_edit-form-group-install-instructions {
+.details-fields-grid .game_edit-form-group-install-instructions,
+.details-fields-grid .game_edit-form-group-version,
+.details-fields-grid .game_edit-form-group-edition {
     grid-column: 1 / -1;
 }
 
 .details-fields-grid textarea {
     min-height: 110px;
+}
+
+/* Helper / hint text under fields */
+.details-section small,
+.form-text-muted,
+small.form-text {
+    display: block;
+    margin-top: 4px;
+    font-size: 0.78em;
+    color: var(--text-secondary, rgba(185, 192, 208, 0.75));
+    line-height: 1.4;
 }
 
 .details-credits-grid {

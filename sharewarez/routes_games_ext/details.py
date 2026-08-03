@@ -105,6 +105,8 @@ def game_details(game_uuid):
             "storyline": game.storyline,
             "install_instructions": game.install_instructions,
             "version": game.version,
+            "edition_name": game.edition_name,
+
             "aggregated_rating": game.aggregated_rating,
             "aggregated_rating_count": game.aggregated_rating_count,
             "updates": [{

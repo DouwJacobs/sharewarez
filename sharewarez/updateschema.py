@@ -298,6 +298,9 @@ class DatabaseManager:
         ALTER TABLE games
         ADD COLUMN IF NOT EXISTS version VARCHAR(100);
 
+        ALTER TABLE games
+        ADD COLUMN IF NOT EXISTS edition_name VARCHAR(255);
+
         ALTER TABLE game_updates ADD COLUMN IF NOT EXISTS title VARCHAR(255);
         ALTER TABLE game_updates ADD COLUMN IF NOT EXISTS version VARCHAR(100);
         ALTER TABLE game_updates ADD COLUMN IF NOT EXISTS update_number INTEGER;
