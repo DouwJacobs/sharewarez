@@ -177,10 +177,6 @@ def game_details(game_uuid):
             if match:
                 steam_app_id = match.group(1)
 
-        if not steam_app_id and game.igdb_id:
-            from sharewarez.utils.igdb_api import get_steam_app_id_from_igdb
-            steam_app_id = get_steam_app_id_from_igdb(game.igdb_id)
-
         steamdb_patchnotes_url = f'https://steamdb.info/app/{steam_app_id}/patchnotes/' if steam_app_id else None
 
         # Augment game_data with URLs using smart icon detection

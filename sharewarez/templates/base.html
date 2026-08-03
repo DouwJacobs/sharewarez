@@ -119,6 +119,10 @@
     <link rel="stylesheet" href="{{ 'css/components.css'|theme_asset }}">
     <link rel="stylesheet" href="{{ 'css/global-search.css'|theme_asset }}">
     <!-- Global mobile responsiveness - loaded last to override all page-specific styles -->
+    <!-- Theme & polish stylesheets loaded in head to prevent Flash of Unstyled Content (FOUC) -->
+    <link rel="stylesheet" href="{{ 'css/table-polish.css'|theme_asset }}">
+    <link rel="stylesheet" href="{{ 'css/theme-components.css'|theme_asset }}">
+    <link rel="stylesheet" href="{{ 'css/theme-overrides.css'|theme_asset }}">
     <link rel="stylesheet" href="{{ 'css/mobile.css'|theme_asset }}">
     
     <script src="{{ 'js/preferences_modal.js'|theme_asset }}"></script>
@@ -301,10 +305,6 @@
     {% block content %}{% endblock %}
 </div>
 
-<!-- Final table layer loads after page styles so every view shares one table language. -->
-<link rel="stylesheet" href="{{ 'css/table-polish.css'|theme_asset }}">
-<link rel="stylesheet" href="{{ 'css/theme-components.css'|theme_asset }}">
-<link rel="stylesheet" href="{{ 'css/theme-overrides.css'|theme_asset }}">
 
 <!-- Add this near the end of base.html -->
 {% include 'partials/delete_game_modal.html' %}

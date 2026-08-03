@@ -73,7 +73,13 @@ def make_igdb_api_request(endpoint_url, query_params):
     except Exception as e:
         return {"error": f"make_igdb_api_request An unexpected error occurred: {e}"}
     
+_access_token_cache = {"token": None, "expires_at": 0}
+
 def get_access_token(client_id, client_secret):
+    now = time.time()
+    if _access_token_cache["token"] and _access_token_cache["expires_at"] > now + 60:
+        return _access_token_cache["token"]
+
     url = "https://id.twitch.tv/oauth2/token"
     params = {
         'client_id': client_id,
@@ -82,7 +88,12 @@ def get_access_token(client_id, client_secret):
     }
     response = requests.post(url, params=params)
     if response.status_code == 200:
-        return response.json()['access_token']
+        data = response.json()
+        token = data.get('access_token')
+        expires_in = data.get('expires_in', 3600)
+        _access_token_cache["token"] = token
+        _access_token_cache["expires_at"] = now + expires_in
+        return token
     else:
         print("Failed to obtain access token")
         return None
