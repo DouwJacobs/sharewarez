@@ -554,36 +554,38 @@
                     </div>
 
                     <!-- Controls -->
-                    <div class="row mb-3 scan-queue-toolbar">
-                        <div class="col-md-6">
-                            <div class="btn-group">
-                                <button class="btn btn-primary" onclick="downloadBatch(10)">
-                                    <i class="fas fa-download"></i> Download 10
-                                </button>
-                                <button class="btn btn-primary" onclick="downloadBatch(50)">
-                                    <i class="fas fa-download"></i> Download 50
-                                </button>
-                                <button class="btn btn-primary" onclick="downloadBatch(100)">
-                                    <i class="fas fa-download"></i> Download 100
-                                </button>
-                                <button class="btn btn-secondary" onclick="refreshQueue()">
-                                    <i class="fas fa-sync"></i> Refresh
-                                </button>
-                            </div>
+                    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3 scan-queue-toolbar">
+                        <div class="d-flex flex-wrap align-items-center gap-2">
+                            <button class="btn btn-primary" onclick="downloadBatch(10)">
+                                <i class="fas fa-download me-1"></i> Download 10
+                            </button>
+                            <button class="btn btn-primary" onclick="downloadBatch(50)">
+                                <i class="fas fa-download me-1"></i> Download 50
+                            </button>
+                            <button class="btn btn-primary" onclick="downloadBatch(100)">
+                                <i class="fas fa-download me-1"></i> Download 100
+                            </button>
+                            <button class="btn btn-secondary" onclick="refreshQueue()" title="Refresh Queue">
+                                <i class="fas fa-sync me-1"></i> Refresh
+                            </button>
+                            <button class="btn btn-warning" onclick="fixHistoricStatus()" id="fix-status-btn" title="Scan all image records and fix download status based on what files exist on disk">
+                                <i class="fas fa-wrench me-1"></i> Fix Status
+                            </button>
+                            <button class="btn btn-danger" onclick="clearQueue('pending')" id="clear-queue-btn" title="Clear pending items from queue">
+                                <i class="fas fa-trash-alt me-1"></i> Clear Queue
+                            </button>
                         </div>
-                        <div class="col-md-6">
-                            <div class="d-flex gap-2">
-                                <select id="status-filter" class="form-select" onchange="applyFilters()">
-                                    <option value="all">All Images</option>
-                                    <option value="pending">Pending Only</option>
-                                    <option value="downloaded">Downloaded Only</option>
-                                </select>
-                                <select id="type-filter" class="form-select" onchange="applyFilters()">
-                                    <option value="all">All Types</option>
-                                    <option value="cover">Covers</option>
-                                    <option value="screenshot">Screenshots</option>
-                                </select>
-                            </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <select id="status-filter" class="form-select" onchange="applyFilters()">
+                                <option value="all">All Images</option>
+                                <option value="pending">Pending Only</option>
+                                <option value="downloaded">Downloaded Only</option>
+                            </select>
+                            <select id="type-filter" class="form-select" onchange="applyFilters()">
+                                <option value="all">All Types</option>
+                                <option value="cover">Covers</option>
+                                <option value="screenshot">Screenshots</option>
+                            </select>
                         </div>
                     </div>
 
@@ -821,6 +823,74 @@
             loadImageQueue();
         }
     });
+
+    // Fix historic image download status
+    async function fixHistoricStatus() {
+        const btn = document.getElementById('fix-status-btn');
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Fixing...';
+        }
+
+        try {
+            const response = await fetch('/admin/api/fix_image_status', {
+                method: 'POST',
+                headers: CSRFUtils.getHeaders()
+            });
+            const data = await response.json();
+
+            if (data.success) {
+                showMessage(
+                    `<i class="fas fa-check-circle"></i> ${data.message} (${data.total_checked} records checked)`,
+                    'success'
+                );
+                loadImageQueue();
+            } else {
+                showMessage('Error: ' + data.message, 'danger');
+            }
+        } catch (error) {
+            showMessage('Failed to fix image status: ' + error, 'danger');
+        } finally {
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-wrench"></i> Fix Historic Status';
+            }
+        }
+    }
+
+    // Clear image queue
+    async function clearQueue(type = 'pending') {
+        if (!confirm(`Are you sure you want to clear all ${type} items from the image queue?`)) return;
+
+        const btn = document.getElementById('clear-queue-btn');
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Clearing...';
+        }
+
+        try {
+            const response = await fetch('/admin/api/clear_image_queue', {
+                method: 'POST',
+                headers: CSRFUtils.getHeaders({ 'Content-Type': 'application/json' }),
+                body: JSON.stringify({ type })
+            });
+            const data = await response.json();
+
+            if (data.success) {
+                showMessage(`<i class="fas fa-check-circle"></i> ${data.message}`, 'success');
+                loadImageQueue();
+            } else {
+                showMessage('Error: ' + data.message, 'danger');
+            }
+        } catch (error) {
+            showMessage('Failed to clear queue: ' + error, 'danger');
+        } finally {
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-trash-alt"></i> Clear Queue';
+            }
+        }
+    }
 
     // Load image queue with filters
     async function loadImageQueue() {

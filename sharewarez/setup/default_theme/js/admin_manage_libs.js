@@ -290,4 +290,37 @@ document.addEventListener('DOMContentLoaded', function() {
         // Start polling
         setTimeout(pollProgress, 500);
     }
+
+    // Handle bulk refresh library images
+    document.querySelectorAll('.bulk-refresh-lib-images').forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            const libraryUuid = this.getAttribute('data-library-uuid');
+            const libraryName = this.getAttribute('data-library-name');
+
+            if (!confirm(`Are you sure you want to trigger bulk image refresh for all games in "${libraryName}"?`)) {
+                return;
+            }
+
+            fetch(`/admin/api/library/${libraryUuid}/refresh_images`, {
+                method: 'POST',
+                headers: CSRFUtils.getHeaders({
+                    'Content-Type': 'application/json'
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    $.notify(data.message, 'success');
+                } else {
+                    $.notify('Error: ' + data.message, 'error');
+                }
+            })
+            .catch(err => {
+                console.error('Error starting bulk refresh:', err);
+                $.notify('Failed to start bulk image refresh.', 'error');
+            });
+        });
+    });
 });
+
