@@ -1,7 +1,6 @@
 from datetime import datetime, timezone
 from functools import wraps
 from flask import request, redirect, url_for, flash
-from urllib.parse import urlparse as url_parse
 from flask_login import current_user, login_user
 from sqlalchemy import func, select
 from sharewarez.models import User, db
@@ -11,6 +10,18 @@ from sharewarez import login_manager
 def load_user(user_id):
     return db.session.get(User, int(user_id))
 
+def get_safe_next_url():
+    """Return a local post-login destination supplied by the request."""
+    next_page = (request.form.get('next') or request.args.get('next') or '').strip()
+    if (
+        not next_page.startswith('/')
+        or next_page.startswith('//')
+        or '\\' in next_page
+        or any(ord(character) < 32 for character in next_page)
+    ):
+        return None
+    return next_page
+
 def _authenticate_and_redirect(username, password):
     user = db.session.execute(select(User).filter(func.lower(User.name) == func.lower(username))).scalars().first()
     
@@ -19,13 +30,12 @@ def _authenticate_and_redirect(username, password):
         db.session.commit()
         login_user(user, remember=True)
         
-        next_page = request.args.get('next')
-        if not next_page or url_parse(next_page).netloc != '':
-            next_page = url_for('discover.discover')
+        next_page = get_safe_next_url() or url_for('discover.discover')
         return redirect(next_page)
     else:
         flash('Invalid username or password', 'error')
-        return redirect(url_for('login.login'))
+        next_page = get_safe_next_url()
+        return redirect(url_for('login.login', next=next_page) if next_page else url_for('login.login'))
 
 def admin_required(f):
     @wraps(f)

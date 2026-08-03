@@ -7,7 +7,7 @@ from werkzeug.wrappers import Request
 
 from sharewarez import create_app, db
 from sharewarez.models import User
-from sharewarez.utils.auth import load_user, _authenticate_and_redirect, admin_required
+from sharewarez.utils.auth import load_user, _authenticate_and_redirect, admin_required, get_safe_next_url
 
 
 def safe_cleanup_database(db_session):
@@ -165,7 +165,7 @@ class TestAuthenticateAndRedirect:
     
     @patch('sharewarez.utils.auth.login_user')
     @patch('sharewarez.utils.auth.redirect')
-    def test_redirect_to_next_page(self, mock_redirect, mock_login_user, 
+    def test_redirect_to_next_page(self, mock_redirect, mock_login_user,
                                  app, db_session, test_user):
         """Test redirect to 'next' page after successful authentication."""
         with app.app_context():
@@ -179,6 +179,29 @@ class TestAuthenticateAndRedirect:
                 # Verify redirect to the 'next' page
                 mock_redirect.assert_called_with('/admin/dashboard')
                 assert result == 'next_page_redirect'
+
+    @patch('sharewarez.utils.auth.login_user')
+    @patch('sharewarez.utils.auth.redirect')
+    def test_redirect_to_next_page_from_login_form(self, mock_redirect, mock_login_user,
+                                                   app, db_session, test_user):
+        """The hidden login field preserves Flask-Login's destination on POST."""
+        with app.test_request_context('/login', method='POST', data={'next': '/favorites?page=2'}):
+            mock_redirect.return_value = 'next_page_redirect'
+
+            result = _authenticate_and_redirect(test_user.name, 'testpassword123')
+
+            mock_redirect.assert_called_with('/favorites?page=2')
+            assert result == 'next_page_redirect'
+
+    @pytest.mark.parametrize('target', [
+        'https://evil.example/steal',
+        '//evil.example/steal',
+        '/\\evil.example/steal',
+        'javascript:alert(1)',
+    ])
+    def test_rejects_unsafe_next_destinations(self, app, target):
+        with app.test_request_context('/login', method='POST', data={'next': target}):
+            assert get_safe_next_url() is None
     
     @patch('sharewarez.utils.auth.login_user')
     @patch('sharewarez.utils.auth.redirect')

@@ -4,7 +4,7 @@ from flask_login import current_user, login_required
 from sharewarez import db
 from sharewarez.models import User, InviteToken, GlobalSettings, Whitelist
 from sharewarez.forms import LoginForm, RegistrationForm, ResetPasswordRequestForm, InviteForm, UserPasswordForm
-from sharewarez.utils.auth import _authenticate_and_redirect
+from sharewarez.utils.auth import _authenticate_and_redirect, get_safe_next_url
 from sharewarez.utils.smtp import send_email, send_password_reset_email, send_invite_email
 from sharewarez.utils.processors import get_global_settings
 from sharewarez.utils.event_logging import log_system_event
@@ -40,8 +40,9 @@ def inject_settings():
 
 @login_bp.route('/login', methods=['GET', 'POST'])
 def login():
+    next_page = get_safe_next_url()
     if current_user.is_authenticated:
-        return redirect(url_for('discover.discover'))
+        return redirect(next_page or url_for('discover.discover'))
 
 
     print("Route: /login")
@@ -55,22 +56,22 @@ def login():
             if not user.is_email_verified:
                 flash('Your account is not activated, check your email.', 'warning')
                 log_system_event(f"User {username} attempted to log in with an unverified account.", event_type='login', event_level='warning')
-                return redirect(url_for('login.login'))
+                return redirect(url_for('login.login', next=next_page) if next_page else url_for('login.login'))
 
             if not user.state:
                 flash('Your account has been banned.', 'error')
                 log_system_event(f"User {username} attempted to log in with a banned account.", event_type='login', event_level='warning')
                 print(f"Error: Attempted login to disabled account - User: {username}")
-                return redirect(url_for('login.login'))
+                return redirect(url_for('login.login', next=next_page) if next_page else url_for('login.login'))
 
             log_system_event(f"User {username} logged in successfully.", event_type='login', event_level='information')
             return _authenticate_and_redirect(username, password)
         else:
             flash('Invalid username or password. USERNAMES ARE CASE SENSITIVE!', 'error')
             log_system_event(f"User {username} attempted to log in with invalid credentials.", event_type='login', event_level='warning')
-            return redirect(url_for('login.login'))
+            return redirect(url_for('login.login', next=next_page) if next_page else url_for('login.login'))
 
-    return render_template('login/login.html', form=form)
+    return render_template('login/login.html', form=form, next_page=next_page)
 
 
 @login_bp.route('/register', methods=['GET', 'POST'])

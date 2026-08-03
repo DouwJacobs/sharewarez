@@ -15,6 +15,7 @@
             <div class="container-content">
                 <form action="/login" method="post">
                     {{ form.hidden_tag() }}
+                    {% if next_page %}<input type="hidden" name="next" value="{{ next_page }}">{% endif %}
                     <label for="username" class="label-large-text">Username</label><br>
                     <input type="text" class="input-glass" id="username" name="username" autocomplete="username"><br>
                     <label for="password" class="label-large-text">Password</label><br>
