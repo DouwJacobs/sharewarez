@@ -78,21 +78,7 @@
     color: var(--text-white);
 }
 
-.button-spinner {
-    display: inline-block;
-    width: 0.9rem;
-    height: 0.9rem;
-    margin-right: 0.45rem;
-    border: 2px solid currentColor;
-    border-right-color: transparent;
-    border-radius: 50%;
-    vertical-align: -0.1rem;
-    animation: game-edit-spin 0.65s linear infinite;
-}
-
-@keyframes game-edit-spin {
-    to { transform: rotate(360deg); }
-}
+/* button-spinner definition is inherited from base.css */
 
 /* Form controls — match base.css and other admin pages exactly */
 .form-control,

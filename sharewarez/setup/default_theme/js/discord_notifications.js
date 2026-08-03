@@ -35,7 +35,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const submitButton = notificationForm.querySelector('button[type="submit"]');
         const originalButtonText = submitButton.innerHTML;
         submitButton.disabled = true;
-        submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+        submitButton.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Saving...';
 
         fetch('/admin/discord_notifications', {
             method: 'POST',

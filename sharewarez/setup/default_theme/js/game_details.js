@@ -348,7 +348,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const submitBtn = document.getElementById('submitUpdateReqBtn');
         if (submitBtn) {
             submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
+            submitBtn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Submitting...';
         }
 
         try {

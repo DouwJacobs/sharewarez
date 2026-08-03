@@ -1674,13 +1674,18 @@ pre {
     .game-card-bottom-info { padding: 0 14px 14px; }
 }
 
+.game-badges-container {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
 .game-version-badge {
     display: inline-flex;
     align-items: center;
-    align-self: flex-start;
-    flex: 0 0 auto;
     gap: 6px;
-    margin-left: auto;
     padding: 7px 11px;
     font-weight: 700;
     white-space: nowrap;

@@ -258,72 +258,74 @@
                     <span>Back</span>
                 </a>
                 <h1>{{ game.name or 'Game Name Not Available' }}</h1>
-                {% if game.edition_name %}<span class="chip game-edition-badge"><i class="fas fa-layer-group" aria-hidden="true"></i> {{ game.edition_name }}</span>{% endif %}
-                {% if game.version %}<span class="chip game-version-badge"><span class="game-version-label">Version</span> {{ game.version }}</span>{% endif %}
             </div>
 
             <div class="game-card-topq">
                 <div class="game-card-q1">
                     {# Cover Image #}
-                    {% if cover_images %}
-                        <div class="game-card-coverimage">
-                            {# Hamburger menu button on cover #}
-                            <button id="menuButton-{{ game.uuid }}" class="button-glass-hamburger button-glass-hamburger-cover">
-                                <i class="fas fa-bars"></i>
-                            </button>
+                    <div class="game-card-coverimage">
+                        {# Hamburger menu button on cover #}
+                        <button id="menuButton-{{ game.uuid }}" class="button-glass-hamburger button-glass-hamburger-cover">
+                            <i class="fas fa-bars"></i>
+                        </button>
 
-                            {# Popup menu (triggered by hamburger button) #}
-                            {% with game_uuid=game.uuid, game_url=game.url %}
-                                {% include 'games/popup_menu.html' %}
-                            {% endwith %}
+                        {# Popup menu (triggered by hamburger button) #}
+                        {% with game_uuid=game.uuid, game_url=game.url %}
+                            {% include 'games/popup_menu.html' %}
+                        {% endwith %}
 
+                        {% if cover_images %}
                             {% for image in cover_images %}
                                 <img src="{{ url_for('static', filename='library/images/' + image.url) }}"
                                      alt="{{ game.name }} Cover Image"
                                      class="game-card-cover-image animated-entry">
                             {% endfor %}
+                        {% else %}
+                            <img src="{{ url_for('static', filename='newstyle/default_cover.jpg') }}"
+                                 alt="{{ game.name }} Default Cover"
+                                 class="game-card-cover-image animated-entry">
+                        {% endif %}
 
-                            {# Favorite button on cover #}
-                            <button class="favorite-btn favorite-btn-cover" data-game-uuid="{{ game.uuid }}" data-is-favorite="{{ is_favorite|lower }}">
-                                <i class="fas fa-heart"></i>
-                            </button>
+                        {# Favorite button on cover #}
+                        <button class="favorite-btn favorite-btn-cover" data-game-uuid="{{ game.uuid }}" data-is-favorite="{{ is_favorite|lower }}">
+                            <i class="fas fa-heart"></i>
+                        </button>
 
-                            {% if show_play_status %}
-                            {# Game status button on cover #}
-                            <button class="game-status-btn game-status-btn-cover" data-game-uuid="{{ game.uuid }}" data-current-status="{{ user_status or '' }}" title="{{ status_label or 'No Status' }}">
-                                <i class="fas {{ status_icon or 'fa-circle' }}"></i>
-                            </button>
+                        {% if show_play_status %}
+                        {# Game status button on cover #}
+                        <button class="game-status-btn game-status-btn-cover" data-game-uuid="{{ game.uuid }}" data-current-status="{{ user_status or '' }}" title="{{ status_label or 'No Status' }}">
+                            <i class="fas {{ status_icon or 'fa-circle' }}"></i>
+                        </button>
 
-                            {# Status dropdown menu #}
-                            <div class="status-dropdown" data-game-uuid="{{ game.uuid }}" style="display: none;">
-                                <div class="status-dropdown-option" data-status="unplayed">
-                                    <i class="fas fa-box" style="color: #808080;"></i>
-                                    <span class="status-label">Unplayed</span>
-                                </div>
-                                <div class="status-dropdown-option" data-status="unfinished">
-                                    <i class="fas fa-gamepad" style="color: #4A90E2;"></i>
-                                    <span class="status-label">Unfinished</span>
-                                </div>
-                                <div class="status-dropdown-option" data-status="beaten">
-                                    <i class="fas fa-flag-checkered" style="color: #50C878;"></i>
-                                    <span class="status-label">Beaten</span>
-                                </div>
-                                <div class="status-dropdown-option" data-status="completed">
-                                    <i class="fas fa-trophy" style="color: #FFD700;"></i>
-                                    <span class="status-label">Completed</span>
-                                </div>
-                                <div class="status-dropdown-option" data-status="null">
-                                    <i class="fas fa-ban" style="color: #DC3545;"></i>
-                                    <span class="status-label">Won't Play</span>
-                                </div>
-                                <div class="status-dropdown-option" data-status="" style="border-top: 1px solid rgba(255, 255, 255, 0.2);">
-                                    <i class="fas fa-times" style="color: #808080;"></i>
-                                    <span class="status-label">Clear Status</span>
-                                </div>
+                        {# Status dropdown menu #}
+                        <div class="status-dropdown" data-game-uuid="{{ game.uuid }}" style="display: none;">
+                            <div class="status-dropdown-option" data-status="unplayed">
+                                <i class="fas fa-box" style="color: #808080;"></i>
+                                <span class="status-label">Unplayed</span>
                             </div>
-                            {% endif %}
+                            <div class="status-dropdown-option" data-status="unfinished">
+                                <i class="fas fa-gamepad" style="color: #4A90E2;"></i>
+                                <span class="status-label">Unfinished</span>
+                            </div>
+                            <div class="status-dropdown-option" data-status="beaten">
+                                <i class="fas fa-flag-checkered" style="color: #50C878;"></i>
+                                <span class="status-label">Beaten</span>
+                            </div>
+                            <div class="status-dropdown-option" data-status="completed">
+                                <i class="fas fa-trophy" style="color: #FFD700;"></i>
+                                <span class="status-label">Completed</span>
+                            </div>
+                            <div class="status-dropdown-option" data-status="null">
+                                <i class="fas fa-ban" style="color: #DC3545;"></i>
+                                <span class="status-label">Won't Play</span>
+                            </div>
+                            <div class="status-dropdown-option" data-status="" style="border-top: 1px solid rgba(255, 255, 255, 0.2);">
+                                <i class="fas fa-times" style="color: #808080;"></i>
+                                <span class="status-label">Clear Status</span>
+                            </div>
                         </div>
-                    {% endif %}
+                        {% endif %}
+                    </div>
                 </div>
 
                 <div class="game-card-q2">
@@ -344,6 +346,14 @@
                                         </a>
                                     </div>
                                 {% endfor %}
+                            </div>
+                        {% endif %}
+
+                        {# Version & Edition Badges #}
+                        {% if game.edition_name or game.version %}
+                            <div class="game-badges-container">
+                                {% if game.edition_name %}<span class="chip game-edition-badge"><i class="fas fa-layer-group" aria-hidden="true"></i> {{ game.edition_name }}</span>{% endif %}
+                                {% if game.version %}<span class="chip game-version-badge"><span class="game-version-label">Version</span> {{ game.version }}</span>{% endif %}
                             </div>
                         {% endif %}
 

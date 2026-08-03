@@ -323,7 +323,31 @@ def game_edit(game_uuid):
 
             if request.form.get('action') == 'save_and_refresh':
                 try:
+                    # Save user edited values before metadata fetch
+                    edited_developer = game.developer
+                    edited_publisher = game.publisher
+                    edited_summary = game.summary
+                    edited_storyline = game.storyline
+                    edited_version = game.version
+                    edited_edition_name = game.edition_name
+
                     refreshed_name = refresh_game_metadata_and_updates(game_uuid)
+
+                    # Re-apply explicit user form edits if specified
+                    if edited_developer is not None:
+                        game.developer = edited_developer
+                    if edited_publisher is not None:
+                        game.publisher = edited_publisher
+                    if edited_summary:
+                        game.summary = edited_summary
+                    if edited_storyline:
+                        game.storyline = edited_storyline
+                    if edited_version:
+                        game.version = edited_version
+                    if edited_edition_name:
+                        game.edition_name = edited_edition_name
+                    db.session.commit()
+
                     flash(f'Game saved and metadata refreshed for {refreshed_name}.', 'success')
                     current_app.logger.info(
                         'Save-and-refresh: metadata refreshed for %s (%s)', refreshed_name, game_uuid

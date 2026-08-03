@@ -492,14 +492,10 @@
 .manual-scan-spinner {
     width: 18px;
     height: 18px;
-    border: 2px solid rgba(210, 225, 255, 0.36);
-    border-top-color: #9fc0ff;
+    border: 2px solid color-mix(in srgb, currentColor 25%, transparent);
+    border-top-color: currentColor;
     border-radius: 50%;
-    animation: manual-scan-spin 0.7s linear infinite;
-}
-
-@keyframes manual-scan-spin {
-    to { transform: rotate(360deg); }
+    animation: app-spinner-rotate 0.75s linear infinite;
 }
 
 /* Auto scan styling */

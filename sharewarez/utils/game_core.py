@@ -342,6 +342,8 @@ def process_and_save_image(game_uuid, image_data, image_type='cover'):
             game_uuid=game_uuid,
             image_type=image_type,
             url=file_name,
+            download_url=url,
+            is_downloaded=True,
         )
         db.session.add(image)
     

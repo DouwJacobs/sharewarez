@@ -12,7 +12,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const gameUuid = button.getAttribute('data-game-uuid');
             const originalText = button.textContent;
             button.disabled = true;
-            button.innerHTML = '<i class="fas fa-spinner fa-spin" aria-hidden="true"></i> Refreshing…';
+            button.innerHTML = '<i class="fas fa-circle-notch fa-spin" aria-hidden="true"></i> Refreshing…';
 
             const popupMenu = document.getElementById(`popupMenu-${gameUuid}`);
             fetch(`/refresh_game_metadata_updates/${gameUuid}`, {
