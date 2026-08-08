@@ -1,6 +1,6 @@
 /* Main container styling */
 .glass-panel-addgame {
-    background: var(--bg-dark-primary);
+    background: var(--theme-card-background, var(--bg-dark-primary));
     backdrop-filter: var(--backdrop-blur);
     border-radius: var(--border-radius-lg);
     padding: var(--spacing-xl);
@@ -31,7 +31,7 @@
 .game_edit-form-group-id,
 .game_edit-form-group-name,
 .game_edit-form-group-path {
-    background: var(--bg-dark-secondary);
+    background: var(--theme-panel-bg, var(--bg-dark-secondary));
     padding: var(--spacing-lg);
     border-radius: var(--border-radius-md);
     margin-bottom: var(--spacing-lg);
@@ -84,22 +84,22 @@
 .form-control,
 .form-select {
     color: var(--text-white);
-    background: rgba(255, 255, 255, 0.045);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: var(--theme-input-bg, rgba(255, 255, 255, 0.045));
+    border: 1px solid var(--theme-border-color, rgba(255, 255, 255, 0.1));
     border-radius: 10px;
     box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.24);
 }
 
 .form-control::placeholder {
-    color: rgba(255, 255, 255, 0.32);
+    color: color-mix(in srgb, var(--theme-text-secondary, #c5ccdc) 52%, transparent);
 }
 
 .form-control:focus,
 .form-select:focus {
-    background: rgba(255, 255, 255, 0.07);
-    border-color: rgba(126, 157, 255, 0.9);
+    background: color-mix(in srgb, var(--theme-input-bg, rgba(255, 255, 255, 0.07)) 90%, white);
+    border-color: rgba(var(--theme-accent-soft-rgb, 126, 157, 255), 0.9);
     color: var(--text-white);
-    box-shadow: 0 0 0 3px rgba(98, 122, 239, 0.18), inset 0 1px 2px rgba(0, 0, 0, 0.24);
+    box-shadow: 0 0 0 3px rgba(var(--theme-accent-rgb, 98, 122, 239), 0.18), inset 0 1px 2px rgba(0, 0, 0, 0.24);
     outline: none;
 }
 
@@ -116,7 +116,7 @@ label {
 
 /* Search results */
 #search-results {
-    background: var(--bg-dark-secondary);
+    background: var(--theme-panel-bg, var(--bg-dark-secondary));
     border-radius: var(--border-radius-sm);
     padding: var(--spacing-md);
     margin-top: var(--spacing-md);
@@ -134,13 +134,13 @@ label {
 }
 
 .search-result-item:hover {
-    background: var(--bg-light-overlay-hover);
+    background: rgba(var(--theme-accent-rgb, 98, 122, 239), 0.14);
     transform: translateY(-2px);
 }
 
 /* Details section */
 .details-section {
-    background: var(--bg-dark-secondary);
+    background: var(--theme-panel-bg, var(--bg-dark-secondary));
     padding: var(--spacing-lg);
     border-radius: var(--border-radius-md);
     margin-top: var(--spacing-25);
@@ -162,7 +162,7 @@ label {
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: var(--spacing-lg);
     margin-top: var(--spacing-lg);
-    background: var(--bg-dark-tertiary);
+    background: color-mix(in srgb, var(--theme-panel-bg, var(--bg-dark-tertiary)) 90%, black);
     padding: var(--spacing-lg);
     border-radius: var(--border-radius-md);
 }
@@ -180,8 +180,8 @@ label {
     color: var(--text-white);
     cursor: pointer;
     list-style: none;
-    background: rgba(255, 255, 255, 0.06);
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: var(--theme-input-bg, rgba(255, 255, 255, 0.06));
+    border: 1px solid var(--theme-border-color, rgba(255, 255, 255, 0.12));
     border-radius: var(--border-radius-sm);
 }
 
@@ -210,8 +210,8 @@ label {
     max-height: 240px;
     overflow-y: auto;
     padding: var(--spacing-sm);
-    background: rgba(21, 22, 35, 0.98);
-    border: 1px solid rgba(255, 255, 255, 0.14);
+    background: var(--theme-panel-bg, rgba(21, 22, 35, 0.98));
+    border: 1px solid var(--theme-border-color, rgba(255, 255, 255, 0.14));
     border-radius: var(--border-radius-sm);
     box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45);
 }
@@ -228,7 +228,7 @@ label {
 }
 
 .metadata-multiselect-options label:hover {
-    background: rgba(255, 255, 255, 0.08);
+    background: rgba(var(--theme-accent-rgb, 98, 122, 239), 0.14);
 }
 
 .checkbox {
@@ -247,7 +247,7 @@ label {
 
 /* Save button styling */
 .game-edit-savebutton .btn-primary {
-    background-color: #007bff;
+    background-color: var(--btn-primary, #007bff);
     border: none;
     padding: var(--spacing-sm) var(--spacing-25);
     font-size: 1.1em;
@@ -255,7 +255,7 @@ label {
 }
 
 .game-edit-savebutton .btn-primary:hover {
-    background-color: #0056b3;
+    background-color: var(--btn-primary-hover, #0056b3);
 }
 
 /* Alert messages */
@@ -268,7 +268,7 @@ label {
 
 /* Essential information section */
 .essential-info {
-    background: var(--bg-dark-tertiary);
+    background: color-mix(in srgb, var(--theme-panel-bg, var(--bg-dark-tertiary)) 90%, black);
     padding: var(--spacing-lg);
     border-radius: var(--border-radius-md);
     margin-bottom: var(--spacing-lg);
@@ -312,8 +312,8 @@ small.form-text {
 .details-credits-grid {
     margin-top: var(--spacing-lg);
     padding: var(--spacing-lg);
-    background: rgba(8, 10, 20, 0.28);
-    border: 1px solid rgba(255, 255, 255, 0.07);
+    background: color-mix(in srgb, var(--theme-panel-bg, rgba(8, 10, 20, 0.28)) 82%, black);
+    border: 1px solid var(--theme-border-color, rgba(255, 255, 255, 0.07));
     border-radius: var(--border-radius-md);
 }
 
@@ -328,7 +328,7 @@ small.form-text {
 
 /* Glass panel top section */
 .glass-panel-addgame-top {
-    background: var(--bg-dark-tertiary);
+    background: color-mix(in srgb, var(--theme-panel-bg, var(--bg-dark-tertiary)) 90%, black);
     padding: var(--spacing-lg);
     border-radius: var(--border-radius-md);
     margin-bottom: var(--spacing-lg);
@@ -363,16 +363,16 @@ small.form-text {
     width: min(1000px, calc(100% - 48px));
     margin: 24px auto;
     box-sizing: border-box;
-    background: linear-gradient(145deg, rgba(18, 18, 28, 0.96), rgba(12, 12, 20, 0.98));
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.025), 0 20px 60px rgba(0, 0, 0, 0.58), 0 0 70px rgba(80, 120, 255, 0.06);
+    background: var(--theme-card-background, linear-gradient(145deg, rgba(18, 18, 28, 0.96), rgba(12, 12, 20, 0.98)));
+    border: 1px solid var(--theme-border-color, rgba(255, 255, 255, 0.08));
+    box-shadow: 0 0 0 1px rgba(var(--theme-accent-soft-rgb, 255, 255, 255), 0.025), 0 20px 60px rgba(0, 0, 0, 0.58), 0 0 70px rgba(var(--theme-accent-rgb, 80, 120, 255), 0.08);
 }
 
 .game_edit-form-group-id,
 .game_edit-form-group-name,
 .game_edit-form-group-path {
-    background: linear-gradient(145deg, rgba(28, 29, 45, 0.72), rgba(16, 16, 27, 0.78));
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: linear-gradient(145deg, color-mix(in srgb, var(--theme-card-top, rgba(28, 29, 45, 0.72)) 88%, transparent), color-mix(in srgb, var(--theme-card-bottom, rgba(16, 16, 27, 0.78)) 92%, transparent));
+    border: 1px solid var(--theme-border-color, rgba(255, 255, 255, 0.08));
 }
 
 @media (max-width: 768px) {
