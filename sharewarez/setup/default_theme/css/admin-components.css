@@ -710,6 +710,19 @@
     font-size: 0.82rem;
 }
 
+/* Keep every admin sub-page on the same desktop rail as its breadcrumb.
+   Individual page styles may still control their internal grids and surfaces. */
+@media (min-width: 769px) {
+    .admin-ui #content > main:not(.admin-manage-libraries-page) {
+        width: min(1440px, 100%) !important;
+        max-width: 1440px !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+    }
+}
+
 .admin-ui .admin-breadcrumb a {
     display: inline-flex;
     align-items: center;
