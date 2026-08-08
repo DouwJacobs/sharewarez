@@ -106,6 +106,8 @@ def test_game_update(db_session, test_game):
     update = GameUpdate(
         game_uuid=test_game.uuid,
         file_path=update_file,
+        title='Update 1.1',
+        version='1.1',
         times_downloaded=0
     )
     db_session.add(update)
@@ -222,6 +224,9 @@ class TestDownloadGameRoute:
                 game_uuid=test_game.uuid
             ).first()
             assert download_request is not None
+            assert download_request.content_type == 'update'
+            assert download_request.content_title == 'Update 1.1'
+            assert download_request.game_update_id == test_game_update.id
             assert download_request.status == 'available'  # Now instant streaming
 
             # Verify game download count increased

@@ -16,14 +16,22 @@ def manage_downloads():
     per_page = min(max(10, request.args.get('per_page', 25, type=int)), 100)
     status_filter = request.args.get('status', '').strip().lower()
     user_filter = request.args.get('user', '').strip()
+    content_type_filter = request.args.get('content_type', '').strip().lower()
     filters = []
     if status_filter:
         filters.append(DownloadRequest.status == status_filter)
     if user_filter:
         filters.append(User.name.ilike(f'%{user_filter}%'))
+    if content_type_filter in {'game', 'update', 'extra'}:
+        filters.append(DownloadRequest.content_type == content_type_filter)
     query = (
         select(DownloadRequest)
-        .options(joinedload(DownloadRequest.game), joinedload(DownloadRequest.user))
+        .options(
+            joinedload(DownloadRequest.game),
+            joinedload(DownloadRequest.user),
+            joinedload(DownloadRequest.game_update),
+            joinedload(DownloadRequest.game_extra),
+        )
         .join(User, DownloadRequest.user_id == User.id)
         .order_by(DownloadRequest.request_time.desc(), DownloadRequest.id.desc())
     )
@@ -32,7 +40,8 @@ def manage_downloads():
     pagination = db.paginate(query, page=page, per_page=per_page, error_out=False)
 
     return render_template('admin/admin_manage_downloads.html', download_requests=pagination.items,
-                           pagination=pagination, status_filter=status_filter, user_filter=user_filter)
+                           pagination=pagination, status_filter=status_filter, user_filter=user_filter,
+                           content_type_filter=content_type_filter)
 
 @download_bp.route('/delete_download_request/<int:request_id>', methods=['POST'])
 @login_required

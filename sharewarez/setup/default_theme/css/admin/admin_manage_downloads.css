@@ -130,6 +130,36 @@
 
 .download-failure-reason { display: block; max-width: 220px; margin-top: .35rem; color: #fecaca; line-height: 1.3; }
 
+.download-content-type {
+    display: inline-flex;
+    width: fit-content;
+    margin-bottom: 0.35rem;
+    padding: 0.2rem 0.55rem;
+    border: 1px solid color-mix(in srgb, var(--btn-primary) 45%, transparent);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--btn-primary) 18%, transparent);
+    color: var(--text-light);
+    font-size: var(--font-size-xs);
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.download-content-type--update {
+    border-color: color-mix(in srgb, var(--accent-color, var(--btn-primary)) 55%, transparent);
+    background: color-mix(in srgb, var(--accent-color, var(--btn-primary)) 22%, transparent);
+}
+
+.download-content-title,
+.download-content-title + small {
+    display: block;
+}
+
+.download-content-title + small {
+    margin-top: 0.2rem;
+    color: var(--text-light);
+}
+
 @keyframes download-status-pulse { 50% { opacity: 0.35; transform: scale(0.75); } }
 
 .actions-cell, .downloads-table td:last-child { white-space: nowrap; }

@@ -354,6 +354,12 @@ class DownloadRequest(db.Model):
     download_size = db.Column(db.Float, nullable=False, default=0.0)
     game = db.relationship('Game', foreign_keys=[game_uuid], back_populates='download_requests')
     file_location = db.Column(db.String, nullable=True)
+    content_type = db.Column(db.String(20), nullable=False, default='game')
+    content_title = db.Column(db.String(255), nullable=True)
+    game_update_id = db.Column(db.Integer, db.ForeignKey('game_updates.id', ondelete='SET NULL'), nullable=True)
+    game_extra_id = db.Column(db.Integer, db.ForeignKey('game_extras.id', ondelete='SET NULL'), nullable=True)
+    game_update = db.relationship('GameUpdate', foreign_keys=[game_update_id])
+    game_extra = db.relationship('GameExtra', foreign_keys=[game_extra_id])
 
 
 class GameRequest(db.Model):

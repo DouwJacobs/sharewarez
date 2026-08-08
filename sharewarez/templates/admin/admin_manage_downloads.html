@@ -19,8 +19,14 @@
                     {% for value in ['available', 'pending', 'processing', 'failed', 'cancelled'] %}<option value="{{ value }}"{% if status_filter == value %} selected{% endif %}>{{ value|title }}</option>{% endfor %}
                 </select>
             </label>
+            <label>Content
+                <select class="form-select" name="content_type">
+                    <option value="">All content</option>
+                    {% for value in ['game', 'update', 'extra'] %}<option value="{{ value }}"{% if content_type_filter == value %} selected{% endif %}>{{ value|title }}</option>{% endfor %}
+                </select>
+            </label>
             <button class="btn btn-primary btn-sm" type="submit"><i class="fas fa-filter" aria-hidden="true"></i> Filter</button>
-            {% if status_filter or user_filter %}<a class="btn btn-secondary btn-sm" href="{{ url_for('download.manage_downloads') }}">Clear</a>{% endif %}
+            {% if status_filter or user_filter or content_type_filter %}<a class="btn btn-secondary btn-sm" href="{{ url_for('download.manage_downloads') }}">Clear</a>{% endif %}
         </form>
         {% if download_requests %}
             <div class="downloads-bulk-bar" aria-label="Bulk download actions">
@@ -37,7 +43,8 @@
                         <th><input type="checkbox" id="selectAllDownloads" aria-label="Select all requests on this page"></th>
                         <th class="admin_manage_downloads-th-headings-1">ID</th>
                         <th class="admin_manage_downloads-th-headings-2">Username</th>
-                        <th class="admin_manage_downloads-th-headings-3">Game</th>
+                        <th class="admin_manage_downloads-th-headings-3">Content</th>
+                        <th>Base game</th>
                         <th class="admin_manage_downloads-th-headings-4">Status</th>
                         <th class="admin_manage_downloads-th-headings-5">Zip File Path</th>
                         <th class="admin_manage_downloads-th-headings-6">Request Time</th>
@@ -52,9 +59,14 @@
                         <td class="admin_manage_downloads-td-data-1">{{ request.id }}</td>
                         <td class="admin_manage_downloads-td-data-2">{{ request.user.name }}</td>
                         <td class="admin_manage_downloads-td-data-3">
+                            {% set content_label = request.content_title or (request.game_update.title if request.game_update else none) or request.game.name %}
+                            <span class="download-content-type download-content-type--{{ request.content_type or 'game' }}">{{ (request.content_type or 'game')|title }}</span>
+                            <strong class="download-content-title">{{ content_label }}</strong>
+                            {% if request.game_update and request.game_update.version %}<small>Version {{ request.game_update.version }}</small>{% endif %}
+                        </td>
+                        <td>
                             <a class="downloads-game-link" href="{{ url_for('games.game_details', game_uuid=request.game_uuid) }}">
-                                <i class="fas fa-gamepad" aria-hidden="true"></i>
-                                <span>{{ request.game.name }}</span>
+                                <i class="fas fa-gamepad" aria-hidden="true"></i><span>{{ request.game.name }}</span>
                                 <i class="fas fa-arrow-up-right-from-square downloads-game-link-icon" aria-hidden="true"></i>
                             </a>
                             <small class="downloads-game-uuid">{{ request.game_uuid[:8] }}</small>
@@ -71,7 +83,7 @@
                 </tbody>
             </table>
             </div>
-            {{ render_pagination(pagination, 'download.manage_downloads', {'status': status_filter, 'user': user_filter}) }}
+            {{ render_pagination(pagination, 'download.manage_downloads', {'status': status_filter, 'user': user_filter, 'content_type': content_type_filter}) }}
         {% else %}
             {{ empty_state('No download requests', 'No requests match the current filters.' if status_filter or user_filter else 'New user download activity will appear here.') }}
         {% endif %}
@@ -94,7 +106,7 @@ $(document).ready(function() {
             "info": "Showing _START_ to _END_ of _TOTAL_ download requests"
         },
         "columnDefs": [
-            { "orderable": false, "targets": [0, 8] }
+            { "orderable": false, "targets": [0, 9] }
         ]
     });
 });

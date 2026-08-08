@@ -313,6 +313,32 @@ class DatabaseManager:
         ALTER TABLE game_updates ADD COLUMN IF NOT EXISTS metadata_managed BOOLEAN DEFAULT FALSE NOT NULL;
         CREATE INDEX IF NOT EXISTS idx_game_updates_game_path ON game_updates(game_uuid, file_path);
 
+        -- Preserve the exact downloaded content in the administrative history.
+        ALTER TABLE download_requests ADD COLUMN IF NOT EXISTS content_type VARCHAR(20) DEFAULT 'game' NOT NULL;
+        ALTER TABLE download_requests ADD COLUMN IF NOT EXISTS content_title VARCHAR(255);
+        ALTER TABLE download_requests ADD COLUMN IF NOT EXISTS game_update_id INTEGER REFERENCES game_updates(id) ON DELETE SET NULL;
+        ALTER TABLE download_requests ADD COLUMN IF NOT EXISTS game_extra_id INTEGER REFERENCES game_extras(id) ON DELETE SET NULL;
+        CREATE INDEX IF NOT EXISTS idx_download_requests_content_type ON download_requests(content_type);
+        CREATE INDEX IF NOT EXISTS idx_download_requests_game_update ON download_requests(game_update_id);
+
+        UPDATE download_requests AS request
+        SET content_type = 'update',
+            content_title = COALESCE(game_update.title, regexp_replace(game_update.file_path, '^.*/', '')),
+            game_update_id = game_update.id
+        FROM game_updates AS game_update
+        WHERE request.file_location = game_update.file_path
+          AND request.game_uuid = game_update.game_uuid
+          AND request.game_update_id IS NULL;
+
+        UPDATE download_requests AS request
+        SET content_type = 'extra',
+            content_title = regexp_replace(game_extra.file_path, '^.*/', ''),
+            game_extra_id = game_extra.id
+        FROM game_extras AS game_extra
+        WHERE request.file_location = game_extra.file_path
+          AND request.game_uuid = game_extra.game_uuid
+          AND request.game_extra_id IS NULL;
+
         -- User-submitted, edition-aware game requests.
         CREATE TABLE IF NOT EXISTS game_requests (
             id SERIAL PRIMARY KEY,
