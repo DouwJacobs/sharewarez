@@ -9,6 +9,7 @@ from sharewarez.models import Game, GameRequest, GameRequestUser, GlobalSettings
 from sharewarez.platform import LibraryPlatform
 from sharewarez.utils.game_requests import (
     create_or_join_request,
+    fetch_related_editions,
     normalize_igdb_game,
     search_igdb_games,
     update_request_status,
@@ -67,6 +68,29 @@ def test_normalize_igdb_edition_uses_parent_group():
     assert result['parent_game_name'] == 'Example Game'
     assert result['edition_name'] == 'Gold Edition'
     assert result['cover_url'].endswith('/cover123.jpg')
+
+
+@patch('sharewarez.utils.game_requests.make_igdb_api_request')
+def test_related_editions_include_direct_version_children(mock_api):
+    mock_api.side_effect = [
+        [{'id': 100, 'name': 'Example Game'}],
+        [
+            {'id': 100, 'name': 'Example Game'},
+            {
+                'id': 102,
+                'name': 'Example Game: Gold Edition',
+                'version_parent': {'id': 100, 'name': 'Example Game'},
+                'version_title': 'Gold Edition',
+            },
+        ],
+        [],
+    ]
+
+    results = fetch_related_editions(100)
+
+    assert [item['igdb_id'] for item in results] == [100, 102]
+    assert results[1]['edition_name'] == 'Gold Edition'
+    assert 'version_parent = 100' in mock_api.call_args_list[1].args[1]
 
 
 @patch('sharewarez.utils.game_requests.make_igdb_api_request')

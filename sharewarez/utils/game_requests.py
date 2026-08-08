@@ -117,6 +117,24 @@ def fetch_related_editions(igdb_id):
     if not selected:
         return []
     parent_id = selected['parent_igdb_id']
+
+    # IGDB commonly exposes commercial editions through games.version_parent
+    # without a corresponding game_versions record. Query that relationship
+    # directly first so Gold/Deluxe/etc. releases are not silently omitted.
+    related_games = make_igdb_api_request(
+        'https://api.igdb.com/v4/games',
+        f'{IGDB_REQUEST_FIELDS} where id = {parent_id} | version_parent = {parent_id}; limit 50;',
+    )
+    related_by_id = {}
+    if isinstance(related_games, list):
+        related_by_id.update(
+            (item['igdb_id'], item)
+            for item in (normalize_igdb_game(game) for game in related_games)
+        )
+    related_by_id[selected['igdb_id']] = selected
+
+    # Retain the game_versions lookup as a fallback/supplement for IGDB groups
+    # that contain related releases without version_parent metadata.
     versions = make_igdb_api_request(
         'https://api.igdb.com/v4/game_versions',
         f'fields games; where game = {parent_id}; limit 50;',
@@ -125,14 +143,19 @@ def fetch_related_editions(igdb_id):
     if isinstance(versions, list):
         for version in versions:
             edition_ids.update(int(value) for value in (version.get('games') or []))
-    ids = ','.join(str(value) for value in sorted(edition_ids))
-    response = make_igdb_api_request(
-        'https://api.igdb.com/v4/games',
-        f'{IGDB_REQUEST_FIELDS} where id = ({ids}); limit 50;',
-    )
-    if not isinstance(response, list):
-        return [selected]
-    return sorted((normalize_igdb_game(item) for item in response), key=lambda item: (item['igdb_id'] != parent_id, item['game_name']))
+    missing_ids = edition_ids.difference(related_by_id)
+    if missing_ids:
+        ids = ','.join(str(value) for value in sorted(missing_ids))
+        response = make_igdb_api_request(
+            'https://api.igdb.com/v4/games',
+            f'{IGDB_REQUEST_FIELDS} where id = ({ids}); limit 50;',
+        )
+        if isinstance(response, list):
+            related_by_id.update(
+                (item['igdb_id'], item)
+                for item in (normalize_igdb_game(game) for game in response)
+            )
+    return sorted(related_by_id.values(), key=lambda item: (item['igdb_id'] != parent_id, item['game_name']))
 
 
 def enrich_request_search(results, user_id):

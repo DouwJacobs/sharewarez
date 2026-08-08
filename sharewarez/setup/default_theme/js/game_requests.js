@@ -29,15 +29,22 @@ document.addEventListener('DOMContentLoaded', () => {
     function render(items, editionParent = null) {
         status.textContent = `${items.length} result${items.length === 1 ? '' : 's'} found.`;
         results.innerHTML = '';
-        if (!items.length) {
-            renderEmpty('No matching games found. Try a different title.');
-            return;
-        }
         if (editionParent) {
             const navigation = document.createElement('div');
             navigation.className = 'request-results-navigation';
-            navigation.innerHTML = `<button class="btn btn-secondary" type="button" data-back-results><i class="fas fa-arrow-left"></i> Back to search results</button><span>Showing editions related to ${escapeHtml(editionParent)}</span>`;
+            navigation.innerHTML = `<button class="btn btn-secondary" type="button" data-back-results><i class="fas fa-arrow-left"></i> Back to search results</button><span>${items.length} related release${items.length === 1 ? '' : 's'} for ${escapeHtml(editionParent)}</span>`;
             results.appendChild(navigation);
+        }
+        if (!items.length) {
+            if (editionParent) {
+                const empty = document.createElement('div');
+                empty.className = 'request-results-empty';
+                empty.innerHTML = `<i class="fas fa-layer-group"></i><p>No separately catalogued editions were found for ${escapeHtml(editionParent)}.</p>`;
+                results.appendChild(empty);
+            } else {
+                renderEmpty('No matching games found. Try a different title.');
+            }
+            return;
         }
         items.forEach(item => {
             const card = document.createElement('article');
@@ -73,7 +80,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="request-platforms">${platforms || '<span>Platforms not listed</span>'}</div>
                     ${item.summary ? `<p class="request-result-summary">${escapeHtml(item.summary)}</p>` : ''}
                     ${(note || anyEdition) ? `<details class="request-result-options"><summary>Add request details</summary>${note}${anyEdition}</details>` : ''}
-                    <div class="request-result-actions">${availability}<button class="btn btn-secondary" data-editions="${item.igdb_id}"><i class="fas fa-layer-group"></i> Editions</button></div>
+                    <div class="request-result-actions">${availability}${editionParent ? '' : `<button class="btn btn-secondary" data-editions="${item.igdb_id}"><i class="fas fa-layer-group"></i> Editions</button>`}</div>
                 </div>`;
             results.appendChild(card);
         });
@@ -149,7 +156,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 const data = await response.json();
                 if (!response.ok) throw new Error(data.error || 'Could not load editions.');
                 const parentName = editionButton.closest('.request-result')?.querySelector('h3')?.textContent || 'selected game';
-                render(data.results || [], parentName);
+                const related = (data.results || []).filter(item => String(item.igdb_id) !== editionButton.dataset.editions);
+                render(related, parentName);
             } catch (error) {
                 status.textContent = error.message;
             } finally {
