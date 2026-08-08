@@ -922,7 +922,7 @@ body.modal-open {
     padding: 20px 32px 24px;
     margin-top: 0;
     scrollbar-width: thin;
-    scrollbar-color: rgba(100, 130, 255, 0.3) transparent;
+    scrollbar-color: var(--theme-scrollbar-thumb, rgba(100, 130, 255, 0.3)) transparent;
     border-top: 1px solid rgba(255, 255, 255, 0.05);
 }
 
@@ -931,7 +931,7 @@ body.modal-open {
 }
 
 .screenshot-gallery::-webkit-scrollbar-thumb {
-    background: rgba(100, 130, 255, 0.3);
+    background: var(--theme-scrollbar-thumb, rgba(100, 130, 255, 0.3));
     border-radius: 4px;
 }
 

@@ -1,5 +1,16 @@
 /* Shared component hooks for lightweight color themes. */
 
+/* Canonical aliases let older page styles participate in the active palette.
+   Each alias retains the original default-theme value as its fallback. */
+:root {
+    --theme-card-background: linear-gradient(145deg, var(--theme-card-top, rgba(18, 18, 28, .96)), var(--theme-card-bottom, rgba(12, 12, 20, .98)));
+    --theme-border-color: rgba(var(--theme-accent-soft-rgb, 154, 177, 255), .18);
+    --theme-primary-color: rgb(var(--theme-accent-rgb, 98, 122, 239));
+    --theme-input-bg: color-mix(in srgb, var(--theme-panel-bg, rgba(18, 18, 28, .94)) 88%, black);
+    --theme-scrollbar-thumb: rgba(var(--theme-accent-rgb, 98, 122, 239), .42);
+    --theme-scrollbar-thumb-hover: rgba(var(--theme-accent-soft-rgb, 154, 177, 255), .68);
+}
+
 .sidebar {
     background: linear-gradient(180deg, var(--theme-sidebar-top, rgba(18, 19, 31, .98)), var(--theme-sidebar-bottom, rgba(10, 11, 20, .99))) !important;
     border-color: rgba(var(--theme-accent-soft-rgb, 154, 177, 255), .16) !important;
@@ -40,6 +51,7 @@
 
 .admin-surface,
 .admin-panel,
+.admin-section,
 .glass-panel,
 .library-toolbar,
 .filter-panel,
@@ -48,6 +60,11 @@
 .preferences-modal-content {
     background-color: var(--theme-panel-bg, rgba(18, 18, 28, .94)) !important;
     border-color: rgba(var(--theme-accent-soft-rgb, 154, 177, 255), .18) !important;
+}
+
+.admin-ui :is(.card, [class$="-card"], [class*="-card "], .info-block, .section-item) {
+    background: linear-gradient(145deg, rgba(var(--theme-accent-rgb, 98, 122, 239), .1), color-mix(in srgb, var(--theme-card-bottom, rgba(12, 12, 20, .98)) 92%, transparent)) !important;
+    border-color: var(--theme-border-color, rgba(154, 177, 255, .18)) !important;
 }
 
 .admin-ui .glass-panel,
@@ -273,6 +290,25 @@
     --sw-btn-bg: rgba(var(--theme-accent-rgb, 98, 122, 239), .2) !important;
 }
 
+/* Download is a primary action and should use the active hue. The original
+   blue remains the fallback when a theme does not expose accent channels. */
+.button-glass-download {
+    --sw-btn-bg: linear-gradient(135deg, rgba(var(--theme-accent-rgb, 37, 99, 235), .98), rgba(var(--theme-accent-rgb, 29, 78, 216), .72)) !important;
+    --sw-btn-border: rgba(var(--theme-accent-soft-rgb, 59, 130, 246), .55) !important;
+    background: var(--sw-btn-bg) !important;
+    border-color: var(--sw-btn-border) !important;
+    box-shadow: 0 4px 14px rgba(var(--theme-accent-rgb, 37, 99, 235), .35), inset 0 1px rgba(255, 255, 255, .15) !important;
+}
+
+.button-glass-download:hover {
+    background: linear-gradient(135deg, rgba(var(--theme-accent-soft-rgb, 59, 130, 246), .96), rgba(var(--theme-accent-rgb, 37, 99, 235), .86)) !important;
+    box-shadow: 0 6px 20px rgba(var(--theme-accent-rgb, 37, 99, 235), .45) !important;
+}
+
+.button-glass-download:focus-visible {
+    outline-color: rgba(var(--theme-accent-soft-rgb, 164, 183, 255), .9) !important;
+}
+
 .admin-ui .btn-circle,
 .btn-circle {
     background: linear-gradient(145deg, rgba(var(--theme-accent-rgb, 98, 122, 239), .46), rgba(var(--theme-accent-rgb, 98, 122, 239), .24)) !important;
@@ -420,9 +456,33 @@
     :is(.card, .theme-card, .theme-operation-card, .stat-card, .info-block, .section-item, .game-card, .favorites-empty-state, .library-name),
 .discovery-panel .game-card,
 .library-browser-panel .game-card {
-    background: linear-gradient(145deg, rgba(var(--theme-accent-rgb, 98, 122, 239), .12), rgba(5, 8, 16, .34)) !important;
+    background: linear-gradient(145deg, rgba(var(--theme-accent-rgb, 98, 122, 239), .12), color-mix(in srgb, var(--theme-card-bottom, rgba(5, 8, 16, .98)) 72%, transparent)) !important;
     border-color: rgba(var(--theme-accent-soft-rgb, 154, 177, 255), .2) !important;
     box-shadow: inset 0 1px rgba(255, 255, 255, .04), 0 8px 22px rgba(0, 0, 0, .24) !important;
+}
+
+/* Scan Manager has several legacy surface names outside the generic card
+   hierarchy, so bridge those surfaces explicitly without removing fallbacks. */
+.admin_manage_scanjobs-nav-panel,
+.admin_manage_scanjobs-manual-panel,
+.admin_manage_scanjobs-unmatched-panel,
+.admin_manage_scanjobs-filters-panel,
+.admin_manage_scanjobs-extensions-panel,
+.admin_manage_scanjobs-imagequeue-panel,
+.scan-extension-card,
+.scan-extension-card .card-header {
+    background: var(--theme-card-background, linear-gradient(145deg, rgba(18, 18, 28, .96), rgba(12, 12, 20, .98))) !important;
+    border-color: var(--theme-border-color, rgba(255, 255, 255, .09)) !important;
+}
+
+.admin_manage_scanjobs-nav-link:hover,
+.admin_manage_scanjobs-nav-link.active {
+    background: rgba(var(--theme-accent-rgb, 98, 122, 239), .14) !important;
+    border-color: rgba(var(--theme-accent-soft-rgb, 154, 177, 255), .24) !important;
+}
+
+.admin_manage_scanjobs-nav-link.active {
+    border-bottom-color: rgba(var(--theme-accent-soft-rgb, 154, 177, 255), .9) !important;
 }
 
 :is(.admin-surface, .admin-panel, .glass-panel, .discovery-panel, .library-browser-panel)
@@ -612,6 +672,15 @@ input[type="radio"] {
     border-radius: var(--control-radius);
     background-color: color-mix(in srgb, var(--theme-panel-bg, #12121c) 88%, black) !important;
     color: var(--text-white, #fff) !important;
+}
+
+/* Search inputs live inside a themed shell; keep their center transparent so
+   the shell reads as one continuous control. */
+.content-global-search input,
+.global-search-input-wrap input {
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
 }
 
 :is(.form-control, .form-select, textarea, input)::placeholder {
