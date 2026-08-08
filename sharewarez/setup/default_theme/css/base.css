@@ -1423,12 +1423,12 @@ fieldset:disabled .btn {
 }
 
 .menu-item button:hover {
-    background: rgba(115, 135, 255, 0.18);
-    border-color: rgba(164, 183, 255, 0.28);
+    background: rgba(var(--theme-accent-rgb, 115, 135, 255), 0.18);
+    border-color: rgba(var(--theme-accent-soft-rgb, 164, 183, 255), 0.28);
 }
 
 .menu-item button:focus-visible {
-    outline: 2px solid rgba(164, 183, 255, 0.85);
+    outline: 2px solid rgba(var(--theme-accent-soft-rgb, 164, 183, 255), 0.85);
     outline-offset: 1px;
 }
 

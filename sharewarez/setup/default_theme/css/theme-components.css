@@ -307,6 +307,26 @@ body { color: var(--theme-text-primary, #f5f7ff); }
     --sw-btn-bg: rgba(var(--theme-accent-rgb, 98, 122, 239), .2) !important;
 }
 
+.button-glass-hamburger:hover,
+.button-glass-hamburger-cover:hover {
+    --sw-btn-bg: rgba(var(--theme-accent-rgb, 98, 122, 239), .28) !important;
+    --sw-btn-border: rgba(var(--theme-accent-soft-rgb, 154, 177, 255), .58) !important;
+    background: var(--sw-btn-bg) !important;
+    border-color: var(--sw-btn-border) !important;
+    box-shadow: 0 6px 18px rgba(var(--theme-accent-rgb, 98, 122, 239), .3) !important;
+}
+
+.button-glass-hamburger:hover i,
+.button-glass-hamburger-cover:hover i,
+.popup-menu .menu-button:hover {
+    color: var(--theme-text-primary, #fff) !important;
+}
+
+.popup-menu .menu-button:hover {
+    background: rgba(var(--theme-accent-rgb, 115, 135, 255), .18) !important;
+    border-color: rgba(var(--theme-accent-soft-rgb, 164, 183, 255), .28) !important;
+}
+
 /* Download is a primary action and should use the active hue. The original
    blue remains the fallback when a theme does not expose accent channels. */
 .button-glass-download {
