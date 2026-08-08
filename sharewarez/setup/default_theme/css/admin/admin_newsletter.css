@@ -1,7 +1,9 @@
 .newsletter-page {
     width: min(980px, calc(100% - 48px));
     margin: 24px auto;
-    padding: 24px;
+    /* The shared desktop admin rail normalizes page wrappers; this page is
+       itself the surface, so it must retain its own internal gutter. */
+    padding: 24px !important;
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 18px;
     background: linear-gradient(145deg, rgba(18, 18, 28, 0.96), rgba(12, 12, 20, 0.98));
@@ -18,7 +20,7 @@
 .newsletter-recipient-summary { margin: -0.25rem 0 0.65rem; color: rgba(205, 214, 235, 0.72); font-size: 0.88rem; }
 
 @media (max-width: 768px) {
-    .newsletter-page { width: calc(100% - 24px); margin: 12px auto; padding: 16px; overflow: hidden; }
+    .newsletter-page { width: calc(100% - 24px); margin: 12px auto; padding: 16px !important; overflow: hidden; }
     .newsletter-page .input-glass { width: 100%; margin-right: 0; margin-left: 0 !important; }
     .newsletter-page .ck-toolbar { flex-wrap: wrap !important; }
     .newsletter-page .table-responsive { overflow: visible; }

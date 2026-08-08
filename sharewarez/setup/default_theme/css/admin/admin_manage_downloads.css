@@ -1,6 +1,6 @@
 .downloads-page {
-    width: min(1500px, 100%);
-    margin: 0 auto;
+    width: min(1440px, calc(100% - 48px));
+    margin: 24px auto 48px;
 }
 
 .downloads-page-header {
@@ -180,6 +180,7 @@
 .downloads-empty-state p { margin: 0 0 var(--spacing-lg); color: var(--text-light); }
 
 @media (max-width: 768px) {
+    .downloads-page { width: 100%; margin: 0 auto 24px; }
     .downloads-page-header { align-items: flex-start; flex-direction: column; }
     .downloads-panel { padding: var(--spacing-sm); }
     .downloads-table, .admin_manage_downloads-table { min-width: 820px; }
