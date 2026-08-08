@@ -334,6 +334,21 @@
         gap: .85rem;
     }
 
+    .admin-request-tile {
+        width: min(250px, 100%);
+        justify-self: center;
+    }
+
+    .admin-request-tile-body {
+        padding: .7rem .8rem .8rem;
+    }
+
+    .admin-request-tile-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: .3rem .65rem;
+    }
+
     .admin-request-filters .request-filter-chips {
         display: none;
     }
