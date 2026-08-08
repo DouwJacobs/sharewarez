@@ -20,7 +20,7 @@ login_manager = LoginManager()
 mail = Mail()
 cache = Cache(config={'CACHE_TYPE': 'SimpleCache'})
 app_start_time = datetime.now()
-app_version = '1.0.0'
+app_version = '1.1.0'
 
 
 def create_app():
