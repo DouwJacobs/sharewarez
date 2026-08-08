@@ -1,5 +1,4 @@
 import os
-from PIL import Image as PILImage
 from werkzeug.utils import secure_filename
 from uuid import uuid4
 from flask import Blueprint, render_template, redirect, url_for, request, flash, current_app, jsonify
@@ -24,9 +23,10 @@ def inject_settings():
 @login_required
 def settings_profile_edit():
     print("Route: Settings profile edit")
-    form = EditProfileForm()
+    form = EditProfileForm(obj=current_user)
 
     if form.validate_on_submit():
+        current_user.about = form.about.data.strip() if form.about.data and form.about.data.strip() else None
         file = form.avatar.data
         if file:
             MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB in bytes
@@ -59,6 +59,8 @@ def settings_profile_edit():
             file.save(image_path)
 
             # Image processing
+            from PIL import Image as PILImage
+
             img = PILImage.open(image_path)
             is_gif = img.format == 'GIF' and 'duration' in img.info
 
@@ -132,7 +134,7 @@ def settings_profile_edit():
             print(f"Error updating profile: {e}")
             flash('Failed to update profile. Please try again.', 'error')
 
-        return redirect(url_for('settings.settings_profile_edit'))
+        return redirect(url_for('settings.settings_profile_view'))
 
     print("Form validation failed" if request.method == 'POST' else "Settings profile Form rendering")
 
@@ -155,9 +157,35 @@ def settings_profile_view():
     ).scalar()
     remaining_invites = max(0, current_user.invite_quota - unused_invites)
     
-    return render_template('settings/settings_profile_view.html', 
+    preferences_form = UserPreferencesForm()
+    _populate_preferences_form(preferences_form)
+
+    return render_template('settings/settings_profile_view.html',
                          remaining_invites=remaining_invites,
-                         total_invites=current_user.invite_quota)
+                         total_invites=current_user.invite_quota,
+                         preferences_form=preferences_form)
+
+
+def _populate_preferences_form(form):
+    """Populate a preferences form from the current user's effective settings."""
+    preferences = current_user.preferences
+    if not preferences:
+        return
+
+    form.items_per_page.data = preferences.items_per_page
+    form.default_sort.data = preferences.default_sort
+    form.default_sort_order.data = preferences.default_sort_order
+
+    from sharewarez.utils.themes import SITE_DEFAULT_THEME_VALUE
+    saved_theme = preferences.theme or SITE_DEFAULT_THEME_VALUE
+    theme_ids = {value for value, _label in form.theme.choices}
+    if saved_theme not in theme_ids:
+        installed_themes = ThemeManager(current_app).get_installed_themes()
+        saved_theme = next(
+            (theme['id'] for theme in installed_themes if theme['name'] == saved_theme),
+            SITE_DEFAULT_THEME_VALUE
+        )
+    form.theme.data = saved_theme
 
 @settings_bp.route('/settings_password', methods=['GET', 'POST'])
 @login_required
@@ -191,7 +219,8 @@ def settings_panel():
         current_user.preferences.items_per_page = form.items_per_page.data
         current_user.preferences.default_sort = form.default_sort.data
         current_user.preferences.default_sort_order = form.default_sort_order.data
-        current_user.preferences.theme = form.theme.data if form.theme.data != 'default' else None
+        from sharewarez.utils.themes import SITE_DEFAULT_THEME_VALUE
+        current_user.preferences.theme = None if form.theme.data == SITE_DEFAULT_THEME_VALUE else form.theme.data
         
         try:
             db.session.add(current_user.preferences)
@@ -205,22 +234,9 @@ def settings_panel():
             return jsonify({'success': False, 'message': str(e)}), 500
     
     if request.method == 'GET':
-        preferences = current_user.preferences
-        if preferences:
-            form.items_per_page.data = preferences.items_per_page
-            form.default_sort.data = preferences.default_sort
-            form.default_sort_order.data = preferences.default_sort_order
-
-            saved_theme = preferences.theme or 'default'
-            theme_ids = {value for value, _label in form.theme.choices}
-            if saved_theme not in theme_ids:
-                installed_themes = ThemeManager(current_app).get_installed_themes()
-                saved_theme = next(
-                    (theme['id'] for theme in installed_themes if theme['name'] == saved_theme),
-                    'default'
-                )
-            form.theme.data = saved_theme
-        return render_template('settings/modal_preferences.html', form=form)
+        _populate_preferences_form(form)
+        template = 'settings/modal_preferences.html' if request.args.get('modal') == '1' else 'settings/settings_panel.html'
+        return render_template(template, form=form, title='Preferences')
     
     return jsonify({
         'success': False,

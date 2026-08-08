@@ -250,8 +250,8 @@
 
 .btn-circle:hover {
     transform: translateY(-3px);
-    background: rgba(0, 150, 255, 0.4);
-    box-shadow: 0 0 20px rgba(0, 150, 255, 0.3);
+    background: rgba(var(--theme-accent-rgb, 0, 150, 255), 0.4);
+    box-shadow: 0 0 20px rgba(var(--theme-accent-rgb, 0, 150, 255), 0.3);
     color: var(--text-white);
 }
 
@@ -735,6 +735,15 @@
     font-size: 0.65rem;
     opacity: 0.7;
 }
+
+/* Breadcrumbs follow the active palette; original blue values are fallbacks. */
+.admin-ui .admin-breadcrumb a { color: rgba(var(--theme-accent-soft-rgb,219,227,255),.86); }
+.admin-ui .admin-breadcrumb a:hover,
+.admin-ui .admin-breadcrumb a:focus-visible {
+    background: rgba(var(--theme-accent-rgb,98,122,239),.12);
+    border-color: rgba(var(--theme-accent-soft-rgb,154,177,255),.22);
+}
+.admin-ui .admin-breadcrumb-separator { color: rgba(var(--theme-accent-soft-rgb,220,225,244),.58); }
 
 /* Replaced by the shared breadcrumb above. This keeps legacy templates clean
    without changing their page logic or embedded scripts. */

@@ -4,10 +4,14 @@ from sharewarez.utils.auth import admin_required
 from sharewarez.forms import ThemeUploadForm
 from sharewarez.utils.themes import ThemeManager
 from sharewarez.utils.event_logging import log_system_event
+from sharewarez import db
+from sharewarez.models import GlobalSettings
+from sqlalchemy import select
 import os
 import shutil
 from pathlib import Path
 from typing import Optional, Union
+from datetime import datetime, timezone
 from . import admin2_bp
 
 # Configuration constants
@@ -176,7 +180,45 @@ def manage_themes():
 
     installed_themes = theme_manager.get_installed_themes()
     default_theme = theme_manager.get_default_theme()
-    return render_template('admin/admin_manage_themes.html', form=form, themes=installed_themes, default_theme=default_theme)
+    from sharewarez.utils.themes import get_site_default_theme_id
+    site_default_theme_id = get_site_default_theme_id(current_app)
+    return render_template(
+        'admin/admin_manage_themes.html',
+        form=form,
+        themes=installed_themes,
+        default_theme=default_theme,
+        site_default_theme_id=site_default_theme_id,
+    )
+
+
+@admin2_bp.route('/admin/themes/site-default', methods=['POST'])
+@login_required
+@admin_required
+def set_site_default_theme():
+    """Set the theme inherited by guests and users without an override."""
+    theme_id = request.form.get('theme_id', '').strip()
+    manager = ThemeManager(current_app)
+    theme = manager.get_theme(theme_id)
+    if not theme:
+        flash('Select an installed theme.', 'error')
+        return redirect(url_for('admin2.manage_themes'))
+
+    settings_record = db.session.execute(select(GlobalSettings)).scalars().first()
+    if not settings_record:
+        settings_record = GlobalSettings(settings={})
+        db.session.add(settings_record)
+    settings = dict(settings_record.settings or {})
+    settings['defaultTheme'] = theme_id
+    settings_record.settings = settings
+    settings_record.last_updated = datetime.now(timezone.utc)
+    db.session.commit()
+    log_system_event(
+        f"Site default theme changed to '{theme.get('name', theme_id)}' by admin {current_user.name}",
+        event_type='themes',
+        event_level='information',
+    )
+    flash(f"'{theme.get('name', theme_id)}' is now the site default theme.", 'success')
+    return redirect(url_for('admin2.manage_themes'))
 
 @admin2_bp.route('/admin/themes/readme')
 @login_required
@@ -210,7 +252,9 @@ def theme_builder(theme_id):
         'background': '#0a0b14',
         'sidebar': '#12131f',
         'card': '#12121c',
-        'panel': '#181925'
+        'panel': '#181925',
+        'text_primary': '#f5f7ff',
+        'text_secondary': '#c5ccdc'
     }
     if existing:
         defaults.update(existing.get('palette', {}))

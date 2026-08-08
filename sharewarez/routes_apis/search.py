@@ -1,9 +1,10 @@
 from flask import jsonify, request
 from flask_login import current_user, login_required
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 
 from sharewarez import db
-from sharewarez.models import Game, Library, User
+from sharewarez.models import Game, GameRequest, Library, User
 from sharewarez.utils.processors import get_global_settings
 from . import apis_bp
 
@@ -25,6 +26,25 @@ def global_search():
         'type': 'Game', 'title': game.name, 'subtitle': 'Game details',
         'url': f'/game_details/{game.uuid}', 'icon': 'fa-gamepad'
     } for game in games)
+
+    if current_user.role == 'admin':
+        requests = db.session.execute(
+            select(GameRequest)
+            .options(selectinload(GameRequest.requesters))
+            .where(GameRequest.game_name.ilike(pattern) | GameRequest.parent_game_name.ilike(pattern))
+            .order_by(GameRequest.created_at.desc())
+            .limit(6)
+        ).scalars().all()
+        results.extend({
+            'type': 'Request',
+            'title': game_request.game_name,
+            'subtitle': '{} · {} interested'.format(
+                game_request.status.replace('_', ' ').title(),
+                len(game_request.interested_requesters),
+            ),
+            'url': f'/admin/game-requests/{game_request.id}',
+            'icon': 'fa-paper-plane',
+        } for game_request in requests)
 
     libraries = db.session.execute(
         select(Library).where(Library.name.ilike(pattern)).order_by(Library.name).limit(5)

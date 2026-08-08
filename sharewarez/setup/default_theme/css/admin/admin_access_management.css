@@ -98,8 +98,8 @@
 
 .search-input:focus {
     background: rgba(255, 255, 255, 0.15);
-    border-color: #0096ff;
-    box-shadow: 0 0 0 0.25rem rgba(0, 150, 255, 0.25);
+    border-color: rgb(var(--theme-accent-rgb, 0, 150, 255));
+    box-shadow: 0 0 0 0.25rem rgba(var(--theme-accent-rgb, 0, 150, 255), 0.25);
 }
 
 .search-icon {
@@ -149,8 +149,8 @@
 }
 
 .user-item:hover {
-    background: rgba(0, 150, 255, 0.1);
-    border-color: rgba(0, 150, 255, 0.3);
+    background: rgba(var(--theme-accent-rgb, 0, 150, 255), 0.1);
+    border-color: rgba(var(--theme-accent-rgb, 0, 150, 255), 0.3);
 }
 
 .user-item.active {
@@ -264,7 +264,7 @@
 }
 
 .resize-handle:hover {
-    background: rgba(0, 150, 255, 0.5);
+    background: rgba(var(--theme-accent-rgb, 0, 150, 255), 0.5);
 }
 
 /* Detail Panel (70%) */
@@ -539,7 +539,7 @@
 
 input:checked + .toggle-label {
     background-color: #0096ff;
-    border-color: #0096ff;
+    border-color: rgb(var(--theme-accent-rgb, 0, 150, 255));
 }
 
 input:checked + .toggle-label:before {
@@ -705,7 +705,28 @@ input:checked + .toggle-label:before {
 
 @media (max-width: 768px) {
     .access-management-container {
-        margin: 1rem;
+        width: 100%;
+        min-width: 0;
+        margin: 0;
+    }
+
+    .split-view-container {
+        min-height: 0;
+        overflow: visible;
+    }
+
+    .master-panel {
+        width: 100%;
+        min-width: 0;
+        min-height: 240px;
+        max-height: 45vh;
+    }
+
+    .detail-panel {
+        width: 100%;
+        min-width: 0;
+        padding: 14px;
+        overflow: visible;
     }
 
     .stats-header {
@@ -737,6 +758,11 @@ input:checked + .toggle-label:before {
         flex-direction: column;
         gap: 0.5rem;
     }
+
+    .form-actions > :is(.btn, button) {
+        flex: 1 1 100%;
+        width: 100%;
+    }
 }
 
 /* Form styling to match existing patterns */
@@ -748,9 +774,9 @@ input:checked + .toggle-label:before {
 
 .form-control:focus, .form-select:focus {
     background: rgba(255, 255, 255, 0.15);
-    border-color: #0096ff;
+    border-color: rgb(var(--theme-accent-rgb, 0, 150, 255));
     color: #fff;
-    box-shadow: 0 0 0 0.25rem rgba(0, 150, 255, 0.25);
+    box-shadow: 0 0 0 0.25rem rgba(var(--theme-accent-rgb, 0, 150, 255), 0.25);
 }
 
 .form-control::placeholder {

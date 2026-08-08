@@ -96,6 +96,18 @@
             </div>
         </div>
 
+        {% if enable_game_requests %}
+        <div class="help-card requests">
+            <div class="card-header"><i class="fas fa-paper-plane"></i><h2>Game Requests</h2><div class="toggle-icon"><i class="fas fa-chevron-down"></i></div></div>
+            <div class="card-content">
+                <div class="help-item"><i class="fas fa-magnifying-glass"></i><span>Search IGDB from Requests and choose the exact edition you want.</span></div>
+                <div class="help-item"><i class="fas fa-layer-group"></i><span>Select “any edition” only when a related standard, deluxe, or gold edition would also satisfy your request.</span></div>
+                <div class="help-item"><i class="fas fa-users"></i><span>Join an existing request instead of creating a duplicate for the same edition.</span></div>
+                <div class="help-item"><i class="fas fa-bell"></i><span>Track status and administrator responses under My requests. Email updates depend on server configuration.</span></div>
+            </div>
+        </div>
+        {% endif %}
+
         <div class="help-card support">
             <div class="card-header">
                 <i class="fas fa-life-ring"></i>

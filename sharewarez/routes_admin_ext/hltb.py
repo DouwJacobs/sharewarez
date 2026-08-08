@@ -6,7 +6,6 @@ from sharewarez import db
 from sqlalchemy import select
 from . import admin2_bp
 from sharewarez.utils.auth import admin_required
-from sharewarez.utils.hltb import update_game_hltb_sync, get_games_without_hltb, get_hltb_stats
 import logging
 
 logger = logging.getLogger(__name__)
@@ -18,6 +17,8 @@ logger = logging.getLogger(__name__)
 def get_hltb_statistics():
     """Get statistics about HLTB data coverage."""
     try:
+        from sharewarez.utils.hltb import get_hltb_stats
+
         stats = get_hltb_stats()
         return jsonify({
             'success': True,
@@ -37,6 +38,8 @@ def get_hltb_statistics():
 def refresh_game_hltb(game_uuid):
     """Refresh HLTB data for a single game."""
     try:
+        from sharewarez.utils.hltb import update_game_hltb_sync
+
         # Check if HLTB integration is enabled
         settings = db.session.execute(select(GlobalSettings)).scalars().first()
         if not settings or not settings.enable_hltb_integration:
@@ -94,6 +97,8 @@ def refresh_game_hltb(game_uuid):
 def bulk_refresh_hltb():
     """Bulk refresh HLTB data for games without it."""
     try:
+        from sharewarez.utils.hltb import get_games_without_hltb, update_game_hltb_sync
+
         # Check if HLTB integration is enabled
         settings = db.session.execute(select(GlobalSettings)).scalars().first()
         if not settings or not settings.enable_hltb_integration:

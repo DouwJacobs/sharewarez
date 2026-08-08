@@ -100,9 +100,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     // Close all other dropdowns first
                     document.querySelectorAll('.status-dropdown').forEach(d => {
                         d.style.display = 'none';
+                        d.previousElementSibling?.setAttribute('aria-expanded', 'false');
                     });
 
                     dropdown.style.display = isVisible ? 'none' : 'block';
+                    button.setAttribute('aria-expanded', String(!isVisible));
+                    if (!isVisible) {
+                        dropdown.querySelector('.status-dropdown-option')?.focus();
+                    }
                     console.log(`[GameStatusManager] Dropdown toggled to: ${dropdown.style.display}`);
                 } else {
                     console.warn(`[GameStatusManager] Dropdown not found or invalid for button ${gameUuid}`);
@@ -130,6 +135,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 // Hide dropdown
                 dropdown.style.display = 'none';
+                button.setAttribute('aria-expanded', 'false');
 
                 // Update status
                 await setGameStatus(button, gameUuid, newStatus);
@@ -161,6 +167,8 @@ document.addEventListener('DOMContentLoaded', () => {
         // Update data attribute
         button.dataset.currentStatus = status || '';
         button.title = config.label;
+        const gameName = button.getAttribute('aria-label')?.split('. Current status:')[0]?.replace('Set play status for ', '') || 'game';
+        button.setAttribute('aria-label', `Set play status for ${gameName}. Current status: ${config.label}`);
     };
 
     // Set game status via API
@@ -242,6 +250,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!e.target.closest('.game-status-btn') && !e.target.closest('.status-dropdown')) {
             document.querySelectorAll('.status-dropdown').forEach(dropdown => {
                 dropdown.style.display = 'none';
+                dropdown.previousElementSibling?.setAttribute('aria-expanded', 'false');
             });
         }
     });
@@ -251,6 +260,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (e.target.closest('[id^="menuButton-"]')) {
             document.querySelectorAll('.status-dropdown').forEach(dropdown => {
                 dropdown.style.display = 'none';
+                dropdown.previousElementSibling?.setAttribute('aria-expanded', 'false');
             });
         }
     });

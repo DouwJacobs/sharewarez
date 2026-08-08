@@ -4,9 +4,40 @@
 import requests
 import time
 import threading
+import re
 from sharewarez import db
 from sharewarez.models import GlobalSettings
 from sqlalchemy import select
+
+
+_steam_app_id_cache: dict = {}
+
+def get_steam_app_id_from_igdb(igdb_id):
+    if not igdb_id:
+        return None
+    try:
+        igdb_id_int = int(igdb_id)
+    except (ValueError, TypeError):
+        return None
+
+    if igdb_id_int in _steam_app_id_cache:
+        return _steam_app_id_cache[igdb_id_int]
+
+    res = make_igdb_api_request('https://api.igdb.com/v4/external_games', f'fields uid, url, category; where game = {igdb_id_int};')
+    steam_app_id = None
+    if isinstance(res, list):
+        for item in res:
+            if item.get('category') == 1 and item.get('uid'):
+                steam_app_id = str(item.get('uid'))
+                break
+            url = item.get('url') or ''
+            match = re.search(r'/app/(\d+)', url)
+            if match:
+                steam_app_id = match.group(1)
+                break
+
+    _steam_app_id_cache[igdb_id_int] = steam_app_id
+    return steam_app_id
 
 
 
@@ -42,7 +73,13 @@ def make_igdb_api_request(endpoint_url, query_params):
     except Exception as e:
         return {"error": f"make_igdb_api_request An unexpected error occurred: {e}"}
     
+_access_token_cache = {"token": None, "expires_at": 0}
+
 def get_access_token(client_id, client_secret):
+    now = time.time()
+    if _access_token_cache["token"] and _access_token_cache["expires_at"] > now + 60:
+        return _access_token_cache["token"]
+
     url = "https://id.twitch.tv/oauth2/token"
     params = {
         'client_id': client_id,
@@ -51,7 +88,12 @@ def get_access_token(client_id, client_secret):
     }
     response = requests.post(url, params=params)
     if response.status_code == 200:
-        return response.json()['access_token']
+        data = response.json()
+        token = data.get('access_token')
+        expires_in = data.get('expires_in', 3600)
+        _access_token_cache["token"] = token
+        _access_token_cache["expires_at"] = now + expires_in
+        return token
     else:
         print("Failed to obtain access token")
         return None

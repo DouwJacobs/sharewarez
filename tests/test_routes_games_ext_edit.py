@@ -1,4 +1,5 @@
 import pytest
+from types import SimpleNamespace
 from unittest.mock import patch, Mock, MagicMock, call
 from uuid import uuid4
 from datetime import datetime, timezone
@@ -549,6 +550,40 @@ class TestGameEditSuccessScenarios:
         assert updated_game.name == form_data['name']
         assert updated_game.summary == form_data['summary']
         assert updated_game.url == form_data['url']
+
+    def test_save_and_refresh_calls_shared_metadata_refresh(self, client, admin_user, test_game, form_data):
+        """The edit action must invoke the same metadata refresh used by the card menu."""
+        form_data['action'] = 'save_and_refresh'
+
+        with client.session_transaction() as sess:
+            sess['_user_id'] = str(admin_user.id)
+            sess['_fresh'] = True
+
+        with patch('sharewarez.routes_games_ext.edit.is_safe_path', return_value=(True, None)), \
+             patch('sharewarez.routes_games_ext.edit.get_allowed_base_directories', return_value=['/allowed']), \
+             patch('sharewarez.routes_games_ext.edit.get_folder_size_in_bytes_updates', return_value=2048000), \
+             patch('sharewarez.routes_games_ext.edit.read_first_nfo_content', return_value='Updated NFO'), \
+             patch(
+                 'sharewarez.routes_games_ext.edit.refresh_game_metadata_and_updates',
+                 return_value=SimpleNamespace(
+                     game_name='Updated Game Name', filesystem_skipped=False,
+                     filesystem_message=None,
+                 ),
+             ) as refresh:
+            response = client.post(f'/game_edit/{test_game.uuid}', data=form_data)
+
+        assert response.status_code == 302
+        refresh.assert_called_once_with(test_game.uuid)
+
+    def test_edit_javascript_preserves_clicked_action_before_disabling_buttons(self):
+        """Regression coverage for browsers omitting disabled submitters from form data."""
+        from pathlib import Path
+
+        script = Path('sharewarez/setup/default_theme/js/admin_game_identify.js').read_text()
+        assert "event.submitter || lastClickedSubmit" in script
+        assert "actionInput.name = 'action'" in script
+        assert script.index("actionInput.value = submittedButton.value") < script.index("btn.disabled = true")
+        assert "document.body.appendChild(saveOverlay)" in script
     
     def test_image_refresh_code_exists(self, client, admin_user, test_game):
         """Test that image refresh code exists in the route."""

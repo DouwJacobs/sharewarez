@@ -25,7 +25,7 @@
 
 .card-header h2 i {
     margin-right: 10px;
-    color: #0096ff;
+    color: rgb(var(--theme-accent-rgb, 0, 150, 255));
 }
 
 .card-body {
@@ -90,7 +90,7 @@
 }
 
 .drag-handle:hover {
-    color: #0096ff;
+    color: rgb(var(--theme-accent-rgb, 0, 150, 255));
 }
 
 .section-name {
@@ -108,4 +108,39 @@
 
 .section-controls {
     margin-left: auto;
+}
+
+@media (max-width: 768px) {
+    .container,
+    .card {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .card-header,
+    .card-body,
+    .section-item {
+        padding: 14px;
+    }
+
+    .section-content {
+        align-items: flex-start;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .section-name {
+        flex: 1 1 calc(100% - 44px);
+        min-width: 0;
+    }
+
+    .section-count {
+        flex: 1 1 100%;
+        margin-left: 34px;
+    }
+
+    .section-controls {
+        flex: 1 1 100%;
+        margin-left: 34px;
+    }
 }

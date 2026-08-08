@@ -121,7 +121,42 @@
 <script src="{{ 'js/game_status_manager.js'|theme_asset }}"></script>
 
 
-{# Modals #}
+{% block modals %}
+{% if enable_game_requests and not has_pending_update_request %}
+<div id="requestUpdateModal" class="modal-request-update">
+    <div class="modal-request-update-content">
+        <div class="modal-request-update-header">
+            <h3>Request Update for {{ game.name }}</h3>
+            <span class="close" onclick="toggleRequestUpdateModal()">&times;</span>
+        </div>
+        <p class="request-update-intro">Request a game update, patch, or new content release from administrators.</p>
+        {% if steamdb_patchnotes_url %}
+        <a href="{{ steamdb_patchnotes_url }}" target="_blank" rel="noopener noreferrer" class="steamdb-helper-link">
+            <i class="fas fa-external-link-alt"></i> Browse available versions &amp; build IDs on SteamDB
+        </a>
+        {% endif %}
+        <form id="requestUpdateForm" data-game-uuid="{{ game.uuid }}">
+            <div class="form-group mb-3">
+                <label for="targetVersion">Requested Version / Build ID <small>(Optional)</small></label>
+                <input type="text" id="targetVersion" name="target_version" class="form-control" maxlength="100" placeholder="e.g. v1.0.5, Build 1459201, or Latest Patch">
+            </div>
+            <div class="form-group mb-3">
+                <label for="referenceUrl">SteamDB or Patch Link <small>(Optional)</small></label>
+                <input type="url" id="referenceUrl" name="reference_url" class="form-control" maxlength="500" placeholder="https://steamdb.info/app/... or patch notes link">
+            </div>
+            <div class="form-group mb-3">
+                <label for="updateNote">Note for Administrator <small>(Optional)</small></label>
+                <textarea id="updateNote" name="note" class="form-control" rows="3" maxlength="1000" placeholder="Specify DLC, patch details, or additional info..."></textarea>
+            </div>
+            <div class="modal-request-update-actions">
+                <button type="button" class="btn btn-secondary" onclick="toggleRequestUpdateModal()">Cancel</button>
+                <button type="submit" class="btn btn-primary" id="submitUpdateReqBtn"><i class="fas fa-paper-plane"></i> Submit Request</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
 <div id="summaryModal" class="summary-modal">
     <div class="summary-modal-content">
         <span class="summary-close">&times;</span>
@@ -151,6 +186,7 @@
     <div class="modal-extras-content">
         <div class="modal-extras-header">
             <h3>Updates & Extras for {{ game.name }}</h3>
+            {% if game.edition_name %}<p>Edition: <strong>{{ game.edition_name }}</strong></p>{% endif %}
             {% if game.version %}<p>Version: <strong>{{ game.version }}</strong></p>{% endif %}
         </div>
         <div class="modal-extras-body">
@@ -222,71 +258,74 @@
                     <span>Back</span>
                 </a>
                 <h1>{{ game.name or 'Game Name Not Available' }}</h1>
-                {% if game.version %}<span class="chip game-version-badge"><span class="game-version-label">Version</span> {{ game.version }}</span>{% endif %}
             </div>
 
             <div class="game-card-topq">
                 <div class="game-card-q1">
                     {# Cover Image #}
-                    {% if cover_images %}
-                        <div class="game-card-coverimage">
-                            {# Hamburger menu button on cover #}
-                            <button id="menuButton-{{ game.uuid }}" class="button-glass-hamburger button-glass-hamburger-cover">
-                                <i class="fas fa-bars"></i>
-                            </button>
+                    <div class="game-card-coverimage">
+                        {# Hamburger menu button on cover #}
+                        <button id="menuButton-{{ game.uuid }}" class="button-glass-hamburger button-glass-hamburger-cover" type="button" aria-label="Open actions for {{ game.name }}" aria-haspopup="menu" aria-expanded="false">
+                            <i class="fas fa-bars" aria-hidden="true"></i>
+                        </button>
 
-                            {# Popup menu (triggered by hamburger button) #}
-                            {% with game_uuid=game.uuid, game_url=game.url %}
-                                {% include 'games/popup_menu.html' %}
-                            {% endwith %}
+                        {# Popup menu (triggered by hamburger button) #}
+                        {% with game_uuid=game.uuid, game_url=game.url %}
+                            {% include 'games/popup_menu.html' %}
+                        {% endwith %}
 
+                        {% if cover_images %}
                             {% for image in cover_images %}
                                 <img src="{{ url_for('static', filename='library/images/' + image.url) }}"
                                      alt="{{ game.name }} Cover Image"
                                      class="game-card-cover-image animated-entry">
                             {% endfor %}
+                        {% else %}
+                            <img src="{{ url_for('static', filename='newstyle/default_cover.jpg') }}"
+                                 alt="{{ game.name }} Default Cover"
+                                 class="game-card-cover-image animated-entry">
+                        {% endif %}
 
-                            {# Favorite button on cover #}
-                            <button class="favorite-btn favorite-btn-cover" data-game-uuid="{{ game.uuid }}" data-is-favorite="{{ is_favorite|lower }}">
-                                <i class="fas fa-heart"></i>
+                        {# Favorite button on cover #}
+                        <button class="favorite-btn favorite-btn-cover" type="button" data-game-uuid="{{ game.uuid }}" data-is-favorite="{{ is_favorite|lower }}" data-game-name="{{ game.name }}" aria-label="{% if is_favorite %}Remove {{ game.name }} from favorites{% else %}Add {{ game.name }} to favorites{% endif %}">
+                            <i class="fas fa-heart" aria-hidden="true"></i>
+                        </button>
+
+                        {% if show_play_status %}
+                        {# Game status button on cover #}
+                        <button class="game-status-btn game-status-btn-cover" type="button" data-game-uuid="{{ game.uuid }}" data-current-status="{{ user_status or '' }}" title="{{ status_label or 'No Status' }}" aria-label="Set play status for {{ game.name }}. Current status: {{ status_label or 'No Status' }}" aria-haspopup="menu" aria-expanded="false">
+                            <i class="fas {{ status_icon or 'fa-circle' }}" aria-hidden="true"></i>
+                        </button>
+
+                        {# Status dropdown menu #}
+                        <div class="status-dropdown" data-game-uuid="{{ game.uuid }}" role="menu" aria-label="Play status for {{ game.name }}" style="display: none;">
+                            <button type="button" class="status-dropdown-option" role="menuitem" data-status="unplayed">
+                                <i class="fas fa-box" style="color: #808080;"></i>
+                                <span class="status-label">Unplayed</span>
                             </button>
-
-                            {% if show_play_status %}
-                            {# Game status button on cover #}
-                            <button class="game-status-btn game-status-btn-cover" data-game-uuid="{{ game.uuid }}" data-current-status="{{ user_status or '' }}" title="{{ status_label or 'No Status' }}">
-                                <i class="fas {{ status_icon or 'fa-circle' }}"></i>
+                            <button type="button" class="status-dropdown-option" role="menuitem" data-status="unfinished">
+                                <i class="fas fa-gamepad" style="color: #4A90E2;"></i>
+                                <span class="status-label">Unfinished</span>
                             </button>
-
-                            {# Status dropdown menu #}
-                            <div class="status-dropdown" data-game-uuid="{{ game.uuid }}" style="display: none;">
-                                <div class="status-dropdown-option" data-status="unplayed">
-                                    <i class="fas fa-box" style="color: #808080;"></i>
-                                    <span class="status-label">Unplayed</span>
-                                </div>
-                                <div class="status-dropdown-option" data-status="unfinished">
-                                    <i class="fas fa-gamepad" style="color: #4A90E2;"></i>
-                                    <span class="status-label">Unfinished</span>
-                                </div>
-                                <div class="status-dropdown-option" data-status="beaten">
-                                    <i class="fas fa-flag-checkered" style="color: #50C878;"></i>
-                                    <span class="status-label">Beaten</span>
-                                </div>
-                                <div class="status-dropdown-option" data-status="completed">
-                                    <i class="fas fa-trophy" style="color: #FFD700;"></i>
-                                    <span class="status-label">Completed</span>
-                                </div>
-                                <div class="status-dropdown-option" data-status="null">
-                                    <i class="fas fa-ban" style="color: #DC3545;"></i>
-                                    <span class="status-label">Won't Play</span>
-                                </div>
-                                <div class="status-dropdown-option" data-status="" style="border-top: 1px solid rgba(255, 255, 255, 0.2);">
-                                    <i class="fas fa-times" style="color: #808080;"></i>
-                                    <span class="status-label">Clear Status</span>
-                                </div>
-                            </div>
-                            {% endif %}
+                            <button type="button" class="status-dropdown-option" role="menuitem" data-status="beaten">
+                                <i class="fas fa-flag-checkered" style="color: #50C878;"></i>
+                                <span class="status-label">Beaten</span>
+                            </button>
+                            <button type="button" class="status-dropdown-option" role="menuitem" data-status="completed">
+                                <i class="fas fa-trophy" style="color: #FFD700;"></i>
+                                <span class="status-label">Completed</span>
+                            </button>
+                            <button type="button" class="status-dropdown-option" role="menuitem" data-status="null">
+                                <i class="fas fa-ban" style="color: #DC3545;"></i>
+                                <span class="status-label">Won't Play</span>
+                            </button>
+                            <button type="button" class="status-dropdown-option" role="menuitem" data-status="" style="border-top: 1px solid rgba(255, 255, 255, 0.2);">
+                                <i class="fas fa-times" style="color: #808080;"></i>
+                                <span class="status-label">Clear Status</span>
+                            </button>
                         </div>
-                    {% endif %}
+                        {% endif %}
+                    </div>
                 </div>
 
                 <div class="game-card-q2">
@@ -307,6 +346,14 @@
                                         </a>
                                     </div>
                                 {% endfor %}
+                            </div>
+                        {% endif %}
+
+                        {# Version & Edition Badges #}
+                        {% if game.edition_name or game.version %}
+                            <div class="game-badges-container">
+                                {% if game.edition_name %}<span class="chip game-edition-badge"><i class="fas fa-layer-group" aria-hidden="true"></i> {{ game.edition_name }}</span>{% endif %}
+                                {% if game.version %}<span class="chip game-version-badge"><span class="game-version-label">Version</span> {{ game.version }}</span>{% endif %}
                             </div>
                         {% endif %}
 

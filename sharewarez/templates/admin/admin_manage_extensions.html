@@ -18,7 +18,7 @@
         <div class="card">
             <div class="card-header">
                 <h3>Allowed File Types</h3>
-                <button class="btn btn-primary btn-sm" onclick="addFileType('allowed')">
+                <button type="button" class="btn btn-primary btn-sm" onclick="addFileType('allowed')">
                     <i class="fas fa-plus"></i> Add New
                 </button>
             </div>
@@ -34,12 +34,12 @@
                     <tbody>
                         {% for type in allowed_types %}
                         <tr data-id="{{ type.id }}" data-category="allowed">
-                            <td class="type-value">{{ type.value }}</td>
-                            <td>
-                                <button class="btn btn-sm btn-warning" onclick="editFileType(this)">
+                            <td class="type-value" data-label="Extension">{{ type.value }}</td>
+                            <td data-label="Actions" class="extension-actions">
+                                <button type="button" class="btn btn-sm btn-warning" onclick="editFileType(this)" aria-label="Edit {{ type.value }} extension">
                                     <i class="fas fa-edit"></i>
                                 </button>
-                                <button class="btn btn-sm btn-danger" onclick="deleteFileType('allowed', {{ type.id }})">
+                                <button type="button" class="btn btn-sm btn-danger" onclick="deleteFileType('allowed', {{ type.id }})" aria-label="Delete {{ type.value }} extension">
                                     <i class="fas fa-trash"></i>
                                 </button>
                             </td>
@@ -64,12 +64,12 @@
 </main>
 
 <!-- Add/Edit Modal -->
-<div class="modal fade" id="fileTypeModal" tabindex="-1">
+<div class="modal fade" id="fileTypeModal" tabindex="-1" aria-labelledby="fileTypeModalTitle" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Add/Edit File Type</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <h5 class="modal-title" id="fileTypeModalTitle">Add/Edit File Type</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 <input type="hidden" id="modalTypeCategory">

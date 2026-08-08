@@ -80,6 +80,8 @@ def download_game(game_uuid):
         new_request = DownloadRequest(
             user_id=current_user.id,
             game_uuid=game.uuid,
+            content_type='game',
+            content_title=game.name,
             status=status,  # Always 'available' for instant download
             download_size=game.size,
             file_location=game.full_disk_path,
@@ -182,6 +184,10 @@ def download_other(file_type, game_uuid, file_id):
         new_request = DownloadRequest(
             user_id=current_user.id,
             game_uuid=game_uuid,
+            content_type=file_type,
+            content_title=(file_record.title if file_type == 'update' and file_record.title else base_name),
+            game_update_id=file_record.id if file_type == 'update' else None,
+            game_extra_id=file_record.id if file_type == 'extra' else None,
             status=status,
             download_size=calculated_size,  # Use calculated size instead of 0
             file_location=file_path,

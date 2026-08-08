@@ -227,19 +227,19 @@
     button,
     input[type="submit"],
     input[type="button"] {
-        min-height: 40px;
+        min-height: 44px;
     }
 
     /* Card action buttons are compact circles, not full-size form controls. */
     .game-card :is(.button-glass-hamburger, .favorite-btn, .game-status-btn) {
-        width: 40px !important;
-        min-width: 40px !important;
-        height: 40px !important;
-        min-height: 40px !important;
+        width: 44px !important;
+        min-width: 44px !important;
+        height: 44px !important;
+        min-height: 44px !important;
         padding: 0 !important;
         border-radius: 50% !important;
         aspect-ratio: 1;
-        flex: 0 0 40px;
+        flex: 0 0 44px;
     }
 
     .admin-header,
@@ -269,6 +269,61 @@
     .user-invites-header > .btn,
     .admin_manage_invites-header > .btn {
         width: 100%;
+    }
+
+    /* Dense extension tables become readable touch-friendly cards. */
+    .scan-extension-card .table-responsive {
+        overflow: visible !important;
+    }
+
+    .scan-extension-card table,
+    .scan-extension-card tbody,
+    .scan-extension-card tr,
+    .scan-extension-card td {
+        display: block;
+        width: 100%;
+    }
+
+    .scan-extension-card thead {
+        display: none;
+    }
+
+    .scan-extension-card tbody {
+        display: grid;
+        gap: 10px;
+        padding: 10px;
+    }
+
+    .scan-extension-card tbody tr {
+        padding: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.09);
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.03);
+    }
+
+    .scan-extension-card td {
+        padding: 6px 0 !important;
+        border: 0 !important;
+    }
+
+    .scan-extension-card td::before {
+        display: block;
+        margin-bottom: 5px;
+        color: var(--text-muted, rgba(205, 214, 235, 0.65));
+        content: attr(data-label);
+        font-size: 0.72rem;
+        font-weight: 750;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+    }
+
+    .scan-extension-card .extension-actions {
+        display: flex;
+        gap: 8px;
+    }
+
+    .scan-extension-card .extension-actions .btn {
+        flex: 1 1 0;
     }
 
     .input-group,
@@ -475,5 +530,184 @@
     .glass-panel,
     .discovery-panel {
         padding: 8px !important;
+    }
+}
+
+/* =====================================================
+   MOBILE HARDENING LAYER
+   Shared safeguards for every authenticated user/admin screen.
+   ===================================================== */
+@media (max-width: 768px) {
+    html,
+    body {
+        max-width: 100%;
+        overflow-x: clip;
+    }
+
+    #content,
+    #content > main,
+    #content > section,
+    #content :is(.row, [class*="-page"], [class*="-panel"], [class*="-container"], [class*="-content"]) {
+        min-width: 0;
+    }
+
+    #content {
+        padding-right: max(12px, env(safe-area-inset-right)) !important;
+        padding-left: max(12px, env(safe-area-inset-left)) !important;
+    }
+
+    #content > main,
+    #content > section,
+    #content > [class*="-page"] {
+        width: 100% !important;
+        max-width: 100% !important;
+        margin-right: auto !important;
+        margin-left: auto !important;
+    }
+
+    /* Page titles and their actions share one predictable mobile layout. */
+    :is(.admin-page-header, .downloads-page-header, .users-management-header,
+        .library-browser-header, .discovery-page-header, .game-edit-header,
+        .requests-page-header, .help-page-header, [class*="-page-header"]) {
+        display: flex !important;
+        align-items: stretch !important;
+        flex-direction: column !important;
+        gap: 12px !important;
+        min-width: 0;
+    }
+
+    :is(.admin-page-header, .downloads-page-header, .users-management-header,
+        .library-browser-header, .discovery-page-header, [class*="-page-header"]) > * {
+        min-width: 0;
+        max-width: 100%;
+    }
+
+    :is(.admin-page-actions, .downloads-page-actions, .header-actions,
+        .form-actions, .modal-footer, .card-actions, [class*="-header-actions"]) {
+        display: flex !important;
+        align-items: stretch !important;
+        flex-wrap: wrap !important;
+        gap: 8px !important;
+        width: 100%;
+    }
+
+    :is(.admin-page-actions, .downloads-page-actions, .header-actions,
+        .form-actions, [class*="-header-actions"]) > :is(.btn, button, a.btn) {
+        flex: 1 1 160px;
+    }
+
+    /* Never let IDs, paths, email addresses, or integration URLs widen a page. */
+    :is(td, th, dd, p, a, code, pre, .form-text, .alert, .badge, .list-group-item) {
+        overflow-wrap: anywhere;
+    }
+
+    pre,
+    code,
+    .log-entry,
+    .code-block {
+        max-width: 100%;
+        white-space: pre-wrap;
+        word-break: break-word;
+    }
+
+    /* Filter bars become a comfortable vertical form on phones. */
+    :is(.filter-controls, .filters-row, .search-controls, .table-controls,
+        .users-management-filters, [class*="-filters"], [class*="-controls"]) {
+        min-width: 0;
+        max-width: 100%;
+    }
+
+    :is(.filter-controls, .filters-row, .search-controls, .table-controls) > :is(.form-control, .form-select, .btn) {
+        flex: 1 1 100%;
+        width: 100%;
+    }
+
+    /* Wide data remains usable without widening the document itself. */
+    .table-responsive,
+    .dataTables_wrapper {
+        width: 100%;
+        max-width: 100%;
+        border-radius: 10px;
+        overscroll-behavior-inline: contain;
+        scrollbar-width: thin;
+    }
+
+    .table-responsive > table,
+    .dataTables_wrapper table {
+        margin-bottom: 0;
+    }
+
+    .table :is(th, td) {
+        padding: 12px 10px;
+        vertical-align: middle;
+    }
+
+    .table td:last-child :is(.btn-group, .inline-form),
+    .table td:last-child > :is(.btn, button, a.btn) {
+        max-width: 100%;
+    }
+
+    /* Pagination remains reachable and legible at 320px. */
+    :is(.sw-pagination, .pagination) {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 8px;
+        width: 100%;
+        margin-top: 16px;
+    }
+
+    .sw-pagination > :is(.btn, a),
+    .pagination .page-link {
+        min-width: 44px;
+        min-height: 44px;
+    }
+
+    /* Dialog chrome must fit above mobile browser controls and safe areas. */
+    .modal-dialog {
+        width: auto !important;
+        margin-top: max(8px, env(safe-area-inset-top)) !important;
+        margin-bottom: max(8px, env(safe-area-inset-bottom)) !important;
+    }
+
+    .modal-header,
+    .modal-footer {
+        padding: 12px 14px;
+    }
+
+    .modal-footer > * {
+        flex: 1 1 130px;
+        margin: 0 !important;
+    }
+
+    .modal-body,
+    .offcanvas-body {
+        min-width: 0;
+        padding: 14px;
+    }
+
+    .dropdown-menu {
+        max-width: calc(100vw - 24px);
+    }
+
+    .dropdown-item {
+        min-height: 44px;
+        white-space: normal;
+    }
+
+    .ck.ck-editor,
+    .ck.ck-editor__main,
+    .ck.ck-editor__editable {
+        min-width: 0;
+        max-width: 100%;
+    }
+
+    img,
+    video,
+    iframe,
+    canvas,
+    svg {
+        max-width: 100%;
     }
 }

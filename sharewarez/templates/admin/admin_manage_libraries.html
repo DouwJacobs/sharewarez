@@ -74,19 +74,35 @@
                             {{ library.name }} - {{ library.platform.value }}
                         </td>
                         <td>{{ library.games|length }}</td>
-                        <td>
-                            <a href="{{ url_for('main.scan_management', library_uuid=library.uuid) }}" class="btn btn-sm btn-secondary">
-                                <i class="fas fa-search"></i> Scan
-                            </a>
-                            <a href="{{ url_for('admin2.edit_library', library_uuid=library.uuid) }}" class="btn btn-sm btn-primary">
-                                <i class="fas fa-edit"></i> Edit
-                            </a>
-                            <form action="{{ url_for('main.delete_full_library', library_uuid=library.uuid) }}" method="post" style="display: inline-block;">
-                                {{ csrf_form.csrf_token }}
-                                <button type="button" class="btn btn-sm btn-danger delete-btn" data-bs-toggle="modal" data-bs-target="#deleteWarningModal" data-library-uuid="{{ library.uuid }}">
-                                    <i class="fas fa-trash"></i> Delete
+                        <td class="position-relative">
+                            <div class="dropdown d-inline-block">
+                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="libMenu-{{ library.uuid }}" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Actions for {{ library.name }}">
+                                    <i class="fas fa-ellipsis-v"></i>
                                 </button>
-                            </form>
+                                <ul class="dropdown-menu dropdown-menu-dark dropdown-menu-end" aria-labelledby="libMenu-{{ library.uuid }}">
+                                    <li>
+                                        <a class="dropdown-item" href="{{ url_for('admin2.edit_library', library_uuid=library.uuid) }}">
+                                            <i class="fas fa-cog me-2"></i> Update Settings
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="{{ url_for('main.scan_management', library_uuid=library.uuid) }}">
+                                            <i class="fas fa-search me-2"></i> Scan Library
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <button type="button" class="dropdown-item bulk-refresh-lib-images" data-library-uuid="{{ library.uuid }}" data-library-name="{{ library.name }}">
+                                            <i class="fas fa-sync-alt me-2"></i> Bulk Refresh Images
+                                        </button>
+                                    </li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <button type="button" class="dropdown-item text-danger delete-btn" data-bs-toggle="modal" data-bs-target="#deleteWarningModal" data-library-uuid="{{ library.uuid }}">
+                                            <i class="fas fa-trash me-2"></i> Delete Library
+                                        </button>
+                                    </li>
+                                </ul>
+                            </div>
                         </td>
                     </tr>
                 {% endfor %}

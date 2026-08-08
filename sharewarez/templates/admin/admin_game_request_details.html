@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block content %}
+<link rel="stylesheet" href="{{ 'css/requests.css'|theme_asset }}">
+<main class="requests-page admin-request-details-page">
+    <nav class="request-detail-toolbar" aria-label="Request navigation">
+        <a class="btn btn-secondary request-back-link" href="{{ url_for('game_requests.admin_requests', status=return_status, type=return_type, q=return_search, sort=return_sort, page=return_page) }}"><i class="fas fa-arrow-left"></i><span>All requests</span></a>
+        <span class="request-detail-toolbar-label">
+            {% if game_request.request_type == 'update' %}
+                <i class="fas fa-rotate"></i> Update request
+            {% else %}
+                <i class="fas fa-paper-plane"></i> New game request
+            {% endif %}
+        </span>
+    </nav>
+
+    <header class="request-detail-hero request-panel">
+        <div class="request-detail-cover">{% if game_request.formatted_cover_url %}<img src="{{ game_request.formatted_cover_url }}" alt="Cover for {{ game_request.game_name }}">{% else %}<span><i class="fas fa-gamepad"></i></span>{% endif %}</div>
+        <div class="request-detail-intro">
+            <div class="request-history-title">
+                <div>
+                    <p class="eyebrow">
+                        {% if game_request.request_type == 'update' %}<i class="fas fa-rotate"></i> Game Update Request{% else %}{{ game_request.edition_name or 'Base game' }}{% endif %}
+                    </p>
+                    <h1>{{ game_request.game_name }}</h1>
+                </div>
+                <span class="request-chip status-{{ game_request.status }}">{{ game_request.status|replace('_', ' ')|title }}</span>
+            </div>
+            {% if game_request.summary %}<p>{{ game_request.summary }}</p>{% endif %}
+            <div class="request-detail-facts">
+                <span><i class="fas fa-users"></i> {{ game_request.interested_requesters|length }} active</span>
+                {% if game_request.satisfied_requesters %}<span><i class="fas fa-circle-check"></i> {{ game_request.satisfied_requesters|length }} satisfied</span>{% endif %}
+                {% if game_request.source_game %}
+                    <span><i class="fas fa-gamepad"></i> Library Game: <a href="{{ url_for('games.game_details', game_uuid=game_request.source_game.uuid) }}" style="color:var(--theme-primary,#03b2f8);">{{ game_request.source_game.name }}</a></span>
+                {% endif %}
+                {% if game_request.platforms %}<span><i class="fas fa-display"></i> {{ game_request.platforms|join(', ') }}</span>{% endif %}
+                {% if game_request.igdb_id %}<span><i class="fas fa-database"></i> IGDB {{ game_request.igdb_id }}</span>{% endif %}
+            </div>
+        </div>
+    </header>
+
+    <div class="request-detail-layout">
+        <section class="request-panel">
+            <div class="request-section-heading"><div><p class="eyebrow">Workflow</p><h2>Update request status</h2></div></div>
+            <form method="post" action="{{ url_for('game_requests.admin_update_request', request_id=game_request.id, status=return_status, type=return_type, q=return_search, sort=return_sort, page=return_page) }}" class="admin-request-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <label>Status<select class="form-select" name="status">{% for status in statuses %}<option value="{{ status }}"{% if game_request.status == status %} selected{% endif %}>{{ status|replace('_', ' ')|title }}</option>{% endfor %}</select></label>
+                <label class="library-game-picker" data-fulfilled-picker>Fulfilled by <small>Required when fulfilled</small>
+                    <input type="search" class="form-control library-game-search" value="{{ game_request.fulfilled_game.name if game_request.fulfilled_game else '' }}" placeholder="Search your library…" autocomplete="off" aria-label="Search library games" aria-expanded="false">
+                    <input type="hidden" name="fulfilled_game_uuid" value="{{ game_request.fulfilled_game_uuid or '' }}">
+                    <span class="library-game-results" role="listbox"></span>
+                </label>
+                <label class="wide">Public response<textarea class="form-control" name="public_response" maxlength="4000" rows="4" placeholder="Shown to everyone following this request">{{ game_request.public_response or '' }}</textarea></label>
+                <label class="wide">Internal note<textarea class="form-control" name="internal_note" maxlength="4000" rows="4" placeholder="Visible to administrators only">{{ game_request.internal_note or '' }}</textarea></label>
+                <button class="btn btn-primary" type="submit"><i class="fas fa-check"></i> Save update</button>
+            </form>
+        </section>
+
+        <aside class="request-detail-sidebar">
+            <section class="request-panel">
+                <div class="request-section-heading"><div><p class="eyebrow">Community</p><h2>Requesters</h2></div></div>
+                <div class="requester-list">{% for link in game_request.requesters if link.withdrawn_at is none %}<article class="requester-card"><div class="requester-avatar"><i class="fas fa-user"></i></div><div><strong>{{ link.user.name }}</strong>{% if link.satisfied_at %}<p>Satisfied{% if link.satisfied_by_game %} by {{ link.satisfied_by_game.name }}{% endif %}</p>{% elif link.accept_any_edition %}<p>Any edition accepted</p>{% else %}<p>Exact edition requested</p>{% endif %}{% if link.requester_note %}<blockquote style="white-space: pre-line; word-break: break-word; color: #e2e8f0; border-left: 3px solid #03b2f8;">{{ link.requester_note|urlize(target="_blank") }}</blockquote>{% endif %}</div></article>{% else %}<p>No active requesters.</p>{% endfor %}</div>
+            </section>
+            <section class="request-panel request-workflow-meta" aria-label="Request activity">
+                <div class="request-section-heading"><div><p class="eyebrow">Activity</p><h2>Current ownership</h2></div></div>
+                <p><strong>Created:</strong> {{ game_request.created_at.strftime('%d %b %Y %H:%M') }}</p>
+                <p><strong>Last updated:</strong> {{ game_request.updated_at.strftime('%d %b %Y %H:%M') }}</p>
+                <p><strong>Last handled by:</strong> {{ game_request.handled_by.name if game_request.handled_by else 'Unassigned' }}</p>
+                {% if game_request.resolved_at %}<p><strong>Resolved:</strong> {{ game_request.resolved_at.strftime('%d %b %Y %H:%M') }}</p>{% endif %}
+                <p class="form-text">Reopening or changing fulfillment automatically reconciles affected requester records.</p>
+            </section>
+            {% if alternatives %}<section class="request-panel"><div class="request-section-heading"><div><p class="eyebrow">Related</p><h2>Other editions</h2></div></div><div class="request-alternatives">{% for item in alternatives %}<a href="{{ url_for('game_requests.admin_request_details', request_id=item.id, status=return_status, type=return_type, q=return_search, sort=return_sort, page=return_page) }}"><span><strong>{{ item.edition_name or item.game_name }}</strong><small>{{ item.interested_requesters|length }} active</small></span><span class="request-chip status-{{ item.status }}">{{ item.status|replace('_', ' ')|title }}</span></a>{% endfor %}</div></section>{% endif %}
+        </aside>
+    </div>
+</main>
+<script src="{{ 'js/admin_game_requests.js'|theme_asset }}"></script>
+{% endblock %}

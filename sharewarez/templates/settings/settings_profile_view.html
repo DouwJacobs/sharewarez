@@ -1,55 +1,91 @@
 {% extends "base.html" %}
 
 {% block content %}
-
 <link rel="stylesheet" href="{{ 'css/settings/settings_profile_view.css'|theme_asset }}">
 
-<div class="container my-4">
+<main class="profile-page container" aria-labelledby="profile-page-title">
+    <section class="profile-card">
+        <header class="profile-card-header">
+            <div>
+                <p class="profile-eyebrow">Account</p>
+                <h1 id="profile-page-title"><i class="fas fa-user-circle" aria-hidden="true"></i> User Profile</h1>
+                <p class="profile-header-copy">Your account details and personal library preferences.</p>
+            </div>
+            <span class="profile-role-badge"><i class="fas fa-user-shield" aria-hidden="true"></i>{{ current_user.role|title }}</span>
+        </header>
 
-    <div class="content-restricted-textblock">
-        <h2><i class="fas fa-user-circle me-2"></i>User Profile</h2>
-        <div class="avatar-container">
-            <div class="settings_profile_view-edit-button">
+        <div class="profile-hero">
+            <img src="{{ url_for('static', filename=current_user.avatarpath) }}"
+                 alt="{{ current_user.name }}'s avatar"
+                 class="profile-avatar">
+            <div class="profile-identity">
+                <h2>{{ current_user.name }}</h2>
+                <p><i class="fas fa-envelope" aria-hidden="true"></i>{{ current_user.email }}</p>
+                <p class="profile-member-since"><i class="fas fa-calendar-alt" aria-hidden="true"></i>Member since {{ current_user.created.strftime('%B %Y') }}</p>
+            </div>
+            <div class="profile-actions" aria-label="Profile actions">
                 <a href="{{ url_for('settings.settings_profile_edit') }}" class="btn btn-primary">
-                    <i class="fas fa-camera me-2"></i>Change Avatar
+                    <i class="fas fa-pen" aria-hidden="true"></i>Edit Profile
                 </a>
             </div>
-            <img src="{{ url_for('static', filename=current_user.avatarpath) }}" 
-                 alt="User Avatar" 
-                 class="settings_profile_view-user-avatar"
-                 title="Profile Picture">
-        </div>
-        <div class="settings_profile_view-userinfo">
-            <p>
-                <strong><i class="fas fa-user me-2"></i>Name:</strong>
-                <span>{{ current_user.name }}</span>
-            </p>
-            <p>
-                <strong><i class="fas fa-envelope me-2"></i>Email:</strong>
-                <span>{{ current_user.email }}</span>
-            </p>
-            <p>
-                <strong><i class="fas fa-user-tag me-2"></i>Role:</strong>
-                <span>{{ current_user.role|title }}</span>
-            </p>
-            <p>
-                <strong><i class="fas fa-calendar-alt me-2"></i>Member Since:</strong>
-                <span>{{ current_user.created.strftime('%B %d, %Y') }}</span>
-            </p>
-            <p>
-                <strong><i class="fas fa-info-circle me-2"></i>About:</strong>
-                <span>{{ current_user.about or 'No information provided' }}</span>
-            </p>
-            <p>
-                <strong><i class="fas fa-ticket-alt me-2"></i>Invites:</strong>
-                <span>{{ remaining_invites }} out of {{ total_invites }}</span>
-            </p>
         </div>
 
-    </div>
-</div>
+        <div class="profile-details" aria-label="Account details">
+            <article class="profile-detail">
+                <span class="profile-detail-icon"><i class="fas fa-id-card" aria-hidden="true"></i></span>
+                <div>
+                    <p class="profile-detail-label">About</p>
+                    <p class="profile-detail-value">{{ current_user.about or 'No information provided yet.' }}</p>
+                </div>
+            </article>
+            <a class="profile-detail profile-detail-navigation" href="{{ url_for('login.invites') }}" aria-label="View your invitations">
+                <span class="profile-detail-icon"><i class="fas fa-ticket-alt" aria-hidden="true"></i></span>
+                <div>
+                    <p class="profile-detail-label">Invitations available</p>
+                    <p class="profile-detail-value"><strong>{{ remaining_invites }}</strong> of {{ total_invites }} remaining</p>
+                </div>
+                <i class="fas fa-arrow-right profile-detail-arrow" aria-hidden="true"></i>
+            </a>
+            <article class="profile-detail">
+                <span class="profile-detail-icon"><i class="fas fa-lock" aria-hidden="true"></i></span>
+                <div>
+                    <p class="profile-detail-label">Account security</p>
+                    <a class="profile-detail-link" href="{{ url_for('settings.account_pw') }}">Change password <i class="fas fa-arrow-right" aria-hidden="true"></i></a>
+                </div>
+            </article>
+        </div>
 
-
-</div>
-
+        <section class="profile-preferences" id="profilePreferences" aria-labelledby="profile-preferences-title" tabindex="-1">
+            <div class="profile-preferences-heading">
+                <div>
+                    <p class="profile-eyebrow">Library defaults</p>
+                    <h2 id="profile-preferences-title"><i class="fas fa-sliders" aria-hidden="true"></i> Preferences</h2>
+                    <p>Choose how your library is displayed and which theme you use.</p>
+                </div>
+            </div>
+            <form id="preferencesForm" method="POST" action="{{ url_for('settings.settings_panel') }}" class="profile-preferences-form">
+                {{ preferences_form.hidden_tag() }}
+                <div class="preferences-field">
+                    {{ preferences_form.items_per_page.label(class="form-label") }}
+                    {{ preferences_form.items_per_page(class="form-select") }}
+                </div>
+                <div class="preferences-field">
+                    {{ preferences_form.default_sort.label(class="form-label") }}
+                    {{ preferences_form.default_sort(class="form-select") }}
+                </div>
+                <div class="preferences-field">
+                    {{ preferences_form.default_sort_order.label(class="form-label") }}
+                    {{ preferences_form.default_sort_order(class="form-select") }}
+                </div>
+                <div class="preferences-field">
+                    {{ preferences_form.theme.label(class="form-label") }}
+                    {{ preferences_form.theme(class="form-select") }}
+                </div>
+                <div class="profile-preferences-submit">
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-check" aria-hidden="true"></i>Save Preferences</button>
+                </div>
+            </form>
+        </section>
+    </section>
+</main>
 {% endblock %}

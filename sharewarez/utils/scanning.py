@@ -316,96 +316,95 @@ def process_game_extras(game_name, full_disk_path, extras_folder, library_uuid, 
 
 def refresh_images_in_background(game_uuid):
     from sharewarez import cache
+    from sharewarez.utils.game_core import store_image_url_for_download
+    from sharewarez.utils.functions import download_image as _download_image
+
     print(f"[IMAGE REFRESH] Starting background refresh process for game UUID: {game_uuid}")
     with current_app.app_context():
-        from sharewarez.utils.game_core import (
-            process_and_save_image
-        )
-
-        # Set initial progress
         cache.set(f'image_refresh_progress_{game_uuid}', {'status': 'in_progress', 'progress': 0}, timeout=300)
 
         try:
             game = db.session.execute(select(Game).filter_by(uuid=game_uuid)).scalar_one_or_none()
             if not game:
-                print(f"[IMAGE REFRESH] Game with UUID {game_uuid} not found in database.")
+                print(f"[IMAGE REFRESH] Game with UUID {game_uuid} not found.")
                 cache.set(f'image_refresh_progress_{game_uuid}', {'status': 'error', 'progress': 0}, timeout=300)
                 return
 
             print(f"[IMAGE REFRESH] Found game: {game.name} (IGDB ID: {game.igdb_id})")
             if game.igdb_id is None:
-                print(f"[IMAGE REFRESH] Error: Game '{game.name}' does not have an IGDB ID. Cannot refresh images.")
+                print(f"[IMAGE REFRESH] Game '{game.name}' has no IGDB ID, cannot refresh images.")
                 cache.set(f'image_refresh_progress_{game_uuid}', {'status': 'error', 'progress': 0}, timeout=300)
-                if has_request_context():
-                    flash(f"Failed to refresh images: Game '{game.name}' is not matched with IGDB.", "error")
                 return
 
             cache.set(f'image_refresh_progress_{game_uuid}', {'status': 'in_progress', 'progress': 20}, timeout=300)
 
-            print(f"[IMAGE REFRESH] Fetching image URLs from IGDB API for IGDB ID: {game.igdb_id}")
-            response_json = make_igdb_api_request(current_app.config['IGDB_API_ENDPOINT'],
-                f"""fields id, cover.url, screenshots.url;
-                    where id = {game.igdb_id}; limit 1;""")
-
+            print(f"[IMAGE REFRESH] Fetching image IDs from IGDB API for IGDB ID: {game.igdb_id}")
+            response_json = make_igdb_api_request(
+                current_app.config['IGDB_API_ENDPOINT'],
+                f"fields id, cover, screenshots; where id = {game.igdb_id}; limit 1;"
+            )
             print(f"[IMAGE REFRESH] IGDB API response: {response_json}")
 
-            if response_json and 'error' not in response_json:
-                cache.set(f'image_refresh_progress_{game_uuid}', {'status': 'in_progress', 'progress': 40}, timeout=300)
-
-                print(f"[IMAGE REFRESH] Deleting existing images for game UUID: {game_uuid}")
-                delete_game_images(game_uuid)
-
-                cache.set(f'image_refresh_progress_{game_uuid}', {'status': 'in_progress', 'progress': 60}, timeout=300)
-
-                cover_data = response_json[0].get('cover')
-                if cover_data:
-                    cover_id = cover_data.get('id') if isinstance(cover_data, dict) else cover_data
-                    print(f"[IMAGE REFRESH] Processing cover ID: {cover_id}")
-                    process_and_save_image(game.uuid, cover_id, image_type='cover')
-
-                screenshots_data = response_json[0].get('screenshots', [])
-                total_images = len(screenshots_data) + (1 if cover_data else 0)
-                processed = 1 if cover_data else 0
-
-                print(f"[IMAGE REFRESH] Found {len(screenshots_data)} screenshots to process.")
-                if total_images > 0:
-                    for screenshot in screenshots_data:
-                        screenshot_id = screenshot.get('id') if isinstance(screenshot, dict) else screenshot
-                        print(f"[IMAGE REFRESH] Processing screenshot ID: {screenshot_id}")
-                        process_and_save_image(game.uuid, screenshot_id, image_type='screenshot')
-                        processed += 1
-                        progress = 60 + int((processed / total_images) * 30)
-                        cache.set(f'image_refresh_progress_{game_uuid}', {'status': 'in_progress', 'progress': progress}, timeout=300)
-                else:
-                    # No images to process, jump to 90%
-                    cache.set(f'image_refresh_progress_{game_uuid}', {'status': 'in_progress', 'progress': 90}, timeout=300)
-
-                db.session.commit()
-                cache.set(f'image_refresh_progress_{game_uuid}', {'status': 'complete', 'progress': 100}, timeout=300)
-                print(f"[IMAGE REFRESH] Successfully finished image refresh for '{game.name}'")
-
-                if has_request_context():
-                    flash("Game images refreshed successfully.", "success")
-                else:
-                    print("Game images refreshed successfully.")
-            else:
-                print(f"[IMAGE REFRESH] IGDB API returned error or empty response: {response_json}")
+            if not response_json or 'error' in response_json:
+                print(f"[IMAGE REFRESH] IGDB API returned error or empty response.")
                 cache.set(f'image_refresh_progress_{game_uuid}', {'status': 'error', 'progress': 0}, timeout=300)
-                if has_request_context():
-                    flash("Failed to retrieve game images from IGDB API.", "error")
-                else:
-                    print("Failed to retrieve game images from IGDB API.")
+                return
+
+            cache.set(f'image_refresh_progress_{game_uuid}', {'status': 'in_progress', 'progress': 40}, timeout=300)
+
+            # Delete existing image records and files for this game
+            print(f"[IMAGE REFRESH] Deleting existing images for game UUID: {game_uuid}")
+            delete_game_images(game_uuid)
+            cache.set(f'image_refresh_progress_{game_uuid}', {'status': 'in_progress', 'progress': 60}, timeout=300)
+
+            # Queue images into DB as pending so they appear in admin image queue
+            cover_id = response_json[0].get('cover')
+            if cover_id:
+                if isinstance(cover_id, dict):
+                    cover_id = cover_id.get('id')
+                print(f"[IMAGE REFRESH] Queuing cover ID: {cover_id}")
+                store_image_url_for_download(game.uuid, cover_id, image_type='cover')
+
+            screenshots_data = response_json[0].get('screenshots', [])
+            print(f"[IMAGE REFRESH] Queuing {len(screenshots_data)} screenshots.")
+            for screenshot in screenshots_data:
+                screenshot_id = screenshot.get('id') if isinstance(screenshot, dict) else screenshot
+                store_image_url_for_download(game.uuid, screenshot_id, image_type='screenshot')
+
+            # Commit so records appear in queue as pending
+            db.session.commit()
+            cache.set(f'image_refresh_progress_{game_uuid}', {'status': 'in_progress', 'progress': 75}, timeout=300)
+
+            # Immediately download this game's pending images
+            pending = db.session.execute(
+                select(Image).filter_by(game_uuid=game_uuid, is_downloaded=False)
+            ).scalars().all()
+
+            total_pending = len(pending)
+            print(f"[IMAGE REFRESH] Downloading {total_pending} queued images.")
+            for idx, img in enumerate(pending):
+                if img.download_url:
+                    try:
+                        save_path = os.path.join(current_app.config['IMAGE_SAVE_PATH'], img.url)
+                        _download_image(img.download_url, save_path)
+                        img.is_downloaded = True
+                        print(f"[IMAGE REFRESH] Downloaded {img.image_type}: {img.url}")
+                    except Exception as dl_err:
+                        print(f"[IMAGE REFRESH] Failed to download {img.url}: {dl_err}")
+                if total_pending > 0:
+                    progress = 75 + int(((idx + 1) / total_pending) * 24)
+                    cache.set(f'image_refresh_progress_{game_uuid}', {'status': 'in_progress', 'progress': progress}, timeout=300)
+
+            db.session.commit()
+            cache.set(f'image_refresh_progress_{game_uuid}', {'status': 'complete', 'progress': 100}, timeout=300)
+            print(f"[IMAGE REFRESH] Successfully finished for '{game.name}'")
 
         except Exception as e:
             db.session.rollback()
-            print(f"[IMAGE REFRESH] Exception occurred during refresh: {str(e)}")
+            print(f"[IMAGE REFRESH] Exception: {str(e)}")
             import traceback
             traceback.print_exc()
             cache.set(f'image_refresh_progress_{game_uuid}', {'status': 'error', 'progress': 0}, timeout=300)
-            if has_request_context():
-                flash(f"Failed to refresh game images: {str(e)}", "error")
-            else:
-                print(f"Failed to refresh game images: {str(e)}")
             
 def delete_game_images(game_uuid):
     with current_app.app_context():

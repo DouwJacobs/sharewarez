@@ -102,3 +102,26 @@ input[type="checkbox"] {
     height: 20px;
     cursor: pointer;
 }
+
+@media (max-width: 768px) {
+    .whitelist-controls,
+    .add-whitelist-form,
+    .whitelist-table {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .image-whitelist img {
+        max-width: min(240px, 80vw);
+    }
+
+    .button-group {
+        align-items: stretch;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .button-group .btn {
+        width: 100%;
+    }
+}

@@ -1,4 +1,5 @@
 # /sharewarez/routes_admin_ext/images.py
+import os
 from flask import render_template, request, jsonify, current_app
 from flask_login import login_required
 from sharewarez.models import Image, Game
@@ -146,3 +147,76 @@ def delete_image(image_id):
         return jsonify({'success': False, 'message': str(e)}), 500
 
 
+@admin2_bp.route('/admin/api/clear_image_queue', methods=['POST'])
+@login_required
+@admin_required
+def clear_image_queue():
+    """Clear pending images from queue or clear all image queue records."""
+    try:
+        data = request.json or {}
+        clear_type = data.get('type', 'pending') # 'pending' or 'all'
+        
+        query = select(Image)
+        if clear_type == 'pending':
+            query = query.filter(Image.is_downloaded == False)
+            
+        images_to_delete = db.session.execute(query).scalars().all()
+        count = len(images_to_delete)
+        
+        for img in images_to_delete:
+            if img.is_downloaded and img.url:
+                file_path = os.path.join(current_app.config['IMAGE_SAVE_PATH'], img.url)
+                if os.path.exists(file_path):
+                    os.remove(file_path)
+            db.session.delete(img)
+            
+        db.session.commit()
+        return jsonify({'success': True, 'message': f'Cleared {count} {clear_type} images from queue.', 'count': count})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+
+
+@admin2_bp.route('/admin/api/fix_image_status', methods=['POST'])
+@login_required
+@admin_required
+def fix_image_status():
+    """
+    Retroactively fix historic Image records that have incorrect is_downloaded status.
+    Scans all Image records, checks if the local file exists on disk, and updates
+    is_downloaded accordingly.
+    """
+    try:
+        image_save_path = current_app.config['IMAGE_SAVE_PATH']
+        images = db.session.execute(select(Image)).scalars().all()
+
+        fixed_downloaded = 0
+        fixed_missing = 0
+
+        for image in images:
+            if not image.url:
+                continue
+            file_path = os.path.join(image_save_path, image.url)
+            file_exists = os.path.exists(file_path)
+
+            if file_exists and not image.is_downloaded:
+                image.is_downloaded = True
+                fixed_downloaded += 1
+            elif not file_exists and image.is_downloaded:
+                image.is_downloaded = False
+                fixed_missing += 1
+
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'message': f'Fixed {fixed_downloaded} images marked as downloaded, {fixed_missing} images marked as missing.',
+            'fixed_downloaded': fixed_downloaded,
+            'fixed_missing': fixed_missing,
+            'total_checked': len(images)
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': str(e)}), 500

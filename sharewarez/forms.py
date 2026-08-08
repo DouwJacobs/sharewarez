@@ -11,7 +11,7 @@ from wtforms.fields import DateField
 from sharewarez.models import Status, Category, genre_choices, game_mode_choices, theme_choices, platform_choices, player_perspective_choices, LibraryPlatform
 from urllib.parse import urlparse
 from sharewarez.utils.functions import comma_separated_urls
-from sharewarez.utils.themes import ThemeManager
+from sharewarez.utils.themes import SITE_DEFAULT_THEME_VALUE, ThemeManager
 from flask import current_app
 from werkzeug.utils import secure_filename
 
@@ -80,6 +80,7 @@ class WhitelistForm(FlaskForm):
     submit = SubmitField('Add to Whitelist')
 
 class EditProfileForm(FlaskForm):
+    about = TextAreaField('About', validators=[Optional(), Length(max=256)])
     avatar = FileField('Profile Avatar', validators=[
         FileAllowed(['jpg', 'jpeg', 'png', 'gif'], 'Images only!')
     ])
@@ -185,6 +186,8 @@ class AddGameForm(FlaskForm):
     storyline = TextAreaField('Storyline', validators=[Optional()])
     install_instructions = TextAreaField('How to Install', validators=[Optional()])
     version = StringField('Base Package Version', validators=[Optional(), Length(max=100)])
+    edition_name = StringField('Edition Name', validators=[Optional(), Length(max=255)])
+
     url = StringField('URL', validators=[Optional(), URL(), safe_url_validator])
     full_disk_path = StringField('Full Disk Path', validators=[DataRequired()], widget=TextInput())
     video_urls = StringField('Video URLs', validators=[Optional(), comma_separated_urls])
@@ -266,17 +269,16 @@ class UserPreferencesForm(FlaskForm):
     items_per_page = SelectField('Max items per Page', choices=items_per_page_choices, coerce=int)
     default_sort = SelectField('Default Sort', choices=default_sort_choices)
     default_sort_order = SelectField('Default Sort Order', choices=default_sort_order_choices)
-    theme = SelectField('Theme', choices=[('default', 'Default')])  # Default theme is always an option
+    theme = SelectField('Theme', choices=[(SITE_DEFAULT_THEME_VALUE, 'Site default')])
     submit = SubmitField('Save Preferences')
 
     def __init__(self, *args, **kwargs):
         super(UserPreferencesForm, self).__init__(*args, **kwargs)
         theme_manager = ThemeManager(current_app)
         installed_themes = theme_manager.get_installed_themes()
-        self.theme.choices = [('default', 'Default')] + [
+        self.theme.choices = [(SITE_DEFAULT_THEME_VALUE, 'Site default (managed by administrator)')] + [
             (theme.get('id', secure_filename(theme['name'])), theme['name'])
             for theme in installed_themes
-            if theme.get('id', secure_filename(theme['name'])) != 'default'
         ]
 
 

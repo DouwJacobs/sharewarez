@@ -7,7 +7,25 @@
     <meta charset="utf-8">
     
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>{% block title %}{{ site_title }}{% endblock %}</title>
+    {% set route_titles = {
+        '/login': 'Login', '/register': 'Register', '/reset_password_request': 'Reset password',
+        '/discover': 'Discover', '/library': 'Library', '/requests': 'Game requests',
+        '/downloads': 'Downloads', '/favorites': 'Favorites', '/trailers': 'Trailers', '/help': 'Help',
+        '/settings_profile_view': 'Profile', '/settings_profile_edit': 'Edit profile',
+        '/settings_password': 'Change password', '/settings_panel': 'Preferences', '/user/invites': 'Invitations',
+        '/admin/dashboard': 'Administration', '/admin/libraries': 'Libraries',
+        '/admin/library/add': 'Add library', '/admin/scan_management': 'Scan management',
+        '/admin/discovery_sections': 'Discovery sections', '/admin/game-requests': 'Game requests',
+        '/admin/new_server_settings': 'Server settings', '/admin/attract_mode_settings': 'Attract mode',
+        '/admin/integrations': 'Integrations', '/admin/statistics': 'Statistics',
+        '/admin/system_logs': 'System logs', '/admin/new_server_info': 'Server status',
+        '/admin/users': 'Users', '/admin/whitelist': 'Whitelist', '/admin/manage_invites': 'Invitations',
+        '/admin/branding': 'Branding', '/admin/manage-downloads': 'Download requests',
+        '/admin/themes': 'Themes', '/admin/newsletter': 'Newsletter', '/admin/help': 'Administrator guide',
+        '/admin/image_queue': 'Image queue', '/admin/extensions': 'File extensions'
+    } %}
+    {% set document_page_title = title|default(route_titles.get(request.path), true) %}
+    <title>{% block title %}{% if document_page_title %}{{ document_page_title }} · {% endif %}{{ site_title }}{% endblock %}</title>
     <link rel="icon" type="image/png" href="{{ url_for('static', filename=brand_logo_path) }}">
     <link rel="apple-touch-icon" href="{{ url_for('static', filename=brand_logo_path) }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -119,6 +137,10 @@
     <link rel="stylesheet" href="{{ 'css/components.css'|theme_asset }}">
     <link rel="stylesheet" href="{{ 'css/global-search.css'|theme_asset }}">
     <!-- Global mobile responsiveness - loaded last to override all page-specific styles -->
+    <!-- Theme & polish stylesheets loaded in head to prevent Flash of Unstyled Content (FOUC) -->
+    <link rel="stylesheet" href="{{ 'css/table-polish.css'|theme_asset }}">
+    <link rel="stylesheet" href="{{ 'css/theme-components.css'|theme_asset }}">
+    <link rel="stylesheet" href="{{ 'css/theme-overrides.css'|theme_asset }}">
     <link rel="stylesheet" href="{{ 'css/mobile.css'|theme_asset }}">
     
     <script src="{{ 'js/preferences_modal.js'|theme_asset }}"></script>
@@ -184,11 +206,25 @@
 {% if not is_setup_mode %}
 <!-- Mobile Header Bar -->
 <div id="mobile-header" class="mobile-header">
-    <button id="mobileMenuToggle" class="mobile-menu-btn" aria-label="Open menu">
+    <button id="mobileMenuToggle" class="mobile-menu-btn" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="sidebar">
         <i class="fas fa-bars"></i>
     </button>
     <span class="mobile-brand-mark" aria-hidden="true"><img src="{{ url_for('static', filename=brand_logo_path) }}" alt=""></span>
     <span class="mobile-title">{{ site_title }}</span>
+    {% if current_user.is_authenticated %}
+    <div class="mobile-account">
+        <button id="mobileAccountToggle" class="mobile-account-toggle" type="button" aria-label="Open account menu" aria-expanded="false" aria-controls="mobileAccountMenu">
+            <img src="{{ url_for('static', filename=current_user.avatarpath) }}" alt="" class="mobile-account-avatar">
+        </button>
+        <div id="mobileAccountMenu" class="mobile-account-menu" hidden>
+            <p class="mobile-account-name">{{ current_user.name | capitalize }}</p>
+            <a href="{{ url_for('settings.settings_profile_view') }}"><i class="fas fa-user"></i> Profile</a>
+            <a href="{{ url_for('login.invites') }}"><i class="fas fa-envelope"></i> Invites</a>
+            <a href="{{ url_for('settings.account_pw') }}"><i class="fas fa-key"></i> Change Password</a>
+            <a href="{{ url_for('site.logout') }}"><i class="fas fa-right-from-bracket"></i> Logout</a>
+        </div>
+    </div>
+    {% endif %}
 </div>
 
 <!-- Sidebar Backdrop (mobile only) -->
@@ -208,7 +244,7 @@
     {% endif %}
     
     <div class="sidebar-header">
-        <button id="toggleSidebar" class="toggle-sidebar">
+        <button id="toggleSidebar" class="toggle-sidebar" type="button" aria-label="Collapse navigation" aria-expanded="true" aria-controls="sidebar">
             <i class="fas fa-chevron-right icon-chevron"></i>
         </button>
     </div>
@@ -219,18 +255,21 @@
                 <a href="{{ url_for('discover.discover') }}" class="sidebar-link{% if request.path.startswith('/discover') %} active{% endif %}" title="Discover"{% if request.path.startswith('/discover') %} aria-current="page"{% endif %}><i class="fas fa-compass"></i><span class="link-text">Discover</span></a>
             {% endif %}
             <a href="{{ url_for('library.library') }}" class="sidebar-link{% if request.path.startswith('/library') %} active{% endif %}" title="Library"{% if request.path.startswith('/library') %} aria-current="page"{% endif %}><i class="fas fa-gamepad"></i><span class="link-text">Library</span></a>
+            {% if enable_game_requests %}
+                <a href="{{ url_for('game_requests.requests_page') }}" class="sidebar-link{% if request.path.startswith('/requests') %} active{% endif %}" title="Requests"{% if request.path.startswith('/requests') %} aria-current="page"{% endif %}><i class="fas fa-paper-plane"></i><span class="link-text">Requests</span></a>
+            {% endif %}
             <a href="{{ url_for('download.downloads') }}" class="sidebar-link{% if request.path.startswith('/downloads') %} active{% endif %}" title="Downloads"{% if request.path.startswith('/downloads') %} aria-current="page"{% endif %}><i class="fas fa-download"></i><span class="link-text">Downloads</span></a>
             {% if show_favorites %}
                 <a href="{{ url_for('site.favorites') }}" class="sidebar-link{% if request.path.startswith('/favorites') %} active{% endif %}" title="Favorites"{% if request.path.startswith('/favorites') %} aria-current="page"{% endif %}><i class="fas fa-heart"></i><span class="link-text">Favorites</span></a>
             {% endif %}
             {% if show_trailers %}
-                <a href="{{ url_for('site.random_trailers') }}" class="sidebar-link{% if request.path.startswith('/random_trailers') %} active{% endif %}" title="Trailers"{% if request.path.startswith('/random_trailers') %} aria-current="page"{% endif %}><i class="fas fa-film"></i><span class="link-text">Trailers</span></a>
+                <a href="{{ url_for('site.random_trailers') }}" class="sidebar-link{% if request.path.startswith('/trailers') %} active{% endif %}" title="Trailers"{% if request.path.startswith('/trailers') %} aria-current="page"{% endif %}><i class="fas fa-film"></i><span class="link-text">Trailers</span></a>
             {% endif %}
 
             {% if current_user.role == 'admin' or show_help_button %}
                 <p class="sidebar-menu-label sidebar-menu-label-system">System</p>
                 {% if current_user.role == 'admin' %}
-                    <a href="/admin/dashboard" class="sidebar-link{% if request.path.startswith('/admin') %} active{% endif %}" title="Settings"{% if request.path.startswith('/admin') %} aria-current="page"{% endif %}><i class="fas fa-cogs"></i><span class="link-text">Settings</span></a>
+                    <a href="/admin/dashboard" class="sidebar-link{% if request.path.startswith('/admin') %} active{% endif %}" title="Administration"{% if request.path.startswith('/admin') %} aria-current="page"{% endif %}><i class="fas fa-shield-halved"></i><span class="link-text">Admin</span></a>
                 {% endif %}
                 {% if show_help_button %}
                     <a href="{{ url_for('site.helpfaq') }}" class="sidebar-link{% if request.path.startswith('/help') %} active{% endif %}" title="Help"{% if request.path.startswith('/help') %} aria-current="page"{% endif %}><i class="fas fa-question-circle"></i><span class="link-text">Help</span></a>
@@ -248,7 +287,6 @@
         <div id="userAccountMenu" class="user-account-menu hide">
             <a href="{{ url_for('settings.settings_profile_view') }}" class="account-menu-option"><i class="fas fa-user"></i> Profile</a>
             <a href="{{ url_for('login.invites') }}" class="account-menu-option"><i class="fas fa-envelope"></i> Invites</a>
-            <a href="#" class="account-menu-option" data-bs-toggle="modal" data-bs-target="#preferencesModal"><i class="fas fa-gear"></i> Preferences</a>
             <a href="{{ url_for('settings.account_pw') }}" class="account-menu-option"><i class="fas fa-key"></i> Change Password</a>
             <a href="{{ url_for('site.logout') }}" class="account-menu-option"><i class="fas fa-right-from-bracket"></i> Logout</a>
         </div>
@@ -269,7 +307,7 @@
         <h2 id="globalSearchTitle" class="visually-hidden">Search {{ site_title }}</h2>
         <div class="global-search-input-wrap">
             <i class="fas fa-magnifying-glass" aria-hidden="true"></i>
-            <input id="globalSearchInput" type="search" autocomplete="off" placeholder="Search games, libraries{% if current_user.role == 'admin' %}, users, and settings{% endif %}…" aria-controls="globalSearchResults">
+            <input id="globalSearchInput" type="search" autocomplete="off" placeholder="Search games, libraries{% if current_user.role == 'admin' %}, requests, users, and settings{% endif %}…" aria-label="Search games, libraries{% if current_user.role == 'admin' %}, requests, users, and settings{% endif %}" aria-controls="globalSearchResults">
             <kbd>Esc</kbd>
         </div>
         <div id="globalSearchResults" class="global-search-results" role="listbox"><p class="global-search-hint">Type at least two characters to search.</p></div>
@@ -280,7 +318,7 @@
     {% if current_user.is_authenticated and not is_setup_mode %}
     <div class="content-global-search">
         <i class="fas fa-magnifying-glass" aria-hidden="true"></i>
-        <input type="search" data-global-search-inline autocomplete="off" placeholder="Search games, libraries{% if current_user.role == 'admin' %}, users, and settings{% endif %}…" aria-label="Search {{ site_title }}">
+        <input type="search" data-global-search-inline autocomplete="off" placeholder="Search games, libraries{% if current_user.role == 'admin' %}, requests, users, and settings{% endif %}…" aria-label="Search {{ site_title }}">
         <kbd>Ctrl K</kbd>
     </div>
     {% endif %}
@@ -292,22 +330,17 @@
             <span>Admin dashboard</span>
         </a>
         <i class="fas fa-chevron-right admin-breadcrumb-separator" aria-hidden="true"></i>
-        <span class="admin-breadcrumb-current">Administration</span>
+        <span class="admin-breadcrumb-current">{{ document_page_title or 'Administration' }}</span>
     </nav>
     {% endif %}
     {% block content %}{% endblock %}
 </div>
 
-<!-- Final table layer loads after page styles so every view shares one table language. -->
-<link rel="stylesheet" href="{{ 'css/table-polish.css'|theme_asset }}">
-<link rel="stylesheet" href="{{ 'css/theme-components.css'|theme_asset }}">
-<link rel="stylesheet" href="{{ 'css/theme-overrides.css'|theme_asset }}">
-
 
 <!-- Add this near the end of base.html -->
 {% include 'partials/delete_game_modal.html' %}
 <div id="preferencesModalContainer"></div>
-
+{% block modals %}{% endblock %}
 
 <script>
     document.addEventListener("DOMContentLoaded", function() {
@@ -329,8 +362,10 @@
         const toggleSidebar = document.getElementById("toggleSidebar");
         if (toggleSidebar) {
             toggleSidebar.addEventListener("click", function() {
-                document.getElementById("sidebar").classList.toggle("collapsed");
+                const collapsed = document.getElementById("sidebar").classList.toggle("collapsed");
                 document.getElementById("content").classList.toggle("collapsed");
+                this.setAttribute("aria-expanded", String(!collapsed));
+                this.setAttribute("aria-label", collapsed ? "Expand navigation" : "Collapse navigation");
                 closeAllSubmenus();
             });
         }
@@ -343,12 +378,14 @@
         function openMobileSidebar() {
             if (sidebar) sidebar.classList.add("mobile-open");
             if (sidebarBackdrop) sidebarBackdrop.classList.add("active");
+            if (mobileMenuToggle) mobileMenuToggle.setAttribute("aria-expanded", "true");
             document.body.style.overflow = "hidden";
         }
 
         function closeMobileSidebar() {
             if (sidebar) sidebar.classList.remove("mobile-open");
             if (sidebarBackdrop) sidebarBackdrop.classList.remove("active");
+            if (mobileMenuToggle) mobileMenuToggle.setAttribute("aria-expanded", "false");
             document.body.style.overflow = "";
         }
 
@@ -363,6 +400,23 @@
         }
         if (sidebarBackdrop) {
             sidebarBackdrop.addEventListener("click", closeMobileSidebar);
+        }
+
+        const mobileAccountToggle = document.getElementById('mobileAccountToggle');
+        const mobileAccountMenu = document.getElementById('mobileAccountMenu');
+        function closeMobileAccountMenu() {
+            if (!mobileAccountToggle || !mobileAccountMenu) return;
+            mobileAccountMenu.hidden = true;
+            mobileAccountToggle.setAttribute('aria-expanded', 'false');
+        }
+        if (mobileAccountToggle && mobileAccountMenu) {
+            mobileAccountToggle.addEventListener('click', function(event) {
+                event.stopPropagation();
+                const willOpen = mobileAccountMenu.hidden;
+                mobileAccountMenu.hidden = !willOpen;
+                mobileAccountToggle.setAttribute('aria-expanded', String(willOpen));
+            });
+            mobileAccountMenu.addEventListener('click', function(event) { event.stopPropagation(); });
         }
 
         // Close mobile sidebar when a nav link is clicked
@@ -400,6 +454,9 @@
         }
 
         document.addEventListener('click', function(event) {
+            if (mobileAccountMenu && !mobileAccountMenu.hidden && !mobileAccountMenu.contains(event.target)) {
+                closeMobileAccountMenu();
+            }
             const userAccountIcon = document.getElementById('userAccountIcon');
             const userAccountMenu = document.getElementById('userAccountMenu');
             const userExpandIcon = document.querySelector('.user-expand-icon');
@@ -415,6 +472,13 @@
                     userAccountIcon.setAttribute('aria-expanded', 'false');
                     userExpandIcon.style.transform = 'rotate(0deg)';
                 }
+            }
+        });
+
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                closeMobileAccountMenu();
+                closeMobileSidebar();
             }
         });
         
@@ -447,26 +511,6 @@
             filterContainer.style.visibility = 'hidden';
         }
     }
-</script>
-
-<script>
-const prefsToggle = document.querySelector('[data-bs-toggle="modal"][data-bs-target="#preferencesModal"]');
-if (prefsToggle) {
-    prefsToggle.addEventListener('click', function(e) {
-        e.preventDefault();
-
-        fetch("{{ url_for('settings.settings_panel') }}")
-            .then(response => response.text())
-            .then(html => {
-                document.getElementById('preferencesModalContainer').innerHTML = html;
-                new bootstrap.Modal(document.getElementById('preferencesModal')).show();
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                $.notify("Error loading preferences", "error");
-            });
-    });
-}
 </script>
 
 <script>

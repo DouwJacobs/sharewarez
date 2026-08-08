@@ -13,13 +13,14 @@
                 </div>
             </div>
             <div class="container-content">
+                <h1 class="visually-hidden">Sign in</h1>
                 <form action="/login" method="post">
                     {{ form.hidden_tag() }}
                     {% if next_page %}<input type="hidden" name="next" value="{{ next_page }}">{% endif %}
                     <label for="username" class="label-large-text">Username</label><br>
-                    <input type="text" class="input-glass" id="username" name="username" autocomplete="username"><br>
+                    <input type="text" class="input-glass" id="username" name="username" autocomplete="username" required><br>
                     <label for="password" class="label-large-text">Password</label><br>
-                    <input type="password" class="input-glass" id="password" name="password" autocomplete="current-password"><br>
+                    <input type="password" class="input-glass" id="password" name="password" autocomplete="current-password" required><br>
                     
                     <div class="container-buttons-login">
                         <input type="submit" value="Login" class="btn btn-primary button-login">

@@ -1,6 +1,6 @@
 # sharewarez/models.py
 from sharewarez import db
-from sqlalchemy import ForeignKey, select
+from sqlalchemy import ForeignKey, select, text
 from sqlalchemy.dialects.sqlite import JSON
 from sqlalchemy.orm import relationship
 from sqlalchemy.types import TypeDecorator, TEXT
@@ -173,6 +173,8 @@ class Game(db.Model):
     nfo_content = db.Column(db.Text, nullable=True)
     install_instructions = db.Column(db.Text, nullable=True)
     version = db.Column(db.String(100), nullable=True)
+    edition_name = db.Column(db.String(255), nullable=True)
+
     # HowLongToBeat integration fields
     hltb_id = db.Column(db.Integer, nullable=True)
     hltb_main_story = db.Column(db.Float, nullable=True)
@@ -352,6 +354,107 @@ class DownloadRequest(db.Model):
     download_size = db.Column(db.Float, nullable=False, default=0.0)
     game = db.relationship('Game', foreign_keys=[game_uuid], back_populates='download_requests')
     file_location = db.Column(db.String, nullable=True)
+    content_type = db.Column(db.String(20), nullable=False, default='game')
+    content_title = db.Column(db.String(255), nullable=True)
+    game_update_id = db.Column(db.Integer, db.ForeignKey('game_updates.id', ondelete='SET NULL'), nullable=True)
+    game_extra_id = db.Column(db.Integer, db.ForeignKey('game_extras.id', ondelete='SET NULL'), nullable=True)
+    game_update = db.relationship('GameUpdate', foreign_keys=[game_update_id])
+    game_extra = db.relationship('GameExtra', foreign_keys=[game_extra_id])
+
+
+class GameRequest(db.Model):
+    __tablename__ = 'game_requests'
+    __table_args__ = (
+        db.Index(
+            'uq_game_requests_new_game_igdb', 'igdb_id', unique=True,
+            postgresql_where=text("request_type = 'new_game'"),
+            sqlite_where=text("request_type = 'new_game'"),
+        ),
+        db.Index(
+            'uq_game_requests_active_update', 'source_game_uuid', unique=True,
+            postgresql_where=text("request_type = 'update' AND status NOT IN ('fulfilled', 'not_planned', 'cancelled')"),
+            sqlite_where=text("request_type = 'update' AND status NOT IN ('fulfilled', 'not_planned', 'cancelled')"),
+        ),
+    )
+
+    id = db.Column(db.Integer, primary_key=True)
+    request_type = db.Column(db.String(16), nullable=False, default='new_game', index=True)
+    igdb_id = db.Column(db.Integer, nullable=True, index=True)
+    parent_igdb_id = db.Column(db.Integer, nullable=True, index=True)
+    parent_game_name = db.Column(db.String(255), nullable=True)
+    game_name = db.Column(db.String(255), nullable=False)
+    edition_name = db.Column(db.String(255), nullable=True)
+    cover_url = db.Column(db.String(512), nullable=True)
+    summary = db.Column(db.Text, nullable=True)
+    platforms = db.Column(JSONEncodedDict, nullable=True)
+    first_release_date = db.Column(db.DateTime, nullable=True)
+    status = db.Column(db.String(32), nullable=False, default='pending', index=True)
+    public_response = db.Column(db.Text, nullable=True)
+    internal_note = db.Column(db.Text, nullable=True)
+    source_game_uuid = db.Column(db.String(36), db.ForeignKey('games.uuid', ondelete='SET NULL'), nullable=True)
+    fulfilled_game_uuid = db.Column(db.String(36), db.ForeignKey('games.uuid', ondelete='SET NULL'), nullable=True)
+    handled_by_user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'), nullable=True)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), nullable=False)
+    resolved_at = db.Column(db.DateTime, nullable=True)
+
+    requesters = db.relationship('GameRequestUser', back_populates='game_request', cascade='all, delete-orphan')
+    source_game = db.relationship('Game', foreign_keys=[source_game_uuid])
+    fulfilled_game = db.relationship('Game', foreign_keys=[fulfilled_game_uuid])
+    handled_by = db.relationship('User', foreign_keys=[handled_by_user_id])
+
+    @property
+    def formatted_cover_url(self):
+        if not self.cover_url:
+            return None
+        if self.cover_url.startswith(('http://', 'https://', '//')):
+            if self.cover_url.startswith('//'):
+                return f'https:{self.cover_url}'
+            return self.cover_url
+        if self.cover_url.startswith('/'):
+            return self.cover_url
+        return f'/static/library/images/{self.cover_url}'
+
+    @property
+    def active_requesters(self):
+        return [
+            requester for requester in self.requesters
+            if requester.withdrawn_at is None and requester.satisfied_at is None
+        ]
+
+    @property
+    def interested_requesters(self):
+        return [
+            requester for requester in self.requesters
+            if requester.withdrawn_at is None and requester.satisfied_at is None
+        ]
+
+    @property
+    def satisfied_requesters(self):
+        return [
+            requester for requester in self.requesters
+            if requester.withdrawn_at is None and requester.satisfied_at is not None
+        ]
+
+
+class GameRequestUser(db.Model):
+    __tablename__ = 'game_request_users'
+    __table_args__ = (db.UniqueConstraint('request_id', 'user_id', name='uq_game_request_user'),)
+
+    id = db.Column(db.Integer, primary_key=True)
+    request_id = db.Column(db.Integer, db.ForeignKey('game_requests.id', ondelete='CASCADE'), nullable=False, index=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False, index=True)
+    requester_note = db.Column(db.Text, nullable=True)
+    accept_any_edition = db.Column(db.Boolean, nullable=False, default=False)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+    withdrawn_at = db.Column(db.DateTime, nullable=True)
+    satisfied_at = db.Column(db.DateTime, nullable=True)
+    satisfied_by_game_uuid = db.Column(db.String(36), db.ForeignKey('games.uuid', ondelete='SET NULL'), nullable=True)
+    last_notified_status = db.Column(db.String(32), nullable=True)
+
+    game_request = db.relationship('GameRequest', back_populates='requesters')
+    user = db.relationship('User', foreign_keys=[user_id])
+    satisfied_by_game = db.relationship('Game', foreign_keys=[satisfied_by_game_uuid])
 
 
 class Whitelist(db.Model):

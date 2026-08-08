@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block content %}
+<link rel="stylesheet" href="{{ 'css/requests.css'|theme_asset }}">
+
+<main class="requests-page">
+    <header class="requests-hero">
+        <div><p class="eyebrow">Community wishlist</p><h1>Game Requests</h1><p>Search IGDB, choose the exact edition, and follow its progress.</p></div>
+    </header>
+
+    <section class="request-panel">
+        <h2>Find a game</h2>
+        <form id="requestSearchForm" class="request-search-wrap" role="search">
+            <i class="fas fa-magnifying-glass request-search-icon" aria-hidden="true"></i>
+            <input id="requestSearch" type="search" maxlength="100" placeholder="Search IGDB for a game or edition…" autocomplete="off" aria-label="Search IGDB games">
+        </form>
+        <p id="requestSearchStatus" class="request-status" aria-live="polite"></p>
+        <div id="requestSearchResults" class="request-results" role="region" aria-label="IGDB search results" aria-live="polite"></div>
+    </section>
+
+    <section class="request-panel">
+        <div class="request-section-heading request-user-summary">
+            <div><h2>My requests</h2><p>{{ request_settings.activeRequestCount }} of {{ request_settings.maxActiveRequestsPerUser }} active requests used</p></div>
+            <span class="request-quota" aria-label="{{ request_settings.activeRequestCount }} of {{ request_settings.maxActiveRequestsPerUser }} active requests used">{{ request_settings.maxActiveRequestsPerUser - request_settings.activeRequestCount }} remaining</span>
+        </div>
+        {% if pagination.items %}
+        <div class="request-history">
+            {% for link in pagination.items %}{% set item = link.game_request %}
+            {% set can_edit_request = not link.satisfied_at and item.status not in ['fulfilled', 'not_planned', 'cancelled'] %}
+            {% set has_editable_preferences = request_settings.allowRequestNotes or (request_settings.allowRequestAnyEdition and item.request_type == 'new_game') %}
+            <article class="request-history-card">
+                {% if item.formatted_cover_url %}<img src="{{ item.formatted_cover_url }}" alt="Cover for {{ item.game_name }}" loading="lazy">{% endif %}
+                <div class="request-history-content">
+                    <div class="request-history-title"><div class="request-history-title-copy"><h3>{{ item.game_name }}</h3>{% if item.request_type == 'update' %}<span class="request-edition-chip" style="background: rgba(3, 178, 248, 0.2); color: #03b2f8;"><i class="fas fa-rotate"></i> Update Request</span>{% elif item.edition_name %}<span class="request-edition-chip">{{ item.edition_name }}</span>{% endif %}</div><div class="request-history-heading-actions">{% if can_edit_request and has_editable_preferences %}<button class="request-edit-button" type="button" data-bs-toggle="modal" data-bs-target="#editRequestModal-{{ item.id }}" aria-label="Edit request for {{ item.game_name }}" title="Edit request"><i class="fas fa-pen" aria-hidden="true"></i></button>{% endif %}<span class="request-chip status-{{ item.status }}">{{ item.status|replace('_', ' ')|title }}</span></div></div>
+                    <p class="request-history-updated">Updated {{ item.updated_at.strftime('%d %b %Y') }}</p>
+                    {% if link.accept_any_edition %}<p><i class="fas fa-layer-group"></i> Any related edition is acceptable</p>{% endif %}
+                    {% if link.requester_note %}<div class="requester-own-note"><strong>Your request details</strong><p>{{ link.requester_note|urlize(target="_blank") }}</p></div>{% endif %}
+                    {% if item.public_response %}<div class="admin-response"><strong>Admin response</strong><p>{{ item.public_response }}</p></div>{% endif %}
+                    {% if link.satisfied_by_game %}<a class="btn btn-primary" href="{{ url_for('games.game_details', game_uuid=link.satisfied_by_game.uuid) }}">View available edition</a>{% elif item.fulfilled_game %}<a class="btn btn-primary" href="{{ url_for('games.game_details', game_uuid=item.fulfilled_game.uuid) }}">View available game</a>{% endif %}
+                    {% if can_edit_request %}
+                    <form method="post" action="{{ url_for('game_requests.withdraw', request_id=item.id, page=pagination.page) }}" data-confirm-withdraw="{{ item.game_name }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-danger" type="submit">Withdraw</button></form>
+                    {% endif %}
+                </div>
+            </article>
+            {% if can_edit_request and has_editable_preferences %}
+            <div class="modal fade request-edit-modal" id="editRequestModal-{{ item.id }}" tabindex="-1" aria-labelledby="editRequestModalLabel-{{ item.id }}" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <div><p class="request-edit-eyebrow">Request preferences</p><h2 class="modal-title" id="editRequestModalLabel-{{ item.id }}"><i class="fas fa-pen" aria-hidden="true"></i>Edit request</h2><p class="request-edit-game-name">{{ item.game_name }}</p></div>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <form id="editRequestForm-{{ item.id }}" class="request-edit-form" method="post" action="{{ url_for('game_requests.update_preferences', request_id=item.id, page=pagination.page) }}">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                {% if request_settings.allowRequestNotes %}<label class="request-edit-field">Request details<textarea class="form-control" name="note" maxlength="2000" rows="4" placeholder="Edition, language, or other useful details">{{ link.requester_note or '' }}</textarea><small>Optional · up to 2,000 characters</small></label>{% endif %}
+                                {% if request_settings.allowRequestAnyEdition and item.request_type == 'new_game' %}<label class="request-any-edition request-edit-any-edition"><input type="checkbox" name="accept_any_edition"{% if link.accept_any_edition %} checked{% endif %}><span><strong>Any related edition is acceptable</strong><small>A related Gold, Deluxe, or standard edition can fulfill this request.</small></span></label>{% endif %}
+                            </form>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button class="btn btn-primary" type="submit" form="editRequestForm-{{ item.id }}"><i class="fas fa-check" aria-hidden="true"></i>Save changes</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            {% endfor %}
+        </div>
+        {% else %}<div class="empty-state"><i class="fas fa-paper-plane"></i><h3>No requests yet</h3><p>Search above to request your first game.</p></div>{% endif %}
+        {% if pagination.pages > 1 %}<nav class="request-pagination">{% for page in pagination.iter_pages() %}{% if page %}<a class="{% if page == pagination.page %}active{% endif %}" href="{{ url_for('game_requests.requests_page', page=page) }}">{{ page }}</a>{% else %}<span>…</span>{% endif %}{% endfor %}</nav>{% endif %}
+    </section>
+</main>
+<script id="requestSettings" type="application/json">{{ request_settings|tojson }}</script>
+<script src="{{ 'js/game_requests.js'|theme_asset }}"></script>
+{% endblock %}

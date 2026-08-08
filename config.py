@@ -34,6 +34,12 @@ class Config(object):
     IMAGE_SAVE_PATH = os.path.join(os.path.dirname(__file__), 'sharewarez/static/library/images')
     IGDB_API_ENDPOINT = os.getenv('IGDB_API_ENDPOINT', 'https://api.igdb.com/v4/games')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        'pool_size': int(os.getenv('DB_POOL_SIZE', '2')),
+        'max_overflow': int(os.getenv('DB_MAX_OVERFLOW', '2')),
+        'pool_recycle': int(os.getenv('DB_POOL_RECYCLE', '1800')),
+        'pool_pre_ping': True,
+    }
 
     # Session/remember-me cookie hardening. Defaults are safe for HTTPS deployments;
     # set SESSION_COOKIE_SECURE=false in .env for local HTTP development only.

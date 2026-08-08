@@ -12,15 +12,16 @@
 .themes-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(285px, 1fr)); gap: var(--spacing-md); }
 .theme-card { display: flex; min-height: 230px; flex-direction: column; padding: var(--spacing-lg); border: 1px solid var(--border-light); border-radius: var(--border-radius-md); background: rgba(255,255,255,.035); transition: border-color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast); }
 .theme-card:hover { transform: translateY(-2px); border-color: var(--border-light-strong); box-shadow: 0 12px 28px rgba(0,0,0,.2); }
-.theme-card.default-theme { border-color: rgba(80,120,255,.38); background: linear-gradient(145deg, rgba(66,110,232,.1), rgba(255,255,255,.03)); }
+.theme-card.site-default-theme { border-color: rgba(var(--theme-accent-soft-rgb, 154,177,255),.48); background: linear-gradient(145deg, rgba(var(--theme-accent-rgb, 98,122,239),.12), rgba(255,255,255,.03)); }
 .theme-card-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--spacing-sm); margin-bottom: var(--spacing-md); }
 .theme-card-heading h3 { margin: 0; color: var(--text-white); font-size: 1.15rem; }
+.theme-card-badges { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 6px; }
 .theme-card > p { margin: 0; color: var(--text-light); line-height: 1.55; }
 .theme-meta { display: grid; grid-template-columns: 1fr 1fr; gap: var(--spacing-sm); margin: 0 0 var(--spacing-md); }
 .theme-meta div { min-width: 0; }
 .theme-meta dt { color: var(--text-muted); font-size: var(--font-size-xs); font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
 .theme-meta dd { margin: .15rem 0 0; overflow: hidden; color: var(--text-white); text-overflow: ellipsis; white-space: nowrap; }
-.theme-card-actions { display: flex; align-items: center; gap: var(--spacing-sm); margin: auto 0 0; padding-top: var(--spacing-lg); }
+.theme-card-actions { display: flex; align-items: center; flex-wrap: wrap; gap: var(--spacing-sm); margin: auto 0 0; padding-top: var(--spacing-lg); }
 .theme-card-actions form { margin: 0; }
 .theme-card-actions .btn { margin: 0; }
 

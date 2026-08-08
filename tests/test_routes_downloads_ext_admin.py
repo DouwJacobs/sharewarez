@@ -2,7 +2,7 @@ import pytest
 import json
 from flask import url_for
 from unittest.mock import patch, MagicMock
-from sharewarez.models import User, DownloadRequest, Game, Library
+from sharewarez.models import User, DownloadRequest, Game, GameUpdate, Library
 from sharewarez.platform import LibraryPlatform
 from sharewarez import db
 from uuid import uuid4
@@ -127,6 +127,33 @@ class TestManageDownloadsRoute:
         assert response.status_code == 200
         assert b'Test Game' in response.data
         assert f'/game_details/{sample_download_request.game_uuid}'.encode() in response.data
+
+    def test_manage_downloads_displays_update_and_base_game_link(self, client, admin_user, db_session, regular_user, test_game):
+        update = GameUpdate(game_uuid=test_game.uuid, file_path='/games/Test Game/updates/update-1.1.zip', title='Update 1.1')
+        db_session.add(update)
+        db_session.flush()
+        download_request = DownloadRequest(
+            user_id=regular_user.id,
+            game_uuid=test_game.uuid,
+            status='available',
+            content_type='update',
+            content_title=update.title,
+            game_update_id=update.id,
+            file_location=update.file_path,
+        )
+        db_session.add(download_request)
+        db_session.commit()
+
+        with client.session_transaction() as session:
+            session['_user_id'] = str(admin_user.id)
+
+        response = client.get('/admin/manage-downloads?content_type=update')
+
+        assert response.status_code == 200
+        assert b'Update 1.1' in response.data
+        assert b'Update' in response.data
+        assert b'Test Game' in response.data
+        assert f'/game_details/{test_game.uuid}'.encode() in response.data
 
     def test_manage_downloads_unauthenticated(self, client):
         """Test that unauthenticated users are redirected."""

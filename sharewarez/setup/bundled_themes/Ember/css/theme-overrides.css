@@ -6,6 +6,8 @@
     --theme-card-top: rgba(48, 27, 22, .97);
     --theme-card-bottom: rgba(29, 17, 16, .98);
     --theme-panel-bg: rgba(41, 24, 20, .94);
+    --theme-text-primary: #fff7ed;
+    --theme-text-secondary: #d6c5bd;
     --btn-primary: #f97316;
     --btn-primary-hover: #ea580c;
     --form-focus-border: #fb923c;

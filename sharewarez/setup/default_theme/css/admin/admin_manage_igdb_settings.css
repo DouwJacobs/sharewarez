@@ -64,8 +64,8 @@
 
 .input-glass:focus {
     outline: none;
-    border-color: #0096ff;
-    box-shadow: 0 0 5px rgba(0, 150, 255, 0.3);
+    border-color: rgb(var(--theme-accent-rgb, 0, 150, 255));
+    box-shadow: 0 0 5px rgba(var(--theme-accent-rgb, 0, 150, 255), 0.3);
 }
 
 .button-group {
@@ -186,4 +186,34 @@
     width: 70%;
     margin: 0 auto;
     padding: var(--spacing-lg);
+}
+
+@media (max-width: 768px) {
+    .card,
+    .instructions-panel,
+    .settings-form {
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+    }
+
+    .card,
+    .instructions-panel {
+        padding: 14px;
+    }
+
+    .button-group {
+        align-items: stretch;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .button-group .btn {
+        width: 100%;
+    }
+
+    .toggle-password {
+        width: 44px;
+        min-width: 44px;
+    }
 }

@@ -342,6 +342,8 @@ def process_and_save_image(game_uuid, image_data, image_type='cover'):
             game_uuid=game_uuid,
             image_type=image_type,
             url=file_name,
+            download_url=url,
+            is_downloaded=True,
         )
         db.session.add(image)
     
@@ -830,7 +832,23 @@ def get_game_by_uuid(game_uuid):
         event_type='game',
         event_level='debug'
     )
-    game = db.session.execute(select(Game).filter_by(uuid=game_uuid)).scalar_one_or_none()
+    from sqlalchemy.orm import selectinload
+    stmt = select(Game).filter_by(uuid=game_uuid).options(
+        selectinload(Game.genres),
+        selectinload(Game.game_modes),
+        selectinload(Game.themes),
+        selectinload(Game.platforms),
+        selectinload(Game.player_perspectives),
+        selectinload(Game.tags),
+        selectinload(Game.developer),
+        selectinload(Game.publisher),
+        selectinload(Game.multiplayer_modes),
+        selectinload(Game.urls),
+        selectinload(Game.favorited_by),
+        selectinload(Game.extras),
+        selectinload(Game.updates)
+    )
+    game = db.session.execute(stmt).scalar_one_or_none()
     if game:
         log_system_event(
             f"Game '{game.name}' (ID: {game.id}, IGDB: {game.igdb_id}) found for UUID search",

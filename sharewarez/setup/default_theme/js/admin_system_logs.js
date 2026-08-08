@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
     confirmButton?.addEventListener('click', async () => {
         const original = confirmButton.innerHTML;
         confirmButton.disabled = true;
-        confirmButton.innerHTML = '<i class="fas fa-spinner fa-spin" aria-hidden="true"></i> Clearing…';
+        confirmButton.innerHTML = '<i class="fas fa-circle-notch fa-spin" aria-hidden="true"></i> Clearing…';
         try {
             const response = await fetch('/admin/api/system_logs/clear', {
                 method: 'DELETE',

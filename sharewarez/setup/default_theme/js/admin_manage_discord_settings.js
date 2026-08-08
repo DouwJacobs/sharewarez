@@ -29,7 +29,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Disable button and show loading state
         testButton.disabled = true;
-        testButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Testing...';
+        testButton.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Testing...';
 
         try {
             const response = await fetch('/admin/test_discord_webhook', {

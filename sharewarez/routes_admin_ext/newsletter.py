@@ -67,13 +67,28 @@ def newsletter():
             flash(str(e), 'error')
         return redirect(url_for('admin2.newsletter'))
     
-    # Get all sent newsletters for display
-    newsletters = db.session.execute(select(Newsletter).order_by(Newsletter.sent_date.desc())).scalars().all()
-    return render_template('admin/admin_newsletter.html', 
-                         title='Newsletter', 
-                         form=form, 
+    # Keep the growing history bounded while retaining the full recipient list
+    # required by the newsletter composer.
+    history_page = request.args.get('page', 1, type=int)
+    newsletter_pagination = db.paginate(
+        select(Newsletter).order_by(Newsletter.sent_date.desc()),
+        page=history_page,
+        per_page=20,
+        error_out=False,
+    )
+    if newsletter_pagination.pages and history_page > newsletter_pagination.pages:
+        newsletter_pagination = db.paginate(
+            select(Newsletter).order_by(Newsletter.sent_date.desc()),
+            page=newsletter_pagination.pages,
+            per_page=20,
+            error_out=False,
+        )
+    return render_template('admin/admin_newsletter.html',
+                         title='Newsletter',
+                         form=form,
                          users=users,
-                         newsletters=newsletters)
+                         newsletters=newsletter_pagination.items,
+                         newsletter_pagination=newsletter_pagination)
 
 @admin2_bp.route('/admin/newsletter/<int:newsletter_id>')
 @login_required

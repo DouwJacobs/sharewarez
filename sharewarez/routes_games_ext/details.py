@@ -1,5 +1,6 @@
 import uuid
 import os
+import re
 from flask import render_template, jsonify, abort, request, url_for
 from flask_login import login_required, current_user
 from sharewarez.forms import CsrfForm
@@ -104,6 +105,8 @@ def game_details(game_uuid):
             "storyline": game.storyline,
             "install_instructions": game.install_instructions,
             "version": game.version,
+            "edition_name": game.edition_name,
+
             "aggregated_rating": game.aggregated_rating,
             "aggregated_rating_count": game.aggregated_rating_count,
             "updates": [{
@@ -168,6 +171,14 @@ def game_details(game_uuid):
             # Duplicate "updates" array removed - already included above
         }
         
+        steam_app_id = None
+        if game.steam_url:
+            match = re.search(r'/app/(\d+)', game.steam_url)
+            if match:
+                steam_app_id = match.group(1)
+
+        steamdb_patchnotes_url = f'https://steamdb.info/app/{steam_app_id}/patchnotes/' if steam_app_id else None
+
         # Augment game_data with URLs using smart icon detection
         # IGDB imports can contain duplicate website records. Keep the first
         # occurrence of each destination so the details view never renders the
@@ -184,6 +195,18 @@ def game_details(game_uuid):
                 "url": game_url.url,
                 "icon": get_url_icon(game_url.url_type, game_url.url)
             })
+
+        # Inject Steam URL if present on game model or resolved via Steam App ID
+        steam_target_url = game.steam_url or (f"https://store.steampowered.com/app/{steam_app_id}/" if steam_app_id else None)
+        if steam_target_url:
+            norm_steam_url = steam_target_url.strip().rstrip('/').casefold()
+            if norm_steam_url not in seen_urls:
+                seen_urls.add(norm_steam_url)
+                game_data['urls'].insert(0, {
+                    "type": "steam",
+                    "url": steam_target_url,
+                    "icon": "fa-brands fa-steam"
+                })
         
         library_uuid = game.library_uuid
         
@@ -216,6 +239,24 @@ def game_details(game_uuid):
                 status_icon = status_info['icon']
                 status_label = status_info['label']
 
+        has_pending_update_request = False
+        if current_user_id:
+            from sharewarez.models import GameRequest, GameRequestUser
+            from sharewarez.utils.game_requests import RESOLVED_STATUSES
+            req_link = db.session.execute(
+                select(GameRequestUser)
+                .join(GameRequest)
+                .where(
+                    GameRequest.source_game_uuid == game.uuid,
+                    GameRequest.request_type == 'update',
+                    GameRequestUser.user_id == current_user_id,
+                    GameRequestUser.withdrawn_at.is_(None),
+                    GameRequestUser.satisfied_at.is_(None),
+                    ~GameRequest.status.in_(RESOLVED_STATUSES)
+                )
+            ).scalars().first()
+            has_pending_update_request = req_link is not None
+
         return render_template(
             'games/game_details.html',
             game=game_data,
@@ -226,6 +267,8 @@ def game_details(game_uuid):
             user_status=user_status,
             status_icon=status_icon,
             status_label=status_label,
+            has_pending_update_request=has_pending_update_request,
+            steamdb_patchnotes_url=steamdb_patchnotes_url,
             back_url=get_safe_back_url()
         )
     else:

@@ -65,7 +65,7 @@
                             <div class="config-grid">
                                 <!-- Library Selection -->
                                 <div class="config-item">
-                                    {{ auto_form.library_uuid.label(class="config-label", **{"data-toggle": "tooltip", "title": "Choose which library to scan games into"}) }}
+                                    <label class="config-label" for="libraryUuid" data-toggle="tooltip" title="Choose which library to scan games into">{{ auto_form.library_uuid.label.text }}</label>
                                     {{ auto_form.library_uuid(class="form-control config-input", id="libraryUuid", onchange='onLibraryChange(this.value, "auto")') }}
                                     {% if auto_form.library_uuid.errors %}
                                         {% for error in auto_form.library_uuid.errors %}
@@ -121,14 +121,14 @@
                                 <div class="option-item">
                                     <div class="form-check modern-checkbox">
                                         {{ auto_form.fetch_hltb(class="form-check-input", id="fetch-hltb-auto", checked="checked") }}
-                                        {{ auto_form.fetch_hltb.label(class="form-check-label", **{"data-toggle": "tooltip", "title": "Fetch game completion times from HowLongToBeat during scan"}) }}
+                                        <label class="form-check-label" for="fetch-hltb-auto" data-toggle="tooltip" title="Fetch game completion times from HowLongToBeat during scan">{{ auto_form.fetch_hltb.label.text }}</label>
                                     </div>
                                 </div>
 
                                 <div class="option-item">
                                     <div class="form-check modern-checkbox">
                                         {{ auto_form.force_hltb_refetch(class="form-check-input", id="force-hltb-refetch-auto") }}
-                                        {{ auto_form.force_hltb_refetch.label(class="form-check-label", **{"data-toggle": "tooltip", "title": "Force refetch HLTB data for games that already exist in the database"}) }}
+                                        <label class="form-check-label" for="force-hltb-refetch-auto" data-toggle="tooltip" title="Force refetch HLTB data for games that already exist in the database">{{ auto_form.force_hltb_refetch.label.text }}</label>
                                     </div>
                                 </div>
                             </div>
@@ -243,7 +243,7 @@
                     {{ manual_form.hidden_tag() }}
                     <!-- Library Selection -->
                     <div class="admin_manage_scanjobs-library form-group manual-field-card">
-                        {{ manual_form.library_uuid.label(**{"data-toggle": "tooltip", "title": "Choose which library to scan games into"}) }}
+        <label for="manualLibraryUuid" data-toggle="tooltip" title="Choose which library to scan games into">{{ manual_form.library_uuid.label.text }}</label>
                         {{ manual_form.library_uuid(class="form-control", id="manualLibraryUuid", onchange='onLibraryChange(this.value, "manual")') }}
                         {% if manual_form.library_uuid.errors %}
                             {% for error in manual_form.library_uuid.errors %}
@@ -283,12 +283,12 @@
                     </div>
                     <div class="form-check modern-checkbox">
                         {{ manual_form.fetch_hltb(class="form-check-input", id="fetch-hltb-manual", checked="checked") }}
-                        {{ manual_form.fetch_hltb.label(class="form-check-label", **{"data-toggle": "tooltip", "title": "Fetch game completion times from HowLongToBeat during scan"}) }}
+        <label class="form-check-label" for="fetch-hltb-manual" data-toggle="tooltip" title="Fetch game completion times from HowLongToBeat during scan">{{ manual_form.fetch_hltb.label.text }}</label>
                     </div>
 
                     <div class="form-check modern-checkbox">
                         {{ manual_form.force_hltb_refetch(class="form-check-input", id="force-hltb-refetch-manual") }}
-                        {{ manual_form.force_hltb_refetch.label(class="form-check-label", **{"data-toggle": "tooltip", "title": "Force refetch HLTB data for games that already exist in the database"}) }}
+        <label class="form-check-label" for="force-hltb-refetch-manual" data-toggle="tooltip" title="Force refetch HLTB data for games that already exist in the database">{{ manual_form.force_hltb_refetch.label.text }}</label>
                     </div></div>
 
                     <div class="form-group manual-actions">
@@ -422,7 +422,7 @@
                             <div class="modal-content">
                                 <div class="modal-header">
                                     <h5 class="modal-title">Add New Scanning Filter</h5>
-                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                 </div>
                                 <form action="" method="post">
                                     <div class="modal-body">
@@ -497,7 +497,7 @@
                         <div class="card scan-extension-card">
                             <div class="card-header">
                                 <h4>Allowed File Types</h4>
-                                <button class="btn btn-primary btn-sm" onclick="addFileType('allowed')">
+                                <button type="button" class="btn btn-primary btn-sm" onclick="addFileType('allowed')">
                                     <i class="fas fa-plus"></i> Add New
                                 </button>
                             </div>
@@ -512,12 +512,12 @@
                                     <tbody>
                                         {% for type in allowed_file_types %}
                                         <tr data-id="{{ type.id }}" data-category="allowed">
-                                            <td class="type-value">{{ type.value }}</td>
-                                            <td>
-                                                <button class="btn btn-sm btn-warning" onclick="editFileType(this)">
+                                                <td class="type-value" data-label="Extension">{{ type.value }}</td>
+                                                <td data-label="Actions" class="extension-actions">
+                                                    <button type="button" class="btn btn-sm btn-warning" onclick="editFileType(this)" aria-label="Edit {{ type.value }} extension">
                                                     <i class="fas fa-edit"></i>
                                                 </button>
-                                                <button class="btn btn-sm btn-danger" onclick="deleteFileType('allowed', {{ type.id }})">
+                                                    <button type="button" class="btn btn-sm btn-danger" onclick="deleteFileType('allowed', {{ type.id }})" aria-label="Delete {{ type.value }} extension">
                                                     <i class="fas fa-trash"></i>
                                                 </button>
                                             </td>
@@ -554,36 +554,38 @@
                     </div>
 
                     <!-- Controls -->
-                    <div class="row mb-3 scan-queue-toolbar">
-                        <div class="col-md-6">
-                            <div class="btn-group">
-                                <button class="btn btn-primary" onclick="downloadBatch(10)">
-                                    <i class="fas fa-download"></i> Download 10
-                                </button>
-                                <button class="btn btn-primary" onclick="downloadBatch(50)">
-                                    <i class="fas fa-download"></i> Download 50
-                                </button>
-                                <button class="btn btn-primary" onclick="downloadBatch(100)">
-                                    <i class="fas fa-download"></i> Download 100
-                                </button>
-                                <button class="btn btn-secondary" onclick="refreshQueue()">
-                                    <i class="fas fa-sync"></i> Refresh
-                                </button>
-                            </div>
+                    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3 scan-queue-toolbar">
+                        <div class="d-flex flex-wrap align-items-center gap-2">
+                            <button class="btn btn-primary" onclick="downloadBatch(10)">
+                                <i class="fas fa-download me-1"></i> Download 10
+                            </button>
+                            <button class="btn btn-primary" onclick="downloadBatch(50)">
+                                <i class="fas fa-download me-1"></i> Download 50
+                            </button>
+                            <button class="btn btn-primary" onclick="downloadBatch(100)">
+                                <i class="fas fa-download me-1"></i> Download 100
+                            </button>
+                            <button class="btn btn-secondary" onclick="refreshQueue()" title="Refresh Queue">
+                                <i class="fas fa-sync me-1"></i> Refresh
+                            </button>
+                            <button class="btn btn-warning" onclick="fixHistoricStatus()" id="fix-status-btn" title="Scan all image records and fix download status based on what files exist on disk">
+                                <i class="fas fa-wrench me-1"></i> Fix Status
+                            </button>
+                            <button class="btn btn-danger" onclick="clearQueue('pending')" id="clear-queue-btn" title="Clear pending items from queue">
+                                <i class="fas fa-trash-alt me-1"></i> Clear Queue
+                            </button>
                         </div>
-                        <div class="col-md-6">
-                            <div class="d-flex gap-2">
-                                <select id="status-filter" class="form-select" onchange="applyFilters()">
-                                    <option value="all">All Images</option>
-                                    <option value="pending">Pending Only</option>
-                                    <option value="downloaded">Downloaded Only</option>
-                                </select>
-                                <select id="type-filter" class="form-select" onchange="applyFilters()">
-                                    <option value="all">All Types</option>
-                                    <option value="cover">Covers</option>
-                                    <option value="screenshot">Screenshots</option>
-                                </select>
-                            </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <select id="status-filter" class="form-select" onchange="applyFilters()">
+                                <option value="all">All Images</option>
+                                <option value="pending">Pending Only</option>
+                                <option value="downloaded">Downloaded Only</option>
+                            </select>
+                            <select id="type-filter" class="form-select" onchange="applyFilters()">
+                                <option value="all">All Types</option>
+                                <option value="cover">Covers</option>
+                                <option value="screenshot">Screenshots</option>
+                            </select>
                         </div>
                     </div>
 
@@ -631,7 +633,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">Add/Edit File Type</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 <input type="hidden" id="modalTypeCategory">
@@ -655,7 +657,7 @@
         <div class="modal-content">
             <div class="modal-header bg-danger text-white">
                 <h5 class="modal-title"><i class="fa-solid fa-exclamation-triangle"></i> Write Permission Error</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 <div class="alert alert-danger">
@@ -821,6 +823,74 @@
             loadImageQueue();
         }
     });
+
+    // Fix historic image download status
+    async function fixHistoricStatus() {
+        const btn = document.getElementById('fix-status-btn');
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Fixing...';
+        }
+
+        try {
+            const response = await fetch('/admin/api/fix_image_status', {
+                method: 'POST',
+                headers: CSRFUtils.getHeaders()
+            });
+            const data = await response.json();
+
+            if (data.success) {
+                showMessage(
+                    `<i class="fas fa-check-circle"></i> ${data.message} (${data.total_checked} records checked)`,
+                    'success'
+                );
+                loadImageQueue();
+            } else {
+                showMessage('Error: ' + data.message, 'danger');
+            }
+        } catch (error) {
+            showMessage('Failed to fix image status: ' + error, 'danger');
+        } finally {
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-wrench"></i> Fix Historic Status';
+            }
+        }
+    }
+
+    // Clear image queue
+    async function clearQueue(type = 'pending') {
+        if (!confirm(`Are you sure you want to clear all ${type} items from the image queue?`)) return;
+
+        const btn = document.getElementById('clear-queue-btn');
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Clearing...';
+        }
+
+        try {
+            const response = await fetch('/admin/api/clear_image_queue', {
+                method: 'POST',
+                headers: CSRFUtils.getHeaders({ 'Content-Type': 'application/json' }),
+                body: JSON.stringify({ type })
+            });
+            const data = await response.json();
+
+            if (data.success) {
+                showMessage(`<i class="fas fa-check-circle"></i> ${data.message}`, 'success');
+                loadImageQueue();
+            } else {
+                showMessage('Error: ' + data.message, 'danger');
+            }
+        } catch (error) {
+            showMessage('Failed to clear queue: ' + error, 'danger');
+        } finally {
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-trash-alt"></i> Clear Queue';
+            }
+        }
+    }
 
     // Load image queue with filters
     async function loadImageQueue() {
@@ -1060,7 +1130,7 @@
         messageDiv.className = `alert alert-${type} alert-dismissible fade show`;
         messageDiv.innerHTML = `
             ${message}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         `;
 
         messagesDiv.appendChild(messageDiv);

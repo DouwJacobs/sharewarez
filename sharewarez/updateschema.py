@@ -298,6 +298,9 @@ class DatabaseManager:
         ALTER TABLE games
         ADD COLUMN IF NOT EXISTS version VARCHAR(100);
 
+        ALTER TABLE games
+        ADD COLUMN IF NOT EXISTS edition_name VARCHAR(255);
+
         ALTER TABLE game_updates ADD COLUMN IF NOT EXISTS title VARCHAR(255);
         ALTER TABLE game_updates ADD COLUMN IF NOT EXISTS version VARCHAR(100);
         ALTER TABLE game_updates ADD COLUMN IF NOT EXISTS update_number INTEGER;
@@ -309,6 +312,127 @@ class DatabaseManager:
         ALTER TABLE game_updates ADD COLUMN IF NOT EXISTS size BIGINT DEFAULT 0 NOT NULL;
         ALTER TABLE game_updates ADD COLUMN IF NOT EXISTS metadata_managed BOOLEAN DEFAULT FALSE NOT NULL;
         CREATE INDEX IF NOT EXISTS idx_game_updates_game_path ON game_updates(game_uuid, file_path);
+
+        -- Preserve the exact downloaded content in the administrative history.
+        ALTER TABLE download_requests ADD COLUMN IF NOT EXISTS content_type VARCHAR(20) DEFAULT 'game' NOT NULL;
+        ALTER TABLE download_requests ADD COLUMN IF NOT EXISTS content_title VARCHAR(255);
+        ALTER TABLE download_requests ADD COLUMN IF NOT EXISTS game_update_id INTEGER REFERENCES game_updates(id) ON DELETE SET NULL;
+        ALTER TABLE download_requests ADD COLUMN IF NOT EXISTS game_extra_id INTEGER REFERENCES game_extras(id) ON DELETE SET NULL;
+        CREATE INDEX IF NOT EXISTS idx_download_requests_content_type ON download_requests(content_type);
+        CREATE INDEX IF NOT EXISTS idx_download_requests_game_update ON download_requests(game_update_id);
+
+        UPDATE download_requests AS request
+        SET content_type = 'update',
+            content_title = COALESCE(game_update.title, regexp_replace(game_update.file_path, '^.*/', '')),
+            game_update_id = game_update.id
+        FROM game_updates AS game_update
+        WHERE request.file_location = game_update.file_path
+          AND request.game_uuid = game_update.game_uuid
+          AND request.game_update_id IS NULL;
+
+        UPDATE download_requests AS request
+        SET content_type = 'extra',
+            content_title = regexp_replace(game_extra.file_path, '^.*/', ''),
+            game_extra_id = game_extra.id
+        FROM game_extras AS game_extra
+        WHERE request.file_location = game_extra.file_path
+          AND request.game_uuid = game_extra.game_uuid
+          AND request.game_extra_id IS NULL;
+
+        -- User-submitted, edition-aware game requests.
+        CREATE TABLE IF NOT EXISTS game_requests (
+            id SERIAL PRIMARY KEY,
+            igdb_id INTEGER UNIQUE NOT NULL,
+            parent_igdb_id INTEGER NOT NULL,
+            parent_game_name VARCHAR(255) NOT NULL,
+            game_name VARCHAR(255) NOT NULL,
+            edition_name VARCHAR(255),
+            cover_url VARCHAR(512),
+            summary TEXT,
+            platforms TEXT,
+            first_release_date TIMESTAMP,
+            status VARCHAR(32) NOT NULL DEFAULT 'pending',
+            public_response TEXT,
+            internal_note TEXT,
+            fulfilled_game_uuid VARCHAR(36) REFERENCES games(uuid) ON DELETE SET NULL,
+            handled_by_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+            created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            resolved_at TIMESTAMP
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_game_requests_parent ON game_requests(parent_igdb_id);
+        CREATE INDEX IF NOT EXISTS idx_game_requests_status ON game_requests(status);
+
+        ALTER TABLE game_requests ADD COLUMN IF NOT EXISTS parent_game_name VARCHAR(255);
+        UPDATE game_requests SET parent_game_name = game_name WHERE parent_game_name IS NULL;
+        ALTER TABLE game_requests ALTER COLUMN parent_game_name SET NOT NULL;
+
+        CREATE TABLE IF NOT EXISTS game_request_users (
+            id SERIAL PRIMARY KEY,
+            request_id INTEGER NOT NULL REFERENCES game_requests(id) ON DELETE CASCADE,
+            user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            requester_note TEXT,
+            accept_any_edition BOOLEAN NOT NULL DEFAULT FALSE,
+            created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            withdrawn_at TIMESTAMP,
+            satisfied_at TIMESTAMP,
+            satisfied_by_game_uuid VARCHAR(36) REFERENCES games(uuid) ON DELETE SET NULL,
+            last_notified_status VARCHAR(32),
+            CONSTRAINT uq_game_request_user UNIQUE (request_id, user_id)
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_game_request_users_request ON game_request_users(request_id);
+        CREATE INDEX IF NOT EXISTS idx_game_request_users_user ON game_request_users(user_id);
+        ALTER TABLE game_request_users ADD COLUMN IF NOT EXISTS satisfied_at TIMESTAMP;
+        ALTER TABLE game_request_users ADD COLUMN IF NOT EXISTS satisfied_by_game_uuid VARCHAR(36) REFERENCES games(uuid) ON DELETE SET NULL;
+
+        -- Update request feature: add request_type and source_game_uuid columns
+        ALTER TABLE game_requests ADD COLUMN IF NOT EXISTS request_type VARCHAR(16) NOT NULL DEFAULT 'new_game';
+        ALTER TABLE game_requests ADD COLUMN IF NOT EXISTS source_game_uuid VARCHAR(36) REFERENCES games(uuid) ON DELETE SET NULL;
+        CREATE INDEX IF NOT EXISTS idx_game_requests_type ON game_requests(request_type);
+        CREATE INDEX IF NOT EXISTS idx_game_requests_source ON game_requests(source_game_uuid);
+
+        -- Make igdb_id nullable and drop the unique constraint for update requests
+        ALTER TABLE game_requests ALTER COLUMN igdb_id DROP NOT NULL;
+        ALTER TABLE game_requests ALTER COLUMN parent_igdb_id DROP NOT NULL;
+        ALTER TABLE game_requests ALTER COLUMN parent_game_name DROP NOT NULL;
+        DO $$
+        BEGIN
+            IF EXISTS (
+                SELECT 1 FROM pg_constraint
+                WHERE conname = 'game_requests_igdb_id_key'
+                  AND conrelid = 'game_requests'::regclass
+            ) THEN
+                ALTER TABLE game_requests DROP CONSTRAINT game_requests_igdb_id_key;
+            END IF;
+        END $$;
+
+        DO $$
+        BEGIN
+            IF NOT EXISTS (
+                SELECT igdb_id FROM game_requests
+                WHERE request_type = 'new_game' GROUP BY igdb_id HAVING COUNT(*) > 1
+            ) THEN
+                CREATE UNIQUE INDEX IF NOT EXISTS uq_game_requests_new_game_igdb
+                    ON game_requests(igdb_id) WHERE request_type = 'new_game';
+            ELSE
+                RAISE NOTICE 'Skipped new-game request uniqueness index because duplicates already exist';
+            END IF;
+            IF NOT EXISTS (
+                SELECT source_game_uuid FROM game_requests
+                WHERE request_type = 'update'
+                  AND status NOT IN ('fulfilled', 'not_planned', 'cancelled')
+                GROUP BY source_game_uuid HAVING COUNT(*) > 1
+            ) THEN
+                CREATE UNIQUE INDEX IF NOT EXISTS uq_game_requests_active_update
+                    ON game_requests(source_game_uuid)
+                    WHERE request_type = 'update'
+                      AND status NOT IN ('fulfilled', 'not_planned', 'cancelled');
+            ELSE
+                RAISE NOTICE 'Skipped active-update request uniqueness index because duplicates already exist';
+            END IF;
+        END $$;
 
         -- Add HowLongToBeat settings to global_settings table
         ALTER TABLE global_settings

@@ -9,6 +9,7 @@ from sharewarez.utils.security import is_safe_path, get_allowed_base_directories
 from sharewarez.utils.event_logging import log_system_event
 from sharewarez.utils.tags import assign_game_tags
 from sharewarez import db
+from sharewarez.utilities import refresh_game_metadata_and_updates
 from threading import Thread
 from datetime import datetime, timezone
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
@@ -110,6 +111,8 @@ def game_edit(game_uuid):
             flash('Install instructions were truncated to 10000 characters', 'warning')
         game.install_instructions = install_instructions
         game.version = (form.version.data or '').strip() or None
+        game.edition_name = (form.edition_name.data or '').strip() or None
+
         
         video_urls = form.video_urls.data or ""
         if len(video_urls) > 4096:
@@ -317,6 +320,47 @@ def game_edit(game_uuid):
             else:
                 flash('Game updated successfully.', 'success')
                 current_app.logger.debug(f"IGDB ID unchanged. Skipping image refresh for game UUID: {game_uuid}")
+
+            if request.form.get('action') == 'save_and_refresh':
+                try:
+                    # Save user edited values before metadata fetch
+                    edited_developer = game.developer
+                    edited_publisher = game.publisher
+                    edited_summary = game.summary
+                    edited_storyline = game.storyline
+                    edited_version = game.version
+                    edited_edition_name = game.edition_name
+
+                    refresh_result = refresh_game_metadata_and_updates(game_uuid)
+                    refreshed_name = refresh_result.game_name
+
+                    # Re-apply explicit user form edits if specified
+                    if edited_developer is not None:
+                        game.developer = edited_developer
+                    if edited_publisher is not None:
+                        game.publisher = edited_publisher
+                    if edited_summary:
+                        game.summary = edited_summary
+                    if edited_storyline:
+                        game.storyline = edited_storyline
+                    if edited_version:
+                        game.version = edited_version
+                    if edited_edition_name:
+                        game.edition_name = edited_edition_name
+                    db.session.commit()
+
+                    flash(f'Game saved and metadata refreshed for {refreshed_name}.', 'success')
+                    if refresh_result.filesystem_skipped:
+                        flash(refresh_result.filesystem_message, 'info')
+                    current_app.logger.info(
+                        'Save-and-refresh: metadata refreshed for %s (%s)', refreshed_name, game_uuid
+                    )
+                except Exception as exc:
+                    current_app.logger.exception(
+                        'Save-and-refresh: metadata refresh failed for %s (%s)', game.name, game_uuid
+                    )
+                    flash(f'Game saved, but metadata refresh failed: {exc}', 'warning')
+                return redirect(url_for('games.game_details', game_uuid=game_uuid))
 
             return redirect(url_for('library.library'))
         except IntegrityError as e:

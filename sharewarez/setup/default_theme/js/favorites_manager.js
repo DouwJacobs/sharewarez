@@ -56,6 +56,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const updateButtonAppearance = (button, isFavorite) => {
         const icon = button.querySelector('i');
+        const gameName = button.dataset.gameName || 'game';
         if (isFavorite) {
             button.classList.add('favorited');
             if (icon) icon.style.color = '#ff69b4';
@@ -63,6 +64,7 @@ document.addEventListener('DOMContentLoaded', () => {
             button.classList.remove('favorited');
             if (icon) icon.style.color = 'white'; // Or your default color
         }
+        button.setAttribute('aria-label', `${isFavorite ? 'Remove' : 'Add'} ${gameName} ${isFavorite ? 'from' : 'to'} favorites`);
     };
 
     const toggleFavorite = async (button, gameUuid) => {

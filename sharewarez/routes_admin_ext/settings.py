@@ -30,6 +30,14 @@ DEFAULT_SETTINGS = {
     'enableWebLinksOnDetailsPage': True,
     'enableServerStatusFeature': True,
     'enableNewsletterFeature': True,
+    'enableGameRequests': True,
+    'allowRequestNotes': True,
+    'allowRequestAnyEdition': True,
+    'maxActiveRequestsPerUser': 20,
+    'notifyRequesterRequestEmail': True,
+    'notifyAdminRequestEmail': False,
+    'notifyDiscordNewRequests': False,
+    'notifyDiscordRequestUpdates': False,
     'showVersion': True,
     'showDiscovery': True,
     'showFavorites': True,
@@ -147,6 +155,10 @@ def validate_settings_data(settings_data):
         elif '/' in metadata_filename or '\\' in metadata_filename:
             errors.append("Local metadata filename cannot contain path separators")
 
+    request_limit = settings_data.get('maxActiveRequestsPerUser')
+    if request_limit is not None and (not isinstance(request_limit, int) or not 1 <= request_limit <= 100):
+        errors.append("Active game request limit must be between 1 and 100")
+
     return errors
 
 
@@ -175,7 +187,9 @@ def update_settings_fields(settings_record, new_settings):
         settings_record.scan_thread_count = scan_threads
     
     # Update the settings JSON field and timestamp
-    settings_record.settings = new_settings
+    merged_settings = dict(settings_record.settings or {})
+    merged_settings.update(new_settings)
+    settings_record.settings = merged_settings
     settings_record.last_updated = datetime.now(timezone.utc)
 
 

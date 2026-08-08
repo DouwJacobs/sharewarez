@@ -98,7 +98,9 @@ class TestBuilderThemes:
             'background': '#090a0b',
             'sidebar': '#111213',
             'card': '#212223',
-            'panel': '#313233'
+            'panel': '#313233',
+            'text_primary': '#f1f2f3',
+            'text_secondary': '#b1b2b3'
         }
 
     def test_create_and_update_builder_theme(self, theme_manager, tmp_path):
@@ -110,6 +112,8 @@ class TestBuilderThemes:
         assert theme_manager.get_theme(theme_id)['palette']['accent'] == '#123456'
         css = (tmp_path / theme_id / 'css' / 'theme-overrides.css').read_text()
         assert '--theme-accent-rgb: 18, 52, 86' in css
+        assert '--theme-text-primary: #f1f2f3' in css
+        assert '--theme-text-secondary: #b1b2b3' in css
 
         updated = self.palette('Renamed Theme')
         updated['accent'] = '#654321'
@@ -163,6 +167,28 @@ class TestGetDefaultTheme:
         assert result is None
         mock_print.assert_called_once()
         assert "Error reading default theme" in str(mock_print.call_args)
+
+
+class TestDefaultThemeControlSystem:
+    def test_shared_control_tokens_cover_buttons_inputs_and_selects(self):
+        from pathlib import Path
+
+        css = Path('sharewarez/setup/default_theme/css/theme-components.css').read_text()
+        assert '--control-height: 42px' in css
+        assert '--control-height-sm: 34px' in css
+        assert '.form-select' in css
+        assert '.input-group > :is(.form-control, .form-select, .btn)' in css
+
+    def test_mobile_header_exposes_account_menu_with_accessible_targets(self):
+        from pathlib import Path
+
+        template = Path('sharewarez/templates/base.html').read_text()
+        css = Path('sharewarez/setup/default_theme/css/site/sidebar.css').read_text()
+        assert 'id="mobileAccountToggle"' in template
+        assert 'aria-controls="mobileAccountMenu"' in template
+        assert 'id="mobileAccountMenu"' in template
+        assert 'height: 100dvh' in css
+        assert 'min-height: 44px' in css
 
 
 class TestGetInstalledThemes:

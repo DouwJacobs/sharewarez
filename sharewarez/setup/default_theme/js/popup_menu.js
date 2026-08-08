@@ -12,7 +12,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const gameUuid = button.getAttribute('data-game-uuid');
             const originalText = button.textContent;
             button.disabled = true;
-            button.innerHTML = '<i class="fas fa-spinner fa-spin" aria-hidden="true"></i> Refreshing…';
+            button.innerHTML = '<i class="fas fa-circle-notch fa-spin" aria-hidden="true"></i> Refreshing…';
 
             const popupMenu = document.getElementById(`popupMenu-${gameUuid}`);
             fetch(`/refresh_game_metadata_updates/${gameUuid}`, {
@@ -190,6 +190,7 @@ document.addEventListener('DOMContentLoaded', function() {
             document.querySelectorAll('.popup-menu').forEach(function(menu) {
                 if (menu.id !== 'popupMenu-' + uuid) {
                     menu.style.display = 'none';
+                    document.getElementById(menu.id.replace('popupMenu-', 'menuButton-'))?.setAttribute('aria-expanded', 'false');
                     // Show favorite button and game status elements for other cards
                     var otherCard = menu.closest('.game-card') || menu.closest('.game-card-coverimage');
                     if (otherCard) {
@@ -209,6 +210,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // Toggle the popup menu
             var isOpening = popupMenu.style.display !== 'block';
             popupMenu.style.display = isOpening ? 'block' : 'none';
+            clickedElement.setAttribute('aria-expanded', String(isOpening));
             parentContainer.classList.toggle('menu-open', isOpening);
             var cardContainer = parentContainer.closest('.game-card-container');
             if (cardContainer) cardContainer.classList.toggle('menu-open', isOpening);
@@ -350,6 +352,7 @@ document.addEventListener('DOMContentLoaded', function() {
     window.addEventListener('click', function() {
         document.querySelectorAll('.popup-menu').forEach(function(menu) {
             menu.style.display = 'none';
+            document.getElementById(menu.id.replace('popupMenu-', 'menuButton-'))?.setAttribute('aria-expanded', 'false');
             // Show favorite button and game status elements when menu closes
             // Handle both library page (.game-card) and game details page (.game-card-coverimage)
             var gameCard = menu.closest('.game-card') || menu.closest('.game-card-coverimage');

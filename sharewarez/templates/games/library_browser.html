@@ -31,11 +31,11 @@
         <div class="game-library-container" id="gamesContainer">
             {% for game in games %}
             <div class="game-card-container">
-                <div class="game-card" onmouseover="showDetails(this, '{{ game.uuid }}')" onmouseout="hideDetails()" data-name="{{ game.name }}" data-size="{{ game.size }}" data-genres="{{ game.genres|join(', ') }}" data-tags="{{ game.tags|join(', ') }}">
-                    <button id="menuButton-{{ game.uuid }}" class="button-glass-hamburger"><i class="fas fa-bars"></i></button>
+                <div class="game-card" onmouseover="showDetails(this, '{{ game.uuid }}')" onmouseout="hideDetails()" onfocusin="showDetails(this, '{{ game.uuid }}')" onfocusout="hideDetails()" data-name="{{ game.name }}" data-size="{{ game.size }}" data-genres="{{ game.genres|join(', ') }}" data-tags="{{ game.tags|join(', ') }}">
+                    <button id="menuButton-{{ game.uuid }}" class="button-glass-hamburger" type="button" aria-label="Open actions for {{ game.name }}" aria-haspopup="menu" aria-expanded="false"><i class="fas fa-bars" aria-hidden="true"></i></button>
                     <button class="favorite-btn" data-game-uuid="{{ game.uuid }}"
-                           data-is-favorite="{{ game.is_favorite|lower }}">
-                        <i class="fas fa-heart"></i>
+                           data-is-favorite="{{ game.is_favorite|lower }}" data-game-name="{{ game.name }}" type="button" aria-label="{% if game.is_favorite %}Remove {{ game.name }} from favorites{% else %}Add {{ game.name }} to favorites{% endif %}">
+                        <i class="fas fa-heart" aria-hidden="true"></i>
                     </button>
 
                     {% with game_uuid=game.uuid, game_url=game.url %}
@@ -53,36 +53,36 @@
                     } %}
                     {% set current_status = game.user_status or '' %}
                     {% set status_info = status_config.get(current_status, {'icon': 'fa-circle', 'color': '#808080', 'label': 'No Status'}) %}
-                    <button class="game-status-btn" data-game-uuid="{{ game.uuid }}" data-current-status="{{ current_status }}" title="{{ status_info.label }}">
-                        <i class="fas {{ status_info.icon }}" style="color: {{ status_info.color }}; {% if not current_status %}opacity: 0.4;{% endif %}"></i>
+                    <button class="game-status-btn" type="button" data-game-uuid="{{ game.uuid }}" data-current-status="{{ current_status }}" title="{{ status_info.label }}" aria-label="Set play status for {{ game.name }}. Current status: {{ status_info.label }}" aria-haspopup="menu" aria-expanded="false">
+                        <i class="fas {{ status_info.icon }}" aria-hidden="true" style="color: {{ status_info.color }}; {% if not current_status %}opacity: 0.4;{% endif %}"></i>
                     </button>
 
                     {# Status dropdown menu #}
-                    <div class="status-dropdown" data-game-uuid="{{ game.uuid }}" style="display: none;">
-                        <div class="status-dropdown-option" data-status="unplayed">
+                    <div class="status-dropdown" data-game-uuid="{{ game.uuid }}" role="menu" aria-label="Play status for {{ game.name }}" style="display: none;">
+                        <button type="button" class="status-dropdown-option" role="menuitem" data-status="unplayed">
                             <i class="fas fa-box" style="color: #808080;"></i>
                             <span class="status-label">Unplayed</span>
-                        </div>
-                        <div class="status-dropdown-option" data-status="unfinished">
+                        </button>
+                        <button type="button" class="status-dropdown-option" role="menuitem" data-status="unfinished">
                             <i class="fas fa-gamepad" style="color: #4A90E2;"></i>
                             <span class="status-label">Unfinished</span>
-                        </div>
-                        <div class="status-dropdown-option" data-status="beaten">
+                        </button>
+                        <button type="button" class="status-dropdown-option" role="menuitem" data-status="beaten">
                             <i class="fas fa-flag-checkered" style="color: #50C878;"></i>
                             <span class="status-label">Beaten</span>
-                        </div>
-                        <div class="status-dropdown-option" data-status="completed">
+                        </button>
+                        <button type="button" class="status-dropdown-option" role="menuitem" data-status="completed">
                             <i class="fas fa-trophy" style="color: #FFD700;"></i>
                             <span class="status-label">Completed</span>
-                        </div>
-                        <div class="status-dropdown-option" data-status="null">
+                        </button>
+                        <button type="button" class="status-dropdown-option" role="menuitem" data-status="null">
                             <i class="fas fa-ban" style="color: #DC3545;"></i>
                             <span class="status-label">Won't Play</span>
-                        </div>
-                        <div class="status-dropdown-option" data-status="" style="border-top: 1px solid rgba(255, 255, 255, 0.2);">
+                        </button>
+                        <button type="button" class="status-dropdown-option" role="menuitem" data-status="" style="border-top: 1px solid rgba(255, 255, 255, 0.2);">
                             <i class="fas fa-times" style="color: #808080;"></i>
                             <span class="status-label">Clear Status</span>
-                        </div>
+                        </button>
                     </div>
                     {% endif %}
                     {% if game.cover_url and game.cover_url != 'newstyle/default_cover.jpg' %}
@@ -101,6 +101,7 @@
                         <!-- Details and screenshots will be injected here by JavaScript -->
                     </div>
                 </div>
+                <a class="library-game-title" href="{{ url_for('games.game_details', game_uuid=game.uuid) }}">{{ game.name }}</a>
             
             </div>
             {% endfor %}
@@ -126,7 +127,7 @@
                 </div>
             </nav>
             <div class="perpage-footer">
-                <span class="pagination-label">Items per page:</span>
+                <label class="pagination-label" for="perPageSelect">Items per page:</label>
                 <select id="perPageSelect" class="dropdown-perpage">
                     <option value="16" {% if user_per_page == 16 %}selected{% endif %}>16</option>
                     <option value="20" {% if user_per_page == 20 %}selected{% endif %}>20</option>

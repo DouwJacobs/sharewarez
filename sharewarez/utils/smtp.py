@@ -97,7 +97,7 @@ def is_server_reachable(server, port):
         print(f"Error connecting to {server}:{port}: {e}")
         return False
 
-def send_email(to, subject, template):
+def send_email(to, subject, template, show_feedback=True):
     """
     Send an email with robust error logging and pre-send checks.
     """
@@ -106,18 +106,21 @@ def send_email(to, subject, template):
     
     if not smtp_settings:
         print("SMTP settings not configured. Email not sent.")
-        flash("SMTP settings not configured. Email not sent.", "error")
+        if show_feedback:
+            flash("SMTP settings not configured. Email not sent.", "error")
         return False
 
     if not smtp_settings.get('SMTP_ENABLED'):
         print("SMTP is not enabled. Email not sent.")
-        flash("SMTP is not enabled. Email not sent.", "error")
+        if show_feedback:
+            flash("SMTP is not enabled. Email not sent.", "error")
         return False
 
     is_valid, error_message = is_smtp_config_valid()
     if not is_valid:
         print(f"Invalid SMTP configuration: {error_message}")
-        flash(f"Invalid SMTP configuration: {error_message}", "error")
+        if show_feedback:
+            flash(f"Invalid SMTP configuration: {error_message}", "error")
         return False
 
     mail_server = smtp_settings['MAIL_SERVER']
@@ -131,7 +134,8 @@ def send_email(to, subject, template):
 
     if not is_server_reachable(mail_server, mail_port):
         print(f"Mail server {mail_server}:{mail_port} is unreachable. Email not sent.")
-        flash(f"Mail server {mail_server}:{mail_port} is unreachable. Email not sent.", "error")
+        if show_feedback:
+            flash(f"Mail server {mail_server}:{mail_port} is unreachable. Email not sent.", "error")
         log_system_event(f"Failed to send email to {to}: Mail server unreachable", event_type='email', event_level='error')
         return False
 
@@ -164,27 +168,33 @@ def send_email(to, subject, template):
             
         print("=== SMTP Transaction Complete ===")
         print(f"Email sent successfully to {to}")
-        flash(f"Email sent successfully to {to}", "success")
+        if show_feedback:
+            flash(f"Email sent successfully to {to}", "success")
         log_system_event(f"Email sent to {to} with subject: {subject}", event_type='email', event_level='information')
         return True
         
     except smtplib.SMTPAuthenticationError as e:
         print(f"SMTP Authentication failed: {e}")
-        flash(f"SMTP Authentication failed: {e}", "error")
+        if show_feedback:
+            flash(f"SMTP Authentication failed: {e}", "error")
     except smtplib.SMTPException as e:
         print(f"SMTP error occurred: {str(e)}")
-        flash(f"SMTP error occurred: {str(e)}", "error")
+        if show_feedback:
+            flash(f"SMTP error occurred: {str(e)}", "error")
     except socket.timeout as e:
         print(f"Connection timed out: {str(e)}")
-        flash("Connection timed out while sending email", "error")
+        if show_feedback:
+            flash("Connection timed out while sending email", "error")
     except socket.gaierror as e:
         print(f"DNS lookup failed: {str(e)}")
-        flash("DNS lookup failed for SMTP server", "error")
+        if show_feedback:
+            flash("DNS lookup failed for SMTP server", "error")
     except Exception as e:
         print(f"Unexpected error occurred while sending email: {str(e)}")
         print(f"Error type: {type(e)}")
         print(f"Error details: {traceback.format_exc()}")
-        flash("An unexpected error occurred while sending the email", "error")
+        if show_feedback:
+            flash("An unexpected error occurred while sending the email", "error")
         log_system_event(f"Failed to send email to {to}: {traceback.format_exc()}", event_type='email', event_level='error')
     print("=== Email Send Process Failed ===\n")
     return False

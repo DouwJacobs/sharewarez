@@ -8,7 +8,7 @@ import os
 import random
 import re
 from datetime import datetime
-from sharewarez.models import Image, Game, Library, Genre, Theme
+from sharewarez.models import Image, Game, Library, Genre, Theme, GameRequest
 from sharewarez.utils.processors import get_global_settings
 from sharewarez.utils.auth import admin_required
 from sharewarez.utils.functions import format_size
@@ -62,7 +62,10 @@ def index():
 @admin_required
 def admin_dashboard():
     print(f"Route: /admin/dashboard - {current_user.name} - {current_user.role} method: {request.method}")
-    return render_template('admin/admin_dashboard.html')
+    pending_request_count = db.session.execute(
+        select(func.count(GameRequest.id)).where(GameRequest.status.in_(['pending', 'reviewing']))
+    ).scalar_one()
+    return render_template('admin/admin_dashboard.html', pending_request_count=pending_request_count)
 
 
 @site_bp.route('/favorites')

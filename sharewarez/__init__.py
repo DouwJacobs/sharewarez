@@ -94,10 +94,8 @@ def create_app():
         """Inject the active theme and instance branding into every template."""
         from sharewarez.utils.processors import get_global_settings
 
-        if current_user.is_authenticated and hasattr(current_user, 'preferences') and current_user.preferences:
-            current_theme = current_user.preferences.theme or 'default'
-        else:
-            current_theme = 'default'
+        from sharewarez.utils.themes import resolve_theme_id
+        current_theme = resolve_theme_id(current_user, app)
         return dict(current_theme=current_theme, **get_global_settings())
 
     @app.before_request
@@ -140,6 +138,7 @@ def create_app():
     from sharewarez.routes_info import info_bp
     from sharewarez.routes_admin_ext import admin2_bp
     from sharewarez.routes_apis import apis_bp
+    from sharewarez.routes_game_requests import game_requests_bp
 
     # Register all blueprints
     app.register_blueprint(routes.bp)
@@ -155,6 +154,7 @@ def create_app():
     app.register_blueprint(smtp_bp)
     app.register_blueprint(info_bp)
     app.register_blueprint(apis_bp)
+    app.register_blueprint(game_requests_bp)
 
     with app.app_context():
         # Database initialization is handled by the InitializationManager before workers start

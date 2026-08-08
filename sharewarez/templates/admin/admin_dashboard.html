@@ -5,7 +5,11 @@
 
 <div class="container-settings-dashboard">
 
-    <div class="hackplanet_titles"></div>
+    <header class="admin-dashboard-header">
+        <p class="admin-dashboard-eyebrow">Administration</p>
+        <h1>Admin dashboard</h1>
+        <p>Manage your libraries, server, access, integrations, and content tools.</p>
+    </header>
     
     <div class="container">
         <!-- Library Management Section -->
@@ -13,23 +17,32 @@
             <h3><i class="fas fa-book"></i> Library Management</h3>
             <div class="admin-buttons">
                 <div class="admin-button-item" data-toggle="tooltip" title="Manage your game libraries">
-                    <a href="{{ url_for('library.admin_libraries') }}" class="btn btn-circle">
+                    <a href="{{ url_for('library.admin_libraries') }}" class="btn btn-circle" aria-label="Manage libraries">
                         <i class="fas fa-book"></i>
                     </a>
                     <span class="button-label">Libraries</span>
                 </div>
                 <div class="admin-button-item" data-toggle="tooltip" title="Manage scanning, filters, extensions, and image queue">
-                    <a href="{{ url_for('main.admin_scan_management') }}" class="btn btn-circle">
+                    <a href="{{ url_for('main.admin_scan_management') }}" class="btn btn-circle" aria-label="Open scan manager">
                         <i class="fas fa-search"></i>
                     </a>
                     <span class="button-label">Scan Manager</span>
                 </div>
-                                <div class="admin-button-item" data-toggle="tooltip" title="Manage discovery sections">
-                    <a href="{{ url_for('admin2.discovery_sections') }}" class="btn btn-circle">
+                <div class="admin-button-item" data-toggle="tooltip" title="Manage discovery sections">
+                    <a href="{{ url_for('admin2.discovery_sections') }}" class="btn btn-circle" aria-label="Manage discovery sections">
                         <i class="fas fa-compass"></i>
                     </a>
                     <span class="button-label">Discovery</span>
                 </div>
+                {% if enable_game_requests %}
+                <div class="admin-button-item" data-toggle="tooltip" title="Review user game requests">
+                    <a href="{{ url_for('game_requests.admin_requests') }}" class="btn btn-circle" aria-label="Review game requests{% if pending_request_count %}, {{ pending_request_count }} pending{% endif %}">
+                        <i class="fas fa-paper-plane"></i>
+                        {% if pending_request_count %}<span class="admin-count-badge">{{ pending_request_count }}</span>{% endif %}
+                    </a>
+                    <span class="button-label">Requests</span>
+                </div>
+                {% endif %}
             </div>
         </div>
 
@@ -39,38 +52,38 @@
             <h3><i class="fas fa-server"></i> Server Management</h3>
             <div class="admin-buttons">
                 <div class="admin-button-item" data-toggle="tooltip" title="Manage server settings">
-                    <a href="{{ url_for('admin2.new_server_settings') }}" class="btn btn-circle">
+                    <a href="{{ url_for('admin2.new_server_settings') }}" class="btn btn-circle" aria-label="Manage server settings">
                         <i class="fas fa-cogs"></i>
                     </a>
                     <span class="button-label">Server Settings</span>
                 </div>
                 <div class="admin-button-item" data-toggle="tooltip" title="Configure attract mode (auto-play trailers on idle)">
-                    <a href="{{ url_for('admin2.attract_mode_settings_page') }}" class="btn btn-circle">
+                    <a href="{{ url_for('admin2.attract_mode_settings_page') }}" class="btn btn-circle" aria-label="Manage attract mode">
                         <i class="fas fa-tv"></i>
                     </a>
                     <span class="button-label">Attract Mode</span>
                 </div>
                 <div class="admin-button-item" data-toggle="tooltip" title="Manage integrations (Email, IGDB, Discord)">
-                    <a href="{{ url_for('admin2.integrations') }}" class="btn btn-circle">
+                    <a href="{{ url_for('admin2.integrations') }}" class="btn btn-circle" aria-label="Manage integrations">
                         <i class="fas fa-plug"></i>
                     </a>
                     <span class="button-label">Integrations</span>
                 </div>
                 <div class="admin-button-item" data-toggle="tooltip" title="View download statistics">
-                    <a href="{{ url_for('download.statistics') }}" class="btn btn-circle">
+                    <a href="{{ url_for('download.statistics') }}" class="btn btn-circle" aria-label="View download statistics">
                         <i class="fas fa-chart-bar"></i>
                     </a>
                     <span class="button-label">Statistics</span>
                 </div>
                 <div class="admin-button-item" data-toggle="tooltip" title="View system logs">
-                    <a href="{{ url_for('admin2.system_logs') }}" class="btn btn-circle">
+                    <a href="{{ url_for('admin2.system_logs') }}" class="btn btn-circle" aria-label="View system logs">
                         <i class="fas fa-clipboard-list"></i>
                     </a>
                     <span class="button-label">System Logs</span>
                 </div>
                 {% if enable_server_status %}
                 <div class="admin-button-item" data-toggle="tooltip" title="View server information">
-                    <a href="{{ url_for('info.new_server_info') }}" class="btn btn-circle">
+                    <a href="{{ url_for('info.new_server_info') }}" class="btn btn-circle" aria-label="View server status">
                         <i class="fas fa-info"></i>
                     </a>
                     <span class="button-label">Server Info</span>
@@ -84,19 +97,19 @@
             <h3><i class="fas fa-users"></i> Access Management</h3>
             <div class="admin-buttons">
                 <div class="admin-button-item" data-toggle="tooltip" title="Manage user accounts">
-                    <a href="{{ url_for('admin2.manage_users') }}" class="btn btn-circle">
+                    <a href="{{ url_for('admin2.manage_users') }}" class="btn btn-circle" aria-label="Manage users">
                         <i class="fas fa-users-cog"></i>
                     </a>
                     <span class="button-label">Users</span>
                 </div>
                 <div class="admin-button-item" data-toggle="tooltip" title="Manage email whitelist">
-                    <a href="{{ url_for('admin2.whitelist') }}" class="btn btn-circle">
+                    <a href="{{ url_for('admin2.whitelist') }}" class="btn btn-circle" aria-label="Manage email whitelist">
                         <i class="fas fa-user-shield"></i>
                     </a>
                     <span class="button-label">Whitelist</span>
                 </div>
                 <div class="admin-button-item" data-toggle="tooltip" title="Manage user invites">
-                    <a href="{{ url_for('admin2.manage_invites') }}" class="btn btn-circle">
+                    <a href="{{ url_for('admin2.manage_invites') }}" class="btn btn-circle" aria-label="Manage invitations">
                         <i class="fas fa-envelope-open-text"></i>
                     </a>
                     <span class="button-label">Invites</span>
@@ -109,13 +122,13 @@
             <h3><i class="fas fa-tools"></i> Admin Tools</h3>
             <div class="admin-buttons">
                 <div class="admin-button-item" data-toggle="tooltip" title="Configure the site title and logo">
-                    <a href="{{ url_for('admin2.branding') }}" class="btn btn-circle">
+                    <a href="{{ url_for('admin2.branding') }}" class="btn btn-circle" aria-label="Manage branding">
                         <i class="fas fa-signature"></i>
                     </a>
                     <span class="button-label">Branding</span>
                 </div>
                 <div class="admin-button-item" data-toggle="tooltip" title="Manage user downloads">
-                    <a href="{{ url_for('download.manage_downloads') }}" class="btn btn-circle">
+                    <a href="{{ url_for('download.manage_downloads') }}" class="btn btn-circle" aria-label="Manage downloads">
                         <i class="fas fa-download"></i>
                     </a>
                     <span class="button-label">Downloads</span>
@@ -125,7 +138,7 @@
 
 
                 <div class="admin-button-item" data-toggle="tooltip" title="Manage themes">
-                    <a href="{{ url_for('admin2.manage_themes') }}" class="btn btn-circle">
+                    <a href="{{ url_for('admin2.manage_themes') }}" class="btn btn-circle" aria-label="Manage themes">
                         <i class="fas fa-palette"></i>
                     </a>
                     <span class="button-label">Themes</span>
@@ -133,14 +146,14 @@
 
                 {% if enable_newsletter %}
                 <div class="admin-button-item" data-toggle="tooltip" title="Send newsletters">
-                    <a href="{{ url_for('admin2.newsletter') }}" class="btn btn-circle">
+                    <a href="{{ url_for('admin2.newsletter') }}" class="btn btn-circle" aria-label="Create a newsletter">
                         <i class="fas fa-newspaper"></i>
                     </a>
                     <span class="button-label">Newsletter</span>
                 </div>
                 {% endif %}
                 <div class="admin-button-item" data-toggle="tooltip" title="View administrator help">
-                    <a href="{{ url_for('admin2.admin_help') }}" class="btn btn-circle">
+                    <a href="{{ url_for('admin2.admin_help') }}" class="btn btn-circle" aria-label="Open administrator guide">
                         <i class="fas fa-question-circle"></i>
                     </a>
                     <span class="button-label">Admin Help</span>

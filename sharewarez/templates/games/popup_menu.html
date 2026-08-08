@@ -8,6 +8,16 @@
         <button type="submit" class="menu-button">Download</button>
     </form>
 
+    {% if enable_game_requests %}
+    <div class="menu-item">
+        {% if has_pending_update_request %}
+        <button type="button" class="menu-button" disabled title="You have already requested an update for this game" style="opacity: 0.65; cursor: default;">Update Requested</button>
+        {% else %}
+        <button type="button" class="menu-button" onclick="toggleRequestUpdateModal()" id="requestUpdateBtn">Request Update</button>
+        {% endif %}
+    </div>
+    {% endif %}
+
     <form action="{{ url_for('games.game_edit', game_uuid=game_uuid) }}" method="get" class="menu-item">
         {{ form.csrf_token }}
         <button type="submit" class="menu-button">Edit Details</button>
