@@ -42,7 +42,14 @@
     outline: 0;
 }
 .request-search-wrap:not(.admin-request-search) { position: relative; display: grid; grid-template-columns: 1fr; }
-.request-search-wrap:not(.admin-request-search) .request-search-icon { position: absolute; top: 50%; left: .9rem; z-index: 1; transform: translateY(-50%); }
+.request-search-wrap:not(.admin-request-search) .request-search-icon {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: .9rem;
+    z-index: 1;
+    margin-block: auto;
+}
 .request-search-wrap:not(.admin-request-search) input { padding: 0 1rem 0 2.5rem; text-align: left; }
 .request-search-wrap:not(.admin-request-search) input::placeholder { text-align: left; }
 .request-search-wrap > i {
