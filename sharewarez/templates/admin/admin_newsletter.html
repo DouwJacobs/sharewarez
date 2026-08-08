@@ -1,5 +1,6 @@
 <!-- in templates/admin/admin_newsletter.html -->
 {% extends "base.html" %}
+{% from "partials/ui_components.html" import pagination as render_pagination %}
 {% block styles %}
 {{ super() }}
 <link rel="stylesheet" href="{{ 'css/admin/admin_newsletter.css'|theme_asset }}">
@@ -67,9 +68,14 @@
                        <td data-label="Recipients">{{ newsletter.recipient_count }}</td>
                        <td data-label="Action"><a href="{{ url_for('admin2.view_newsletter', newsletter_id=newsletter.id) }}" class="btn btn-sm btn-primary">View</a></td>
                    </tr>
+                   {% else %}
+                   <tr>
+                       <td colspan="5" class="text-center py-4">No newsletters have been sent yet.</td>
+                   </tr>
                    {% endfor %}
                </tbody>
            </table></div>
+           {{ render_pagination(newsletter_pagination, 'admin2.newsletter') }}
        </div>
  </main>
 
