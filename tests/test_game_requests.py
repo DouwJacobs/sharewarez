@@ -10,6 +10,7 @@ from sharewarez.platform import LibraryPlatform
 from sharewarez.utils.game_requests import (
     create_or_join_request,
     normalize_igdb_game,
+    search_igdb_games,
     update_request_status,
     update_request_preferences,
     withdraw_request,
@@ -66,6 +67,20 @@ def test_normalize_igdb_edition_uses_parent_group():
     assert result['parent_game_name'] == 'Example Game'
     assert result['edition_name'] == 'Gold Edition'
     assert result['cover_url'].endswith('/cover123.jpg')
+
+
+@patch('sharewarez.utils.game_requests.make_igdb_api_request')
+def test_request_search_uses_bounded_ttl_cache(mock_api):
+    term = f'Cache Test {uuid4().hex}'
+    mock_api.return_value = [{'id': unique_igdb_id(), 'name': 'Cached Game'}]
+
+    first, first_error = search_igdb_games(term)
+    first[0]['game_name'] = 'Mutated locally'
+    second, second_error = search_igdb_games(term)
+
+    assert first_error is None and second_error is None
+    assert second[0]['game_name'] == 'Cached Game'
+    mock_api.assert_called_once()
 
 
 @patch('sharewarez.utils.game_requests.fetch_igdb_game')

@@ -1,5 +1,8 @@
 from datetime import datetime, timezone
+from copy import deepcopy
 import re
+from threading import Lock
+from time import monotonic
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import selectinload
@@ -21,6 +24,10 @@ DEFAULT_REQUEST_SETTINGS = {
     'notifyDiscordNewRequests': False,
     'notifyDiscordRequestUpdates': False,
 }
+_search_cache = {}
+_search_cache_lock = Lock()
+_SEARCH_CACHE_TTL_SECONDS = 300
+_SEARCH_CACHE_MAX_ENTRIES = 128
 
 
 def get_request_settings():
@@ -82,13 +89,27 @@ def fetch_igdb_game(igdb_id):
 
 def search_igdb_games(term):
     safe_term = re.sub(r"[^\w\s\-:&+().'\u00c0-\u024f]", ' ', term).strip()
+    cache_key = safe_term.casefold()
+    now = monotonic()
+    with _search_cache_lock:
+        cached = _search_cache.get(cache_key)
+        if cached and cached[0] > now:
+            return deepcopy(cached[1]), None
     response = make_igdb_api_request(
         'https://api.igdb.com/v4/games',
         f'{IGDB_REQUEST_FIELDS} search "{safe_term}"; limit 10;',
     )
     if not isinstance(response, list):
         return [], response.get('error') if isinstance(response, dict) else 'IGDB search failed'
-    return [normalize_igdb_game(item) for item in response], None
+    results = [normalize_igdb_game(item) for item in response]
+    with _search_cache_lock:
+        expired = [key for key, value in _search_cache.items() if value[0] <= now]
+        for key in expired:
+            _search_cache.pop(key, None)
+        if len(_search_cache) >= _SEARCH_CACHE_MAX_ENTRIES:
+            _search_cache.pop(next(iter(_search_cache)))
+        _search_cache[cache_key] = (now + _SEARCH_CACHE_TTL_SECONDS, deepcopy(results))
+    return results, None
 
 
 def fetch_related_editions(igdb_id):

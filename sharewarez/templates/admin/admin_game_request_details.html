@@ -14,7 +14,7 @@
     </nav>
 
     <header class="request-detail-hero request-panel">
-        <div class="request-detail-cover">{% if game_request.formatted_cover_url %}<img src="{{ game_request.formatted_cover_url }}" alt="">{% else %}<span><i class="fas fa-gamepad"></i></span>{% endif %}</div>
+        <div class="request-detail-cover">{% if game_request.formatted_cover_url %}<img src="{{ game_request.formatted_cover_url }}" alt="Cover for {{ game_request.game_name }}">{% else %}<span><i class="fas fa-gamepad"></i></span>{% endif %}</div>
         <div class="request-detail-intro">
             <div class="request-history-title">
                 <div>

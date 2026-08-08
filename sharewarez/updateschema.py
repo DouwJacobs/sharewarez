@@ -408,6 +408,32 @@ class DatabaseManager:
             END IF;
         END $$;
 
+        DO $$
+        BEGIN
+            IF NOT EXISTS (
+                SELECT igdb_id FROM game_requests
+                WHERE request_type = 'new_game' GROUP BY igdb_id HAVING COUNT(*) > 1
+            ) THEN
+                CREATE UNIQUE INDEX IF NOT EXISTS uq_game_requests_new_game_igdb
+                    ON game_requests(igdb_id) WHERE request_type = 'new_game';
+            ELSE
+                RAISE NOTICE 'Skipped new-game request uniqueness index because duplicates already exist';
+            END IF;
+            IF NOT EXISTS (
+                SELECT source_game_uuid FROM game_requests
+                WHERE request_type = 'update'
+                  AND status NOT IN ('fulfilled', 'not_planned', 'cancelled')
+                GROUP BY source_game_uuid HAVING COUNT(*) > 1
+            ) THEN
+                CREATE UNIQUE INDEX IF NOT EXISTS uq_game_requests_active_update
+                    ON game_requests(source_game_uuid)
+                    WHERE request_type = 'update'
+                      AND status NOT IN ('fulfilled', 'not_planned', 'cancelled');
+            ELSE
+                RAISE NOTICE 'Skipped active-update request uniqueness index because duplicates already exist';
+            END IF;
+        END $$;
+
         -- Add HowLongToBeat settings to global_settings table
         ALTER TABLE global_settings
         ADD COLUMN IF NOT EXISTS enable_hltb_integration BOOLEAN DEFAULT TRUE;

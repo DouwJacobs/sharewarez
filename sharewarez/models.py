@@ -1,6 +1,6 @@
 # sharewarez/models.py
 from sharewarez import db
-from sqlalchemy import ForeignKey, select
+from sqlalchemy import ForeignKey, select, text
 from sqlalchemy.dialects.sqlite import JSON
 from sqlalchemy.orm import relationship
 from sqlalchemy.types import TypeDecorator, TEXT
@@ -364,6 +364,18 @@ class DownloadRequest(db.Model):
 
 class GameRequest(db.Model):
     __tablename__ = 'game_requests'
+    __table_args__ = (
+        db.Index(
+            'uq_game_requests_new_game_igdb', 'igdb_id', unique=True,
+            postgresql_where=text("request_type = 'new_game'"),
+            sqlite_where=text("request_type = 'new_game'"),
+        ),
+        db.Index(
+            'uq_game_requests_active_update', 'source_game_uuid', unique=True,
+            postgresql_where=text("request_type = 'update' AND status NOT IN ('fulfilled', 'not_planned', 'cancelled')"),
+            sqlite_where=text("request_type = 'update' AND status NOT IN ('fulfilled', 'not_planned', 'cancelled')"),
+        ),
+    )
 
     id = db.Column(db.Integer, primary_key=True)
     request_type = db.Column(db.String(16), nullable=False, default='new_game', index=True)

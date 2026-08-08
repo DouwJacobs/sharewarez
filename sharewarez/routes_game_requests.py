@@ -1,7 +1,12 @@
+from collections import defaultdict, deque
+from threading import Lock
+from time import monotonic
+
 from flask import Blueprint, abort, flash, jsonify, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 from sqlalchemy import func, select
 from sqlalchemy.orm import selectinload
+from sqlalchemy.exc import IntegrityError
 
 from sharewarez import db
 from sharewarez.models import Game, GameRequest, GameRequestUser, User
@@ -24,6 +29,26 @@ from sharewarez.utils.request_notifications import notify_new_request, notify_re
 
 
 game_requests_bp = Blueprint('game_requests', __name__)
+_request_rate_hits = defaultdict(deque)
+_request_rate_lock = Lock()
+
+
+def _rate_limit_response(scope, limit, window_seconds=60):
+    """Small per-process guard; upstream proxy limits can remain stricter."""
+    key = (scope, current_user.id)
+    now = monotonic()
+    with _request_rate_lock:
+        hits = _request_rate_hits[key]
+        while hits and hits[0] <= now - window_seconds:
+            hits.popleft()
+        if len(hits) >= limit:
+            retry_after = max(1, int(window_seconds - (now - hits[0])))
+            response = jsonify({'error': f'Too many requests. Try again in {retry_after} seconds.'})
+            response.status_code = 429
+            response.headers['Retry-After'] = str(retry_after)
+            return response
+        hits.append(now)
+    return None
 
 
 def _require_enabled():
@@ -60,6 +85,8 @@ def requests_page():
 @login_required
 def request_search():
     _require_enabled()
+    if limited := _rate_limit_response('search', 40):
+        return limited
     term = (request.args.get('q') or '').strip()
     if len(term) < 2 or len(term) > 100:
         return jsonify({'error': 'Enter between 2 and 100 characters.'}), 400
@@ -73,6 +100,8 @@ def request_search():
 @login_required
 def request_editions(igdb_id):
     _require_enabled()
+    if limited := _rate_limit_response('editions', 40):
+        return limited
     editions = fetch_related_editions(igdb_id)
     return jsonify({'results': enrich_request_search(editions, current_user.id)})
 
@@ -81,6 +110,8 @@ def request_editions(igdb_id):
 @login_required
 def submit_request():
     _require_enabled()
+    if limited := _rate_limit_response('submit', 10):
+        return limited
     data = request.get_json(silent=True) or request.form
     igdb_id = data.get('igdb_id')
     if not str(igdb_id or '').isdigit():
@@ -96,6 +127,18 @@ def submit_request():
         log_system_event(f'{current_user.name} requested {game_request.game_name}', event_type='game_request', event_level='information')
         notify_new_request(game_request, joined_existing=existing is not None)
         return jsonify({'message': 'Your request was submitted.', 'request_id': game_request.id}), 201
+    except IntegrityError:
+        db.session.rollback()
+        try:
+            game_request, _ = create_or_join_request(
+                current_user, int(igdb_id), data.get('note'),
+                str(data.get('accept_any_edition', '')).lower() in {'true', '1', 'on', 'yes'},
+            )
+            notify_new_request(game_request, joined_existing=True)
+            return jsonify({'message': 'Your request was joined.', 'request_id': game_request.id}), 201
+        except ValueError as error:
+            db.session.rollback()
+            return jsonify({'error': str(error)}), 400
     except ValueError as error:
         db.session.rollback()
         return jsonify({'error': str(error)}), 400
@@ -105,6 +148,8 @@ def submit_request():
 @login_required
 def submit_update_request(game_uuid):
     _require_enabled()
+    if limited := _rate_limit_response('submit', 10):
+        return limited
     game = db.session.execute(select(Game).filter_by(uuid=game_uuid)).scalars().first() or abort(404)
     data = request.get_json(silent=True) or request.form
     existing = db.session.execute(
@@ -128,6 +173,18 @@ def submit_update_request(game_uuid):
         )
         notify_new_request(game_request, joined_existing=existing is not None)
         return jsonify({'message': 'Your update request was submitted.', 'request_id': game_request.id}), 201
+    except IntegrityError:
+        db.session.rollback()
+        try:
+            game_request, _ = create_update_request(
+                current_user, game, note=data.get('note'),
+                target_version=data.get('target_version'), reference_url=data.get('reference_url'),
+            )
+            notify_new_request(game_request, joined_existing=True)
+            return jsonify({'message': 'Your update request was joined.', 'request_id': game_request.id}), 201
+        except ValueError as error:
+            db.session.rollback()
+            return jsonify({'error': str(error)}), 400
     except ValueError as error:
         db.session.rollback()
         return jsonify({'error': str(error)}), 400

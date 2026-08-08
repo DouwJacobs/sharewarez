@@ -36,7 +36,7 @@
         {% for item in pagination.items %}
         <a class="admin-request-tile" href="{{ url_for('game_requests.admin_request_details', request_id=item.id, status=selected_status, type=selected_type, q=search_term, sort=selected_sort, page=pagination.page) }}">
             <div class="admin-request-cover">
-                {% if item.formatted_cover_url %}<img src="{{ item.formatted_cover_url }}" alt="">{% else %}<span><i class="fas fa-gamepad"></i></span>{% endif %}
+                {% if item.formatted_cover_url %}<img src="{{ item.formatted_cover_url }}" alt="Cover for {{ item.game_name }}" loading="lazy">{% else %}<span><i class="fas fa-gamepad"></i></span>{% endif %}
                 <span class="request-chip status-{{ item.status }}">{{ item.status|replace('_', ' ')|title }}</span>
             </div>
             <div class="admin-request-tile-body">
