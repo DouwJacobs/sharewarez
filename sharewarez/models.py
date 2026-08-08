@@ -412,7 +412,17 @@ class GameRequest(db.Model):
 
     @property
     def interested_requesters(self):
-        return [requester for requester in self.requesters if requester.withdrawn_at is None]
+        return [
+            requester for requester in self.requesters
+            if requester.withdrawn_at is None and requester.satisfied_at is None
+        ]
+
+    @property
+    def satisfied_requesters(self):
+        return [
+            requester for requester in self.requesters
+            if requester.withdrawn_at is None and requester.satisfied_at is not None
+        ]
 
 
 class GameRequestUser(db.Model):

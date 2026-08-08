@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+from types import SimpleNamespace
 from unittest.mock import patch
 from uuid import uuid4
 
@@ -12,6 +13,7 @@ from sharewarez.utils.game_requests import (
     update_request_status,
     withdraw_request,
 )
+from sharewarez.utils.request_notifications import notify_request_updated
 
 
 def make_user(db_session, role='user'):
@@ -163,7 +165,61 @@ def test_fulfilling_related_edition_satisfies_flexible_requesters_only(mock_fetc
     assert {link.user_id for link in satisfied} == {gold_user.id, flexible_user.id}
     assert [link.user_id for link in standard.active_requesters] == [exact_user.id]
 
+    _, reopened = update_request_status(gold, admin, 'reviewing')
+
+    assert {link.user_id for link in reopened} == {gold_user.id, flexible_user.id}
+    assert all(link.satisfied_at is None for link in reopened)
+    assert all(link.satisfied_by_game_uuid is None for link in reopened)
+    assert {link.user_id for link in standard.active_requesters} == {exact_user.id, flexible_user.id}
+    assert {link.user_id for link in gold.active_requesters} == {gold_user.id}
+
+
+@patch('sharewarez.utils.game_requests.fetch_igdb_game')
+def test_changing_fulfilled_game_updates_existing_satisfaction(mock_fetch, db_session):
+    ensure_settings(db_session)
+    user = make_user(db_session)
+    admin = make_user(db_session, role='admin')
+    edition_id = unique_igdb_id()
+    mock_fetch.return_value = snapshot(edition_id, edition_id)
+    game_request, link = create_or_join_request(user, edition_id)
+
+    library = Library(uuid=str(uuid4()), name='PC', platform=LibraryPlatform.PCWIN)
+    db_session.add(library)
+    db_session.flush()
+    first_game = Game(uuid=str(uuid4()), igdb_id=edition_id, name='First release', library_uuid=library.uuid, size=1)
+    replacement_game = Game(uuid=str(uuid4()), igdb_id=edition_id + 1, name='Replacement release', library_uuid=library.uuid, size=1)
+    db_session.add_all([first_game, replacement_game])
+    db_session.commit()
+
+    update_request_status(game_request, admin, 'fulfilled', game_uuid=first_game.uuid)
+    _, affected = update_request_status(game_request, admin, 'fulfilled', game_uuid=replacement_game.uuid)
+
+    assert affected == [link]
+    assert link.satisfied_by_game_uuid == replacement_game.uuid
+    assert game_request.fulfilled_game_uuid == replacement_game.uuid
+
 
 def test_requests_page_requires_authentication(client):
     response = client.get('/requests')
     assert response.status_code == 302
+
+
+@patch('sharewarez.utils.request_notifications.get_request_settings')
+@patch('sharewarez.utils.request_notifications.send_email')
+def test_request_update_email_deduplicates_users(mock_send, mock_settings, app, db_session):
+    mock_settings.return_value = {
+        'notifyDiscordRequestUpdates': False,
+        'notifyRequesterRequestEmail': True,
+    }
+    user = make_user(db_session)
+    record = SimpleNamespace(
+        status='fulfilled', game_name='Example', public_response=None,
+        fulfilled_game_uuid=None, active_requesters=[],
+    )
+    first = SimpleNamespace(user_id=user.id, user=user, withdrawn_at=None, last_notified_status=None)
+    second = SimpleNamespace(user_id=user.id, user=user, withdrawn_at=None, last_notified_status=None)
+
+    with app.app_context():
+        notify_request_updated(record, [first, second])
+
+    mock_send.assert_called_once()

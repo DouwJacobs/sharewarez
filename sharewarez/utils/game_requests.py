@@ -327,15 +327,40 @@ def update_request_status(game_request, admin, status, public_response=None, int
         fulfilled_game = db.session.execute(select(Game).filter_by(uuid=game_uuid)).scalars().first()
         if not fulfilled_game:
             raise ValueError('The selected library game could not be found.')
+    previous_status = game_request.status
+    previous_game_uuid = game_request.fulfilled_game_uuid
+    affected_links = []
+
+    if previous_status == 'fulfilled' and (
+        status != 'fulfilled' or previous_game_uuid != (fulfilled_game.uuid if fulfilled_game else None)
+    ):
+        exact_links = [
+            link for link in game_request.requesters
+            if link.satisfied_by_game_uuid == previous_game_uuid
+        ]
+        alternative_links = db.session.execute(
+            select(GameRequestUser)
+            .join(GameRequest)
+            .where(
+                GameRequest.parent_igdb_id == game_request.parent_igdb_id,
+                GameRequest.id != game_request.id,
+                GameRequestUser.accept_any_edition.is_(True),
+                GameRequestUser.satisfied_by_game_uuid == previous_game_uuid,
+            )
+        ).scalars().all()
+        for link in exact_links + alternative_links:
+            link.satisfied_at = None
+            link.satisfied_by_game_uuid = None
+            affected_links.append(link)
+
     game_request.status = status
     game_request.public_response = (public_response or '').strip()[:4000] or None
     game_request.internal_note = (internal_note or '').strip()[:4000] or None
     game_request.fulfilled_game = fulfilled_game
     game_request.handled_by_user_id = admin.id
     game_request.resolved_at = datetime.now(timezone.utc) if status in RESOLVED_STATUSES else None
-    satisfied_links = []
     if status == 'fulfilled':
-        exact_links = [link for link in game_request.requesters if link.withdrawn_at is None and link.satisfied_at is None]
+        exact_links = [link for link in game_request.requesters if link.withdrawn_at is None]
         alternative_links = db.session.execute(
             select(GameRequestUser)
             .join(GameRequest)
@@ -344,12 +369,12 @@ def update_request_status(game_request, admin, status, public_response=None, int
                 GameRequest.id != game_request.id,
                 GameRequestUser.accept_any_edition.is_(True),
                 GameRequestUser.withdrawn_at.is_(None),
-                GameRequestUser.satisfied_at.is_(None),
             )
         ).scalars().all()
-        satisfied_links = exact_links + alternative_links
-        for link in satisfied_links:
+        for link in exact_links + alternative_links:
             link.satisfied_at = datetime.now(timezone.utc)
             link.satisfied_by_game_uuid = fulfilled_game.uuid
+            if link not in affected_links:
+                affected_links.append(link)
     db.session.commit()
-    return game_request, satisfied_links
+    return game_request, affected_links

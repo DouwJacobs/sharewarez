@@ -72,9 +72,11 @@ def notify_request_updated(record, satisfied_links=None):
                 base = ((settings.site_url if settings else None) or 'http://127.0.0.1:5006').rstrip('/')
                 game_link = f'<p><a href="{base}/game_details/{record.fulfilled_game_uuid}">View available game</a></p>'
             recipients = list(satisfied_links if satisfied_links is not None else record.active_requesters)
+            notified_user_ids = set()
             for link in recipients:
-                if link.withdrawn_at is not None:
+                if link.withdrawn_at is not None or link.user_id in notified_user_ids:
                     continue
+                notified_user_ids.add(link.user_id)
                 send_email(
                     link.user.email,
                     f'Your game request is {status}: {record.game_name}',

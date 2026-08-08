@@ -238,6 +238,8 @@ def request_library_games():
 def admin_update_request(request_id):
     game_request = db.session.get(GameRequest, request_id) or abort(404)
     previous = game_request.status
+    previous_public_response = game_request.public_response
+    previous_fulfilled_game_uuid = game_request.fulfilled_game_uuid
     try:
         game_request, additionally_satisfied = update_request_status(
             game_request, current_user, request.form.get('status', ''),
@@ -248,7 +250,13 @@ def admin_update_request(request_id):
             f'{current_user.name} changed {game_request.game_name} request from {previous} to {game_request.status}',
             event_type='game_request', event_level='information',
         )
-        notify_request_updated(game_request, additionally_satisfied)
+        public_change = (
+            previous != game_request.status
+            or previous_public_response != game_request.public_response
+            or previous_fulfilled_game_uuid != game_request.fulfilled_game_uuid
+        )
+        if public_change:
+            notify_request_updated(game_request, additionally_satisfied or None)
         flash('Game request updated.', 'success')
     except ValueError as error:
         db.session.rollback()
