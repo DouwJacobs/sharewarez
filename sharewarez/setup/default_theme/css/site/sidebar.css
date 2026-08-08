@@ -350,6 +350,11 @@
     flex-shrink: 0;
 }
 
+.sidebar .useraccount-minimenu-container {
+    border-color: transparent !important;
+    background: transparent !important;
+}
+
 .user-account-icon {
     display: flex;
     align-items: center;
@@ -985,7 +990,10 @@ button.account-menu-option {
     border: 0;
     background: transparent;
     cursor: pointer;
-    font: inherit;
+    font-family: inherit;
+    font-size: 0.86rem;
+    font-weight: 400;
+    line-height: 1.2;
     text-align: left;
 }
 

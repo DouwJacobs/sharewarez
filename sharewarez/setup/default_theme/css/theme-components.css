@@ -47,11 +47,15 @@ body { color: var(--theme-text-primary, #f5f7ff); }
     background: linear-gradient(90deg, rgba(var(--theme-accent-rgb, 98, 122, 239), .3), rgba(var(--theme-accent-rgb, 98, 122, 239), .08)) !important;
 }
 
-.useraccount-minimenu-container,
 .user-account-menu,
 .sidebar .container-filtersandsort {
     background: var(--theme-panel-bg, rgba(18, 19, 31, .96)) !important;
     border-color: rgba(var(--theme-accent-soft-rgb, 154, 177, 255), .2) !important;
+}
+
+.useraccount-minimenu-container {
+    background: transparent !important;
+    border-color: transparent !important;
 }
 
 .game-card,
