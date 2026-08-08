@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="{{ pwa_theme_color }}">
+    <meta name="robots" content="noindex">
+    <title>Offline · {{ site_title }}</title>
+    <style>
+        :root { color-scheme: dark; font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+        * { box-sizing: border-box; }
+        body { display: grid; min-height: 100dvh; margin: 0; padding: 24px; place-items: center; background: {{ pwa_background_color }}; color: #fff; }
+        main { width: min(420px, 100%); padding: 32px 24px; border: 1px solid color-mix(in srgb, {{ pwa_theme_color }} 34%, transparent); border-radius: 22px; background: color-mix(in srgb, {{ pwa_background_color }} 82%, white 6%); box-shadow: 0 24px 70px rgba(0,0,0,.35); text-align: center; }
+        img { width: 96px; height: 96px; object-fit: contain; }
+        h1 { margin: 18px 0 8px; font-size: 1.55rem; }
+        p { margin: 0; color: rgba(255,255,255,.7); line-height: 1.55; }
+        button { min-height: 44px; margin-top: 22px; padding: 0 18px; border: 0; border-radius: 11px; background: {{ pwa_theme_color }}; color: #fff; font: inherit; font-weight: 700; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <main>
+        <img src="{{ url_for('site.pwa_icon', size=192, revision=pwa_revision) }}" alt="">
+        <h1>{{ site_title }} is offline</h1>
+        <p>Reconnect to your server to browse games, manage requests, or download files.</p>
+        <button type="button" onclick="location.reload()">Try again</button>
+    </main>
+</body>
+</html>

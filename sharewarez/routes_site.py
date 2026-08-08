@@ -63,6 +63,42 @@ def pwa_icon(size):
     response.set_etag(branding['revision'])
     return response
 
+
+@site_bp.route('/service-worker.js')
+def service_worker():
+    from sharewarez.utils.pwa import get_pwa_branding
+
+    branding = get_pwa_branding()
+    revision = branding['revision']
+    offline_url = url_for('site.pwa_offline', revision=revision)
+    source = render_template(
+        'pwa/service-worker.js',
+        cache_name=f'gamelibrary-pwa-{revision}',
+        offline_url=offline_url,
+        core_assets=[
+            offline_url,
+            url_for('site.pwa_icon', size=192, revision=revision),
+            url_for('site.pwa_icon', size=512, revision=revision),
+        ],
+    )
+    response = current_app.response_class(source, mimetype='application/javascript')
+    response.headers['Cache-Control'] = 'no-cache, must-revalidate'
+    response.headers['Service-Worker-Allowed'] = '/'
+    return response
+
+
+@site_bp.route('/offline')
+def pwa_offline():
+    from sharewarez.utils.pwa import get_pwa_branding
+
+    branding = get_pwa_branding()
+    response = current_app.make_response(render_template(
+        'pwa/offline.html',
+        pwa_background_color=branding['background_color'],
+    ))
+    response.headers['Cache-Control'] = 'no-cache, must-revalidate'
+    return response
+
 @site_bp.context_processor
 @cache.cached(timeout=500, key_prefix='global_settings')
 def inject_settings():

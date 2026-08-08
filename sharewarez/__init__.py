@@ -114,7 +114,8 @@ def create_app():
         # Skip setup checks for certain endpoints
         exempt_endpoints = {
             'setup.setup', 'setup.setup_submit', 'setup.setup_smtp', 'setup.setup_igdb',
-            'static', 'favicon', 'site.favicon', 'site.pwa_manifest', 'site.pwa_icon'
+            'static', 'favicon', 'site.favicon', 'site.pwa_manifest', 'site.pwa_icon',
+            'site.service_worker', 'site.pwa_offline'
         }
         
         # Skip setup checks for API endpoints (they should handle their own authentication)
