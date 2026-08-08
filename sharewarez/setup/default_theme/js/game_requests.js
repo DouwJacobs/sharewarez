@@ -149,19 +149,23 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         const editionButton = event.target.closest('[data-editions]');
         if (editionButton) {
+            const originalButtonHtml = editionButton.innerHTML;
+            const parentName = editionButton.closest('.request-result')?.querySelector('h3')?.textContent || 'selected game';
             editionButton.disabled = true;
-            setLoading(true);
+            editionButton.setAttribute('aria-busy', 'true');
+            editionButton.innerHTML = '<i class="fas fa-circle-notch fa-spin" aria-hidden="true"></i> Loading editions';
+            status.textContent = `Loading related editions for ${parentName}.`;
             try {
                 const response = await fetch(`/api/requests/editions/${editionButton.dataset.editions}`);
                 const data = await response.json();
                 if (!response.ok) throw new Error(data.error || 'Could not load editions.');
-                const parentName = editionButton.closest('.request-result')?.querySelector('h3')?.textContent || 'selected game';
                 const related = (data.results || []).filter(item => String(item.igdb_id) !== editionButton.dataset.editions);
                 render(related, parentName);
             } catch (error) {
                 status.textContent = error.message;
-            } finally {
-                setLoading(false);
+                editionButton.disabled = false;
+                editionButton.removeAttribute('aria-busy');
+                editionButton.innerHTML = originalButtonHtml;
             }
             return;
         }
