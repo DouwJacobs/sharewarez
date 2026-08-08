@@ -583,6 +583,7 @@ class TestGameEditSuccessScenarios:
         assert "event.submitter || lastClickedSubmit" in script
         assert "actionInput.name = 'action'" in script
         assert script.index("actionInput.value = submittedButton.value") < script.index("btn.disabled = true")
+        assert "document.body.appendChild(saveOverlay)" in script
     
     def test_image_refresh_code_exists(self, client, admin_user, test_game):
         """Test that image refresh code exists in the route."""

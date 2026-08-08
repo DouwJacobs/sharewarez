@@ -1,4 +1,12 @@
 document.addEventListener('DOMContentLoaded', function() {
+    // #content keeps a transform after its entrance animation, which makes fixed
+    // descendants use the content panel as their containing block. Portal the
+    // save overlay to body so it always covers and centers in the true viewport.
+    const saveOverlay = document.getElementById('saveSpinner');
+    if (saveOverlay && saveOverlay.parentElement !== document.body) {
+        document.body.appendChild(saveOverlay);
+    }
+
     var platformDisplay = document.querySelector('#platform_display');
     const platformId = document.querySelector('#platform_id').textContent; 
     const igdbIdInput = document.querySelector('#igdb_id');
