@@ -175,6 +175,17 @@ class TestDefaultThemeControlSystem:
         assert '.form-select' in css
         assert '.input-group > :is(.form-control, .form-select, .btn)' in css
 
+    def test_mobile_header_exposes_account_menu_with_accessible_targets(self):
+        from pathlib import Path
+
+        template = Path('sharewarez/templates/base.html').read_text()
+        css = Path('sharewarez/setup/default_theme/css/site/sidebar.css').read_text()
+        assert 'id="mobileAccountToggle"' in template
+        assert 'aria-controls="mobileAccountMenu"' in template
+        assert 'id="mobileAccountMenu"' in template
+        assert 'height: 100dvh' in css
+        assert 'min-height: 44px' in css
+
 
 class TestGetInstalledThemes:
     """Tests for get_installed_themes method."""

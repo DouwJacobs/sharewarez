@@ -193,6 +193,21 @@
     </button>
     <span class="mobile-brand-mark" aria-hidden="true"><img src="{{ url_for('static', filename=brand_logo_path) }}" alt=""></span>
     <span class="mobile-title">{{ site_title }}</span>
+    {% if current_user.is_authenticated %}
+    <div class="mobile-account">
+        <button id="mobileAccountToggle" class="mobile-account-toggle" type="button" aria-label="Open account menu" aria-expanded="false" aria-controls="mobileAccountMenu">
+            <img src="{{ url_for('static', filename=current_user.avatarpath) }}" alt="" class="mobile-account-avatar">
+        </button>
+        <div id="mobileAccountMenu" class="mobile-account-menu" hidden>
+            <p class="mobile-account-name">{{ current_user.name | capitalize }}</p>
+            <a href="{{ url_for('settings.settings_profile_view') }}"><i class="fas fa-user"></i> Profile</a>
+            <a href="{{ url_for('login.invites') }}"><i class="fas fa-envelope"></i> Invites</a>
+            <a href="#" data-bs-toggle="modal" data-bs-target="#preferencesModal"><i class="fas fa-gear"></i> Preferences</a>
+            <a href="{{ url_for('settings.account_pw') }}"><i class="fas fa-key"></i> Change Password</a>
+            <a href="{{ url_for('site.logout') }}"><i class="fas fa-right-from-bracket"></i> Logout</a>
+        </div>
+    </div>
+    {% endif %}
 </div>
 
 <!-- Sidebar Backdrop (mobile only) -->
@@ -367,6 +382,23 @@
             sidebarBackdrop.addEventListener("click", closeMobileSidebar);
         }
 
+        const mobileAccountToggle = document.getElementById('mobileAccountToggle');
+        const mobileAccountMenu = document.getElementById('mobileAccountMenu');
+        function closeMobileAccountMenu() {
+            if (!mobileAccountToggle || !mobileAccountMenu) return;
+            mobileAccountMenu.hidden = true;
+            mobileAccountToggle.setAttribute('aria-expanded', 'false');
+        }
+        if (mobileAccountToggle && mobileAccountMenu) {
+            mobileAccountToggle.addEventListener('click', function(event) {
+                event.stopPropagation();
+                const willOpen = mobileAccountMenu.hidden;
+                mobileAccountMenu.hidden = !willOpen;
+                mobileAccountToggle.setAttribute('aria-expanded', String(willOpen));
+            });
+            mobileAccountMenu.addEventListener('click', function(event) { event.stopPropagation(); });
+        }
+
         // Close mobile sidebar when a nav link is clicked
         document.querySelectorAll("#sidebar .sidebar-link").forEach(function(link) {
             link.addEventListener("click", function() {
@@ -402,6 +434,9 @@
         }
 
         document.addEventListener('click', function(event) {
+            if (mobileAccountMenu && !mobileAccountMenu.hidden && !mobileAccountMenu.contains(event.target)) {
+                closeMobileAccountMenu();
+            }
             const userAccountIcon = document.getElementById('userAccountIcon');
             const userAccountMenu = document.getElementById('userAccountMenu');
             const userExpandIcon = document.querySelector('.user-expand-icon');
@@ -417,6 +452,13 @@
                     userAccountIcon.setAttribute('aria-expanded', 'false');
                     userExpandIcon.style.transform = 'rotate(0deg)';
                 }
+            }
+        });
+
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                closeMobileAccountMenu();
+                closeMobileSidebar();
             }
         });
         
