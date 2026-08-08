@@ -11,15 +11,22 @@
             <input type="hidden" name="status" value="{{ selected_status }}">
             <input type="hidden" name="type" value="{{ selected_type }}">
             <input type="hidden" name="page" value="1">
-            <div class="request-search-wrap admin-request-search"><i class="fas fa-magnifying-glass"></i><input id="requestAdminSearch" type="search" name="q" value="{{ search_term }}" placeholder="Search requests…" autocomplete="off" aria-label="Search requests"></div>
+            <div class="request-toolbar">
+                <div class="request-search-wrap admin-request-search"><i class="fas fa-magnifying-glass"></i><input id="requestAdminSearch" type="search" name="q" value="{{ search_term }}" placeholder="Search title, requester, response, or note…" autocomplete="off" aria-label="Search requests"></div>
+                <label class="request-sort-label" for="requestSort">Sort
+                    <select class="form-select" id="requestSort" name="sort">
+                        {% for value, label in [('newest', 'Newest'), ('oldest', 'Oldest'), ('updated', 'Recently updated'), ('demand', 'Most requested'), ('title', 'Title')] %}<option value="{{ value }}"{% if selected_sort == value %} selected{% endif %}>{{ label }}</option>{% endfor %}
+                    </select>
+                </label>
+            </div>
             <div class="request-filter-chips type-filters" aria-label="Filter by type">
-                <a class="request-filter-chip{% if not selected_type %} active{% endif %}" href="{{ url_for('game_requests.admin_requests', status=selected_status, q=search_term) }}">All Types <span>{{ type_counts.values()|sum }}</span></a>
-                <a class="request-filter-chip{% if selected_type == 'new_game' %} active{% endif %}" href="{{ url_for('game_requests.admin_requests', status=selected_status, type='new_game', q=search_term) }}"><i class="fas fa-plus-circle"></i> New Game <span>{{ type_counts.get('new_game', 0) }}</span></a>
-                <a class="request-filter-chip{% if selected_type == 'update' %} active{% endif %}" href="{{ url_for('game_requests.admin_requests', status=selected_status, type='update', q=search_term) }}"><i class="fas fa-arrows-rotate"></i> Update <span>{{ type_counts.get('update', 0) }}</span></a>
+                <a class="request-filter-chip{% if not selected_type %} active{% endif %}" href="{{ url_for('game_requests.admin_requests', status=selected_status, q=search_term, sort=selected_sort) }}">All Types <span>{{ type_counts.values()|sum }}</span></a>
+                <a class="request-filter-chip{% if selected_type == 'new_game' %} active{% endif %}" href="{{ url_for('game_requests.admin_requests', status=selected_status, type='new_game', q=search_term, sort=selected_sort) }}"><i class="fas fa-plus-circle"></i> New Game <span>{{ type_counts.get('new_game', 0) }}</span></a>
+                <a class="request-filter-chip{% if selected_type == 'update' %} active{% endif %}" href="{{ url_for('game_requests.admin_requests', status=selected_status, type='update', q=search_term, sort=selected_sort) }}"><i class="fas fa-arrows-rotate"></i> Update <span>{{ type_counts.get('update', 0) }}</span></a>
             </div>
             <div class="request-filter-chips" aria-label="Filter by status">
-                <a class="request-filter-chip{% if not selected_status %} active{% endif %}" href="{{ url_for('game_requests.admin_requests', status='all', type=selected_type, q=search_term) }}">All Statuses <span>{{ status_counts.values()|sum }}</span></a>
-                {% for status in statuses %}<a class="request-filter-chip{% if selected_status == status %} active{% endif %}" href="{{ url_for('game_requests.admin_requests', status=status, type=selected_type, q=search_term) }}">{{ status|replace('_', ' ')|title }} <span>{{ status_counts.get(status, 0) }}</span></a>{% endfor %}
+                <a class="request-filter-chip{% if not selected_status %} active{% endif %}" href="{{ url_for('game_requests.admin_requests', status='all', type=selected_type, q=search_term, sort=selected_sort) }}">All Statuses <span>{{ status_counts.values()|sum }}</span></a>
+                {% for status in statuses %}<a class="request-filter-chip{% if selected_status == status %} active{% endif %}" href="{{ url_for('game_requests.admin_requests', status=status, type=selected_type, q=search_term, sort=selected_sort) }}">{{ status|replace('_', ' ')|title }} <span>{{ status_counts.get(status, 0) }}</span></a>{% endfor %}
             </div>
         </form>
     </section>
@@ -27,7 +34,7 @@
     {% if pagination.items %}
     <section class="admin-request-grid" aria-label="Game requests">
         {% for item in pagination.items %}
-        <a class="admin-request-tile" href="{{ url_for('game_requests.admin_request_details', request_id=item.id, status=selected_status, type=selected_type, q=search_term, page=pagination.page) }}">
+        <a class="admin-request-tile" href="{{ url_for('game_requests.admin_request_details', request_id=item.id, status=selected_status, type=selected_type, q=search_term, sort=selected_sort, page=pagination.page) }}">
             <div class="admin-request-cover">
                 {% if item.formatted_cover_url %}<img src="{{ item.formatted_cover_url }}" alt="">{% else %}<span><i class="fas fa-gamepad"></i></span>{% endif %}
                 <span class="request-chip status-{{ item.status }}">{{ item.status|replace('_', ' ')|title }}</span>
@@ -42,14 +49,14 @@
                     {% endif %}
                 </div>
                 <h2>{{ item.parent_game_name or item.game_name }}</h2>
-                <div class="admin-request-tile-meta"><span><i class="fas fa-users"></i> {{ item.interested_requesters|length }}</span><span><i class="fas fa-clock"></i> {{ item.created_at.strftime('%d %b %Y') }}</span></div>
+                <div class="admin-request-tile-meta"><span title="Active requesters"><i class="fas fa-users"></i> {{ item.interested_requesters|length }} active</span>{% if item.satisfied_requesters %}<span title="Satisfied requesters"><i class="fas fa-circle-check"></i> {{ item.satisfied_requesters|length }}</span>{% endif %}<span><i class="fas fa-clock"></i> {{ item.created_at.strftime('%d %b %Y') }}</span></div>
             </div>
         </a>
         {% endfor %}
     </section>
     {% else %}<section class="request-panel empty-state"><i class="fas fa-inbox"></i><h2>No matching requests</h2><p>Try another search or status filter.</p></section>{% endif %}
 
-    {% if pagination.pages > 1 %}<nav class="request-pagination">{% for page in pagination.iter_pages() %}{% if page %}<a class="{% if page == pagination.page %}active{% endif %}" href="{{ url_for('game_requests.admin_requests', page=page, status=selected_status, type=selected_type, q=search_term) }}">{{ page }}</a>{% else %}<span>…</span>{% endif %}{% endfor %}</nav>{% endif %}
+    {% if pagination.pages > 1 %}<nav class="request-pagination">{% for page in pagination.iter_pages() %}{% if page %}<a class="{% if page == pagination.page %}active{% endif %}" href="{{ url_for('game_requests.admin_requests', page=page, status=selected_status, type=selected_type, q=search_term, sort=selected_sort) }}">{{ page }}</a>{% else %}<span>…</span>{% endif %}{% endfor %}</nav>{% endif %}
 </main>
 <script src="{{ 'js/admin_game_requests.js'|theme_asset }}"></script>
 {% endblock %}

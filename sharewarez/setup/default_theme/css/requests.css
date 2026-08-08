@@ -276,3 +276,28 @@
     color: #bda7ff;
     border: 1px solid rgba(150, 104, 255, 0.3);
 }
+/* Admin request queue controls and workflow context. */
+.admin-request-filters .request-toolbar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: .75rem;
+    align-items: end;
+}
+.admin-request-filters .request-toolbar .request-search-wrap { margin-top: 0; }
+.request-sort-label {
+    display: grid;
+    gap: .35rem;
+    min-width: 180px;
+    color: var(--theme-text-secondary, #b9c0d0);
+    font-size: .78rem;
+    font-weight: 700;
+}
+.admin-request-form [data-fulfilled-picker][hidden] { display: none !important; }
+.request-workflow-meta { font-size: .86rem; }
+.request-workflow-meta p { margin: .45rem 0; color: var(--theme-text-secondary, #b9c0d0); }
+.request-workflow-meta strong { color: var(--theme-text-primary, #fff); }
+
+@media (max-width: 700px) {
+    .admin-request-filters .request-toolbar { grid-template-columns: 1fr; }
+    .request-sort-label { min-width: 0; }
+}

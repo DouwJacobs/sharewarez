@@ -4,7 +4,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import selectinload
 
 from sharewarez import db
-from sharewarez.models import Game, GameRequest, GameRequestUser
+from sharewarez.models import Game, GameRequest, GameRequestUser, User
 from sharewarez.utils.auth import admin_required
 from sharewarez.utils.event_logging import log_system_event
 from sharewarez.utils.game_requests import (
@@ -148,6 +148,7 @@ def admin_requests():
     else:
         status = status_param.strip()
     req_type = (request.args.get('type') or '').strip()
+    sort = (request.args.get('sort') or 'newest').strip()
     search_term = (request.args.get('q') or '').strip()[:100]
     query = select(GameRequest).options(selectinload(GameRequest.requesters))
     if status in REQUEST_STATUSES:
@@ -157,16 +158,39 @@ def admin_requests():
     if search_term:
         pattern = f'%{search_term}%'
         query = query.where(
-            GameRequest.game_name.ilike(pattern) | GameRequest.parent_game_name.ilike(pattern)
+            GameRequest.game_name.ilike(pattern)
+            | GameRequest.parent_game_name.ilike(pattern)
+            | GameRequest.public_response.ilike(pattern)
+            | GameRequest.internal_note.ilike(pattern)
+            | GameRequest.requesters.any(GameRequestUser.user.has(User.name.ilike(pattern)))
         )
-    query = query.order_by(GameRequest.created_at.desc())
+    active_demand = (
+        select(func.count(GameRequestUser.id))
+        .where(
+            GameRequestUser.request_id == GameRequest.id,
+            GameRequestUser.withdrawn_at.is_(None),
+            GameRequestUser.satisfied_at.is_(None),
+        )
+        .correlate(GameRequest)
+        .scalar_subquery()
+    )
+    orderings = {
+        'newest': (GameRequest.created_at.desc(),),
+        'oldest': (GameRequest.created_at.asc(),),
+        'updated': (GameRequest.updated_at.desc(),),
+        'title': (GameRequest.game_name.asc(),),
+        'demand': (active_demand.desc(), GameRequest.created_at.asc()),
+    }
+    if sort not in orderings:
+        sort = 'newest'
+    query = query.order_by(*orderings[sort])
     pagination = db.paginate(query, page=page, per_page=24, error_out=False)
     counts = dict(db.session.execute(select(GameRequest.status, func.count(GameRequest.id)).group_by(GameRequest.status)).all())
     type_counts = dict(db.session.execute(select(GameRequest.request_type, func.count(GameRequest.id)).group_by(GameRequest.request_type)).all())
     return render_template(
         'admin/admin_game_requests.html', pagination=pagination,
         statuses=REQUEST_STATUSES, selected_status=status, selected_type=req_type, search_term=search_term,
-        status_counts=counts, type_counts=type_counts,
+        status_counts=counts, type_counts=type_counts, selected_sort=sort,
     )
 
 
@@ -203,6 +227,7 @@ def admin_request_details(request_id):
         return_status=request.args.get('status', ''),
         return_type=request.args.get('type', ''),
         return_search=request.args.get('q', ''),
+        return_sort=request.args.get('sort', 'newest'),
         return_page=max(request.args.get('page', 1, type=int), 1),
     )
 
@@ -264,5 +289,6 @@ def admin_update_request(request_id):
     return redirect(url_for(
         'game_requests.admin_request_details', request_id=request_id,
         status=request.args.get('status', ''), q=request.args.get('q', ''),
+        type=request.args.get('type', ''), sort=request.args.get('sort', 'newest'),
         page=request.args.get('page', 1),
     ))
