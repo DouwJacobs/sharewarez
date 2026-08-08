@@ -1,5 +1,5 @@
 # sharewarez/routes_site.py
-from flask import Blueprint, render_template, redirect, url_for, current_app, send_from_directory, jsonify, request
+from flask import Blueprint, render_template, redirect, url_for, current_app, send_from_directory, jsonify, request, send_file
 from flask_login import login_required, logout_user, current_user
 
 from sqlalchemy import func, select
@@ -15,6 +15,53 @@ from sharewarez.utils.functions import format_size
 from sharewarez import cache
 
 site_bp = Blueprint('site', __name__)
+
+
+@site_bp.route('/manifest.webmanifest')
+def pwa_manifest():
+    from sharewarez.utils.pwa import get_pwa_branding
+
+    branding = get_pwa_branding()
+    revision = branding['revision']
+    manifest = {
+        'id': '/',
+        'name': branding['site_title'],
+        'short_name': branding['short_name'],
+        'description': f"Browse and manage {branding['site_title']}.",
+        'start_url': '/discover?source=pwa',
+        'scope': '/',
+        'display': 'standalone',
+        'background_color': branding['background_color'],
+        'theme_color': branding['theme_color'],
+        'icons': [
+            {'src': url_for('site.pwa_icon', size=192, revision=revision), 'sizes': '192x192', 'type': 'image/png', 'purpose': 'any'},
+            {'src': url_for('site.pwa_icon', size=512, revision=revision), 'sizes': '512x512', 'type': 'image/png', 'purpose': 'any'},
+            {'src': url_for('site.pwa_icon', size=192, maskable=1, revision=revision), 'sizes': '192x192', 'type': 'image/png', 'purpose': 'maskable'},
+            {'src': url_for('site.pwa_icon', size=512, maskable=1, revision=revision), 'sizes': '512x512', 'type': 'image/png', 'purpose': 'maskable'},
+        ],
+        'shortcuts': [
+            {'name': 'Discover', 'short_name': 'Discover', 'url': '/discover'},
+            {'name': 'Library', 'short_name': 'Library', 'url': '/library'},
+            {'name': 'Requests', 'short_name': 'Requests', 'url': '/requests'},
+        ],
+    }
+    response = jsonify(manifest)
+    response.mimetype = 'application/manifest+json'
+    response.headers['Cache-Control'] = 'no-cache, must-revalidate'
+    return response
+
+
+@site_bp.route('/pwa/icon-<int:size>.png')
+def pwa_icon(size):
+    from sharewarez.utils.pwa import render_pwa_icon
+
+    try:
+        icon, branding = render_pwa_icon(size, maskable=request.args.get('maskable') == '1')
+    except ValueError:
+        return '', 404
+    response = send_file(icon, mimetype='image/png', max_age=86400)
+    response.set_etag(branding['revision'])
+    return response
 
 @site_bp.context_processor
 @cache.cached(timeout=500, key_prefix='global_settings')

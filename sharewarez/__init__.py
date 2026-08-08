@@ -93,10 +93,17 @@ def create_app():
     def inject_current_theme():
         """Inject the active theme and instance branding into every template."""
         from sharewarez.utils.processors import get_global_settings
+        from sharewarez.utils.pwa import get_pwa_branding
 
         from sharewarez.utils.themes import resolve_theme_id
         current_theme = resolve_theme_id(current_user, app)
-        return dict(current_theme=current_theme, **get_global_settings())
+        pwa_branding = get_pwa_branding()
+        return dict(
+            current_theme=current_theme,
+            pwa_theme_color=pwa_branding['theme_color'],
+            pwa_revision=pwa_branding['revision'],
+            **get_global_settings(),
+        )
 
     @app.before_request
     def check_setup_status():
@@ -107,7 +114,7 @@ def create_app():
         # Skip setup checks for certain endpoints
         exempt_endpoints = {
             'setup.setup', 'setup.setup_submit', 'setup.setup_smtp', 'setup.setup_igdb',
-            'static', 'favicon', 'site.favicon'
+            'static', 'favicon', 'site.favicon', 'site.pwa_manifest', 'site.pwa_icon'
         }
         
         # Skip setup checks for API endpoints (they should handle their own authentication)

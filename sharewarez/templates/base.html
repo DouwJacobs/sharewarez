@@ -26,8 +26,13 @@
     } %}
     {% set document_page_title = title|default(route_titles.get(request.path), true) %}
     <title>{% block title %}{% if document_page_title %}{{ document_page_title }} · {% endif %}{{ site_title }}{% endblock %}</title>
+    <meta name="theme-color" content="{{ pwa_theme_color }}">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="{{ site_title }}">
+    <link rel="manifest" href="{{ url_for('site.pwa_manifest', revision=pwa_revision) }}">
     <link rel="icon" type="image/png" href="{{ url_for('static', filename=brand_logo_path) }}">
-    <link rel="apple-touch-icon" href="{{ url_for('static', filename=brand_logo_path) }}">
+    <link rel="apple-touch-icon" sizes="192x192" href="{{ url_for('site.pwa_icon', size=192, revision=pwa_revision) }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
