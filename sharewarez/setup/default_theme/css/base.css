@@ -792,13 +792,13 @@ form textarea {
 
 .spinner-overlay {
     position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    width: 100vw;
-    height: 100vh;
-    background: rgba(4, 5, 12, 0.72);
+    inset: 0;
+    width: auto;
+    height: auto;
+    box-sizing: border-box;
+    overflow: hidden;
+    overscroll-behavior: contain;
+    background: color-mix(in srgb, var(--theme-panel-bg, rgba(4, 5, 12, 0.72)) 76%, transparent);
     backdrop-filter: blur(5px);
     -webkit-backdrop-filter: blur(5px);
     z-index: 99999;
@@ -812,14 +812,22 @@ form textarea {
 .spinner-container {
     position: relative;
     padding: 24px 32px;
-    border: 1px solid rgba(154, 177, 255, 0.18);
+    border: 1px solid rgba(var(--theme-accent-soft-rgb, 154, 177, 255), 0.28);
     border-radius: 16px;
-    background: linear-gradient(145deg, rgba(28, 29, 45, 0.98), rgba(12, 12, 20, 0.99));
-    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.68), 0 0 55px rgba(80, 120, 255, 0.1);
-    color: var(--text-white);
+    background: var(--theme-card-background, linear-gradient(145deg, rgba(28, 29, 45, 0.98), rgba(12, 12, 20, 0.99)));
+    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.68), 0 0 55px rgba(var(--theme-accent-rgb, 80, 120, 255), 0.16);
+    color: var(--theme-text-primary, var(--text-white, #fff));
     text-align: center;
     min-width: 300px;
     margin: auto;
+}
+
+.spinner-container .app-spinner {
+    color: rgb(var(--theme-accent-rgb, 98, 122, 239));
+}
+
+.spinner-container .progress-text {
+    color: var(--theme-text-secondary, var(--text-light, #c5ccdc));
 }
 
 .spinner-container img {
