@@ -475,8 +475,8 @@
     height: 30px;
     border: 1px solid rgba(154, 177, 255, 0.22);
     border-radius: 10px;
-    background: linear-gradient(135deg, rgba(66, 110, 232, 0.35), rgba(117, 84, 214, 0.3));
-    color: rgba(225, 233, 255, 0.96);
+    background: linear-gradient(135deg, rgba(var(--theme-accent-rgb, 98, 122, 239), 0.35), rgba(var(--theme-accent-soft-rgb, 154, 177, 255), 0.22));
+    color: var(--text-white);
     font-size: 0.8rem;
 }
 
@@ -487,6 +487,8 @@
 }
 
 .mobile-title {
+    min-width: 0;
+    flex: 1;
     font-size: 0.96rem;
     font-weight: 700;
     color: var(--text-white);
@@ -497,9 +499,61 @@
     white-space: nowrap;
 }
 
+.mobile-header-search {
+    display: inline-flex;
+    min-width: 0;
+    height: 44px;
+    flex: 1;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 10px 5px 6px;
+    border: 1px solid rgba(var(--theme-accent-soft-rgb, 154, 177, 255), 0.24);
+    border-radius: 13px;
+    background: color-mix(in srgb, var(--theme-panel-bg, rgba(18, 19, 31, 0.96)) 78%, transparent);
+    color: var(--text-white);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    cursor: pointer;
+    text-align: left;
+    transition: border-color 0.2s, background-color 0.2s, box-shadow 0.2s;
+}
+
+.mobile-header-search:hover {
+    border-color: rgba(var(--theme-accent-soft-rgb, 154, 177, 255), 0.5);
+    background: rgba(var(--theme-accent-rgb, 98, 122, 239), 0.14);
+}
+
+.mobile-header-search:focus-visible {
+    outline: 2px solid rgb(var(--theme-accent-soft-rgb, 154, 177, 255));
+    outline-offset: 2px;
+}
+
+.mobile-header-search-icon {
+    color: rgb(var(--theme-accent-soft-rgb, 154, 177, 255));
+    font-size: 0.9rem;
+}
+
+.mobile-search-label {
+    min-width: 0;
+    overflow: hidden;
+    color: var(--text-muted, rgba(225, 233, 255, 0.72));
+    font-size: 0.92rem;
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.mobile-header-brand {
+    cursor: default;
+}
+
+.mobile-header-brand:hover {
+    border-color: rgba(var(--theme-accent-soft-rgb, 154, 177, 255), 0.24);
+    background: color-mix(in srgb, var(--theme-panel-bg, rgba(18, 19, 31, 0.96)) 78%, transparent);
+}
+
 .mobile-account {
     position: relative;
-    margin-left: auto;
+    flex: 0 0 auto;
 }
 
 .mobile-account-toggle {

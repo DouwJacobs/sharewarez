@@ -18,4 +18,26 @@
 .global-search-result small, .global-search-hint { color: var(--text-muted); }
 .global-search-hint { margin: 0; padding: 1.4rem; text-align: center; }
 body.global-search-open { overflow: hidden; }
-@media (max-width: 768px) { .content-global-search { margin-bottom: var(--spacing-lg); } .content-global-search kbd { display: none; } }
+@media (max-width: 768px) {
+    .content-global-search {
+        display: none !important;
+    }
+
+    .global-search {
+        place-items: start stretch;
+        padding: 74px 10px 10px;
+    }
+
+    .global-search-dialog {
+        width: 100%;
+        max-height: calc(100dvh - 84px);
+    }
+
+    .global-search-input-wrap {
+        padding: 0.8rem;
+    }
+
+    .global-search-results {
+        max-height: calc(100dvh - 150px);
+    }
+}

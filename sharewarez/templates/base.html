@@ -209,8 +209,17 @@
     <button id="mobileMenuToggle" class="mobile-menu-btn" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="sidebar">
         <i class="fas fa-bars"></i>
     </button>
-    <span class="mobile-brand-mark" aria-hidden="true"><img src="{{ url_for('static', filename=brand_logo_path) }}" alt=""></span>
-    <span class="mobile-title">{{ site_title }}</span>
+    {% if current_user.is_authenticated %}
+    <button type="button" class="mobile-header-search" data-global-search-open aria-label="Search {{ site_title }}">
+        <i class="fas fa-magnifying-glass mobile-header-search-icon" aria-hidden="true"></i>
+        <span class="mobile-search-label">Search</span>
+    </button>
+    {% else %}
+    <div class="mobile-header-search mobile-header-brand">
+        <span class="mobile-brand-mark" aria-hidden="true"><img src="{{ url_for('static', filename=brand_logo_path) }}" alt=""></span>
+        <span class="mobile-title">{{ site_title }}</span>
+    </div>
+    {% endif %}
     {% if current_user.is_authenticated %}
     <div class="mobile-account">
         <button id="mobileAccountToggle" class="mobile-account-toggle" type="button" aria-label="Open account menu" aria-expanded="false" aria-controls="mobileAccountMenu">
