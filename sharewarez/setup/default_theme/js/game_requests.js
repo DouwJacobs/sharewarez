@@ -13,6 +13,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let searchTimer;
     let searchController;
     let searchSequence = 0;
+    let searchResults = [];
 
     function setLoading(loading) {
         searchWrap.classList.toggle('is-loading', loading);
@@ -25,12 +26,18 @@ document.addEventListener('DOMContentLoaded', () => {
         results.innerHTML = `<div class="request-results-empty"><i class="fas ${icon}"></i><p>${escapeHtml(message)}</p></div>`;
     }
 
-    function render(items) {
-        status.textContent = '';
+    function render(items, editionParent = null) {
+        status.textContent = `${items.length} result${items.length === 1 ? '' : 's'} found.`;
         results.innerHTML = '';
         if (!items.length) {
             renderEmpty('No matching games found. Try a different title.');
             return;
+        }
+        if (editionParent) {
+            const navigation = document.createElement('div');
+            navigation.className = 'request-results-navigation';
+            navigation.innerHTML = `<button class="btn btn-secondary" type="button" data-back-results><i class="fas fa-arrow-left"></i> Back to search results</button><span>Showing editions related to ${escapeHtml(editionParent)}</span>`;
+            results.appendChild(navigation);
         }
         items.forEach(item => {
             const card = document.createElement('article');
@@ -41,7 +48,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     ? '<button class="btn btn-secondary" disabled><i class="fas fa-check"></i> Already requested</button>'
                     : item.request_status === 'fulfilled' || item.request_status === 'not_planned'
                         ? `<button class="btn btn-secondary" disabled><i class="fas fa-ban"></i> ${escapeHtml(item.request_status === 'fulfilled' ? 'Request fulfilled' : 'Not planned')}</button>`
-                        : `<button class="btn btn-primary" data-request="${item.igdb_id}"><i class="fas fa-paper-plane"></i> ${item.can_join_request ? 'Join request' : 'Request game'}</button>`;
+                        : settings.activeRequestCount >= settings.maxActiveRequestsPerUser
+                            ? '<button class="btn btn-secondary" disabled><i class="fas fa-gauge-high"></i> Request limit reached</button>'
+                            : `<button class="btn btn-primary" data-request="${item.igdb_id}"><i class="fas fa-paper-plane"></i> ${item.can_join_request ? 'Join request' : 'Request game'}</button>`;
             const note = settings.allowRequestNotes && !item.available_game_uuid && !item.requested_by_user
                 ? '<label class="request-note"><span>Note for the administrator <small>Optional</small></span><textarea maxlength="1000" placeholder="Edition, language, or other useful details"></textarea></label>' : '';
             const anyEdition = settings.allowRequestAnyEdition && !item.available_game_uuid && !item.requested_by_user
@@ -53,7 +62,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const platforms = (item.platforms || []).slice(0, 3).map(platform => `<span>${escapeHtml(platform)}</span>`).join('');
             card.innerHTML = `
                 <div class="request-result-cover">
-                    ${item.cover_url ? `<img src="${escapeHtml(item.cover_url)}" alt="">` : '<span><i class="fas fa-gamepad"></i></span>'}
+                    ${item.cover_url ? `<img src="${escapeHtml(item.cover_url)}" alt="Cover for ${escapeHtml(item.game_name)}" loading="lazy">` : '<span><i class="fas fa-gamepad"></i></span>'}
                     ${availableBadge}
                 </div>
                 <div class="request-result-content">
@@ -63,7 +72,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                     <div class="request-platforms">${platforms || '<span>Platforms not listed</span>'}</div>
                     ${item.summary ? `<p class="request-result-summary">${escapeHtml(item.summary)}</p>` : ''}
-                    ${note}${anyEdition}
+                    ${(note || anyEdition) ? `<details class="request-result-options"><summary>Add request details</summary>${note}${anyEdition}</details>` : ''}
                     <div class="request-result-actions">${availability}<button class="btn btn-secondary" data-editions="${item.igdb_id}"><i class="fas fa-layer-group"></i> Editions</button></div>
                 </div>`;
             results.appendChild(card);
@@ -84,7 +93,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const response = await fetch(`/api/requests/search?q=${encodeURIComponent(term)}`, {signal: searchController.signal});
             const data = await response.json();
             if (!response.ok) throw new Error(data.error || 'Search failed.');
-            if (sequence === searchSequence) render(data.results);
+            if (sequence === searchSequence) {
+                searchResults = data.results;
+                render(searchResults);
+            }
         } catch (error) {
             if (error.name !== 'AbortError' && sequence === searchSequence) {
                 status.textContent = error.message;
@@ -122,6 +134,12 @@ document.addEventListener('DOMContentLoaded', () => {
         form.requestSubmit();
     });
     results.addEventListener('click', async event => {
+        const backButton = event.target.closest('[data-back-results]');
+        if (backButton) {
+            render(searchResults);
+            input.focus();
+            return;
+        }
         const editionButton = event.target.closest('[data-editions]');
         if (editionButton) {
             editionButton.disabled = true;
@@ -130,7 +148,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 const response = await fetch(`/api/requests/editions/${editionButton.dataset.editions}`);
                 const data = await response.json();
                 if (!response.ok) throw new Error(data.error || 'Could not load editions.');
-                render(data.results || []);
+                const parentName = editionButton.closest('.request-result')?.querySelector('h3')?.textContent || 'selected game';
+                render(data.results || [], parentName);
             } catch (error) {
                 status.textContent = error.message;
             } finally {
@@ -161,5 +180,14 @@ document.addEventListener('DOMContentLoaded', () => {
             requestButton.disabled = false;
             requestButton.innerHTML = '<i class="fas fa-rotate-right"></i> Try again';
         }
+    });
+
+    document.querySelectorAll('[data-confirm-withdraw]').forEach(formElement => {
+        formElement.addEventListener('submit', event => {
+            const gameName = formElement.dataset.confirmWithdraw || 'this request';
+            if (!window.confirm(`Withdraw your request for ${gameName}? You can request it again later.`)) {
+                event.preventDefault();
+            }
+        });
     });
 });

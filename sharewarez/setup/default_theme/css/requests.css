@@ -301,3 +301,53 @@
     .admin-request-filters .request-toolbar { grid-template-columns: 1fr; }
     .request-sort-label { min-width: 0; }
 }
+/* User request progress and compact, progressive search results. */
+.request-user-summary { align-items: center; }
+.request-user-summary p { margin: .25rem 0 0; color: var(--theme-text-secondary, #b9c0d0); }
+.request-quota {
+    padding: .4rem .7rem;
+    border: 1px solid var(--theme-border-color, rgba(255,255,255,.12));
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--theme-primary-color, #03b2f8) 15%, transparent);
+    color: var(--theme-text-primary, #fff);
+    font-size: .78rem;
+    font-weight: 750;
+    white-space: nowrap;
+}
+.request-result-summary {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+}
+.request-result-options,
+.request-preferences {
+    margin-top: .75rem;
+    border: 1px solid var(--theme-border-color, rgba(255,255,255,.1));
+    border-radius: 10px;
+    background: var(--theme-input-bg, rgba(0,0,0,.16));
+}
+.request-result-options > summary,
+.request-preferences > summary {
+    padding: .65rem .75rem;
+    color: var(--theme-text-secondary, #b9c0d0);
+    cursor: pointer;
+    font-size: .82rem;
+    font-weight: 700;
+}
+.request-result-options[open],
+.request-preferences[open] { padding-bottom: .75rem; }
+.request-result-options[open] > :not(summary),
+.request-preferences[open] > :not(summary) { margin-right: .75rem; margin-left: .75rem; }
+.request-preferences form { display: grid; gap: .7rem; }
+.request-preferences label:not(.request-any-edition) { display: grid; gap: .35rem; color: var(--theme-text-secondary, #b9c0d0); font-size: .82rem; }
+.request-preferences .btn { justify-self: start; }
+.requester-own-note { margin-top: .65rem; padding: .7rem; border-left: 3px solid var(--theme-primary-color, #03b2f8); background: var(--theme-input-bg, rgba(0,0,0,.16)); border-radius: 7px; }
+.requester-own-note p { margin: .3rem 0 0; white-space: pre-line; overflow-wrap: anywhere; }
+.request-results-navigation { display: flex; grid-column: 1 / -1; align-items: center; gap: .75rem; color: var(--theme-text-secondary, #b9c0d0); }
+
+@media (max-width: 700px) {
+    .request-user-summary { align-items: flex-start; }
+    .request-results-navigation { align-items: stretch; flex-direction: column; }
+}

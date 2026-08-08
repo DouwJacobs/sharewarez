@@ -17,6 +17,7 @@ from sharewarez.utils.game_requests import (
     get_request_settings,
     search_igdb_games,
     update_request_status,
+    update_request_preferences,
     withdraw_request,
 )
 from sharewarez.utils.request_notifications import notify_new_request, notify_request_updated
@@ -42,7 +43,17 @@ def requests_page():
         .order_by(GameRequestUser.created_at.desc())
     )
     pagination = db.paginate(query, page=page, per_page=20, error_out=False)
-    return render_template('requests/requests.html', pagination=pagination, request_settings=get_request_settings())
+    settings = get_request_settings()
+    active_count = db.session.execute(
+        select(func.count(GameRequestUser.id)).join(GameRequest).where(
+            GameRequestUser.user_id == current_user.id,
+            GameRequestUser.withdrawn_at.is_(None),
+            GameRequestUser.satisfied_at.is_(None),
+            ~GameRequest.status.in_(RESOLVED_STATUSES),
+        )
+    ).scalar_one()
+    settings['activeRequestCount'] = active_count
+    return render_template('requests/requests.html', pagination=pagination, request_settings=settings)
 
 
 @game_requests_bp.route('/api/requests/search')
@@ -132,7 +143,25 @@ def withdraw(request_id):
         flash('Request withdrawn.', 'success')
     except ValueError as error:
         flash(str(error), 'error')
-    return redirect(url_for('game_requests.requests_page'))
+    return redirect(url_for('game_requests.requests_page', page=max(request.args.get('page', 1, type=int), 1)))
+
+
+@game_requests_bp.route('/requests/<int:request_id>/preferences', methods=['POST'])
+@login_required
+def update_preferences(request_id):
+    _require_enabled()
+    try:
+        update_request_preferences(
+            current_user,
+            request_id,
+            note=request.form.get('note'),
+            accept_any_edition=request.form.get('accept_any_edition') == 'on',
+        )
+        flash('Request preferences updated.', 'success')
+    except ValueError as error:
+        db.session.rollback()
+        flash(str(error), 'error')
+    return redirect(url_for('game_requests.requests_page', page=max(request.args.get('page', 1, type=int), 1)))
 
 
 @game_requests_bp.route('/admin/game-requests')

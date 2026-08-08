@@ -18,7 +18,10 @@
     </section>
 
     <section class="request-panel">
-        <h2>My requests</h2>
+        <div class="request-section-heading request-user-summary">
+            <div><h2>My requests</h2><p>{{ request_settings.activeRequestCount }} of {{ request_settings.maxActiveRequestsPerUser }} active requests used</p></div>
+            <span class="request-quota" aria-label="{{ request_settings.activeRequestCount }} of {{ request_settings.maxActiveRequestsPerUser }} active requests used">{{ request_settings.maxActiveRequestsPerUser - request_settings.activeRequestCount }} remaining</span>
+        </div>
         {% if pagination.items %}
         <div class="request-history">
             {% for link in pagination.items %}{% set item = link.game_request %}
@@ -27,9 +30,20 @@
                 <div class="request-history-content">
                     <div class="request-history-title"><div class="request-history-title-copy"><h3>{{ item.game_name }}</h3>{% if item.request_type == 'update' %}<span class="request-edition-chip" style="background: rgba(3, 178, 248, 0.2); color: #03b2f8;"><i class="fas fa-rotate"></i> Update Request</span>{% elif item.edition_name %}<span class="request-edition-chip">{{ item.edition_name }}</span>{% endif %}</div><span class="request-chip status-{{ item.status }}">{{ item.status|replace('_', ' ')|title }}</span></div>
                     {% if link.accept_any_edition %}<p><i class="fas fa-layer-group"></i> Any related edition is acceptable</p>{% endif %}
+                    {% if link.requester_note %}<div class="requester-own-note"><strong>Your request details</strong><p>{{ link.requester_note|urlize(target="_blank") }}</p></div>{% endif %}
                     {% if item.public_response %}<div class="admin-response"><strong>Admin response</strong><p>{{ item.public_response }}</p></div>{% endif %}
                     {% if link.satisfied_by_game %}<a class="btn btn-primary" href="{{ url_for('games.game_details', game_uuid=link.satisfied_by_game.uuid) }}">View available edition</a>{% elif item.fulfilled_game %}<a class="btn btn-primary" href="{{ url_for('games.game_details', game_uuid=item.fulfilled_game.uuid) }}">View available game</a>{% endif %}
-                    {% if not link.satisfied_at and item.status not in ['fulfilled', 'not_planned', 'cancelled'] %}<form method="post" action="{{ url_for('game_requests.withdraw', request_id=item.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-danger" type="submit">Withdraw</button></form>{% endif %}
+                    {% if not link.satisfied_at and item.status not in ['fulfilled', 'not_planned', 'cancelled'] %}
+                    <details class="request-preferences"><summary>Edit request</summary>
+                        <form method="post" action="{{ url_for('game_requests.update_preferences', request_id=item.id, page=pagination.page) }}">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            {% if request_settings.allowRequestNotes %}<label>Request details<textarea class="form-control" name="note" maxlength="2000" rows="3">{{ link.requester_note or '' }}</textarea></label>{% endif %}
+                            {% if request_settings.allowRequestAnyEdition and item.request_type == 'new_game' %}<label class="request-any-edition"><input type="checkbox" name="accept_any_edition"{% if link.accept_any_edition %} checked{% endif %}><span><strong>Any related edition is acceptable</strong></span></label>{% endif %}
+                            <button class="btn btn-primary" type="submit">Save preferences</button>
+                        </form>
+                    </details>
+                    <form method="post" action="{{ url_for('game_requests.withdraw', request_id=item.id, page=pagination.page) }}" data-confirm-withdraw="{{ item.game_name }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-danger" type="submit">Withdraw</button></form>
+                    {% endif %}
                 </div>
             </article>
             {% endfor %}

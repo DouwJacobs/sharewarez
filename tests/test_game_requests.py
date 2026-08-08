@@ -11,6 +11,7 @@ from sharewarez.utils.game_requests import (
     create_or_join_request,
     normalize_igdb_game,
     update_request_status,
+    update_request_preferences,
     withdraw_request,
 )
 from sharewarez.utils.request_notifications import notify_request_updated
@@ -93,6 +94,21 @@ def test_user_cannot_request_same_edition_twice(mock_fetch, db_session):
     create_or_join_request(user, edition_id)
     with pytest.raises(ValueError, match='already requested'):
         create_or_join_request(user, edition_id)
+
+
+@patch('sharewarez.utils.game_requests.fetch_igdb_game')
+def test_user_can_edit_active_request_preferences(mock_fetch, db_session):
+    ensure_settings(db_session)
+    user = make_user(db_session)
+    edition_id = unique_igdb_id()
+    mock_fetch.return_value = snapshot(edition_id, edition_id)
+    game_request, link = create_or_join_request(user, edition_id)
+
+    updated = update_request_preferences(user, game_request.id, 'Updated details', True)
+
+    assert updated.id == link.id
+    assert updated.requester_note == 'Updated details'
+    assert updated.accept_any_edition is True
 
 
 @patch('sharewarez.utils.game_requests.fetch_igdb_game')

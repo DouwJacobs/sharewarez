@@ -317,6 +317,28 @@ def withdraw_request(user, request_id):
     return link.game_request
 
 
+def update_request_preferences(user, request_id, note=None, accept_any_edition=False):
+    """Update the current user's editable preferences for an active request."""
+    settings = get_request_settings()
+    link = db.session.execute(
+        select(GameRequestUser)
+        .options(selectinload(GameRequestUser.game_request))
+        .filter_by(request_id=request_id, user_id=user.id)
+    ).scalars().first()
+    if not link or link.withdrawn_at is not None:
+        raise ValueError('Request was not found.')
+    if link.satisfied_at is not None or link.game_request.status in RESOLVED_STATUSES:
+        raise ValueError('Resolved requests cannot be edited.')
+    link.requester_note = ((note or '').strip()[:2000] or None) if settings['allowRequestNotes'] else None
+    link.accept_any_edition = bool(
+        accept_any_edition
+        and settings['allowRequestAnyEdition']
+        and link.game_request.request_type == 'new_game'
+    )
+    db.session.commit()
+    return link
+
+
 def update_request_status(game_request, admin, status, public_response=None, internal_note=None, game_uuid=None):
     if status not in REQUEST_STATUSES:
         raise ValueError('Invalid request status.')
