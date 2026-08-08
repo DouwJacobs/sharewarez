@@ -64,8 +64,8 @@
 
 .input-glass:focus {
     outline: none;
-    border-color: #0096ff;
-    box-shadow: 0 0 5px rgba(0, 150, 255, 0.3);
+    border-color: rgb(var(--theme-accent-rgb, 0, 150, 255));
+    box-shadow: 0 0 5px rgba(var(--theme-accent-rgb, 0, 150, 255), 0.3);
 }
 
 .button-group {

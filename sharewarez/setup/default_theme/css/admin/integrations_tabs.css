@@ -21,16 +21,16 @@
 }
 
 .integrations-nav-link:hover {
-    background: rgba(0, 150, 255, 0.1);
-    color: #0096ff;
-    border-color: rgba(0, 150, 255, 0.3);
+    background: rgba(var(--theme-accent-rgb, 0, 150, 255), 0.1);
+    color: rgb(var(--theme-accent-rgb, 0, 150, 255));
+    border-color: rgba(var(--theme-accent-rgb, 0, 150, 255), 0.3);
     transform: translateY(-2px);
 }
 
 .integrations-nav-link.active {
-    background: rgba(0, 150, 255, 0.2);
-    color: #0096ff;
-    border-color: #0096ff;
+    background: rgba(var(--theme-accent-rgb, 0, 150, 255), 0.2);
+    color: rgb(var(--theme-accent-rgb, 0, 150, 255));
+    border-color: rgb(var(--theme-accent-rgb, 0, 150, 255));
     border-bottom-color: transparent;
 }
 
@@ -51,10 +51,10 @@
 }
 
 .tab-content-wrapper h4 {
-    color: #0096ff;
+    color: rgb(var(--theme-accent-rgb, 0, 150, 255));
     margin-bottom: 1.5rem;
     padding-bottom: 0.5rem;
-    border-bottom: 1px solid rgba(0, 150, 255, 0.2);
+    border-bottom: 1px solid rgba(var(--theme-accent-rgb, 0, 150, 255), 0.2);
     display: flex;
     align-items: center;
     justify-content: space-between;

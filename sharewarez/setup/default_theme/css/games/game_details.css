@@ -433,7 +433,7 @@ body.modal-open {
 
 .chip-detailspage:hover {
     background: rgba(100, 130, 255, 0.25);
-    border-color: rgba(120, 150, 255, 0.5);
+    border-color: rgba(var(--theme-accent-soft-rgb, 120, 150, 255), 0.5);
     color: #ffffff;
     transform: translateY(-1px);
 }

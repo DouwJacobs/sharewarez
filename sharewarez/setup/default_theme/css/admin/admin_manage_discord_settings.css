@@ -140,8 +140,8 @@
 }
 
 .notification-card .form-check-input:focus {
-    border-color: #0096ff;
-    box-shadow: 0 0 5px rgba(0, 150, 255, 0.3);
+    border-color: rgb(var(--theme-accent-rgb, 0, 150, 255));
+    box-shadow: 0 0 5px rgba(var(--theme-accent-rgb, 0, 150, 255), 0.3);
 }
 
 .notification-card .form-check-label {
@@ -188,8 +188,8 @@
 
 .connection-card .form-control:focus {
     background: rgba(0, 0, 0, 0.3);
-    border-color: #0096ff;
-    box-shadow: 0 0 5px rgba(0, 150, 255, 0.3);
+    border-color: rgb(var(--theme-accent-rgb, 0, 150, 255));
+    box-shadow: 0 0 5px rgba(var(--theme-accent-rgb, 0, 150, 255), 0.3);
     color: #fff;
 }
 

@@ -250,8 +250,8 @@
 
 .btn-circle:hover {
     transform: translateY(-3px);
-    background: rgba(0, 150, 255, 0.4);
-    box-shadow: 0 0 20px rgba(0, 150, 255, 0.3);
+    background: rgba(var(--theme-accent-rgb, 0, 150, 255), 0.4);
+    box-shadow: 0 0 20px rgba(var(--theme-accent-rgb, 0, 150, 255), 0.3);
     color: var(--text-white);
 }
 

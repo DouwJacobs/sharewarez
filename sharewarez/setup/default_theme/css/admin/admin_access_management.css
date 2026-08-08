@@ -98,8 +98,8 @@
 
 .search-input:focus {
     background: rgba(255, 255, 255, 0.15);
-    border-color: #0096ff;
-    box-shadow: 0 0 0 0.25rem rgba(0, 150, 255, 0.25);
+    border-color: rgb(var(--theme-accent-rgb, 0, 150, 255));
+    box-shadow: 0 0 0 0.25rem rgba(var(--theme-accent-rgb, 0, 150, 255), 0.25);
 }
 
 .search-icon {
@@ -149,8 +149,8 @@
 }
 
 .user-item:hover {
-    background: rgba(0, 150, 255, 0.1);
-    border-color: rgba(0, 150, 255, 0.3);
+    background: rgba(var(--theme-accent-rgb, 0, 150, 255), 0.1);
+    border-color: rgba(var(--theme-accent-rgb, 0, 150, 255), 0.3);
 }
 
 .user-item.active {
@@ -264,7 +264,7 @@
 }
 
 .resize-handle:hover {
-    background: rgba(0, 150, 255, 0.5);
+    background: rgba(var(--theme-accent-rgb, 0, 150, 255), 0.5);
 }
 
 /* Detail Panel (70%) */
@@ -539,7 +539,7 @@
 
 input:checked + .toggle-label {
     background-color: #0096ff;
-    border-color: #0096ff;
+    border-color: rgb(var(--theme-accent-rgb, 0, 150, 255));
 }
 
 input:checked + .toggle-label:before {
@@ -774,9 +774,9 @@ input:checked + .toggle-label:before {
 
 .form-control:focus, .form-select:focus {
     background: rgba(255, 255, 255, 0.15);
-    border-color: #0096ff;
+    border-color: rgb(var(--theme-accent-rgb, 0, 150, 255));
     color: #fff;
-    box-shadow: 0 0 0 0.25rem rgba(0, 150, 255, 0.25);
+    box-shadow: 0 0 0 0.25rem rgba(var(--theme-accent-rgb, 0, 150, 255), 0.25);
 }
 
 .form-control::placeholder {

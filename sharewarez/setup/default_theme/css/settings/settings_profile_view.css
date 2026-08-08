@@ -83,7 +83,7 @@
  
  .settings_profile_view-edit-button .btn-primary:hover {
      transform: translateY(-2px);
-     box-shadow: 0 6px 20px rgba(0, 123, 255, 0.4);
+     box-shadow: 0 6px 20px rgba(var(--theme-accent-rgb, 0, 123, 255), 0.4);
  }
  
  @media (max-width: 768px) {

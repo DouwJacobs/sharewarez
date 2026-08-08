@@ -1334,13 +1334,13 @@
 .admin_manage_scanjobs-nav-link:hover,
 .admin_manage_scanjobs-nav-link.active {
     color: #fff;
-    background: rgba(98, 122, 239, 0.14);
-    border-color: rgba(154, 177, 255, 0.24);
+    background: rgba(var(--theme-accent-rgb, 98, 122, 239), 0.14);
+    border-color: rgba(var(--theme-accent-soft-rgb, 154, 177, 255), 0.24);
     box-shadow: none;
 }
 
 .admin_manage_scanjobs-nav-link.active {
-    border-bottom-color: rgba(123, 150, 255, 0.9);
+    border-bottom-color: rgba(var(--theme-accent-soft-rgb, 123, 150, 255), 0.9);
 }
 
 .admin_manage_scanjobs-tab-content {
