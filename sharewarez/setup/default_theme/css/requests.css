@@ -167,6 +167,7 @@
 .request-filter-chip { display: inline-flex; align-items: center; gap: .4rem; padding: .45rem .65rem; border: 1px solid var(--theme-border-color, rgba(255,255,255,.1)); border-radius: 999px; color: var(--theme-text-secondary, #b9c0d0); text-decoration: none; }
 .request-filter-chip span { min-width: 1.35rem; padding: .08rem .35rem; border-radius: 999px; background: var(--theme-inner-card-bg, rgba(255,255,255,.08)); text-align: center; font-size: .7rem; }
 .request-filter-chip:hover, .request-filter-chip.active { border-color: var(--theme-primary, #03b2f8); background: color-mix(in srgb, var(--theme-primary, #03b2f8) 14%, transparent); color: var(--theme-text-primary, #fff); }
+.request-mobile-filters { display: none; }
 .admin-request-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 1rem; }
 .admin-request-tile { min-width: 0; overflow: hidden; border: 1px solid var(--theme-border-color, rgba(255,255,255,.1)); border-radius: 16px; background: var(--theme-card-bg, rgba(20,22,34,.92)); color: var(--theme-text-primary, #fff); text-decoration: none; box-shadow: var(--theme-card-shadow, 0 18px 45px rgba(0,0,0,.2)); transition: transform .2s ease, border-color .2s ease; }
 .admin-request-tile:hover { transform: translateY(-4px); border-color: var(--theme-primary, #03b2f8); color: var(--theme-text-primary, #fff); }
@@ -327,6 +328,41 @@
 @media (max-width: 700px) {
     .admin-request-filters .request-toolbar { grid-template-columns: 1fr; }
     .request-sort-label { min-width: 0; }
+
+    .admin-request-filters .request-filter-chips {
+        display: none;
+    }
+
+    .request-mobile-filters {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: .75rem;
+    }
+
+    .request-mobile-filters label {
+        display: grid;
+        min-width: 0;
+        gap: .35rem;
+        color: var(--theme-text-secondary, #b9c0d0);
+        font-size: .76rem;
+        font-weight: 700;
+    }
+
+    .request-mobile-filters .form-select {
+        width: 100%;
+        min-width: 0;
+        min-height: 44px;
+        border: 1px solid var(--form-border, var(--theme-border-color, rgba(255,255,255,.12)));
+        border-radius: 10px;
+        background-color: var(--form-bg, var(--theme-input-bg, rgba(0,0,0,.2)));
+        color: var(--theme-text-primary, #fff);
+        font-size: .86rem;
+    }
+
+    .request-mobile-filters .form-select:focus {
+        border-color: var(--form-focus-border, var(--theme-primary, #03b2f8));
+        box-shadow: var(--form-focus-shadow, 0 0 0 3px color-mix(in srgb, var(--theme-primary, #03b2f8) 18%, transparent));
+    }
 
     /* Match the mobile Library and Discover pages: the viewport supplies the
        page gutter, while request content sits directly on the page surface. */

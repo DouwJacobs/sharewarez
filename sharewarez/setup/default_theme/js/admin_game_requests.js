@@ -20,6 +20,13 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         requestFilterForm.addEventListener('submit', showFiltering);
         document.getElementById('requestSort')?.addEventListener('change', () => requestFilterForm.requestSubmit());
+        requestFilterForm.querySelectorAll('[data-request-filter]').forEach(select => {
+            select.addEventListener('change', () => {
+                const hiddenInput = requestFilterForm.querySelector(`input[name="${select.dataset.requestFilter}"]`);
+                if (hiddenInput) hiddenInput.value = select.value;
+                requestFilterForm.requestSubmit();
+            });
+        });
     }
 
     document.querySelectorAll('.admin-request-form').forEach(form => {

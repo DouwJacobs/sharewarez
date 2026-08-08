@@ -19,6 +19,21 @@
                     </select>
                 </label>
             </div>
+            <div class="request-mobile-filters" aria-label="Request filters">
+                <label for="mobileRequestType">Type
+                    <select class="form-select" id="mobileRequestType" data-request-filter="type">
+                        <option value=""{% if not selected_type %} selected{% endif %}>All types ({{ type_counts.values()|sum }})</option>
+                        <option value="new_game"{% if selected_type == 'new_game' %} selected{% endif %}>New game ({{ type_counts.get('new_game', 0) }})</option>
+                        <option value="update"{% if selected_type == 'update' %} selected{% endif %}>Update ({{ type_counts.get('update', 0) }})</option>
+                    </select>
+                </label>
+                <label for="mobileRequestStatus">Status
+                    <select class="form-select" id="mobileRequestStatus" data-request-filter="status">
+                        <option value="all"{% if not selected_status %} selected{% endif %}>All statuses ({{ status_counts.values()|sum }})</option>
+                        {% for status in statuses %}<option value="{{ status }}"{% if selected_status == status %} selected{% endif %}>{{ status|replace('_', ' ')|title }} ({{ status_counts.get(status, 0) }})</option>{% endfor %}
+                    </select>
+                </label>
+            </div>
             <div class="request-filter-chips type-filters" aria-label="Filter by type">
                 <a class="request-filter-chip{% if not selected_type %} active{% endif %}" href="{{ url_for('game_requests.admin_requests', status=selected_status, q=search_term, sort=selected_sort) }}">All Types <span>{{ type_counts.values()|sum }}</span></a>
                 <a class="request-filter-chip{% if selected_type == 'new_game' %} active{% endif %}" href="{{ url_for('game_requests.admin_requests', status=selected_status, type='new_game', q=search_term, sort=selected_sort) }}"><i class="fas fa-plus-circle"></i> New Game <span>{{ type_counts.get('new_game', 0) }}</span></a>
