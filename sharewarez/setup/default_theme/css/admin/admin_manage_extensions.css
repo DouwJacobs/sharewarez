@@ -100,4 +100,58 @@
         padding: 16px;
         border-radius: 14px;
     }
+
+    .extensions-management-panel .table-responsive {
+        overflow: visible;
+    }
+
+    .extensions-management-panel table,
+    .extensions-management-panel tbody,
+    .extensions-management-panel tr,
+    .extensions-management-panel td {
+        display: block;
+        width: 100%;
+    }
+
+    .extensions-management-panel thead {
+        display: none;
+    }
+
+    .extensions-management-panel tbody {
+        display: grid;
+        gap: 10px;
+        padding: 10px;
+    }
+
+    .extensions-management-panel tbody tr {
+        padding: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.09);
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.03);
+    }
+
+    .extensions-management-panel td {
+        padding: 6px 0 !important;
+        border: 0;
+    }
+
+    .extensions-management-panel td::before {
+        display: block;
+        margin-bottom: 5px;
+        color: rgba(205, 214, 235, 0.65);
+        content: attr(data-label);
+        font-size: 0.72rem;
+        font-weight: 750;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+    }
+
+    .extension-actions {
+        display: flex !important;
+        gap: 8px;
+    }
+
+    .extension-actions .btn {
+        flex: 1 1 0;
+    }
 }

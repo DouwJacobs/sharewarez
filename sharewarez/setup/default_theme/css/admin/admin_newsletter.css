@@ -5,11 +5,27 @@
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 18px;
     background: linear-gradient(145deg, rgba(18, 18, 28, 0.96), rgba(12, 12, 20, 0.98));
+    box-sizing: border-box;
 }
 
 .newsletter-page h1, .newsletter-page h2 { color: #fff; }
 .newsletter-recipient-list { max-height: 280px; overflow-y: auto; border-radius: 12px; }
 .newsletter-page .list-group-item { color: rgba(225, 229, 245, 0.82); background: rgba(255, 255, 255, 0.035); border-color: rgba(255, 255, 255, 0.08); }
 .newsletter-page .ck-editor__editable { min-height: 300px; background: rgba(5, 6, 13, 0.5) !important; color: #fff; }
+.newsletter-page .ck-editor,
+.newsletter-page .ck-editor__main,
+.newsletter-page .ck-editor__editable { max-width: 100%; box-sizing: border-box; }
+.newsletter-recipient-summary { margin: -0.25rem 0 0.65rem; color: rgba(205, 214, 235, 0.72); font-size: 0.88rem; }
 
-@media (max-width: 768px) { .newsletter-page { width: calc(100% - 24px); margin: 12px auto; padding: 16px; } }
+@media (max-width: 768px) {
+    .newsletter-page { width: calc(100% - 24px); margin: 12px auto; padding: 16px; overflow: hidden; }
+    .newsletter-page .input-glass { width: 100%; margin-right: 0; margin-left: 0 !important; }
+    .newsletter-page .ck-toolbar { flex-wrap: wrap !important; }
+    .newsletter-page .table-responsive { overflow: visible; }
+    .newsletter-page table, .newsletter-page tbody, .newsletter-page tr, .newsletter-page td { display: block; width: 100%; }
+    .newsletter-page thead { display: none; }
+    .newsletter-page tbody { display: grid; gap: 10px; }
+    .newsletter-page tbody tr { padding: 12px; border: 1px solid rgba(255,255,255,.09); border-radius: 12px; background: rgba(255,255,255,.03); }
+    .newsletter-page tbody td { display: grid; grid-template-columns: minmax(90px, .4fr) 1fr; gap: 10px; padding: 6px 0 !important; border: 0; overflow-wrap: anywhere; }
+    .newsletter-page tbody td::before { color: rgba(205,214,235,.65); content: attr(data-label); font-size: .72rem; font-weight: 750; letter-spacing: .06em; text-transform: uppercase; }
+}

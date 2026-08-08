@@ -12,6 +12,8 @@
     transition: all var(--transition-fast);
     line-height: 1.1;
     font-size: var(--font-size-base);
+    min-height: 42px;
+    box-sizing: border-box;
 }
 
 .form-control:focus {
@@ -35,6 +37,8 @@
     padding: var(--spacing-sm);
     width: 100%;
     transition: all var(--transition-fast);
+    min-height: 42px;
+    box-sizing: border-box;
 }
 
 .form-select:focus {
@@ -79,6 +83,8 @@
     padding: var(--spacing-sm);
     width: 100%;
     transition: border-color var(--transition-fast);
+    min-height: 42px;
+    box-sizing: border-box;
 }
 
 .admin-input:focus {
@@ -129,6 +135,20 @@ form textarea {
     color: var(--text-white);
     padding: var(--spacing-sm);
     transition: all var(--transition-fast);
+    box-sizing: border-box;
+}
+
+form input[type="text"],
+form input[type="password"],
+form input[type="email"],
+form input[type="search"],
+form input[type="number"],
+form input[type="date"],
+form input[type="tel"],
+form input[type="url"],
+form input[type="time"],
+form select {
+    min-height: 42px;
 }
 
 form input[type="text"]:focus,

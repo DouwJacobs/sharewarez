@@ -227,19 +227,19 @@
     button,
     input[type="submit"],
     input[type="button"] {
-        min-height: 40px;
+        min-height: 44px;
     }
 
     /* Card action buttons are compact circles, not full-size form controls. */
     .game-card :is(.button-glass-hamburger, .favorite-btn, .game-status-btn) {
-        width: 40px !important;
-        min-width: 40px !important;
-        height: 40px !important;
-        min-height: 40px !important;
+        width: 44px !important;
+        min-width: 44px !important;
+        height: 44px !important;
+        min-height: 44px !important;
         padding: 0 !important;
         border-radius: 50% !important;
         aspect-ratio: 1;
-        flex: 0 0 40px;
+        flex: 0 0 44px;
     }
 
     .admin-header,
@@ -269,6 +269,61 @@
     .user-invites-header > .btn,
     .admin_manage_invites-header > .btn {
         width: 100%;
+    }
+
+    /* Dense extension tables become readable touch-friendly cards. */
+    .scan-extension-card .table-responsive {
+        overflow: visible !important;
+    }
+
+    .scan-extension-card table,
+    .scan-extension-card tbody,
+    .scan-extension-card tr,
+    .scan-extension-card td {
+        display: block;
+        width: 100%;
+    }
+
+    .scan-extension-card thead {
+        display: none;
+    }
+
+    .scan-extension-card tbody {
+        display: grid;
+        gap: 10px;
+        padding: 10px;
+    }
+
+    .scan-extension-card tbody tr {
+        padding: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.09);
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.03);
+    }
+
+    .scan-extension-card td {
+        padding: 6px 0 !important;
+        border: 0 !important;
+    }
+
+    .scan-extension-card td::before {
+        display: block;
+        margin-bottom: 5px;
+        color: var(--text-muted, rgba(205, 214, 235, 0.65));
+        content: attr(data-label);
+        font-size: 0.72rem;
+        font-weight: 750;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+    }
+
+    .scan-extension-card .extension-actions {
+        display: flex;
+        gap: 8px;
+    }
+
+    .scan-extension-card .extension-actions .btn {
+        flex: 1 1 0;
     }
 
     .input-group,

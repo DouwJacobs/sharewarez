@@ -65,7 +65,7 @@
                             <div class="config-grid">
                                 <!-- Library Selection -->
                                 <div class="config-item">
-                                    {{ auto_form.library_uuid.label(class="config-label", **{"data-toggle": "tooltip", "title": "Choose which library to scan games into"}) }}
+                                    <label class="config-label" for="libraryUuid" data-toggle="tooltip" title="Choose which library to scan games into">{{ auto_form.library_uuid.label.text }}</label>
                                     {{ auto_form.library_uuid(class="form-control config-input", id="libraryUuid", onchange='onLibraryChange(this.value, "auto")') }}
                                     {% if auto_form.library_uuid.errors %}
                                         {% for error in auto_form.library_uuid.errors %}
@@ -121,14 +121,14 @@
                                 <div class="option-item">
                                     <div class="form-check modern-checkbox">
                                         {{ auto_form.fetch_hltb(class="form-check-input", id="fetch-hltb-auto", checked="checked") }}
-                                        {{ auto_form.fetch_hltb.label(class="form-check-label", **{"data-toggle": "tooltip", "title": "Fetch game completion times from HowLongToBeat during scan"}) }}
+                                        <label class="form-check-label" for="fetch-hltb-auto" data-toggle="tooltip" title="Fetch game completion times from HowLongToBeat during scan">{{ auto_form.fetch_hltb.label.text }}</label>
                                     </div>
                                 </div>
 
                                 <div class="option-item">
                                     <div class="form-check modern-checkbox">
                                         {{ auto_form.force_hltb_refetch(class="form-check-input", id="force-hltb-refetch-auto") }}
-                                        {{ auto_form.force_hltb_refetch.label(class="form-check-label", **{"data-toggle": "tooltip", "title": "Force refetch HLTB data for games that already exist in the database"}) }}
+                                        <label class="form-check-label" for="force-hltb-refetch-auto" data-toggle="tooltip" title="Force refetch HLTB data for games that already exist in the database">{{ auto_form.force_hltb_refetch.label.text }}</label>
                                     </div>
                                 </div>
                             </div>
@@ -243,7 +243,7 @@
                     {{ manual_form.hidden_tag() }}
                     <!-- Library Selection -->
                     <div class="admin_manage_scanjobs-library form-group manual-field-card">
-                        {{ manual_form.library_uuid.label(**{"data-toggle": "tooltip", "title": "Choose which library to scan games into"}) }}
+        <label for="manualLibraryUuid" data-toggle="tooltip" title="Choose which library to scan games into">{{ manual_form.library_uuid.label.text }}</label>
                         {{ manual_form.library_uuid(class="form-control", id="manualLibraryUuid", onchange='onLibraryChange(this.value, "manual")') }}
                         {% if manual_form.library_uuid.errors %}
                             {% for error in manual_form.library_uuid.errors %}
@@ -283,12 +283,12 @@
                     </div>
                     <div class="form-check modern-checkbox">
                         {{ manual_form.fetch_hltb(class="form-check-input", id="fetch-hltb-manual", checked="checked") }}
-                        {{ manual_form.fetch_hltb.label(class="form-check-label", **{"data-toggle": "tooltip", "title": "Fetch game completion times from HowLongToBeat during scan"}) }}
+        <label class="form-check-label" for="fetch-hltb-manual" data-toggle="tooltip" title="Fetch game completion times from HowLongToBeat during scan">{{ manual_form.fetch_hltb.label.text }}</label>
                     </div>
 
                     <div class="form-check modern-checkbox">
                         {{ manual_form.force_hltb_refetch(class="form-check-input", id="force-hltb-refetch-manual") }}
-                        {{ manual_form.force_hltb_refetch.label(class="form-check-label", **{"data-toggle": "tooltip", "title": "Force refetch HLTB data for games that already exist in the database"}) }}
+        <label class="form-check-label" for="force-hltb-refetch-manual" data-toggle="tooltip" title="Force refetch HLTB data for games that already exist in the database">{{ manual_form.force_hltb_refetch.label.text }}</label>
                     </div></div>
 
                     <div class="form-group manual-actions">
@@ -422,7 +422,7 @@
                             <div class="modal-content">
                                 <div class="modal-header">
                                     <h5 class="modal-title">Add New Scanning Filter</h5>
-                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                 </div>
                                 <form action="" method="post">
                                     <div class="modal-body">
@@ -497,7 +497,7 @@
                         <div class="card scan-extension-card">
                             <div class="card-header">
                                 <h4>Allowed File Types</h4>
-                                <button class="btn btn-primary btn-sm" onclick="addFileType('allowed')">
+                                <button type="button" class="btn btn-primary btn-sm" onclick="addFileType('allowed')">
                                     <i class="fas fa-plus"></i> Add New
                                 </button>
                             </div>
@@ -512,12 +512,12 @@
                                     <tbody>
                                         {% for type in allowed_file_types %}
                                         <tr data-id="{{ type.id }}" data-category="allowed">
-                                            <td class="type-value">{{ type.value }}</td>
-                                            <td>
-                                                <button class="btn btn-sm btn-warning" onclick="editFileType(this)">
+                                                <td class="type-value" data-label="Extension">{{ type.value }}</td>
+                                                <td data-label="Actions" class="extension-actions">
+                                                    <button type="button" class="btn btn-sm btn-warning" onclick="editFileType(this)" aria-label="Edit {{ type.value }} extension">
                                                     <i class="fas fa-edit"></i>
                                                 </button>
-                                                <button class="btn btn-sm btn-danger" onclick="deleteFileType('allowed', {{ type.id }})">
+                                                    <button type="button" class="btn btn-sm btn-danger" onclick="deleteFileType('allowed', {{ type.id }})" aria-label="Delete {{ type.value }} extension">
                                                     <i class="fas fa-trash"></i>
                                                 </button>
                                             </td>
@@ -633,7 +633,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">Add/Edit File Type</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 <input type="hidden" id="modalTypeCategory">
@@ -657,7 +657,7 @@
         <div class="modal-content">
             <div class="modal-header bg-danger text-white">
                 <h5 class="modal-title"><i class="fa-solid fa-exclamation-triangle"></i> Write Permission Error</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 <div class="alert alert-danger">
@@ -1130,7 +1130,7 @@
         messageDiv.className = `alert alert-${type} alert-dismissible fade show`;
         messageDiv.innerHTML = `
             ${message}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         `;
 
         messagesDiv.appendChild(messageDiv);

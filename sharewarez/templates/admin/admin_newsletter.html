@@ -8,24 +8,25 @@
 <script src="https://cdn.ckeditor.com/ckeditor5/39.0.1/classic/ckeditor.js"></script>
 <main class="newsletter-page">
         <h1>Newsletter</h1>
-        <form action="" method="post" novalidate>
+        <form id="newsletterForm" action="" method="post" novalidate>
             {{ form.hidden_tag() }}
             <div class="mb-3">
-                <label for="subject" class="form-label">{{ form.subject.label }}</label>
+                {{ form.subject.label(class="form-label", for="subject") }}
                 {{ form.subject(size=32, class="form-control input-glass", id="subject") }}
             </div>
             
             <div class="mb-3">
-                <label for="content" class="form-label">{{ form.content.label }}</label>
+                {{ form.content.label(class="form-label", for="editor") }}
                 {{ form.content(id="editor", class="form-control input-glass") }}
             </div>
             
             <div class="mb-3 form-check">
                 <input type="checkbox" class="form-check-input" id="selectAll">
-                <label class="form-check-label" for="selectAll">Select All/Select None</label>
+                <label class="form-check-label" for="selectAll">Select or clear all recipients</label>
             </div>
             
-            <div class="newsletter-recipient-list list-group mb-3">
+            <div class="newsletter-recipient-summary" id="recipientSummary" aria-live="polite"></div>
+            <div class="newsletter-recipient-list list-group mb-3" aria-label="Newsletter recipients">
             {% for user in users %}
                 <label class="list-group-item">
                     <input class="form-check-input me-1 userCheckbox" type="checkbox" name="user" value="{{ user.email }}" checked onchange="updateRecipients()">
@@ -54,17 +55,17 @@
                <tbody>
                    {% for newsletter in newsletters %}
                    <tr>
-                       <td>{{ newsletter.subject }}</td>
-                       <td>{{ newsletter.sent_date.strftime('%Y-%m-%d %H:%M:%S') }}</td>
-                       <td>
+                       <td data-label="Subject">{{ newsletter.subject }}</td>
+                       <td data-label="Sent">{{ newsletter.sent_date.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                       <td data-label="Status">
                            {% if newsletter.status == 'sent' %}
                                <span class="badge bg-success">Sent</span>
                            {% else %}
                                <span class="badge bg-danger">Failed</span>
                            {% endif %}
                        </td>
-                       <td>{{ newsletter.recipient_count }}</td>
-                       <td><a href="{{ url_for('admin2.view_newsletter', newsletter_id=newsletter.id) }}" class="btn btn-sm btn-primary">View</a></td>
+                       <td data-label="Recipients">{{ newsletter.recipient_count }}</td>
+                       <td data-label="Action"><a href="{{ url_for('admin2.view_newsletter', newsletter_id=newsletter.id) }}" class="btn btn-sm btn-primary">View</a></td>
                    </tr>
                    {% endfor %}
                </tbody>
@@ -90,6 +91,7 @@ function updateRecipients() {
     }
 
     document.querySelector('input[name="recipients"]').value = recipients.join(',');
+    document.getElementById('recipientSummary').textContent = `${recipients.length} recipient${recipients.length === 1 ? '' : 's'} selected`;
 
     console.log('Recipients: ' + document.querySelector('input[name="recipients"]').value);
 }
@@ -108,5 +110,13 @@ ClassicEditor
     });
 
 updateRecipients(); 
+
+document.getElementById('newsletterForm').addEventListener('submit', function(event) {
+    const selectedCount = document.querySelectorAll('input[name="user"]:checked').length;
+    const subject = document.getElementById('subject').value.trim() || 'Untitled newsletter';
+    if (!window.confirm(`Send “${subject}” to ${selectedCount} recipient${selectedCount === 1 ? '' : 's'}?`)) {
+        event.preventDefault();
+    }
+});
 </script>
 {% endblock %}
