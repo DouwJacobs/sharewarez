@@ -231,7 +231,7 @@
             <img src="{{ url_for('static', filename=current_user.avatarpath) }}" alt="" class="mobile-account-avatar">
         </button>
         <div id="mobileAccountMenu" class="mobile-account-menu" hidden>
-            <p class="mobile-account-name">{{ current_user.name | capitalize }}</p>
+            <p class="mobile-account-name">{{ current_user.name }}</p>
             <a href="{{ url_for('settings.settings_profile_view') }}"><i class="fas fa-user"></i> Profile</a>
             <a href="{{ url_for('login.invites') }}"><i class="fas fa-envelope"></i> Invites</a>
             <a href="{{ url_for('settings.account_pw') }}"><i class="fas fa-key"></i> Change Password</a>
@@ -308,7 +308,7 @@
         </div>
         <div id="userAccountIcon" class="user-account-icon" role="button" tabindex="0" aria-label="Open account menu">
             <img src="{{ url_for('static', filename=current_user.avatarpath) }}" alt="" class="user-avatar">
-            <span class="user-name">{{ current_user.name | capitalize }}</span>
+            <span class="user-name">{{ current_user.name }}</span>
             <i class="fas fa-chevron-up user-expand-icon" aria-hidden="true"></i>
         </div>
     </div>
