@@ -479,6 +479,68 @@ input[type="radio"] {
     box-shadow: 0 0 0 3px rgba(var(--theme-accent-rgb, 98, 122, 239), .16) !important;
 }
 
+/* Canonical interactive-control sizing. Page styles may arrange controls, but
+   buttons, inputs and selects share the same visual rhythm everywhere. */
+:root {
+    --control-height-sm: 34px;
+    --control-height: 42px;
+    --control-height-lg: 50px;
+    --control-radius: 10px;
+}
+
+:is(.btn, button[class*="btn-"]):not(.btn-link) {
+    min-height: var(--control-height);
+    border-radius: var(--control-radius);
+}
+
+:is(.btn-sm, .btn-group-sm > .btn) {
+    min-height: var(--control-height-sm) !important;
+}
+
+:is(.btn-lg, .btn-group-lg > .btn) {
+    min-height: var(--control-height-lg) !important;
+}
+
+:is(.form-control:not(textarea), .form-select, .form-control-color,
+    input[type="text"], input[type="email"], input[type="password"],
+    input[type="search"], input[type="url"], input[type="number"],
+    input[type="date"], input[type="time"]):not(.form-control-sm):not(.form-control-lg) {
+    min-height: var(--control-height);
+}
+
+:is(.form-control-sm, .form-select-sm) {
+    min-height: var(--control-height-sm) !important;
+}
+
+:is(.form-control-lg, .form-select-lg) {
+    min-height: var(--control-height-lg) !important;
+}
+
+:is(.form-control, .form-select, textarea, input[type="text"], input[type="email"],
+    input[type="password"], input[type="search"], input[type="url"], input[type="number"],
+    input[type="date"], input[type="time"]) {
+    border-color: rgba(var(--theme-accent-soft-rgb, 154, 177, 255), .22) !important;
+    border-radius: var(--control-radius);
+    background-color: color-mix(in srgb, var(--theme-panel-bg, #12121c) 88%, black) !important;
+    color: var(--text-white, #fff) !important;
+}
+
+:is(.form-control, .form-select, textarea, input)::placeholder {
+    color: color-mix(in srgb, var(--text-light, #d7d9e2) 62%, transparent) !important;
+    opacity: 1;
+}
+
+.input-group > :is(.form-control, .form-select, .btn) {
+    min-height: var(--control-height);
+}
+
+:is(.form-control, .form-select, textarea):disabled,
+:is(.form-control, .form-select, textarea)[readonly] {
+    background-color: color-mix(in srgb, var(--theme-panel-bg, #12121c) 78%, black) !important;
+    color: var(--text-light, #d7d9e2) !important;
+    opacity: .72;
+}
+
 @media (max-width: 768px) {
     /* Match the Library mobile layout: one continuous page surface with
        spacing supplied by the page stylesheet, not an outer card shell. */

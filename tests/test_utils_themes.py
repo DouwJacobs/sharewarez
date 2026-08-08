@@ -165,6 +165,17 @@ class TestGetDefaultTheme:
         assert "Error reading default theme" in str(mock_print.call_args)
 
 
+class TestDefaultThemeControlSystem:
+    def test_shared_control_tokens_cover_buttons_inputs_and_selects(self):
+        from pathlib import Path
+
+        css = Path('sharewarez/setup/default_theme/css/theme-components.css').read_text()
+        assert '--control-height: 42px' in css
+        assert '--control-height-sm: 34px' in css
+        assert '.form-select' in css
+        assert '.input-group > :is(.form-control, .form-select, .btn)' in css
+
+
 class TestGetInstalledThemes:
     """Tests for get_installed_themes method."""
 
