@@ -6,8 +6,8 @@ body {
 /* Use the unified .admin-section from base.css */
 
 .admin-dashboard-header {
-    width: min(100%, 1180px);
-    margin: 0 auto var(--spacing-xl);
+    width: min(100%, 1200px);
+    margin: 0 0 var(--spacing-xl);
 }
 
 .admin-dashboard-eyebrow {
