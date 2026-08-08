@@ -13,6 +13,7 @@
 
 .admin_manage_libraries-library-container .card {
     padding: 24px;
+    overflow: visible;
 }
 
 .libraries-management-header {
@@ -46,7 +47,7 @@
 }
 
 .libraries-table-wrapper {
-    overflow: auto;
+    overflow: visible;
 }
 
 .libraries-table-wrapper .table {
@@ -70,6 +71,11 @@
 
     .admin_manage_libraries-library-container .card {
         padding: 16px;
+    }
+
+    .libraries-table-wrapper {
+        overflow-x: auto;
+        overflow-y: visible;
     }
 
     .libraries-management-header {
