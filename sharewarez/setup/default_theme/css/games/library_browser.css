@@ -426,6 +426,28 @@
     display: none;
 }
 
+.library-game-title {
+    display: -webkit-box;
+    width: min(100%, 250px);
+    margin: 2px auto 0;
+    overflow: hidden;
+    color: var(--text-white);
+    font-size: 0.92rem;
+    font-weight: 650;
+    line-height: 1.3;
+    text-align: center;
+    text-decoration: none;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+}
+
+.library-game-title:hover,
+.library-game-title:focus-visible {
+    color: var(--theme-accent, #9ab1ff);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
 @media (max-width: 768px) {
 
     .library-browser-page {
@@ -461,6 +483,8 @@
 
     .game-library-container .game-card-container {
         display: flex;
+        flex-direction: column;
+        align-items: center;
         justify-content: center;
         width: 100%;
     }

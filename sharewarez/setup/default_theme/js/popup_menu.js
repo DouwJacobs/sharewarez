@@ -209,6 +209,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // Toggle the popup menu
             var isOpening = popupMenu.style.display !== 'block';
             popupMenu.style.display = isOpening ? 'block' : 'none';
+            clickedElement.setAttribute('aria-expanded', String(isOpening));
             parentContainer.classList.toggle('menu-open', isOpening);
             var cardContainer = parentContainer.closest('.game-card-container');
             if (cardContainer) cardContainer.classList.toggle('menu-open', isOpening);

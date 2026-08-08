@@ -457,6 +457,7 @@ $(document).ready(function() {
     }
 
     function createGameCardHtml(game) {
+        const safeName = $('<div>').text(game.name || 'Untitled game').html();
         var genres = game.genres ? game.genres.join(', ') : 'No Genres';
         var tags = game.tags ? game.tags.join(', ') : '';
         var defaultCover = 'newstyle/default_cover.jpg';
@@ -484,55 +485,56 @@ $(document).ready(function() {
             const config = statusConfig[currentStatus] || { icon: 'fa-circle', color: '#808080', label: 'No Status' };
 
             statusButtonHtml = `
-                <button class="game-status-btn" data-game-uuid="${game.uuid}" data-current-status="${currentStatus}" title="${config.label}">
+                <button class="game-status-btn" type="button" data-game-uuid="${game.uuid}" data-current-status="${currentStatus}" title="${config.label}" aria-label="Set play status for ${safeName}. Current status: ${config.label}" aria-haspopup="menu" aria-expanded="false">
                     <i class="fas ${config.icon}" style="color: ${config.color}; ${!currentStatus ? 'opacity: 0.4;' : ''}"></i>
                 </button>
-                <div class="status-dropdown" data-game-uuid="${game.uuid}" style="display: none;">
-                    <div class="status-dropdown-option" data-status="unplayed">
+                <div class="status-dropdown" data-game-uuid="${game.uuid}" role="menu" aria-label="Play status for ${safeName}" style="display: none;">
+                    <button type="button" class="status-dropdown-option" role="menuitem" data-status="unplayed">
                         <i class="fas fa-box" style="color: #808080;"></i>
                         <span class="status-label">Unplayed</span>
-                    </div>
-                    <div class="status-dropdown-option" data-status="unfinished">
+                    </button>
+                    <button type="button" class="status-dropdown-option" role="menuitem" data-status="unfinished">
                         <i class="fas fa-gamepad" style="color: #4A90E2;"></i>
                         <span class="status-label">Unfinished</span>
-                    </div>
-                    <div class="status-dropdown-option" data-status="beaten">
+                    </button>
+                    <button type="button" class="status-dropdown-option" role="menuitem" data-status="beaten">
                         <i class="fas fa-flag-checkered" style="color: #50C878;"></i>
                         <span class="status-label">Beaten</span>
-                    </div>
-                    <div class="status-dropdown-option" data-status="completed">
+                    </button>
+                    <button type="button" class="status-dropdown-option" role="menuitem" data-status="completed">
                         <i class="fas fa-trophy" style="color: #FFD700;"></i>
                         <span class="status-label">Completed</span>
-                    </div>
-                    <div class="status-dropdown-option" data-status="null">
+                    </button>
+                    <button type="button" class="status-dropdown-option" role="menuitem" data-status="null">
                         <i class="fas fa-ban" style="color: #DC3545;"></i>
                         <span class="status-label">Won't Play</span>
-                    </div>
-                    <div class="status-dropdown-option" data-status="" style="border-top: 1px solid rgba(255, 255, 255, 0.2);">
+                    </button>
+                    <button type="button" class="status-dropdown-option" role="menuitem" data-status="" style="border-top: 1px solid rgba(255, 255, 255, 0.2);">
                         <i class="fas fa-times" style="color: #808080;"></i>
                         <span class="status-label">Clear Status</span>
-                    </div>
+                    </button>
                 </div>
             `;
         }
 
         var gameCardHtml = `
     <div class="game-card-container">
-        <div class="game-card" onmouseover="showDetails(this, '${game.uuid}')" onmouseout="hideDetails()" data-name="${game.name}" data-size="${game.size}" data-genres="${genres}" data-tags="${tags}">
-            <button id="menuButton-${game.uuid}" class="button-glass-hamburger"><i class="fas fa-bars"></i></button>
-            <button class="favorite-btn" data-game-uuid="${game.uuid}" data-is-favorite="${game.is_favorite}">
-                <i class="fas fa-heart"></i>
+        <div class="game-card" onmouseover="showDetails(this, '${game.uuid}')" onmouseout="hideDetails()" onfocusin="showDetails(this, '${game.uuid}')" onfocusout="hideDetails()" data-name="${safeName}" data-size="${game.size}" data-genres="${genres}" data-tags="${tags}">
+            <button id="menuButton-${game.uuid}" class="button-glass-hamburger" type="button" aria-label="Open actions for ${safeName}" aria-haspopup="menu" aria-expanded="false"><i class="fas fa-bars" aria-hidden="true"></i></button>
+            <button class="favorite-btn" type="button" data-game-uuid="${game.uuid}" data-is-favorite="${game.is_favorite}" data-game-name="${safeName}" aria-label="${game.is_favorite ? 'Remove' : 'Add'} ${safeName} ${game.is_favorite ? 'from' : 'to'} favorites">
+                <i class="fas fa-heart" aria-hidden="true"></i>
             </button>
             ${popupMenuHtml}
             ${statusButtonHtml}
 
             <a href="/game_details/${game.uuid}">
-                <img src="${fullCoverUrl}" alt="${game.name}" class="game-cover">
+                <img src="${fullCoverUrl}" alt="${safeName}" class="game-cover">
             </a>
             <div id="details-${game.uuid}" class="popup-game-details hidden">
                 <!-- Details and screenshots will be injected here by JavaScript -->
             </div>
         </div>
+        <a class="library-game-title" href="/game_details/${game.uuid}">${safeName}</a>
     </div>
     `;
         return gameCardHtml;
