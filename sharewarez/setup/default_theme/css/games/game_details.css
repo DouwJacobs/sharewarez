@@ -1591,10 +1591,13 @@ pre {
     .game-card-gamename h1 {
         font-size: 1.8rem;
         line-height: 1.18;
+        overflow-wrap: anywhere;
     }
 
     .game-version-badge {
-        margin-left: auto;
+        max-width: 100%;
+        margin-left: 0;
+        white-space: normal;
     }
 
     .game-details-back span {
@@ -1664,6 +1667,10 @@ pre {
 
     .extras-download-button {
         width: 100%;
+    }
+
+    .game-files :is(.btn, button, a.btn) {
+        min-height: 44px;
     }
 }
 

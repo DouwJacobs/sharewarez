@@ -225,6 +225,12 @@
     .admin-request-tile-meta { display: grid; }
 }
 
+@media (max-width: 420px) {
+    .admin-request-grid { grid-template-columns: 1fr; }
+    .request-history-card, .admin-request-card { display: grid; grid-template-columns: 64px minmax(0, 1fr); }
+    .request-history-card > img, .admin-request-card > img { width: 64px; height: 92px; }
+}
+
 .type-filters { margin-bottom: 0.5rem; }
 
 .admin-request-tile-header {
@@ -270,4 +276,3 @@
     color: #bda7ff;
     border: 1px solid rgba(150, 104, 255, 0.3);
 }
-

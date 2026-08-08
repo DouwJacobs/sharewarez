@@ -28,4 +28,9 @@
     .newsletter-page tbody tr { padding: 12px; border: 1px solid rgba(255,255,255,.09); border-radius: 12px; background: rgba(255,255,255,.03); }
     .newsletter-page tbody td { display: grid; grid-template-columns: minmax(90px, .4fr) 1fr; gap: 10px; padding: 6px 0 !important; border: 0; overflow-wrap: anywhere; }
     .newsletter-page tbody td::before { color: rgba(205,214,235,.65); content: attr(data-label); font-size: .72rem; font-weight: 750; letter-spacing: .06em; text-transform: uppercase; }
+    .newsletter-recipient-list { max-height: min(280px, 42vh); overscroll-behavior: contain; }
+    .newsletter-recipient-list .list-group-item { display: flex; align-items: center; min-height: 48px; padding: 10px 12px; overflow-wrap: anywhere; }
+    .newsletter-recipient-list .form-check-input { flex: 0 0 auto; width: 22px !important; min-height: 22px; }
+    .newsletter-page .ck-editor__editable { min-height: 220px; }
+    .newsletter-page > form > .btn { width: 100%; }
 }

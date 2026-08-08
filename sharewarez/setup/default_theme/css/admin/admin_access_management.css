@@ -705,7 +705,28 @@ input:checked + .toggle-label:before {
 
 @media (max-width: 768px) {
     .access-management-container {
-        margin: 1rem;
+        width: 100%;
+        min-width: 0;
+        margin: 0;
+    }
+
+    .split-view-container {
+        min-height: 0;
+        overflow: visible;
+    }
+
+    .master-panel {
+        width: 100%;
+        min-width: 0;
+        min-height: 240px;
+        max-height: 45vh;
+    }
+
+    .detail-panel {
+        width: 100%;
+        min-width: 0;
+        padding: 14px;
+        overflow: visible;
     }
 
     .stats-header {
@@ -736,6 +757,11 @@ input:checked + .toggle-label:before {
     .filter-controls {
         flex-direction: column;
         gap: 0.5rem;
+    }
+
+    .form-actions > :is(.btn, button) {
+        flex: 1 1 100%;
+        width: 100%;
     }
 }
 
