@@ -279,13 +279,14 @@
 
 .pagination-footer {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
+    flex-wrap: wrap;
     justify-content: center;
     align-items: center;
     margin-top: 30px;
-    padding: 15px 0;
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
-    gap: 20px;
+    padding: 18px 0;
+    border-top: 1px solid rgba(var(--theme-accent-soft-rgb, 154, 177, 255), 0.14);
+    gap: 12px;
 }
 
 .pagination-controls-left {
@@ -301,32 +302,33 @@
 }
 
 .pagination-label {
-    color: var(--color-gray-ddd);
+    margin: 0;
+    color: var(--theme-text-secondary, var(--color-gray-ddd));
     font-size: 14px;
-    font-weight: 500;
+    font-weight: 650;
 }
 
 .pagination-nav {
     display: flex;
     align-items: center;
-    margin-left: 2px;
+    margin: 0;
 }
 
 .pagination-controls {
     display: flex;
     align-items: center;
     gap: 8px;
-    background: rgba(255, 255, 255, 0.035);
+    background: var(--theme-panel-bg, rgba(18, 18, 28, 0.9));
     backdrop-filter: blur(16px);
     padding: 8px 12px;
     border-radius: 12px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(var(--theme-accent-soft-rgb, 154, 177, 255), 0.18);
 }
 
 .btn-pagination {
-    background: rgba(255, 255, 255, 0.055);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    color: var(--color-gray-ddd);
+    background: rgba(var(--theme-accent-rgb, 98, 122, 239), 0.08);
+    border: 1px solid rgba(var(--theme-accent-soft-rgb, 154, 177, 255), 0.2);
+    color: var(--theme-text-primary, var(--color-gray-ddd));
     border-radius: 8px;
     padding: 8px 12px;
     font-size: 14px;
@@ -335,15 +337,16 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    min-width: 36px;
-    height: 36px;
+    min-width: 42px;
+    width: 42px;
+    height: 42px;
 }
 
 .btn-pagination:hover:not(:disabled) {
-    background: rgba(98, 122, 239, 0.22);
-    border-color: rgba(154, 177, 255, 0.5);
+    background: rgba(var(--theme-accent-rgb, 98, 122, 239), 0.22);
+    border-color: rgba(var(--theme-accent-soft-rgb, 154, 177, 255), 0.5);
     transform: translateY(-2px);
-    box-shadow: 0 7px 18px rgba(52, 72, 185, 0.25);
+    box-shadow: 0 7px 18px rgba(var(--theme-accent-rgb, 52, 72, 185), 0.25);
 }
 
 .btn-pagination:disabled {
@@ -353,40 +356,63 @@
 }
 
 .page-info {
+    display: inline-flex;
+    min-width: 80px;
+    min-height: 42px;
+    align-items: center;
+    justify-content: center;
     padding: 8px 16px;
-    background: rgba(98, 122, 239, 0.12);
+    border: 1px solid rgba(var(--theme-accent-soft-rgb, 154, 177, 255), 0.2);
+    background: rgba(var(--theme-accent-rgb, 98, 122, 239), 0.16);
     border-radius: 8px;
     color: var(--text-white);
     font-size: 14px;
     font-weight: 500;
     white-space: nowrap;
-    min-width: 80px;
     text-align: center;
-    margin: 2px auto;
+    margin: 0;
+}
+
+.perpage-footer {
+    display: flex;
+    min-height: 60px;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px 8px 14px;
+    border: 1px solid rgba(var(--theme-accent-soft-rgb, 154, 177, 255), 0.18);
+    border-radius: 12px;
+    background: var(--theme-panel-bg, rgba(18, 18, 28, 0.9));
 }
 
 .dropdown-perpage {
-    background: rgba(255, 255, 255, 0.055);
+    min-width: 70px;
+    min-height: 42px;
+    margin: 0;
+    background: var(--theme-input-bg, rgba(12, 12, 20, 0.88));
     backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    color: var(--color-gray-ddd);
+    border: 1px solid rgba(var(--theme-accent-soft-rgb, 154, 177, 255), 0.2);
+    color: var(--theme-text-primary, var(--color-gray-ddd));
     border-radius: 8px;
     padding: 8px 12px;
     font-size: 14px;
     cursor: pointer;
     transition: all 0.2s ease;
-    min-width: 70px;
 }
 
 .dropdown-perpage:hover {
-    background: var(--bg-dark-secondary);
-    border-color: var(--border-light-30);
+    background: color-mix(in srgb, var(--theme-input-bg, rgba(12, 12, 20, 0.88)) 88%, rgb(var(--theme-accent-rgb, 98, 122, 239)));
+    border-color: rgba(var(--theme-accent-soft-rgb, 154, 177, 255), 0.42);
 }
 
 .dropdown-perpage:focus {
     outline: none;
-    border-color: var(--btn-info-hover);
-    box-shadow: 0 0 0 2px var(--primary-brand-25);
+    border-color: rgba(var(--theme-accent-soft-rgb, 154, 177, 255), 0.58);
+    box-shadow: 0 0 0 3px rgba(var(--theme-accent-rgb, 98, 122, 239), 0.16);
+}
+
+.dropdown-perpage option {
+    background: var(--theme-panel-bg, #12121c);
+    color: var(--theme-text-primary, #f5f7ff);
 }
 
 /* Legacy pagination compatibility */
@@ -512,6 +538,15 @@
         justify-content: center;
         gap: 6px;
         padding: 6px 8px;
+    }
+
+    .pagination-footer {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .perpage-footer {
+        min-height: 52px;
     }
 
     .pagination-label {
