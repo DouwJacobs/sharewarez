@@ -99,6 +99,49 @@ body { color: var(--theme-text-primary, #f5f7ff); }
     box-shadow: 0 0 0 .2rem rgba(var(--theme-accent-rgb, 98, 122, 239), .16) !important;
 }
 
+/* Native file inputs otherwise retain Bootstrap's fixed light chooser button.
+   Keep the filename and action visually aligned with the shared control system. */
+.form-control[type="file"] {
+    min-height: var(--control-height, 42px);
+    padding: 0 !important;
+    overflow: hidden;
+    border-color: rgba(var(--theme-accent-soft-rgb, 154, 177, 255), .2) !important;
+    background: var(--theme-input-bg, rgba(12, 12, 20, .88)) !important;
+    color: var(--theme-text-secondary, #c5ccdc) !important;
+    line-height: var(--control-height, 42px);
+}
+
+.form-control[type="file"]::file-selector-button {
+    min-height: var(--control-height, 42px);
+    margin: 0 14px 0 0 !important;
+    padding: 0 17px !important;
+    border: 0 !important;
+    border-right: 1px solid rgba(var(--theme-accent-soft-rgb, 154, 177, 255), .22) !important;
+    border-radius: 0 !important;
+    background: rgba(var(--theme-accent-rgb, 98, 122, 239), .16) !important;
+    color: var(--theme-text-primary, #f5f7ff) !important;
+    font-weight: 650;
+    line-height: var(--control-height, 42px);
+    cursor: pointer;
+    transition: background-color var(--transition-fast, .15s ease), color var(--transition-fast, .15s ease);
+}
+
+.form-control[type="file"]:hover::file-selector-button {
+    background: rgba(var(--theme-accent-rgb, 98, 122, 239), .28) !important;
+    color: color-mix(in srgb, var(--theme-text-primary, #f5f7ff) 82%, white) !important;
+}
+
+.form-control[type="file"]:focus-visible::file-selector-button {
+    background: rgba(var(--theme-accent-rgb, 98, 122, 239), .32) !important;
+}
+
+@media (max-width: 520px) {
+    .form-control[type="file"]::file-selector-button {
+        padding-inline: 13px !important;
+        margin-right: 10px !important;
+    }
+}
+
 .table > :not(caption) > * > *,
 .dataTable > :not(caption) > * > * {
     border-color: rgba(var(--theme-accent-soft-rgb, 154, 177, 255), .12) !important;
