@@ -114,6 +114,5 @@ The default deployment uses two application workers for concurrent users and str
 ## Support and credits
 
 - Report problems through [GitHub Issues](https://github.com/DouwJacobs/sharewarez/issues)
-- Join the [Discord community](https://discord.gg/WTwp236zU7)
 - GameLibrary was forked from [SharewareZ](https://github.com/axewater/sharewarez)
 - Browser-based retro gaming is powered by [Webretro](https://github.com/BinBashBanana/webretro)
