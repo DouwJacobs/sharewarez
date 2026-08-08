@@ -1,3 +1,23 @@
+/* Add and Edit Library share this focused settings surface. */
+.admin-ui #content > .admin_manage_library_create-panel {
+    width: min(760px, calc(100% - 48px));
+    max-width: 760px;
+    margin: 24px auto 48px;
+    padding: 28px;
+}
+
+.admin_manage_library_create-form {
+    width: 100%;
+}
+
+.admin_manage_library_create-image img {
+    display: block;
+    width: min(200px, 100%);
+    height: auto;
+    border: 1px solid var(--theme-border-color, rgba(255, 255, 255, .1));
+    border-radius: 12px;
+}
+
 /* Glassmorphic Image Editor Modal Styles */
 .glass-panel-modal {
     background: rgba(40, 40, 40, 0.95);
@@ -159,6 +179,12 @@
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
+    .admin-ui #content > .admin_manage_library_create-panel {
+        width: 100%;
+        margin: 0 auto 24px;
+        padding: 18px;
+    }
+
     .image-editor-canvas-container {
         height: 300px;
         max-width: 100%;
