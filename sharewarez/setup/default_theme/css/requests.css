@@ -48,7 +48,7 @@
     display: inline-flex;
     width: 1rem;
     height: 1rem;
-    align-items: center;
+    align-items: flex-start;
     justify-content: center;
     line-height: 1;
 }
@@ -303,9 +303,17 @@
     .request-sort-label { min-width: 0; }
 }
 /* User request progress and compact, progressive search results. */
-.request-user-summary { align-items: center; }
+.request-user-summary {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+.request-user-summary > div { min-width: 0; }
 .request-user-summary p { margin: .25rem 0 0; color: var(--theme-text-secondary, #b9c0d0); }
 .request-quota {
+    flex: 0 0 auto;
     padding: .4rem .7rem;
     border: 1px solid var(--theme-border-color, rgba(255,255,255,.12));
     border-radius: 999px;
