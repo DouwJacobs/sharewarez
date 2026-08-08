@@ -2,10 +2,11 @@
 
 {% macro game_card(game) %}
 <a class="home-game-card" href="{{ url_for('games.game_details', game_uuid=game.uuid) }}" aria-label="View {{ game.name }}">
-    <span class="home-game-cover"><img src="{{ game.cover_url }}" alt="Cover for {{ game.name }}" loading="lazy"></span>
+    <span class="home-game-cover"><img src="{{ game.cover_url }}" alt="Cover for {{ game.name }}" loading="lazy"><span class="home-card-availability">In library</span></span>
     <span class="home-game-info">
         <strong title="{{ game.name }}">{{ game.name }}</strong>
-        <span>{% if game.rating %}<i class="fas fa-star" aria-hidden="true"></i> {{ game.rating }}{% elif game.genres %}{{ game.genres[0] }}{% else %}{{ game.size }}{% endif %}</span>
+        <span class="home-game-genres">{% if game.genres %}{{ game.genres[:2]|join(', ') }}{% else %}Game{% endif %}</span>
+        <span class="home-game-meta"><small>{{ game.size }}</small>{% if game.rating %}<b><i class="fas fa-star" aria-hidden="true"></i> {{ game.rating }}</b>{% endif %}</span>
     </span>
 </a>
 {% endmacro %}
@@ -14,10 +15,21 @@
 <link rel="stylesheet" href="{{ 'css/games/discover.css'|theme_asset }}">
 
 <main class="home-page">
+    <header class="storefront-header">
+        <div><p class="home-eyebrow">Browse the collection</p><h1>Discover</h1></div>
+        <nav aria-label="Discover shortcuts">
+            <a class="active" href="{{ url_for('discover.discover') }}">Featured</a>
+            <a href="{{ url_for('library.library', sort_by='date_identified', sort_order='desc') }}">New releases</a>
+            <a href="{{ url_for('library.library', sort_by='rating', sort_order='desc') }}">Top rated</a>
+            <a href="{{ url_for('site.favorites') }}">Wishlist</a>
+        </nav>
+    </header>
+
     {% if featured_game %}
+    <div class="storefront-featured-grid">
     <section class="home-hero" style="--home-hero-image: url('{{ featured_game.backdrop_url }}')" aria-labelledby="home-featured-title">
         <div class="home-hero-content">
-            <p class="home-eyebrow"><i class="fas fa-sparkles" aria-hidden="true"></i> Featured from your library</p>
+            <p class="home-featured-label"><i class="fas fa-bolt" aria-hidden="true"></i> Featured game</p>
             <h1 id="home-featured-title">{{ featured_game.name }}</h1>
             {% if featured_game.summary %}<p class="home-hero-summary">{{ featured_game.summary }}</p>{% endif %}
             <div class="home-hero-meta">
@@ -31,6 +43,16 @@
             </div>
         </div>
     </section>
+        {% set noteworthy = section_data.get('latest_games', [])[1:4] %}
+        {% if noteworthy %}
+        <aside class="storefront-noteworthy" aria-labelledby="noteworthy-title">
+            <div class="storefront-noteworthy-heading"><p class="home-eyebrow">Fresh arrivals</p><h2 id="noteworthy-title">New & noteworthy</h2></div>
+            {% for game in noteworthy %}
+            <a href="{{ url_for('games.game_details', game_uuid=game.uuid) }}"><img src="{{ game.cover_url }}" alt=""><span><strong>{{ game.name }}</strong><small>{% if game.genres %}{{ game.genres[0] }}{% else %}Recently added{% endif %}</small><b>View game <i class="fas fa-arrow-right"></i></b></span></a>
+            {% endfor %}
+        </aside>
+        {% endif %}
+    </div>
     {% else %}
     <section class="home-welcome">
         <p class="home-eyebrow">Your game library</p>
@@ -40,7 +62,7 @@
     </section>
     {% endif %}
 
-    <section class="home-overview" aria-label="Your library overview">
+    <section class="home-overview" aria-label="Your collection at a glance">
         <a href="{{ url_for('library.library') }}"><i class="fas fa-gamepad"></i><span><strong>{{ library_stats.games }}</strong>Games available</span></a>
         <a href="{{ url_for('site.favorites') }}"><i class="fas fa-heart"></i><span><strong>{{ library_stats.favorites }}</strong>Favorites</span></a>
         <a href="{{ url_for('library.library') }}"><i class="fas fa-circle-play"></i><span><strong>{{ library_stats.playing }}</strong>Playing</span></a>
@@ -73,12 +95,12 @@
     {% endif %}
 
     <section class="home-quick-discover" aria-labelledby="quick-discover-title">
-        <div><p class="home-eyebrow">Find something different</p><h2 id="quick-discover-title">What are you in the mood for?</h2></div>
+        <div><p class="home-eyebrow">Curated collections</p><h2 id="quick-discover-title">Browse by mood</h2></div>
         <div class="home-quick-links">
-            <a href="{{ url_for('library.library', sort_by='rating', sort_order='desc') }}"><i class="fas fa-trophy"></i> Highly rated</a>
-            <a href="{{ url_for('library.library', sort_by='date_identified', sort_order='desc') }}"><i class="fas fa-clock"></i> Recently added</a>
-            <a href="{{ url_for('library.library', genre='Adventure') }}"><i class="fas fa-compass"></i> Adventure</a>
-            <a href="{{ url_for('library.library', genre='Indie') }}"><i class="fas fa-gem"></i> Hidden gems</a>
+            <a class="mood-rated" href="{{ url_for('library.library', sort_by='rating', sort_order='desc') }}"><i class="fas fa-trophy"></i><span><strong>Critically acclaimed</strong><small>The highest-rated games in your collection</small></span></a>
+            <a class="mood-new" href="{{ url_for('library.library', sort_by='date_identified', sort_order='desc') }}"><i class="fas fa-clock"></i><span><strong>Fresh arrivals</strong><small>See what was added recently</small></span></a>
+            <a class="mood-adventure" href="{{ url_for('library.library', genre='Adventure') }}"><i class="fas fa-compass"></i><span><strong>Epic adventures</strong><small>Explore another world</small></span></a>
+            <a class="mood-hidden" href="{{ url_for('library.library', genre='Indie') }}"><i class="fas fa-gem"></i><span><strong>Hidden gems</strong><small>Something outside the spotlight</small></span></a>
         </div>
     </section>
 
