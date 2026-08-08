@@ -10,7 +10,7 @@
 .branding-reset strong { color: #eef1ff; }
 .branding-reset.is-disabled { opacity: .55; cursor: default; }
 .branding-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 26px; }
-.branding-preview { position: sticky; top: 24px; text-align: center; }
+.branding-preview { position: sticky; top: 0; align-self: start; text-align: center; }
 .branding-preview-logo { display: grid; place-items: center; width: 190px; height: 190px; margin: 18px auto; padding: 16px; border-radius: 30px; background: linear-gradient(145deg, rgba(117, 136, 255, .14), rgba(60, 212, 255, .05)); }
 .branding-preview-logo img { display: block; max-width: 100%; max-height: 100%; object-fit: contain; }
 .branding-preview strong { display: block; color: #f6f7ff; font-size: 1.35rem; overflow-wrap: anywhere; }
