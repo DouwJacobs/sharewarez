@@ -23,9 +23,10 @@ def inject_settings():
 @login_required
 def settings_profile_edit():
     print("Route: Settings profile edit")
-    form = EditProfileForm()
+    form = EditProfileForm(obj=current_user)
 
     if form.validate_on_submit():
+        current_user.about = form.about.data.strip() if form.about.data and form.about.data.strip() else None
         file = form.avatar.data
         if file:
             MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB in bytes
@@ -133,7 +134,7 @@ def settings_profile_edit():
             print(f"Error updating profile: {e}")
             flash('Failed to update profile. Please try again.', 'error')
 
-        return redirect(url_for('settings.settings_profile_edit'))
+        return redirect(url_for('settings.settings_profile_view'))
 
     print("Form validation failed" if request.method == 'POST' else "Settings profile Form rendering")
 

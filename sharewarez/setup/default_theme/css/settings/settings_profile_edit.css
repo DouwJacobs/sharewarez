@@ -89,6 +89,51 @@
     margin-bottom: 1.5rem;
 }
 
+.profile-fields {
+    display: grid;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.profile-fields .form-label {
+    margin-bottom: .45rem;
+    color: var(--theme-text-secondary, var(--text-light));
+    font-weight: 650;
+}
+
+.profile-fields .form-control {
+    border-color: rgba(var(--theme-accent-soft-rgb, 154, 177, 255), .18);
+    background: var(--theme-input-bg, rgba(7, 9, 19, .72));
+    color: var(--theme-text-primary, var(--text-white));
+}
+
+.profile-fields .form-control[readonly] {
+    opacity: .72;
+    cursor: not-allowed;
+}
+
+.profile-fields textarea.form-control {
+    min-height: 112px;
+    resize: vertical;
+}
+
+.avatar-upload-title {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid rgba(var(--theme-accent-soft-rgb, 154, 177, 255), .14);
+}
+
+.avatar-upload-title span {
+    margin-left: auto;
+    color: var(--theme-text-secondary, var(--text-light));
+    font-size: .72rem;
+    font-weight: 600;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+}
+
 .upload-zone {
     border: 2px dashed rgba(150, 170, 255, 0.32);
     border-radius: 12px;

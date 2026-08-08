@@ -80,6 +80,7 @@ class WhitelistForm(FlaskForm):
     submit = SubmitField('Add to Whitelist')
 
 class EditProfileForm(FlaskForm):
+    about = TextAreaField('About', validators=[Optional(), Length(max=256)])
     avatar = FileField('Profile Avatar', validators=[
         FileAllowed(['jpg', 'jpeg', 'png', 'gif'], 'Images only!')
     ])

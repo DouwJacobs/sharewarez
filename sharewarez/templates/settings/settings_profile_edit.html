@@ -9,7 +9,7 @@
 <div class="breadcrumb-container glass-panel mb-4">
     <nav aria-label="breadcrumb">
         <ol class="breadcrumb mb-0">
-            <li class="breadcrumb-item"><a href="{{ url_for('settings.settings_panel') }}"><i class="fas fa-cog"></i> Settings</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('settings.settings_profile_view') }}"><i class="fas fa-user"></i> Profile</a></li>
             <li class="breadcrumb-item active"><i class="fas fa-user-edit"></i> Edit Profile</li>
         </ol>
     </nav>
@@ -17,7 +17,7 @@
 
 <!-- Main Content -->
 <div class="profile-edit-container glass-panel">
-    <h2 class="section-title"><i class="fas fa-user-circle"></i> Change User Avatar</h2>
+    <h2 class="section-title"><i class="fas fa-user-circle"></i> Edit Profile</h2>
     
     <div class="row">
         <!-- Left Column - Avatar Preview -->
@@ -40,9 +40,26 @@
         <!-- Right Column - Upload Form -->
         <div class="col-md-7">
             <div class="upload-section">
-                <h4><i class="fas fa-upload"></i> Upload New Avatar</h4>
+                <h4><i class="fas fa-pen"></i> Profile Details</h4>
                 <form method="POST" enctype="multipart/form-data" class="upload-form">
                     {{ form.hidden_tag() }}
+                    <div class="profile-fields">
+                        <div>
+                            <label class="form-label" for="profileName">Account name</label>
+                            <input class="form-control" id="profileName" value="{{ current_user.name }}" readonly aria-describedby="profileNameHelp">
+                            <p class="form-text" id="profileNameHelp">Your login name cannot be changed.</p>
+                        </div>
+                        <div>
+                            <label class="form-label" for="profileEmail">Email address</label>
+                            <input class="form-control" id="profileEmail" value="{{ current_user.email }}" readonly>
+                        </div>
+                        <div>
+                            {{ form.about.label(class="form-label") }}
+                            {{ form.about(class="form-control", rows="4", maxlength="256", placeholder="Tell other users a little about yourself") }}
+                            <p class="form-text">Up to 256 characters.</p>
+                        </div>
+                    </div>
+                    <h4 class="avatar-upload-title"><i class="fas fa-upload"></i> Change Avatar <span>Optional</span></h4>
                     <div class="mb-4">
                         <div class="upload-zone">
                             <i class="fas fa-cloud-upload-alt upload-icon"></i>
@@ -57,7 +74,7 @@
                         </div>
                     </div>
                     <button type="submit" class="btn btn-primary save-button">
-                        <i class="fas fa-save"></i> Save Changes
+                        <i class="fas fa-save"></i> Save Profile
                     </button>
                 </form>
             </div>
