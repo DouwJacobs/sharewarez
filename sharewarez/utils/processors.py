@@ -35,6 +35,7 @@ def get_global_settings():
         'enableNewsletterFeature': True,
         'enableGameRequests': True,
         'showVersion': True,
+        'defaultTheme': 'default',
         'enableDeleteGameOnDisk': True,
         'enableGameUpdates': True,
         'enableGameExtras': True,

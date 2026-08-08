@@ -23,7 +23,8 @@ def initialize_default_settings():
                 'enableWebLinksOnDetailsPage': True,
                 'enableServerStatusFeature': True,
                 'enableNewsletterFeature': True,
-                'showVersion': True
+                'showVersion': True,
+                'defaultTheme': 'default'
             }
             settings_record = GlobalSettings(settings=default_settings)
             db.session.add(settings_record)
@@ -43,7 +44,8 @@ def initialize_default_settings():
                     'enableWebLinksOnDetailsPage': True,
                     'enableServerStatusFeature': True,
                     'enableNewsletterFeature': True,
-                    'showVersion': True
+                    'showVersion': True,
+                    'defaultTheme': 'default'
                 }
                 settings_record.settings = default_settings
                 db.session.commit()

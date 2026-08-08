@@ -5,11 +5,49 @@ import shutil
 import re
 from datetime import date
 from io import BytesIO
-from flask import flash
+from flask import current_app, flash, g, has_request_context
 from werkzeug.utils import secure_filename
-from sharewarez.models import UserPreference
+from sharewarez.models import GlobalSettings, UserPreference
 from sharewarez import db
-from sqlalchemy import update
+from sqlalchemy import select, update
+
+SITE_DEFAULT_THEME_VALUE = '__site_default__'
+
+
+def get_site_default_theme_id(app=None):
+    """Return a valid installed theme selected as the site-wide default."""
+    cache_key = '_site_default_theme_id'
+    if has_request_context() and hasattr(g, cache_key):
+        return getattr(g, cache_key)
+
+    settings_record = db.session.execute(select(GlobalSettings)).scalars().first()
+    configured = (settings_record.settings or {}).get('defaultTheme', 'default') if settings_record else 'default'
+    manager = ThemeManager(app or current_app)
+    theme_id = configured if manager.get_theme(configured) else 'default'
+    if has_request_context():
+        setattr(g, cache_key, theme_id)
+    return theme_id
+
+
+def resolve_theme_id(user=None, app=None):
+    """Resolve a user override, otherwise falling back to the site default."""
+    selected = None
+    if user is not None and getattr(user, 'is_authenticated', False):
+        preferences = getattr(user, 'preferences', None)
+        selected = getattr(preferences, 'theme', None) if preferences else None
+
+    manager = ThemeManager(app or current_app)
+    if selected:
+        if manager.get_theme(selected):
+            return selected
+        # Older preferences sometimes stored a display name.
+        matched = next(
+            (theme['id'] for theme in manager.get_installed_themes() if theme['name'] == selected),
+            None,
+        )
+        if matched:
+            return matched
+    return get_site_default_theme_id(app)
 
 class ThemeManager:
     def __init__(self, app):
@@ -282,4 +320,9 @@ a {{ color: {palette['accent_soft']}; }}
         if display_name:
             values.append(display_name)
         db.session.execute(update(UserPreference).where(UserPreference.theme.in_(values)).values(theme='default'))
+        settings_record = db.session.execute(select(GlobalSettings)).scalars().first()
+        if settings_record and (settings_record.settings or {}).get('defaultTheme') in values:
+            settings = dict(settings_record.settings or {})
+            settings['defaultTheme'] = 'default'
+            settings_record.settings = settings
         db.session.commit()

@@ -1114,11 +1114,8 @@ def theme_asset_filter(_template_context, path):
     """Convert a relative theme path to the correct themed URL with fallback to default"""
     from flask_login import current_user
 
-    # Get current theme from user preferences or default
-    if current_user.is_authenticated and hasattr(current_user, 'preferences') and current_user.preferences:
-        current_theme = current_user.preferences.theme or 'default'
-    else:
-        current_theme = 'default'
+    from sharewarez.utils.themes import resolve_theme_id
+    current_theme = _template_context.get('current_theme') or resolve_theme_id(current_user, current_app)
 
     # Older preferences stored the display name rather than the filesystem-safe
     # theme id. Normalizing here keeps those selections working.

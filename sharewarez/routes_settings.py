@@ -192,7 +192,8 @@ def settings_panel():
         current_user.preferences.items_per_page = form.items_per_page.data
         current_user.preferences.default_sort = form.default_sort.data
         current_user.preferences.default_sort_order = form.default_sort_order.data
-        current_user.preferences.theme = form.theme.data if form.theme.data != 'default' else None
+        from sharewarez.utils.themes import SITE_DEFAULT_THEME_VALUE
+        current_user.preferences.theme = None if form.theme.data == SITE_DEFAULT_THEME_VALUE else form.theme.data
         
         try:
             db.session.add(current_user.preferences)
@@ -212,13 +213,14 @@ def settings_panel():
             form.default_sort.data = preferences.default_sort
             form.default_sort_order.data = preferences.default_sort_order
 
-            saved_theme = preferences.theme or 'default'
+            from sharewarez.utils.themes import SITE_DEFAULT_THEME_VALUE
+            saved_theme = preferences.theme or SITE_DEFAULT_THEME_VALUE
             theme_ids = {value for value, _label in form.theme.choices}
             if saved_theme not in theme_ids:
                 installed_themes = ThemeManager(current_app).get_installed_themes()
                 saved_theme = next(
                     (theme['id'] for theme in installed_themes if theme['name'] == saved_theme),
-                    'default'
+                    SITE_DEFAULT_THEME_VALUE
                 )
             form.theme.data = saved_theme
         template = 'settings/modal_preferences.html' if request.args.get('modal') == '1' else 'settings/settings_panel.html'

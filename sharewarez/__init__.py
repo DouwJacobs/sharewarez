@@ -94,10 +94,8 @@ def create_app():
         """Inject the active theme and instance branding into every template."""
         from sharewarez.utils.processors import get_global_settings
 
-        if current_user.is_authenticated and hasattr(current_user, 'preferences') and current_user.preferences:
-            current_theme = current_user.preferences.theme or 'default'
-        else:
-            current_theme = 'default'
+        from sharewarez.utils.themes import resolve_theme_id
+        current_theme = resolve_theme_id(current_user, app)
         return dict(current_theme=current_theme, **get_global_settings())
 
     @app.before_request

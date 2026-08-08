@@ -61,17 +61,22 @@
         </div>
         <div class="themes-grid">
             {% for theme in themes %}
-            <article class="theme-card{% if theme.id == 'default' %} default-theme{% endif %}">
-                <div class="theme-card-heading"><h3>{{ theme.name }}</h3><span class="badge {% if theme.id == 'default' %}bg-primary{% elif theme.source == 'bundled' %}bg-info{% elif theme.source == 'builder' %}bg-success{% else %}bg-secondary{% endif %}">{% if theme.id == 'default' %}Default{% elif theme.source == 'bundled' %}Bundled{% elif theme.source == 'builder' %}Created in app{% else %}Uploaded{% endif %}</span></div>
+            <article class="theme-card{% if theme.id == site_default_theme_id %} site-default-theme{% endif %}">
+                <div class="theme-card-heading"><h3>{{ theme.name }}</h3><div class="theme-card-badges">{% if theme.id == site_default_theme_id %}<span class="badge bg-primary">Site default</span>{% endif %}<span class="badge {% if theme.id == 'default' %}bg-secondary{% elif theme.source == 'bundled' %}bg-info{% elif theme.source == 'builder' %}bg-success{% else %}bg-secondary{% endif %}">{% if theme.id == 'default' %}Built in{% elif theme.source == 'bundled' %}Bundled{% elif theme.source == 'builder' %}Created in app{% else %}Uploaded{% endif %}</span></div></div>
                 <dl class="theme-meta"><div><dt>Author</dt><dd>{{ theme.author }}</dd></div><div><dt>Released</dt><dd>{{ theme.release_date }}</dd></div></dl>
                 <p>{{ theme.description }}</p>
-                {% if theme.editable or not theme.bundled %}<div class="theme-card-actions">
+                <div class="theme-card-actions">
+                    {% if theme.id != site_default_theme_id %}<form action="{{ url_for('admin2.set_site_default_theme') }}" method="POST">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="theme_id" value="{{ theme.id }}">
+                        <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-check" aria-hidden="true"></i> Set as site default</button>
+                    </form>{% endif %}
                     {% if theme.editable %}<a href="{{ url_for('admin2.theme_builder', theme_id=theme.id) }}" class="btn btn-secondary btn-sm"><i class="fas fa-pen" aria-hidden="true"></i> Edit</a>{% endif %}
                     {% if not theme.bundled %}<form action="{{ url_for('admin2.delete_theme', theme_name=theme.id) }}" method="POST" onsubmit="return confirm('Delete this theme?');">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <button type="submit" class="btn btn-danger btn-sm"><i class="fas fa-trash" aria-hidden="true"></i> Delete</button>
                     </form>{% endif %}
-                </div>{% endif %}
+                </div>
             </article>
             {% endfor %}
         </div>
