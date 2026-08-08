@@ -705,22 +705,14 @@ def refresh_game_images(game_uuid):
 @login_required
 @admin_required
 def refresh_game_metadata_updates(game_uuid):
-    settings = db.session.execute(select(GlobalSettings)).scalars().first()
-    if not settings or not (settings.enable_game_updates or settings.enable_game_extras):
-        return jsonify({
-            'status': 'error',
-            'message': 'Game update and extras scanning are disabled in global settings.'
-        }), 409
-
     game = db.session.execute(select(Game).filter_by(uuid=game_uuid)).scalar_one_or_none()
     if not game:
         return jsonify({'status': 'error', 'message': 'Game not found.'}), 404
-    if not game.full_disk_path or not os.path.exists(game.full_disk_path):
-        return jsonify({'status': 'error', 'message': 'The game path is not currently available.'}), 409
 
     game_name = game.name
     try:
-        refreshed_name = refresh_game_metadata_and_updates(game_uuid)
+        refresh_result = refresh_game_metadata_and_updates(game_uuid)
+        refreshed_name = refresh_result.game_name
         current_app.logger.info(
             "Metadata and updates refreshed for %s (%s)", refreshed_name, game_uuid
         )
@@ -734,7 +726,9 @@ def refresh_game_metadata_updates(game_uuid):
         flash(message, 'error')
         return redirect(request.referrer or url_for('library.library'))
 
-    message = f"Metadata and updates refreshed for {refreshed_name}."
+    message = f"Metadata refreshed for {refreshed_name}."
+    if refresh_result.filesystem_skipped:
+        message = f'{message} {refresh_result.filesystem_message}'
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         return jsonify({'status': 'info', 'message': message})
     flash(message, 'info')

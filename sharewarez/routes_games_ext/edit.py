@@ -331,7 +331,8 @@ def game_edit(game_uuid):
                     edited_version = game.version
                     edited_edition_name = game.edition_name
 
-                    refreshed_name = refresh_game_metadata_and_updates(game_uuid)
+                    refresh_result = refresh_game_metadata_and_updates(game_uuid)
+                    refreshed_name = refresh_result.game_name
 
                     # Re-apply explicit user form edits if specified
                     if edited_developer is not None:
@@ -349,6 +350,8 @@ def game_edit(game_uuid):
                     db.session.commit()
 
                     flash(f'Game saved and metadata refreshed for {refreshed_name}.', 'success')
+                    if refresh_result.filesystem_skipped:
+                        flash(refresh_result.filesystem_message, 'info')
                     current_app.logger.info(
                         'Save-and-refresh: metadata refreshed for %s (%s)', refreshed_name, game_uuid
                     )

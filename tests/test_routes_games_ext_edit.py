@@ -1,4 +1,5 @@
 import pytest
+from types import SimpleNamespace
 from unittest.mock import patch, Mock, MagicMock, call
 from uuid import uuid4
 from datetime import datetime, timezone
@@ -562,7 +563,13 @@ class TestGameEditSuccessScenarios:
              patch('sharewarez.routes_games_ext.edit.get_allowed_base_directories', return_value=['/allowed']), \
              patch('sharewarez.routes_games_ext.edit.get_folder_size_in_bytes_updates', return_value=2048000), \
              patch('sharewarez.routes_games_ext.edit.read_first_nfo_content', return_value='Updated NFO'), \
-             patch('sharewarez.routes_games_ext.edit.refresh_game_metadata_and_updates', return_value='Updated Game Name') as refresh:
+             patch(
+                 'sharewarez.routes_games_ext.edit.refresh_game_metadata_and_updates',
+                 return_value=SimpleNamespace(
+                     game_name='Updated Game Name', filesystem_skipped=False,
+                     filesystem_message=None,
+                 ),
+             ) as refresh:
             response = client.post(f'/game_edit/{test_game.uuid}', data=form_data)
 
         assert response.status_code == 302

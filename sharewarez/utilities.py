@@ -1,6 +1,7 @@
 #/sharewarez/utilities.py
 import os
 import re
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from threading import Thread
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -24,6 +25,15 @@ from sharewarez.utils.gamenames import get_game_names_from_folder, get_game_name
 from sharewarez.utils.scanning import process_game_with_fallback, process_game_updates, process_game_extras, is_scan_job_running
 from sharewarez.utils.igdb_api import IGDBRateLimiter
 from sharewarez.utils.security import is_safe_path, get_allowed_base_directories
+
+
+@dataclass(frozen=True)
+class MetadataRefreshResult:
+    """Outcome of remote metadata refresh and optional local enrichment."""
+
+    game_name: str
+    filesystem_skipped: bool = False
+    filesystem_message: str | None = None
 
 
 def _scan_enabled_supplemental_content(game_name, full_disk_path, library_uuid,
@@ -56,12 +66,6 @@ def refresh_game_metadata_and_updates(game_uuid):
     game = db.session.execute(select(Game).filter_by(uuid=game_uuid)).scalar_one_or_none()
     if not game:
         raise ValueError('Game not found')
-    if not game.full_disk_path or not os.path.exists(game.full_disk_path):
-        raise FileNotFoundError(f"Game path is unavailable: {game.full_disk_path or 'not configured'}")
-    allowed_bases = get_allowed_base_directories(current_app)
-    is_safe, error_message = is_safe_path(game.full_disk_path, allowed_bases)
-    if not is_safe:
-        raise PermissionError(error_message)
 
     settings = db.session.execute(select(GlobalSettings)).scalars().first()
     update_folder_name = settings.update_folder_name if settings else 'updates'
@@ -129,22 +133,44 @@ def refresh_game_metadata_and_updates(game_uuid):
             game.publisher = None
         enumerate_companies(game, game.igdb_id, involved_companies)
 
-    game.nfo_content = read_first_nfo_content(game.full_disk_path) if os.path.isdir(game.full_disk_path) else None
-    game.size = get_folder_size_in_bytes_updates(game.full_disk_path)
+    filesystem_message = None
+    path_available = bool(game.full_disk_path and os.path.isdir(game.full_disk_path))
+    if path_available:
+        allowed_bases = get_allowed_base_directories(current_app)
+        path_is_safe, error_message = is_safe_path(game.full_disk_path, allowed_bases)
+        if not path_is_safe:
+            path_available = False
+            filesystem_message = f'Filesystem enrichment skipped: {error_message}'
+    else:
+        filesystem_message = (
+            'Filesystem enrichment skipped because the game path is unavailable: '
+            f"{game.full_disk_path or 'not configured'}"
+        )
+
+    if path_available:
+        game.nfo_content = read_first_nfo_content(game.full_disk_path)
+        game.size = get_folder_size_in_bytes_updates(game.full_disk_path)
     game.last_updated = datetime.now(timezone.utc)
     db.session.commit()
 
-    _scan_enabled_supplemental_content(
-        game.name, game.full_disk_path, game.library_uuid,
-        enable_game_updates, update_folder_name,
-        enable_game_extras, extras_folder_name
-    )
+    if path_available:
+        _scan_enabled_supplemental_content(
+            game.name, game.full_disk_path, game.library_uuid,
+            enable_game_updates, update_folder_name,
+            enable_game_extras, extras_folder_name
+        )
+    elif filesystem_message:
+        current_app.logger.info('%s (%s)', filesystem_message, game.uuid)
 
     if settings and settings.enable_hltb_integration:
         from sharewarez.utils.hltb import update_game_hltb_sync
         update_game_hltb_sync(game.uuid, game.name)
 
-    return game.name
+    return MetadataRefreshResult(
+        game_name=game.name,
+        filesystem_skipped=not path_available,
+        filesystem_message=filesystem_message,
+    )
 
 
 def scan_and_add_games(folder_path, scan_mode='folders', library_uuid=None, remove_missing=False, existing_job=None, download_missing_images=False, force_updates_extras_scan=False, fetch_hltb=False, force_hltb_refetch=False):

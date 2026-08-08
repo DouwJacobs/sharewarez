@@ -79,11 +79,50 @@ def test_metadata_refresh_updates_igdb_fields_and_repairs_developer_placeholder(
          patch('sharewarez.utilities.read_first_nfo_content', return_value=None), \
          patch('sharewarez.utilities.get_folder_size_in_bytes_updates', return_value=1024), \
          patch('sharewarez.utilities._scan_enabled_supplemental_content'):
-        refreshed_name = refresh_game_metadata_and_updates(game.uuid)
+        refresh_result = refresh_game_metadata_and_updates(game.uuid)
 
-    assert refreshed_name == 'Updated name'
+    assert refresh_result.game_name == 'Updated name'
+    assert refresh_result.filesystem_skipped is False
     assert game.rating == 84.5
     assert game.aggregated_rating == 79.25
     assert game.first_release_date.year == 2024
     assert game.developer.name == 'Actual Developer'
     assert game.genres == ['Adventure']
+
+
+def test_metadata_refresh_succeeds_when_game_path_is_unavailable():
+    game = SimpleNamespace(
+        uuid='game-uuid', igdb_id=123, name='Old name', full_disk_path='/storage/offline/Game',
+        library_uuid='library-uuid', developer=None, publisher=None, genres=[], themes=[],
+        game_modes=[], platforms=[], player_perspectives=[], nfo_content='Existing NFO', size=2048,
+    )
+    settings = SimpleNamespace(
+        update_folder_name='updates', extras_folder_name='extras',
+        enable_game_updates=True, enable_game_extras=True, enable_hltb_integration=True,
+    )
+    results = [
+        SimpleNamespace(scalar_one_or_none=lambda: game),
+        SimpleNamespace(scalars=lambda: SimpleNamespace(first=lambda: settings)),
+    ]
+
+    app = Flask(__name__)
+    with app.app_context(), \
+         patch('sharewarez.utilities.db.session.execute', side_effect=results), \
+         patch('sharewarez.utilities.db.session.commit'), \
+         patch('sharewarez.utilities.os.path.isdir', return_value=False), \
+         patch('sharewarez.utilities.fetch_game_by_igdb_id', return_value=[{'name': 'Updated name'}]), \
+         patch('sharewarez.utilities.read_first_nfo_content') as read_nfo, \
+         patch('sharewarez.utilities.get_folder_size_in_bytes_updates') as calculate_size, \
+         patch('sharewarez.utilities._scan_enabled_supplemental_content') as scan_supplemental, \
+         patch('sharewarez.utils.hltb.update_game_hltb_sync') as refresh_hltb:
+        refresh_result = refresh_game_metadata_and_updates(game.uuid)
+
+    assert refresh_result.game_name == 'Updated name'
+    assert refresh_result.filesystem_skipped is True
+    assert '/storage/offline/Game' in refresh_result.filesystem_message
+    assert game.nfo_content == 'Existing NFO'
+    assert game.size == 2048
+    read_nfo.assert_not_called()
+    calculate_size.assert_not_called()
+    scan_supplemental.assert_not_called()
+    refresh_hltb.assert_called_once_with(game.uuid, 'Updated name')
