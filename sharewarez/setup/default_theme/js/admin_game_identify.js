@@ -446,14 +446,30 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     if (gameEditForm) {
-        gameEditForm.addEventListener('submit', function() {
+        gameEditForm.addEventListener('submit', function(event) {
             if (submitButton.disabled) return; // form is blocked (validation)
+
+            // Disabled submit buttons are omitted from the browser payload. Preserve
+            // the clicked action before disabling the controls so the backend can
+            // distinguish a normal save from Save & Refresh Metadata.
+            const submittedButton = event.submitter || lastClickedSubmit;
+            if (submittedButton && submittedButton.name === 'action') {
+                let actionInput = gameEditForm.querySelector('input[data-submitted-action]');
+                if (!actionInput) {
+                    actionInput = document.createElement('input');
+                    actionInput.type = 'hidden';
+                    actionInput.name = 'action';
+                    actionInput.dataset.submittedAction = 'true';
+                    gameEditForm.appendChild(actionInput);
+                }
+                actionInput.value = submittedButton.value;
+            }
 
             const spinner = document.getElementById('saveSpinner');
             const spinnerMsg = document.getElementById('spinnerMessage');
 
             if (spinner) {
-                const isRefresh = lastClickedSubmit && lastClickedSubmit.value === 'save_and_refresh';
+                const isRefresh = submittedButton && submittedButton.value === 'save_and_refresh';
                 if (spinnerMsg) {
                     spinnerMsg.textContent = isRefresh
                         ? 'Saving and refreshing metadata\u2026'
