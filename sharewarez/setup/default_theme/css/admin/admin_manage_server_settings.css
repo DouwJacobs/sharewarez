@@ -1,238 +1,210 @@
-/* Add this to make table headers white */
-.table thead th {
-    background: var(--bg-dark-tertiary);
-    border-bottom: 2px solid var(--border-light);
-    padding: var(--spacing-12);
-    color: var(--text-white);
+.server-settings-page {
+    max-width: 1380px;
+    margin: 0 auto;
+    padding: 28px;
 }
 
-/* Style the icons in the headers */
-.table thead th i {
-    color: var(--text-white);
-    margin-right: var(--spacing-8);
+.server-settings-surface {
+    padding: clamp(18px, 3vw, 28px);
 }
 
-/* Hide beta scanning features */
-.hidden-beta-feature {
-    display: none !important;
-    visibility: hidden !important;
-}
-
-/* Header styling */
-.container-serverstatus-version {
+.server-settings-toolbar {
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    margin-bottom: var(--spacing-xl);
-    padding: var(--spacing-md);
-    background: var(--bg-dark-40);
-    border-radius: var(--border-radius-md);
+    justify-content: space-between;
+    gap: 20px;
+    margin-bottom: 22px;
+    padding-bottom: 18px;
+    border-bottom: 1px solid rgba(var(--theme-accent-soft-rgb, 154, 177, 255), .16);
 }
 
-/* Info blocks styling */
-.info-block {
-    background: var(--bg-dark-40);
-    border-radius: var(--border-radius-md);
-    padding: var(--spacing-lg);
-    margin-bottom: var(--spacing-25);
-    border: 1px solid var(--border-light);
+.server-settings-toolbar h2 {
+    margin: 0;
+    color: var(--theme-text-primary, #f5f7ff);
+    font-size: 1.35rem;
 }
 
-.info-block h3 {
-    color: var(--text-white);
-    font-size: 1.3em;
-    margin-bottom: var(--spacing-lg);
-    border-bottom: 1px solid var(--border-light);
-    padding-bottom: var(--spacing-sm);
-}
-
-.info-block h3 i {
-    margin-right: var(--spacing-sm);
-}
-
-/* Table styling */
-/* Table styling inherited from table-components.css */
-
-.table thead th {
-    background: var(--bg-dark-tertiary);
-    border-bottom: 2px solid var(--border-light);
-    padding: var(--spacing-12);
-}
-
-.table tbody tr:hover {
-    background: var(--bg-transparent-5);
-}
-
-.table td {
-    padding: var(--spacing-12);
-    border-top: 1px solid var(--border-light);
-}
-
-/* System resources section */
-.row {
-    display: flex;
-    flex-wrap: wrap;
-    margin: calc(-1 * var(--spacing-sm));
-}
-
-.col-md-4, .col-md-6 {
-    flex: 1;
-    padding: var(--spacing-sm);
-    min-width: 250px;
-}
-
-/* Resource cards */
-.col-md-4 h4, .col-md-6 h4 {
-    color: #0096ff;
-    font-size: 1.1em;
-    margin-bottom: 10px;
-}
-
-.col-md-4 p, .col-md-6 p {
-    color: var(--text-white);
-    background: var(--bg-dark-tertiary);
-    padding: var(--spacing-sm);
-    border-radius: 6px;
+.server-settings-toolbar .btn {
+    flex: 0 0 auto;
     margin: 0;
 }
 
-/* Icons */
-.fas {
-    margin-right: 8px;
+.server-settings-page .admin-panel-kicker {
+    margin: 0 0 4px;
+    color: rgb(var(--theme-accent-soft-rgb, 154, 177, 255));
+    font-size: .72rem;
+    font-weight: 750;
+    letter-spacing: .1em;
+    text-transform: uppercase;
 }
 
-/* Progress bar styling */
-.progress {
-    background-color: var(--bg-dark-tertiary);
-    border-radius: var(--border-radius-md);
-    overflow: hidden;
-    margin-top: var(--spacing-sm);
+.settings-primary-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 18px;
+    align-items: start;
 }
 
-.progress-bar {
-    transition: width 0.6s ease;
-    text-align: center;
-    line-height: 25px;
-    color: white;
-    font-weight: bold;
-    text-shadow: 1px 1px 1px var(--shadow-dark);
+.settings-primary-column {
+    min-width: 0;
 }
 
-/* Settings sections styling */
-.settings-section {
-    background: var(--bg-dark-40);
-    border-radius: var(--border-radius-md);
-    padding: var(--spacing-lg);
-    margin-bottom: var(--spacing-lg);
-    border: 1px solid var(--border-light);
-    height: fit-content;
+.server-settings-page .settings-section {
+    min-width: 0;
+    margin: 0;
+    padding: 20px;
+    border: 1px solid rgba(var(--theme-accent-soft-rgb, 154, 177, 255), .16);
+    border-radius: 16px;
+    background: linear-gradient(145deg, rgba(var(--theme-accent-rgb, 98, 122, 239), .08), var(--theme-panel-bg, rgba(18, 18, 28, .86)));
 }
 
-.section-header {
-    color: var(--text-white);
-    font-size: 1.1em;
-    margin-bottom: var(--spacing-md);
-    padding-bottom: var(--spacing-sm);
-    border-bottom: 1px solid var(--border-light);
+.server-settings-page .section-header {
     display: flex;
     align-items: center;
+    gap: 9px;
+    margin: 0 0 18px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid rgba(var(--theme-accent-soft-rgb, 154, 177, 255), .14);
+    color: var(--theme-text-primary, #f5f7ff);
+    font-size: 1rem;
+    font-weight: 700;
 }
 
-.section-header i {
-    margin-right: var(--spacing-sm);
-    color: var(--accent-blue);
+.server-settings-page .section-header i,
+.server-settings-page h6 i {
+    color: rgb(var(--theme-accent-soft-rgb, 154, 177, 255));
 }
 
-/* Compact form controls */
-.form-control-sm {
-    padding: 0.25rem 0.5rem;
-    font-size: 0.875rem;
+.server-settings-page h6 {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    color: var(--theme-text-primary, #f5f7ff) !important;
 }
 
-.form-check {
-    margin-bottom: var(--spacing-sm);
+.server-settings-page hr {
+    border-color: rgba(var(--theme-accent-soft-rgb, 154, 177, 255), .14);
+    opacity: 1;
 }
 
-.form-check-label {
-    font-size: 0.9em;
+.server-settings-page .form-check {
+    display: grid;
+    grid-template-columns: 20px minmax(0, 1fr);
+    gap: 10px;
+    align-items: start;
+    min-height: 28px;
+    margin: 0 0 8px;
+    padding: 0;
+}
+
+.server-settings-page .form-check-input {
+    float: none;
+    width: 18px;
+    height: 18px;
+    margin: 2px 0 0;
+}
+
+.server-settings-page .form-check-label {
+    min-width: 0;
+    color: var(--theme-text-primary, #f5f7ff);
+    font-size: .88rem;
     line-height: 1.4;
 }
 
-.form-group {
-    margin-bottom: var(--spacing-md);
+.server-settings-page .form-group {
+    min-width: 0;
+    margin: 0 0 16px;
 }
 
-.form-label {
-    font-size: 0.85em;
-    font-weight: 600;
-    color: var(--text-secondary);
-    margin-bottom: 0.25rem;
+.server-settings-page .form-label {
+    display: block;
+    margin: 0 0 7px;
+    color: var(--theme-text-secondary, #c5ccdc);
+    font-size: .82rem;
+    font-weight: 650;
 }
 
-/* Inline form elements */
-.row.mb-2 .col-6 {
-    padding-left: 0.25rem;
-    padding-right: 0.25rem;
+.server-settings-page :is(.form-control, .form-select) {
+    width: 100%;
+    min-width: 0;
+    min-height: var(--control-height, 42px);
+    padding: 8px 11px;
+    border-color: rgba(var(--theme-accent-soft-rgb, 154, 177, 255), .2);
+    background: var(--theme-input-bg, rgba(12, 12, 20, .88));
+    color: var(--theme-text-primary, #f5f7ff);
 }
 
-.row.mb-2 .col-6:first-child {
-    padding-left: 0;
+.server-settings-page .form-text,
+.server-settings-page .text-info {
+    color: var(--theme-text-secondary, #c5ccdc) !important;
 }
 
-.row.mb-2 .col-6:last-child {
-    padding-right: 0;
+.settings-inline-fields {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    margin-bottom: 14px;
 }
 
-/* Responsive design */
-@media (max-width: 991px) {
-    .col-lg-4 {
-        margin-bottom: var(--spacing-lg);
+.settings-requests-section {
+    margin-top: 18px !important;
+}
+
+.settings-request-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 22px;
+}
+
+.settings-request-column {
+    min-width: 0;
+}
+
+#settingsSavedNotification {
+    margin-bottom: 18px;
+}
+
+@media (max-width: 1100px) {
+    .settings-primary-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
-    .settings-section {
-        padding: var(--spacing-md);
+    .settings-primary-column:last-child {
+        grid-column: 1 / -1;
     }
 }
 
-@media (max-width: 768px) {
-    .container-status-page {
-        margin: var(--spacing-sm);
-        padding: var(--spacing-md);
+@media (max-width: 760px) {
+    .server-settings-page {
+        padding: 18px 12px;
     }
 
-    .info-block {
-        padding: var(--spacing-md);
-    }
-
-    .col-md-4, .col-md-6, .col-lg-4 {
-        flex: 100%;
-        margin-bottom: var(--spacing-lg);
-    }
-
-    .table {
-        display: block;
-        overflow-x: auto;
-    }
-
-    .container-serverstatus-version {
+    .server-settings-toolbar {
+        align-items: stretch;
         flex-direction: column;
-        text-align: center;
     }
 
-    .container-serverstatus-version > div {
-        margin-bottom: var(--spacing-sm);
+    .server-settings-toolbar .btn {
+        width: 100%;
     }
 
-    .d-flex.justify-content-between {
-        flex-direction: column;
-        align-items: flex-start !important;
+    .settings-primary-grid,
+    .settings-request-grid {
+        grid-template-columns: 1fr;
     }
 
-    .d-flex.justify-content-between h3 {
-        margin-bottom: var(--spacing-sm);
+    .settings-primary-column:last-child {
+        grid-column: auto;
+    }
+}
+
+@media (max-width: 420px) {
+    .server-settings-surface,
+    .server-settings-page .settings-section {
+        padding: 15px;
     }
 
-    .settings-section {
-        padding: var(--spacing-sm);
+    .settings-inline-fields {
+        grid-template-columns: 1fr;
     }
 }
