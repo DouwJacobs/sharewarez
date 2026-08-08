@@ -11,9 +11,8 @@
     box-shadow: none;
 }
 
-.admin-ui .admin_manage_libraries-library-container .card {
+.admin_manage_libraries-library-container .card {
     padding: 24px;
-    overflow: visible !important;
 }
 
 .libraries-management-header {
@@ -46,8 +45,8 @@
     color: rgba(205, 214, 235, 0.68);
 }
 
-.admin-ui .libraries-table-wrapper.table-responsive {
-    overflow: visible !important;
+.libraries-table-wrapper {
+    overflow: auto;
 }
 
 .libraries-table-wrapper .table {
@@ -69,13 +68,8 @@
         margin-top: 12px;
     }
 
-    .admin-ui .admin_manage_libraries-library-container .card {
+    .admin_manage_libraries-library-container .card {
         padding: 16px;
-    }
-
-    .admin-ui .libraries-table-wrapper.table-responsive {
-        overflow-x: auto !important;
-        overflow-y: auto !important;
     }
 
     .libraries-management-header {

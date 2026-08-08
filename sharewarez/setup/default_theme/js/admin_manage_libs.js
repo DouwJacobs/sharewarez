@@ -1,4 +1,25 @@
 document.addEventListener('DOMContentLoaded', function() {
+    // Move action menus to the document layer while open. The responsive table
+    // must clip its contents to retain rounded corners, but that should not
+    // clip Bootstrap's floating dropdown menu.
+    document.querySelectorAll('[data-library-actions]').forEach(dropdown => {
+        const menu = dropdown.querySelector('.dropdown-menu');
+        let marker = null;
+
+        dropdown.addEventListener('show.bs.dropdown', () => {
+            marker = document.createComment('library-actions-menu');
+            menu.before(marker);
+            document.body.appendChild(menu);
+            menu.classList.add('library-actions-menu-portal');
+        });
+
+        dropdown.addEventListener('hidden.bs.dropdown', () => {
+            menu.classList.remove('library-actions-menu-portal');
+            if (marker?.isConnected) marker.replaceWith(menu);
+            marker = null;
+        });
+    });
+
     // Initialize Sortable on the libraries table
     const tbody = document.querySelector('#librariesTable tbody');
     new Sortable(tbody, {
@@ -323,4 +344,3 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 });
-
