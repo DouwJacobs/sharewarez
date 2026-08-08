@@ -14,7 +14,6 @@ from werkzeug.utils import secure_filename
 from werkzeug.exceptions import NotFound
 from sharewarez import db, cache
 from datetime import datetime, timezone
-from PIL import Image as PILImage
 from itsdangerous import URLSafeTimedSerializer
 from jinja2 import pass_context
 
@@ -459,6 +458,8 @@ def upload_image(game_uuid):
 
     # Further validate the file's data to ensure it's a valid image
     try:
+        from PIL import Image as PILImage
+
         img = PILImage.open(file)
         img.verify()  # Verify that it is, in fact, an image
         img = PILImage.open(file)

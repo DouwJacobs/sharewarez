@@ -1,5 +1,4 @@
 import os
-from PIL import Image as PILImage
 from werkzeug.utils import secure_filename
 from uuid import uuid4
 from flask import Blueprint, render_template, redirect, url_for, request, flash, current_app, jsonify
@@ -59,6 +58,8 @@ def settings_profile_edit():
             file.save(image_path)
 
             # Image processing
+            from PIL import Image as PILImage
+
             img = PILImage.open(image_path)
             is_gif = img.format == 'GIF' and 'duration' in img.info
 

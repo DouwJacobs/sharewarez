@@ -6,7 +6,6 @@ from sharewarez import db
 from sqlalchemy import select
 from sharewarez.forms import LibraryForm
 from sharewarez.utils.event_logging import log_system_event
-from PIL import Image as PILImage
 from uuid import uuid4
 from werkzeug.utils import secure_filename
 import os
@@ -16,6 +15,8 @@ from . import admin2_bp
 
 def _process_library_image(file, library):
     """Process and save library image file."""
+    from PIL import Image as PILImage
+
     if not file:
         if not library.image_url:
             library.image_url = url_for('static', filename='newstyle/default_library.jpg')
@@ -162,6 +163,8 @@ def edit_library(library_uuid):
 def preview_cropped_image():
     """Process cropped image and return preview URL for immediate feedback."""
     try:
+        from PIL import Image as PILImage
+
         data = request.get_json()
 
         if not data or 'image_data' not in data:
