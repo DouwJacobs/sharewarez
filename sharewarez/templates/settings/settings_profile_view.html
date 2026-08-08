@@ -27,9 +27,9 @@
                 <a href="{{ url_for('settings.settings_profile_edit') }}" class="btn btn-primary">
                     <i class="fas fa-pen" aria-hidden="true"></i>Edit Profile
                 </a>
-                <button type="button" class="btn btn-secondary" data-preferences-modal-trigger>
+                <a href="#profilePreferences" class="btn btn-secondary">
                     <i class="fas fa-sliders" aria-hidden="true"></i>Preferences
-                </button>
+                </a>
             </div>
         </div>
 
@@ -41,13 +41,14 @@
                     <p class="profile-detail-value">{{ current_user.about or 'No information provided yet.' }}</p>
                 </div>
             </article>
-            <article class="profile-detail">
+            <a class="profile-detail profile-detail-navigation" href="{{ url_for('login.invites') }}" aria-label="View your invitations">
                 <span class="profile-detail-icon"><i class="fas fa-ticket-alt" aria-hidden="true"></i></span>
                 <div>
                     <p class="profile-detail-label">Invitations available</p>
                     <p class="profile-detail-value"><strong>{{ remaining_invites }}</strong> of {{ total_invites }} remaining</p>
                 </div>
-            </article>
+                <i class="fas fa-arrow-right profile-detail-arrow" aria-hidden="true"></i>
+            </a>
             <article class="profile-detail">
                 <span class="profile-detail-icon"><i class="fas fa-lock" aria-hidden="true"></i></span>
                 <div>

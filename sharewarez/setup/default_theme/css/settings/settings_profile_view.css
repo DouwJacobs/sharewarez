@@ -105,6 +105,35 @@
     background: linear-gradient(145deg, rgba(var(--theme-accent-rgb, 98, 122, 239), 0.1), var(--theme-panel-bg, rgba(18, 18, 28, 0.84)));
 }
 
+.profile-detail-navigation {
+    position: relative;
+    padding-right: 42px;
+    color: inherit;
+    text-decoration: none;
+    transition: border-color var(--transition-fast, .15s ease), transform var(--transition-fast, .15s ease), box-shadow var(--transition-fast, .15s ease);
+}
+
+.profile-detail-navigation:hover,
+.profile-detail-navigation:focus-visible {
+    border-color: rgba(var(--theme-accent-soft-rgb, 154, 177, 255), 0.4);
+    color: inherit;
+    transform: translateY(-2px);
+    box-shadow: 0 10px 24px rgba(var(--theme-accent-rgb, 98, 122, 239), 0.12);
+}
+
+.profile-detail-navigation:focus-visible {
+    outline: 2px solid rgba(var(--theme-accent-soft-rgb, 154, 177, 255), 0.72);
+    outline-offset: 2px;
+}
+
+.profile-detail-arrow {
+    position: absolute;
+    top: 50%;
+    right: 18px;
+    color: rgb(var(--theme-accent-soft-rgb, 154, 177, 255));
+    transform: translateY(-50%);
+}
+
 .profile-detail-icon {
     display: grid;
     flex: 0 0 38px;
