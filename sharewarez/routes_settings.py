@@ -221,7 +221,8 @@ def settings_panel():
                     'default'
                 )
             form.theme.data = saved_theme
-        return render_template('settings/modal_preferences.html', form=form)
+        template = 'settings/modal_preferences.html' if request.args.get('modal') == '1' else 'settings/settings_panel.html'
+        return render_template(template, form=form, title='Preferences')
     
     return jsonify({
         'success': False,

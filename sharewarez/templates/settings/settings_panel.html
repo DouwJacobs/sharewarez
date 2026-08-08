@@ -6,8 +6,10 @@
 
 {% block content %}
 <main class="settings-panel-page">
-        <h2>User Preferences</h2>
-        <form method="POST">
+        <p class="preferences-modal-eyebrow">Your experience</p>
+        <h1>User Preferences</h1>
+        <p>Set the defaults used when you browse your library.</p>
+        <form id="preferencesForm" method="POST" action="{{ url_for('settings.settings_panel') }}" class="preferences-form">
             {{ form.hidden_tag() }}
             <div class="mb-3">
                 {{ form.items_per_page.label(class="form-label") }}
