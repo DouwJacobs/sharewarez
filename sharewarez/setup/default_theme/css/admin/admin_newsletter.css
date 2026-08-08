@@ -1,4 +1,4 @@
-.newsletter-page {
+.admin-ui #content > main.newsletter-page {
     width: min(980px, calc(100% - 48px));
     margin: 24px auto;
     /* The shared desktop admin rail normalizes page wrappers; this page is
@@ -20,7 +20,7 @@
 .newsletter-recipient-summary { margin: -0.25rem 0 0.65rem; color: rgba(205, 214, 235, 0.72); font-size: 0.88rem; }
 
 @media (max-width: 768px) {
-    .newsletter-page { width: calc(100% - 24px); margin: 12px auto; padding: 16px !important; overflow: hidden; }
+    .admin-ui #content > main.newsletter-page { width: calc(100% - 24px); margin: 12px auto; padding: 16px !important; overflow: hidden; }
     .newsletter-page .input-glass { width: 100%; margin-right: 0; margin-left: 0 !important; }
     .newsletter-page .ck-toolbar { flex-wrap: wrap !important; }
     .newsletter-page .table-responsive { overflow: visible; }
@@ -38,7 +38,7 @@
 }
 
 /* Active-theme bridge; legacy values remain fallbacks. */
-.newsletter-page {
+.admin-ui #content > main.newsletter-page {
     background: var(--theme-card-background, linear-gradient(145deg, rgba(18,18,28,.96), rgba(12,12,20,.98)));
     border-color: var(--theme-border-color, rgba(255,255,255,.08));
 }
