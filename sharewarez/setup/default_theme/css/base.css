@@ -534,7 +534,7 @@ body {
 
 @keyframes sw-toast-slidein {
     from {
-        transform: translateX(110%);
+        transform: translateY(-12px);
         opacity: 0;
     }
 
@@ -659,7 +659,7 @@ body {
 
 @keyframes sw-toast-slideout {
     to {
-        transform: translateX(115%);
+        transform: translateY(10px);
         opacity: 0;
     }
 }
