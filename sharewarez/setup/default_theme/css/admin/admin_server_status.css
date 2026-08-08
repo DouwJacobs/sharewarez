@@ -154,3 +154,34 @@ canvas#warezDiskChart {
 .text-success { color: #28a745 !important; }
 .text-danger { color: #dc3545 !important; }
 .text-end { text-align: right !important; }
+
+@media (max-width: 768px) {
+    .container-settings,
+    .info-block,
+    .resource-card {
+        width: 100%;
+        min-width: 0;
+        padding: 14px;
+    }
+
+    .resource-cards {
+        align-items: stretch;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .permission-icons {
+        float: none;
+        display: flex;
+        justify-content: flex-start;
+        margin: 8px 0 0;
+    }
+
+    .chart-container {
+        height: min(200px, 60vw);
+    }
+
+    .btn-secondary {
+        margin: 6px 0;
+    }
+}

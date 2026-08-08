@@ -73,3 +73,31 @@ input[type="checkbox"] {
     margin: 0 auto;
     padding: var(--spacing-lg);
 }
+
+@media (max-width: 768px) {
+    .smtp-settings-container,
+    .card {
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+        margin: 8px auto;
+        padding: 14px;
+    }
+
+    .smtp-settings-container h2 {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .smtp-settings-container h2 .btn-info {
+        width: 100%;
+        margin-left: 0;
+    }
+
+    .button-group {
+        align-items: stretch;
+        flex-direction: column;
+        gap: 8px;
+    }
+}
