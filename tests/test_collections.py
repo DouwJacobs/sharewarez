@@ -7,6 +7,13 @@ from sharewarez.platform import LibraryPlatform
 
 
 def test_featured_collection_is_seeded_once(app, db_session):
+    from sharewarez.init_manager import InitializationManager
+
+    manager = InitializationManager()
+    manager._init_featured_collection(db_session)
+    db_session.commit()
+    manager._init_featured_collection(db_session)
+    db_session.commit()
     featured = db_session.execute(
         select(Collection).where(Collection.is_featured.is_(True))
     ).scalars().all()

@@ -1739,3 +1739,8 @@ pre {
     white-space: pre-wrap;
     overflow-wrap: anywhere;
 }
+.details-collections { margin: 14px 0; }
+.details-collections h4 { margin: 0 0 8px; color: var(--theme-text-secondary, #b8c0d4); font-size: .76rem; text-transform: uppercase; letter-spacing: .08em; }
+.details-collection-links { display: flex; flex-wrap: wrap; gap: 7px; }
+.details-collection-links .chip-detailspage { display: inline-flex; align-items: center; gap: 6px; }
+.details-collection-links .chip-detailspage i { color: rgb(var(--theme-accent-soft-rgb, 154, 177, 255)); }

@@ -57,6 +57,7 @@ class SetupForm(FlaskForm):
 class LoginForm(FlaskForm):
     username = StringField('Username', validators=[DataRequired()])
     password = PasswordField('Password', validators=[DataRequired()])
+    submit = SubmitField('Login')
 
 
 class CollectionForm(FlaskForm):
@@ -66,7 +67,6 @@ class CollectionForm(FlaskForm):
     display_order = IntegerField('Discover row order', validators=[Optional(), NumberRange(min=0, max=9999)], default=0)
     game_order = HiddenField('Selected games')
     submit = SubmitField('Save collection')
-    submit = SubmitField('Login')
     
 class ResetPasswordRequestForm(FlaskForm):
     email = StringField('Email', validators=[DataRequired(), Email()])

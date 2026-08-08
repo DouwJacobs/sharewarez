@@ -2,7 +2,7 @@
 from flask import jsonify, request, url_for
 from flask_login import login_required
 from sharewarez import db
-from sharewarez.models import Library
+from sharewarez.models import Collection, Library
 from sharewarez.utils.auth import admin_required
 from sqlalchemy import select
 from . import apis_bp
@@ -21,6 +21,17 @@ def get_libraries():
     ]
     print(f"Returning {len(libraries)} libraries.")
     return jsonify(libraries)
+
+
+@apis_bp.route('/collections')
+@login_required
+def get_collections():
+    collections = db.session.execute(
+        select(Collection)
+        .where(Collection.game_links.any())
+        .order_by(Collection.is_featured.desc(), Collection.name)
+    ).scalars().all()
+    return jsonify([{'slug': item.slug, 'name': item.name} for item in collections])
 
 @apis_bp.route('/reorder_libraries', methods=['POST'])
 @login_required

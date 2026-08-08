@@ -95,7 +95,7 @@
 .collection-picker-heading h2 { font-size: 1.1rem; }
 .collection-search { position: relative; display: block; }
 .collection-search > i { position: absolute; left: 14px; top: 50%; z-index: 1; transform: translateY(-50%); color: var(--text-muted); }
-.collection-search input { height: 44px; padding-left: 42px; padding-right: 42px; }
+.collection-search input { height: 44px; padding-right: 42px !important; padding-left: 42px !important; }
 .collection-search .app-spinner { position: absolute; top: calc(50% - 9px); right: 14px; width: 18px; height: 18px; }
 .collection-search-results {
     max-height: 240px;

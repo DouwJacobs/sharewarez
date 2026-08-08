@@ -75,6 +75,7 @@ def browse_games():
     player_perspective = request.args.get('player_perspective')
     theme = request.args.get('theme')
     tag = request.args.get('tag')
+    collection = request.args.get('collection')
     sort_by = request.args.get('sort_by', 'name')
     sort_order = request.args.get('sort_order', 'asc')
     query = select(Game).options(
@@ -100,6 +101,13 @@ def browse_games():
         query = query.filter(Game.themes.any(Theme.name == theme))
     if tag:
         query = query.filter(Game.tags.any(GameTag.name == tag))
+    if collection:
+        from sharewarez.models import Collection, CollectionGame
+        query = query.filter(
+            Game.collection_links.any(
+                CollectionGame.collection.has(Collection.slug == collection)
+            )
+        )
     if sort_by == 'name':
         query = query.order_by(Game.name.asc() if sort_order == 'asc' else Game.name.desc())
     elif sort_by == 'rating':

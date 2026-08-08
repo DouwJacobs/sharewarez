@@ -69,6 +69,7 @@ $(document).ready(function() {
     if (savedFilters) {
         try {
             $('#libraryNameSelect').val(savedFilters.library_uuid || '');
+            $('#collectionSelect').val(savedFilters.collection || '');
             $('#genreSelect').val(savedFilters.genre || '');
             $('#themeSelect').val(savedFilters.theme || '');
             $('#tagSelect').val(savedFilters.tag || '');
@@ -90,6 +91,7 @@ $(document).ready(function() {
         
         var keyMappings = {
             'library_uuid': 'library_uuid',
+            'collection': 'collection',
             'genre': 'genre', 
             'theme': 'theme',
             'tag': 'tag',
@@ -194,6 +196,18 @@ $(document).ready(function() {
         });
     }
 
+    function populateCollections(callback) {
+        populateDropdown({
+            apiUrl: '/api/collections',
+            elementId: '#collectionSelect',
+            defaultText: 'All Collections',
+            valueField: 'slug',
+            textField: 'name',
+            paramName: 'collection',
+            callback: callback
+        });
+    }
+
     function populateGameModes(callback) {
         populateDropdown({
             apiUrl: '/api/game_modes',
@@ -260,6 +274,7 @@ $(document).ready(function() {
         page = page || urlParams.page || 1; 
         var filters = {
             library_uuid: $('#libraryNameSelect').val() || urlParams.library_uuid || undefined,
+            collection: $('#collectionSelect').val() || undefined,
             page: page,
             per_page: $('#perPageSelect').val() || 20,
             category: $('#categorySelect').val() || urlParams.category,
@@ -603,6 +618,7 @@ $(document).ready(function() {
         e.preventDefault();
         var filters = {
             library_uuid: $('#libraryNameSelect').val(),
+            collection: $('#collectionSelect').val(),
             genre: $('#genreSelect').val(),
             theme: $('#themeSelect').val(),
             tag: $('#tagSelect').val(),
@@ -620,7 +636,7 @@ $(document).ready(function() {
     });
 
     $('#clearFilters').click(function() {
-        $('#libraryNameSelect, #genreSelect, #themeSelect, #tagSelect, #gameModeSelect, #playerPerspectiveSelect').val('');
+        $('#libraryNameSelect, #collectionSelect, #genreSelect, #themeSelect, #tagSelect, #gameModeSelect, #playerPerspectiveSelect').val('');
         $('#ratingSlider').val(0);
         $('#ratingValue').text('0');
         $('#sortSelect').val('name');
@@ -633,6 +649,7 @@ $(document).ready(function() {
     });
 
     populateLibraries(function() {
+        populateCollections(function() {
         populateGenres(function() {
             populateThemes(function() {
                 populateTags(function() {
@@ -643,6 +660,7 @@ $(document).ready(function() {
                         if (savedFilters) {
                             console.log('Restoring filters from cookie:', savedFilters);
                             $('#libraryNameSelect').val(savedFilters.library_uuid || '');
+                            $('#collectionSelect').val(getUrlParams().collection || savedFilters.collection || '');
                             $('#genreSelect').val(savedFilters.genre || '');
                             $('#themeSelect').val(savedFilters.theme || '');
                             $('#tagSelect').val(savedFilters.tag || '');
@@ -668,6 +686,7 @@ $(document).ready(function() {
                             }
                         }
                     });
+        });
                 });
                 });
             });

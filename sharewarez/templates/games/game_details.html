@@ -365,6 +365,16 @@
                         {% if game.tags %}
                             {{ list_items(game.tags, "Tags", "tag") }}
                         {% endif %}
+                        {% if collections %}
+                        <div class="details-collections">
+                            <h4>Collections</h4>
+                            <div class="details-collection-links">
+                                {% for collection in collections %}
+                                <a href="{{ url_for('library.library', collection=collection.slug) }}" class="chip-detailspage"><i class="fas {{ 'fa-star' if collection.is_featured else 'fa-layer-group' }}" aria-hidden="true"></i> {{ collection.name }}</a>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
 
                         <div class="flex-row-horiz">
                             {{ detail_item("Category", game.category) }}

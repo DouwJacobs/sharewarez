@@ -4,7 +4,7 @@ import re
 from flask import render_template, jsonify, abort, request, url_for
 from flask_login import login_required, current_user
 from sharewarez.forms import CsrfForm
-from sharewarez.models import GameUpdate, GameExtra, user_game_status, get_status_info
+from sharewarez.models import Collection, CollectionGame, GameUpdate, GameExtra, user_game_status, get_status_info
 from sharewarez import db
 from sqlalchemy import select, and_
 from sharewarez.utils.functions import format_size, sanitize_string_input, get_url_icon
@@ -257,6 +257,13 @@ def game_details(game_uuid):
             ).scalars().first()
             has_pending_update_request = req_link is not None
 
+        collections = db.session.execute(
+            select(Collection)
+            .join(CollectionGame)
+            .where(CollectionGame.game_uuid == game.uuid)
+            .order_by(Collection.is_featured.desc(), Collection.name)
+        ).scalars().all()
+
         return render_template(
             'games/game_details.html',
             game=game_data,
@@ -269,6 +276,7 @@ def game_details(game_uuid):
             status_label=status_label,
             has_pending_update_request=has_pending_update_request,
             steamdb_patchnotes_url=steamdb_patchnotes_url,
+            collections=collections,
             back_url=get_safe_back_url()
         )
     else:

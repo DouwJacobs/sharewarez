@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import login_required, current_user
-from sharewarez.models import Library, Game, Genre, GameMode, PlayerPerspective, Theme, GameTag, Image, UserPreference
+from sharewarez.models import Library, Game, Genre, GameMode, PlayerPerspective, Theme, GameTag, Image, UserPreference, Collection, CollectionGame
 from sharewarez import db
 from sharewarez.utils.functions import format_size, get_library_count, get_games_count
 from sharewarez.utils.auth import admin_required
@@ -81,6 +81,7 @@ def library():
     player_perspective = request.args.get('player_perspective') or saved_filters.get('player_perspective')
     theme = request.args.get('theme') or saved_filters.get('theme')
     tag = request.args.get('tag') or saved_filters.get('tag')
+    collection = request.args.get('collection') or saved_filters.get('collection')
     sort_by = request.args.get('sort_by') or sort_by
     sort_order = request.args.get('sort_order') or sort_order
 
@@ -91,7 +92,8 @@ def library():
         'game_mode': game_mode,
         'player_perspective': player_perspective,
         'theme': theme,
-        'tag': tag
+        'tag': tag,
+        'collection': collection,
     }
     # Filter out None values
     filters = {k: v for k, v in filters.items() if v is not None}
@@ -169,6 +171,12 @@ def get_games(page=1, per_page=20, sort_by='name', sort_order='asc', **filters):
         query = query.filter(Game.themes.any(Theme.name == filters['theme']))
     if filters.get('tag'):
         query = query.filter(Game.tags.any(GameTag.name == filters['tag']))
+    if filters.get('collection'):
+        query = query.filter(
+            Game.collection_links.any(
+                CollectionGame.collection.has(Collection.slug == filters['collection'])
+            )
+        )
     # Sorting logic
     if sort_by == 'name':
         query = query.order_by(Game.name.asc() if sort_order == 'asc' else Game.name.desc())

@@ -37,6 +37,7 @@ def collections():
         'admin/admin_manage_collections.html',
         collections=items,
         csrf_form=CsrfProtectForm(),
+        title='Collections',
     )
 
 
@@ -62,7 +63,7 @@ def add_collection():
             log_system_event(f'Collection created: {item.name}', event_type='collection')
             flash('Collection created.', 'success')
             return redirect(url_for('admin2.collections'))
-    return render_template('admin/admin_collection_editor.html', form=form, collection=None)
+    return render_template('admin/admin_collection_editor.html', form=form, collection=None, title='New collection')
 
 
 @admin2_bp.route('/admin/collections/<int:collection_id>/edit', methods=['GET', 'POST'])
@@ -93,7 +94,7 @@ def edit_collection(collection_id):
             log_system_event(f'Collection updated: {item.name}', event_type='collection')
             flash('Collection updated.', 'success')
             return redirect(url_for('admin2.collections'))
-    return render_template('admin/admin_collection_editor.html', form=form, collection=item)
+    return render_template('admin/admin_collection_editor.html', form=form, collection=item, title='Edit collection')
 
 
 @admin2_bp.route('/admin/collections/<int:collection_id>/delete', methods=['POST'])

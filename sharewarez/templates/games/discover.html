@@ -25,12 +25,15 @@
         </nav>
     </header>
 
-    {% if featured_game %}
+    {% if featured_games %}
     <div class="storefront-featured-grid">
-    <section class="home-hero" style="--home-hero-image: url('{{ featured_game.backdrop_url }}')" aria-labelledby="home-featured-title">
-        <div class="home-hero-content">
+    <section class="featured-carousel" data-featured-carousel aria-roledescription="carousel" aria-label="Featured games">
+        <div class="featured-carousel-slides">
+        {% for featured_game in featured_games %}
+        <article class="home-hero featured-carousel-slide{% if loop.first %} is-active{% endif %}" style="--home-hero-image: url('{{ featured_game.backdrop_url }}')" data-featured-slide aria-hidden="{{ 'false' if loop.first else 'true' }}">
+          <div class="home-hero-content">
             <p class="home-featured-label"><i class="fas fa-bolt" aria-hidden="true"></i> Featured game</p>
-            <h1 id="home-featured-title">{{ featured_game.name }}</h1>
+            <h1{% if loop.first %} id="home-featured-title"{% endif %}>{{ featured_game.name }}</h1>
             {% if featured_game.summary %}<p class="home-hero-summary">{{ featured_game.summary }}</p>{% endif %}
             <div class="home-hero-meta">
                 {% if featured_game.rating %}<span><i class="fas fa-star" aria-hidden="true"></i> {{ featured_game.rating }}</span>{% endif %}
@@ -41,7 +44,19 @@
                 <a class="btn btn-primary" href="{{ url_for('games.game_details', game_uuid=featured_game.uuid) }}"><i class="fas fa-circle-play" aria-hidden="true"></i> View game</a>
                 <a class="btn btn-secondary" href="{{ url_for('library.library') }}"><i class="fas fa-layer-group" aria-hidden="true"></i> Browse library</a>
             </div>
+          </div>
+        </article>
+        {% endfor %}
         </div>
+        {% if featured_games|length > 1 %}
+        <div class="featured-carousel-controls">
+            <button type="button" data-featured-previous aria-label="Previous featured game"><i class="fas fa-chevron-left"></i></button>
+            <div class="featured-carousel-dots" role="tablist" aria-label="Choose featured game">
+                {% for game in featured_games %}<button type="button" class="{% if loop.first %}is-active{% endif %}" data-featured-dot="{{ loop.index0 }}" role="tab" aria-selected="{{ 'true' if loop.first else 'false' }}" aria-label="Show {{ game.name }}"></button>{% endfor %}
+            </div>
+            <button type="button" data-featured-next aria-label="Next featured game"><i class="fas fa-chevron-right"></i></button>
+        </div>
+        {% endif %}
     </section>
         {% set noteworthy = section_data.get('latest_games', [])[1:4] %}
         {% if noteworthy %}
@@ -104,6 +119,16 @@
         </div>
     </section>
 
+    {% for collection in collection_rows %}
+    <section class="home-section home-curated-collection" aria-labelledby="collection-{{ collection.slug }}">
+        <header class="home-section-header">
+            <div><p class="home-eyebrow">Curated collection</p><h2 id="collection-{{ collection.slug }}">{{ collection.name }}</h2>{% if collection.description %}<p>{{ collection.description }}</p>{% endif %}</div>
+            <a href="{{ url_for('library.library', collection=collection.slug) }}">View collection <i class="fas fa-arrow-right"></i></a>
+        </header>
+        <div class="home-card-rail">{% for game in collection.games %}{{ game_card(game) }}{% endfor %}</div>
+    </section>
+    {% endfor %}
+
     {% for section in visible_sections %}
         {% set games = section_data.get(section.identifier) %}
         {% if section.identifier == 'libraries' and games %}
@@ -121,4 +146,5 @@
         {% endif %}
     {% endfor %}
 </main>
+<script src="{{ 'js/games/discover.js'|theme_asset }}"></script>
 {% endblock %}
