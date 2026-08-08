@@ -220,7 +220,7 @@
             <p class="mobile-account-name">{{ current_user.name | capitalize }}</p>
             <a href="{{ url_for('settings.settings_profile_view') }}"><i class="fas fa-user"></i> Profile</a>
             <a href="{{ url_for('login.invites') }}"><i class="fas fa-envelope"></i> Invites</a>
-            <a href="#" data-bs-toggle="modal" data-bs-target="#preferencesModal"><i class="fas fa-gear"></i> Preferences</a>
+            <a href="#" data-preferences-modal-trigger><i class="fas fa-gear"></i> Preferences</a>
             <a href="{{ url_for('settings.account_pw') }}"><i class="fas fa-key"></i> Change Password</a>
             <a href="{{ url_for('site.logout') }}"><i class="fas fa-right-from-bracket"></i> Logout</a>
         </div>
@@ -288,7 +288,7 @@
         <div id="userAccountMenu" class="user-account-menu hide">
             <a href="{{ url_for('settings.settings_profile_view') }}" class="account-menu-option"><i class="fas fa-user"></i> Profile</a>
             <a href="{{ url_for('login.invites') }}" class="account-menu-option"><i class="fas fa-envelope"></i> Invites</a>
-            <a href="#" class="account-menu-option" data-bs-toggle="modal" data-bs-target="#preferencesModal"><i class="fas fa-gear"></i> Preferences</a>
+            <a href="#" class="account-menu-option" data-preferences-modal-trigger><i class="fas fa-gear"></i> Preferences</a>
             <a href="{{ url_for('settings.account_pw') }}" class="account-menu-option"><i class="fas fa-key"></i> Change Password</a>
             <a href="{{ url_for('site.logout') }}" class="account-menu-option"><i class="fas fa-right-from-bracket"></i> Logout</a>
         </div>
@@ -516,23 +516,47 @@
 </script>
 
 <script>
-const prefsToggle = document.querySelector('[data-bs-toggle="modal"][data-bs-target="#preferencesModal"]');
-if (prefsToggle) {
-    prefsToggle.addEventListener('click', function(e) {
-        e.preventDefault();
+let preferencesModalLoading = false;
 
-        fetch("{{ url_for('settings.settings_panel', modal=1) }}")
-            .then(response => response.text())
-            .then(html => {
-                document.getElementById('preferencesModalContainer').innerHTML = html;
-                new bootstrap.Modal(document.getElementById('preferencesModal')).show();
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                $.notify("Error loading preferences", "error");
-            });
-    });
-}
+document.addEventListener('click', async function (event) {
+    const prefsToggle = event.target.closest('[data-preferences-modal-trigger]');
+    if (!prefsToggle) return;
+
+    event.preventDefault();
+    if (preferencesModalLoading) return;
+
+    const inlinePreferences = document.getElementById('profilePreferences');
+    if (inlinePreferences) {
+        inlinePreferences.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        inlinePreferences.focus({ preventScroll: true });
+        return;
+    }
+
+    const container = document.getElementById('preferencesModalContainer');
+    if (!container) return;
+
+    preferencesModalLoading = true;
+    prefsToggle.setAttribute('aria-busy', 'true');
+
+    try {
+        const response = await fetch("{{ url_for('settings.settings_panel', modal=1) }}", {
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        });
+        if (!response.ok) throw new Error(`Preferences request failed (${response.status})`);
+
+        container.innerHTML = await response.text();
+        const modalElement = document.getElementById('preferencesModal');
+        if (!modalElement) throw new Error('Preferences modal was not returned');
+
+        bootstrap.Modal.getOrCreateInstance(modalElement).show();
+    } catch (error) {
+        console.error('Error loading preferences:', error);
+        $.notify("Error loading preferences", "error");
+    } finally {
+        preferencesModalLoading = false;
+        prefsToggle.removeAttribute('aria-busy');
+    }
+});
 </script>
 
 <script>

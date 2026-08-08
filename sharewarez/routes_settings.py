@@ -156,9 +156,35 @@ def settings_profile_view():
     ).scalar()
     remaining_invites = max(0, current_user.invite_quota - unused_invites)
     
-    return render_template('settings/settings_profile_view.html', 
+    preferences_form = UserPreferencesForm()
+    _populate_preferences_form(preferences_form)
+
+    return render_template('settings/settings_profile_view.html',
                          remaining_invites=remaining_invites,
-                         total_invites=current_user.invite_quota)
+                         total_invites=current_user.invite_quota,
+                         preferences_form=preferences_form)
+
+
+def _populate_preferences_form(form):
+    """Populate a preferences form from the current user's effective settings."""
+    preferences = current_user.preferences
+    if not preferences:
+        return
+
+    form.items_per_page.data = preferences.items_per_page
+    form.default_sort.data = preferences.default_sort
+    form.default_sort_order.data = preferences.default_sort_order
+
+    from sharewarez.utils.themes import SITE_DEFAULT_THEME_VALUE
+    saved_theme = preferences.theme or SITE_DEFAULT_THEME_VALUE
+    theme_ids = {value for value, _label in form.theme.choices}
+    if saved_theme not in theme_ids:
+        installed_themes = ThemeManager(current_app).get_installed_themes()
+        saved_theme = next(
+            (theme['id'] for theme in installed_themes if theme['name'] == saved_theme),
+            SITE_DEFAULT_THEME_VALUE
+        )
+    form.theme.data = saved_theme
 
 @settings_bp.route('/settings_password', methods=['GET', 'POST'])
 @login_required
@@ -207,22 +233,7 @@ def settings_panel():
             return jsonify({'success': False, 'message': str(e)}), 500
     
     if request.method == 'GET':
-        preferences = current_user.preferences
-        if preferences:
-            form.items_per_page.data = preferences.items_per_page
-            form.default_sort.data = preferences.default_sort
-            form.default_sort_order.data = preferences.default_sort_order
-
-            from sharewarez.utils.themes import SITE_DEFAULT_THEME_VALUE
-            saved_theme = preferences.theme or SITE_DEFAULT_THEME_VALUE
-            theme_ids = {value for value, _label in form.theme.choices}
-            if saved_theme not in theme_ids:
-                installed_themes = ThemeManager(current_app).get_installed_themes()
-                saved_theme = next(
-                    (theme['id'] for theme in installed_themes if theme['name'] == saved_theme),
-                    SITE_DEFAULT_THEME_VALUE
-                )
-            form.theme.data = saved_theme
+        _populate_preferences_form(form)
         template = 'settings/modal_preferences.html' if request.args.get('modal') == '1' else 'settings/settings_panel.html'
         return render_template(template, form=form, title='Preferences')
     
