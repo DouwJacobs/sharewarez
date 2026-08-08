@@ -620,7 +620,8 @@
         grid-template-rows: auto auto auto minmax(0, 1fr) auto;
     }
 
-    /* Keep account controls visible while the navigation itself scrolls. */
+    /* The mobile header owns account access; avoid a duplicate profile control
+       at the bottom of the slide-out navigation. */
     .sidebar-menu {
         min-height: 0;
         overflow-y: auto;
@@ -628,11 +629,7 @@
     }
 
     .useraccount-minimenu-container {
-        position: relative;
-        z-index: 2;
-        margin-top: 0;
-        padding-top: 8px;
-        background: var(--theme-panel-bg, rgba(18, 19, 31, 0.96));
+        display: none !important;
     }
 
     /* When toggled open on mobile */
@@ -676,11 +673,6 @@
     .sidebar.collapsed .user-account-icon {
         justify-content: flex-start;
         padding: 5px 8px;
-    }
-
-    .useraccount-minimenu-container {
-        margin-top: auto;
-        padding-bottom: 8px;
     }
 
     /* Prevent body scroll when sidebar open */
