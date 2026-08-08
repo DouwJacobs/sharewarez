@@ -200,6 +200,12 @@ class Game(db.Model):
     library_uuid = db.Column(db.String(36), db.ForeignKey('libraries.uuid'), nullable=False)
     size = db.Column(db.BigInteger, nullable=False, default=0)
     last_updated = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    collection_links = db.relationship(
+        'CollectionGame',
+        back_populates='game',
+        cascade='all, delete-orphan',
+        passive_deletes=True,
+    )
 
     def __repr__(self):
         return f"<Game id={self.id}, name={self.name}>"
@@ -689,6 +695,63 @@ class DiscoverySection(db.Model):
     
     def __repr__(self):
         return f"<DiscoverySection {self.name}>"
+
+
+class Collection(db.Model):
+    __tablename__ = 'collections'
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(120), unique=True, nullable=False)
+    slug = db.Column(db.String(140), unique=True, nullable=False, index=True)
+    description = db.Column(db.Text, nullable=True)
+    show_on_discover = db.Column(db.Boolean, nullable=False, default=False, index=True)
+    is_featured = db.Column(db.Boolean, nullable=False, default=False, index=True)
+    display_order = db.Column(db.Integer, nullable=False, default=0)
+    created_at = db.Column(db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(
+        db.DateTime,
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
+    game_links = db.relationship(
+        'CollectionGame',
+        back_populates='collection',
+        cascade='all, delete-orphan',
+        passive_deletes=True,
+        order_by='CollectionGame.display_order',
+    )
+
+    @property
+    def games(self):
+        return [link.game for link in self.game_links]
+
+    def __repr__(self):
+        return f"<Collection {self.name}>"
+
+
+class CollectionGame(db.Model):
+    __tablename__ = 'collection_games'
+    __table_args__ = (
+        db.Index('idx_collection_games_order', 'collection_id', 'display_order'),
+        db.Index('idx_collection_games_game', 'game_uuid'),
+    )
+
+    collection_id = db.Column(
+        db.Integer,
+        db.ForeignKey('collections.id', ondelete='CASCADE'),
+        primary_key=True,
+    )
+    game_uuid = db.Column(
+        db.String(36),
+        db.ForeignKey('games.uuid', ondelete='CASCADE'),
+        primary_key=True,
+    )
+    display_order = db.Column(db.Integer, nullable=False, default=0)
+    added_at = db.Column(db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
+
+    collection = db.relationship('Collection', back_populates='game_links')
+    game = db.relationship('Game', back_populates='collection_links')
 
 
 class InviteToken(db.Model):

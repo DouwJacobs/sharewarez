@@ -140,6 +140,7 @@ class InitializationManager:
                 self._init_scanning_filters(session)
                 self._init_allowed_file_types(session)
                 self._init_discovery_sections(session)
+                self._init_featured_collection(session)
 
                 # Commit all changes
                 session.commit()
@@ -337,6 +338,26 @@ class InitializationManager:
             print(f"✅ Added {added_count} discovery sections")
         else:
             print("ℹ️  Discovery sections already exist")
+
+    def _init_featured_collection(self, session):
+        """Ensure the protected collection used by the Discover hero exists."""
+        from sharewarez.models import Collection
+
+        featured = session.execute(
+            select(Collection).where(Collection.is_featured.is_(True))
+        ).scalars().first()
+        if featured:
+            return
+
+        session.add(Collection(
+            name='Featured Games',
+            slug='featured-games',
+            description='Games shown in the rotating Discover spotlight.',
+            is_featured=True,
+            show_on_discover=False,
+            display_order=0,
+        ))
+        print("✅ Added Featured Games collection")
 
     def _setup_default_theme(self, themes_path, dev_mode):
         """Setup default theme files with DEV_MODE support."""
