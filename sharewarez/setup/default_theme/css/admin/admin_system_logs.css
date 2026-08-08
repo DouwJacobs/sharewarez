@@ -24,3 +24,27 @@
 #clearLogsModal .modal-content { border: 1px solid rgba(255,100,125,.2); border-radius: 18px; background: #111422; color: #e8ebf5; }
 @media(max-width:1180px){.logs-filter-form{grid-template-columns:repeat(3,1fr)}.logs-search-field{grid-column:span 2}.logs-filter-actions{justify-content:flex-end}}
 @media(max-width:760px){.logs-page{padding:18px 12px}.logs-summary{grid-template-columns:repeat(2,1fr)}.logs-filter-form{grid-template-columns:1fr 1fr}.logs-search-field{grid-column:1/-1}.logs-filter-actions{grid-column:1/-1;justify-content:stretch}.logs-filter-actions .btn{flex:1}.logs-results-heading{align-items:start;flex-direction:column}.logs-table thead{display:none}.logs-table,.logs-table tbody,.logs-table tr,.logs-table td{display:block}.logs-table tr{padding:14px;border-top:1px solid rgba(154,177,255,.1)}.logs-table td{padding:6px 0;border:0}.log-message{min-width:0;max-width:none}.log-actor{min-width:0}.logs-pagination{flex-wrap:wrap}.logs-pagination>div{order:-1;width:100%;justify-content:center}}
+
+/* Active-theme bridge; semantic warning/error colors remain unchanged. */
+.logs-summary article,
+.logs-page .admin-panel {
+    background: var(--theme-card-background, linear-gradient(145deg, rgba(22,25,42,.88), rgba(13,15,27,.78)));
+    border-color: var(--theme-border-color, rgba(154,177,255,.14));
+}
+.logs-filter-form input,
+.logs-filter-form select,
+.log-message details div {
+    background: var(--theme-input-bg, rgba(7,9,19,.75));
+    border-color: var(--theme-border-color, rgba(154,177,255,.16));
+}
+.logs-table th { background: color-mix(in srgb, var(--theme-card-bottom, rgba(7,9,18,.98)) 68%, transparent); }
+.logs-table td,
+.logs-results-heading,
+.logs-pagination { border-color: rgba(var(--theme-accent-soft-rgb,154,177,255),.1); }
+.logs-table tbody tr:hover,
+.logs-page-number:hover,
+.logs-page-number.is-current { background: rgba(var(--theme-accent-rgb,117,136,255),.14); }
+.logs-page-number.is-current { box-shadow: inset 0 0 0 1px rgba(var(--theme-accent-soft-rgb,139,153,255),.3); }
+.log-copy { color: rgb(var(--theme-accent-soft-rgb,143,160,255)); }
+.logs-summary-info { border-color: rgba(var(--theme-accent-soft-rgb,92,164,255),.3)!important; }
+#clearLogsModal .modal-content { background: var(--theme-panel-bg, #111422); }

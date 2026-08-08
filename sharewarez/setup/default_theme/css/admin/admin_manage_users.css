@@ -132,3 +132,16 @@
         width: 100%;
     }
 }
+
+/* Active-theme bridge; legacy values remain fallbacks. */
+.users-management-panel {
+    background: var(--theme-card-background, linear-gradient(145deg, rgba(18,18,28,.96), rgba(12,12,20,.98)));
+    border-color: var(--theme-border-color, rgba(255,255,255,.09));
+    box-shadow: 0 20px 60px rgba(0,0,0,.5), 0 0 60px rgba(var(--theme-accent-rgb,80,120,255),.08);
+}
+.users-management-eyebrow { color: rgba(var(--theme-accent-soft-rgb,130,165,255),.9); }
+#usersTable thead th {
+    background: color-mix(in srgb, var(--theme-card-bottom, rgba(8,10,19,.98)) 78%, transparent) !important;
+    color: rgba(var(--theme-accent-soft-rgb,205,217,247),.86) !important;
+}
+#usersTable .user-avatar-small { border-color: rgba(var(--theme-accent-soft-rgb,130,165,255),.42); }

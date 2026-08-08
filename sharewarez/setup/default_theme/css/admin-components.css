@@ -736,6 +736,15 @@
     opacity: 0.7;
 }
 
+/* Breadcrumbs follow the active palette; original blue values are fallbacks. */
+.admin-ui .admin-breadcrumb a { color: rgba(var(--theme-accent-soft-rgb,219,227,255),.86); }
+.admin-ui .admin-breadcrumb a:hover,
+.admin-ui .admin-breadcrumb a:focus-visible {
+    background: rgba(var(--theme-accent-rgb,98,122,239),.12);
+    border-color: rgba(var(--theme-accent-soft-rgb,154,177,255),.22);
+}
+.admin-ui .admin-breadcrumb-separator { color: rgba(var(--theme-accent-soft-rgb,220,225,244),.58); }
+
 /* Replaced by the shared breadcrumb above. This keeps legacy templates clean
    without changing their page logic or embedded scripts. */
 .admin-ui .container > .glass-panel:has(> a[href*="/admin/dashboard"]) {
