@@ -57,6 +57,15 @@ class SetupForm(FlaskForm):
 class LoginForm(FlaskForm):
     username = StringField('Username', validators=[DataRequired()])
     password = PasswordField('Password', validators=[DataRequired()])
+
+
+class CollectionForm(FlaskForm):
+    name = StringField('Collection name', validators=[DataRequired(), Length(min=2, max=120)])
+    description = TextAreaField('Description', validators=[Optional(), Length(max=1000)])
+    show_on_discover = BooleanField('Show as a row on Discover')
+    display_order = IntegerField('Discover row order', validators=[Optional(), NumberRange(min=0, max=9999)], default=0)
+    game_order = HiddenField('Selected games')
+    submit = SubmitField('Save collection')
     submit = SubmitField('Login')
     
 class ResetPasswordRequestForm(FlaskForm):

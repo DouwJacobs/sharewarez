@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block styles %}
+{{ super() }}
+<link rel="stylesheet" href="{{ 'css/admin/admin_collections.css'|theme_asset }}">
+{% endblock %}
+{% block content %}
+<main class="collections-admin-shell">
+    <section class="collections-admin-card card">
+        <header class="collections-admin-header">
+            <div>
+                <p class="collections-eyebrow">Content curation</p>
+                <h1>Collections</h1>
+                <p>Group games for discovery, browsing, and the featured spotlight.</p>
+            </div>
+            <a class="btn btn-primary" href="{{ url_for('admin2.add_collection') }}">
+                <i class="fas fa-plus" aria-hidden="true"></i> New collection
+            </a>
+        </header>
+
+        <div class="collection-list">
+            {% for collection in collections %}
+            <article class="collection-admin-row{% if collection.is_featured %} is-featured{% endif %}">
+                <div class="collection-admin-icon"><i class="fas {{ 'fa-star' if collection.is_featured else 'fa-layer-group' }}" aria-hidden="true"></i></div>
+                <div class="collection-admin-summary">
+                    <div class="collection-admin-title">
+                        <h2>{{ collection.name }}</h2>
+                        {% if collection.is_featured %}<span class="collection-badge">Discover hero</span>{% endif %}
+                        {% if collection.show_on_discover %}<span class="collection-badge">Discover row</span>{% endif %}
+                    </div>
+                    <p>{{ collection.description or 'No description yet.' }}</p>
+                    <span>{{ collection.game_links|length }} game{{ '' if collection.game_links|length == 1 else 's' }}</span>
+                </div>
+                <div class="collection-admin-actions">
+                    <a class="btn btn-secondary" href="{{ url_for('admin2.edit_collection', collection_id=collection.id) }}">
+                        <i class="fas fa-pencil-alt" aria-hidden="true"></i> Edit
+                    </a>
+                    {% if not collection.is_featured %}
+                    <form method="post" action="{{ url_for('admin2.delete_collection', collection_id=collection.id) }}" onsubmit="return confirm('Delete this collection? Games will remain in the library.');">
+                        {{ csrf_form.hidden_tag() }}
+                        <button class="btn btn-danger" type="submit" aria-label="Delete {{ collection.name }}">
+                            <i class="fas fa-trash" aria-hidden="true"></i>
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
+            </article>
+            {% else %}
+            <div class="collection-empty">
+                <i class="fas fa-layer-group" aria-hidden="true"></i>
+                <h2>No collections yet</h2>
+                <p>Create a collection to curate games for your users.</p>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+</main>
+{% endblock %}

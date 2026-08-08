@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% block styles %}
+{{ super() }}
+<link rel="stylesheet" href="{{ 'css/admin/admin_collections.css'|theme_asset }}">
+{% endblock %}
+{% block content %}
+<main class="collections-admin-shell collection-editor-shell">
+    <form class="collection-editor-card card" method="post" data-collection-editor data-search-url="{{ url_for('admin2.search_collection_games') }}">
+        {{ form.hidden_tag() }}
+        <header class="collections-admin-header">
+            <div>
+                <p class="collections-eyebrow">{{ 'Featured spotlight' if collection and collection.is_featured else 'Content curation' }}</p>
+                <h1>{{ 'Edit collection' if collection else 'New collection' }}</h1>
+                <p>{% if collection and collection.is_featured %}Choose and order the games that rotate through the Discover hero.{% else %}Build an ordered group of games and choose where users see it.{% endif %}</p>
+            </div>
+        </header>
+
+        {% if form.errors %}
+        <div class="alert alert-danger" role="alert">
+            {% for field_errors in form.errors.values() %}{% for error in field_errors %}<div>{{ error }}</div>{% endfor %}{% endfor %}
+        </div>
+        {% endif %}
+
+        <div class="collection-editor-grid">
+            <section class="collection-editor-settings" aria-labelledby="collectionDetailsHeading">
+                <h2 id="collectionDetailsHeading">Collection details</h2>
+                <div class="collection-field">
+                    {{ form.name.label(class="form-label") }}
+                    {{ form.name(class="form-control", readonly=(collection and collection.is_featured)) }}
+                    {% if collection and collection.is_featured %}<small>This system collection cannot be renamed or removed.</small>{% endif %}
+                </div>
+                <div class="collection-field">
+                    {{ form.description.label(class="form-label") }}
+                    {{ form.description(class="form-control", rows="4", placeholder="Tell users what ties these games together") }}
+                </div>
+                {% if not (collection and collection.is_featured) %}
+                <label class="collection-switch">
+                    {{ form.show_on_discover() }}
+                    <span><strong>Show on Discover</strong><small>Display this collection as a horizontal game row.</small></span>
+                </label>
+                <div class="collection-field collection-order-field">
+                    {{ form.display_order.label(class="form-label") }}
+                    {{ form.display_order(class="form-control", min="0", max="9999") }}
+                    <small>Lower numbers appear first.</small>
+                </div>
+                {% endif %}
+            </section>
+
+            <section class="collection-game-picker" aria-labelledby="collectionGamesHeading">
+                <div class="collection-picker-heading">
+                    <div><h2 id="collectionGamesHeading">Games</h2><p>Search, add, and arrange the display order.</p></div>
+                    <span class="collection-count" data-selected-count>{{ collection.game_links|length if collection else 0 }}</span>
+                </div>
+                <label class="collection-search">
+                    <i class="fas fa-search" aria-hidden="true"></i>
+                    <span class="visually-hidden">Search library games</span>
+                    <input class="form-control" type="search" placeholder="Search your library" autocomplete="off" data-game-search>
+                    <span class="app-spinner" hidden data-search-spinner aria-label="Searching"></span>
+                </label>
+                <div class="collection-search-results" data-search-results hidden></div>
+
+                <div class="collection-selected-list" data-selected-list>
+                    {% if collection %}{% for link in collection.game_links %}
+                    <div class="collection-selected-game" data-game-uuid="{{ link.game_uuid }}" data-game-name="{{ link.game.name }}">
+                        <span class="collection-drag-handle"><i class="fas fa-grip-vertical" aria-hidden="true"></i></span>
+                        <span class="collection-game-name">{{ link.game.name }}</span>
+                        <span class="collection-order-actions">
+                            <button type="button" data-move="up" aria-label="Move {{ link.game.name }} up"><i class="fas fa-chevron-up"></i></button>
+                            <button type="button" data-move="down" aria-label="Move {{ link.game.name }} down"><i class="fas fa-chevron-down"></i></button>
+                            <button type="button" data-remove aria-label="Remove {{ link.game.name }}"><i class="fas fa-times"></i></button>
+                        </span>
+                    </div>
+                    {% endfor %}{% endif %}
+                    <div class="collection-selected-empty" data-selected-empty{% if collection and collection.game_links %} hidden{% endif %}>
+                        <i class="fas fa-gamepad" aria-hidden="true"></i><span>No games selected yet.</span>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <footer class="collection-editor-actions">
+            <a class="btn btn-secondary" href="{{ url_for('admin2.collections') }}">Cancel</a>
+            {{ form.submit(class="btn btn-primary") }}
+        </footer>
+    </form>
+</main>
+<script src="{{ 'js/admin_collections.js'|theme_asset }}"></script>
+{% endblock %}
