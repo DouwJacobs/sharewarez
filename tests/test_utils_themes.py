@@ -98,7 +98,9 @@ class TestBuilderThemes:
             'background': '#090a0b',
             'sidebar': '#111213',
             'card': '#212223',
-            'panel': '#313233'
+            'panel': '#313233',
+            'text_primary': '#f1f2f3',
+            'text_secondary': '#b1b2b3'
         }
 
     def test_create_and_update_builder_theme(self, theme_manager, tmp_path):
@@ -110,6 +112,8 @@ class TestBuilderThemes:
         assert theme_manager.get_theme(theme_id)['palette']['accent'] == '#123456'
         css = (tmp_path / theme_id / 'css' / 'theme-overrides.css').read_text()
         assert '--theme-accent-rgb: 18, 52, 86' in css
+        assert '--theme-text-primary: #f1f2f3' in css
+        assert '--theme-text-secondary: #b1b2b3' in css
 
         updated = self.palette('Renamed Theme')
         updated['accent'] = '#654321'

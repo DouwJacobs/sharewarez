@@ -9,6 +9,23 @@
     --theme-input-bg: color-mix(in srgb, var(--theme-panel-bg, rgba(18, 18, 28, .94)) 88%, black);
     --theme-scrollbar-thumb: rgba(var(--theme-accent-rgb, 98, 122, 239), .42);
     --theme-scrollbar-thumb-hover: rgba(var(--theme-accent-soft-rgb, 154, 177, 255), .68);
+    --theme-text-primary: #f5f7ff;
+    --theme-text-secondary: #c5ccdc;
+    --text-white: var(--theme-text-primary, #f5f7ff);
+    --text-light: var(--theme-text-secondary, #c5ccdc);
+    --text-muted: color-mix(in srgb, var(--theme-text-secondary, #c5ccdc) 72%, transparent);
+    --text-muted-light: color-mix(in srgb, var(--theme-text-secondary, #c5ccdc) 84%, transparent);
+    --bs-body-color: var(--theme-text-primary, #f5f7ff);
+    --bs-secondary-color: var(--theme-text-secondary, #c5ccdc);
+}
+
+body { color: var(--theme-text-primary, #f5f7ff); }
+
+.text-muted,
+.form-text,
+.help-text,
+.description-text {
+    color: var(--theme-text-secondary, #c5ccdc) !important;
 }
 
 .sidebar {

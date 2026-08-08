@@ -128,7 +128,10 @@ class ThemeManager:
 
         palette = {
             key: self._validate_builder_color(data.get(key))
-            for key in ('accent', 'accent_soft', 'background', 'sidebar', 'card', 'panel')
+            for key in (
+                'accent', 'accent_soft', 'background', 'sidebar', 'card', 'panel',
+                'text_primary', 'text_secondary'
+            )
         }
         target_id = secure_filename(name) if theme_id is None else secure_filename(theme_id)
         if not target_id or target_id in ('default', 'Default'):
@@ -166,6 +169,14 @@ class ThemeManager:
     --theme-card-top: {palette['card']};
     --theme-card-bottom: color-mix(in srgb, {palette['card']} 74%, black);
     --theme-panel-bg: color-mix(in srgb, {palette['panel']} 94%, transparent);
+    --theme-text-primary: {palette['text_primary']};
+    --theme-text-secondary: {palette['text_secondary']};
+    --text-white: var(--theme-text-primary);
+    --text-light: var(--theme-text-secondary);
+    --text-muted: color-mix(in srgb, var(--theme-text-secondary) 72%, transparent);
+    --text-muted-light: color-mix(in srgb, var(--theme-text-secondary) 84%, transparent);
+    --bs-body-color: var(--theme-text-primary);
+    --bs-secondary-color: var(--theme-text-secondary);
     --btn-primary: {palette['accent']};
     --btn-primary-hover: {palette['accent_soft']};
     --form-focus-border: {palette['accent_soft']};

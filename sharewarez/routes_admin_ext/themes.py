@@ -252,7 +252,9 @@ def theme_builder(theme_id):
         'background': '#0a0b14',
         'sidebar': '#12131f',
         'card': '#12121c',
-        'panel': '#181925'
+        'panel': '#181925',
+        'text_primary': '#f5f7ff',
+        'text_secondary': '#c5ccdc'
     }
     if existing:
         defaults.update(existing.get('palette', {}))

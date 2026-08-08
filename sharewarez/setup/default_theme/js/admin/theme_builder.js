@@ -5,11 +5,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const defaults = {
         accent: '#557cf4', accent_soft: '#9ab1ff', background: '#0a0b14',
-        sidebar: '#12131f', card: '#12121c', panel: '#181925'
+        sidebar: '#12131f', card: '#12121c', panel: '#181925',
+        text_primary: '#f5f7ff', text_secondary: '#c5ccdc'
     };
     const variableNames = {
         accent: '--preview-accent', accent_soft: '--preview-soft', background: '--preview-bg',
-        sidebar: '--preview-sidebar', card: '--preview-card', panel: '--preview-panel'
+        sidebar: '--preview-sidebar', card: '--preview-card', panel: '--preview-panel',
+        text_primary: '--preview-text-primary', text_secondary: '--preview-text-secondary'
     };
 
     function updatePreview() {
