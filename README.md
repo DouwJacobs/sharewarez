@@ -1,391 +1,119 @@
-# Self-hosted game library
+# GameLibrary
 
-A modern interface for turning game folders and archives into a searchable, shareable library with cover art, screenshots, metadata, downloads, and user management.
+GameLibrary is a self-hosted interface for organizing and sharing a game collection. It scans game folders, enriches them with metadata and artwork, and provides discovery, streaming downloads, requests, user management, and browser-based retro gaming.
 
-> This project was forked from [SharewareZ](https://github.com/axewater/sharewarez).
+> GameLibrary is intended for legally owned software. It does not condone unauthorized distribution of copyrighted material.
 
-## Screenshots
+![GameLibrary library](docs/screenshots/library.png)
 
-### Library
+## Features
 
-![Library overview](docs/screenshots/library.png)
+- Searchable, filterable game library with IGDB metadata and artwork
+- Discovery, favorites, play-status tracking, updates, and extras
+- Streaming ZIP downloads without temporary archive files
+- Game requests with edition selection and administrator workflow
+- Multiple users, invitations, roles, password reset, and notifications
+- Custom branding, site-wide themes, and an integrated theme builder
+- Browser-based support for many retro game formats through Webretro
 
-<table>
-  <tr>
-    <td><strong>Discover</strong><br><img src="docs/screenshots/discover.png" alt="Discovery page"></td>
-    <td><strong>Game details</strong><br><img src="docs/screenshots/game-details.png" alt="Game details page"></td>
-  </tr>
-  <tr>
-    <td colspan="2"><strong>Visual theme builder</strong><br><img src="docs/screenshots/theme-builder.png" alt="Visual theme builder"></td>
-  </tr>
-</table>
+## Docker installation
 
-## 📢 Important Notes
+### Requirements
 
-- 🔄 To update a source installation, pull the latest changes and run `pip install -r requirements.txt` again.
-- Run `./startweb.sh --force-setup` only when you intentionally want to recreate the database and rerun the setup wizard.
-- ⚖️ This project is intended for the legal use of software and does not condone or support unauthorized distribution of copyrighted material.
+- Docker Engine
+- Docker Compose v2 (`docker compose`)
+- A directory containing your games
 
-## ✨ Core Features
+### 1. Download the deployment files
 
-### 📚 Game Library Management
-- 🔍 Smart folder scanning & cataloging with multi-threaded processing (4 threads by default)
-- 🔎 Global search across games and authorized settings pages
-- 📄 Server-side pagination for responsive large libraries
-- ⚡ Multi-threaded image downloading and processing for faster library building
-- 🖼️ Steam-style popup with screenshot galleries
-- 🏷️ Advanced filtering (genre, rating, gameplay modes)
-- 📁 Support for 'updates' and 'extras' folders
-- 🎯 Discovery page to find new gems:
-  - 🆕 Latest additions
-  - ⭐ Top downloads
-  - ❤️ Most favorited
-  - 🏆 Highly rated games
-- 🚀 Ability to play ROM files directly in browser
-- 💬 Discord webhook integration (bot posts in your channel when there is a new game)
-
-### 💾 Download Features
-- 📦 Streaming ZIP downloads for multi-file folders (no disk storage required)
-- 📄 NFO file indexing with viewer
-- ⚡ Multi-threaded download processing with configurable thread count
-
-### 👥 User Management
-- 🛡️ Role-based access control
-- 📨 Invitation system (admin-controlled)
-- 🔑 Self-service password reset (requires SMTP)
-- 🎨 User-selectable themes with a built-in visual theme builder
-- 🖌️ Configurable site title, logo, and favicon
-
-### ⚡ Performance Features
-- 🚀 Multi-threaded game scanning (4 threads by default, configurable)
-- 📥 Multi-threaded image downloading (8 threads by default, configurable)
-- 🔄 Chunked streaming downloads for large files
-- 🌐 ASGI-based web server with uvicorn and multiple workers
-
-## 🚀 Installation Guide
-
-## ⚡ Install Script Method (Linux Only)
-
-**One-Command Installation:**
 ```bash
-git clone --depth 1 https://github.com/DouwJacobs/sharewarez.git
-cd sharewarez
-# IMPORTANT: Make install script executable first
-chmod +x install-linux.sh
-./install-linux.sh
-```
-
-The auto-installer will:
-- ✅ Detect your Linux distribution automatically
-- ✅ Install all prerequisites (Python, PostgreSQL, Git)
-- ✅ Set up database with secure credentials
-- ✅ Configure the application automatically
-- ✅ Generate secure encryption keys
-- ✅ Start the application when ready
-
-**Advanced Options:**
-```bash
-# Specify custom games directory
-./install-linux.sh --games-dir /path/to/games
-
-# Development setup with extra tools including unit testing
-./install-linux.sh --dev
-
-# Skip database setup (use existing)
-./install-linux.sh --no-db
-
-# Override existing installation
-./install-linux.sh --force
-```
-
----
-
-## 🐧 Linux Manual Install
-
-If you prefer manual setup or the auto-installer doesn't work:
-
-**Step 1: Install Prerequisites**
-```bash
-# Update package list
-sudo apt update
-
-# Install Python 3.11+ and pip
-sudo apt install python3 python3-pip python3-venv
-
-# Install git
-sudo apt install git
-
-# Install PostgreSQL database server
-sudo apt install postgresql postgresql-contrib
-
-# Verify installations
-python3 --version
-python3 -m pip --version
-git --version
-
-# Start PostgreSQL service
-sudo systemctl start postgresql
-sudo systemctl enable postgresql
-```
-
-**Step 2: Set up PostgreSQL**
-```bash
-# Switch to postgres user and create database
-sudo -u postgres psql
-```
-```sql
--- In PostgreSQL shell, create database and user
-CREATE DATABASE sharewarez;
-CREATE USER sharewarezuser WITH ENCRYPTED PASSWORD 'your_password_here';
-GRANT ALL PRIVILEGES ON DATABASE sharewarez TO sharewarezuser;
-\q
-```
-
-**Step 3: Clone and set up the application**
-```bash
-# Clone the repository
-git clone --depth 1 https://github.com/DouwJacobs/sharewarez.git
-cd sharewarez
-
-# IMPORTANT: Make shell scripts executable first
-chmod +x *.sh
-
-# Create and activate virtual environment
-python3 -m venv venv
-source venv/bin/activate
-
-# Install Python dependencies
-python3 -m pip install -r requirements.txt
-```
-
-**Step 4: Configure Application**
-```bash
-# Copy configuration files
-cp config.py.example config.py
-cp .env.example .env
-
-# Edit the .env file with your settings
-nano .env
-```
-
-**Important**: Update these values in your `.env` file:
-- `DATABASE_URL=postgresql://sharewarezuser:your_password_here@localhost:5432/sharewarez`
-- `DATA_FOLDER_WAREZ=/path/to/your/games/folder`
-- `SECRET_KEY=your_secure_random_key_here`
-
-> **⚠️ SECRET_KEY is mandatory.** The application **will refuse to start** if `SECRET_KEY`
-> is unset or still has the placeholder/example value. This is intentional: the secret
-> key signs session and "remember me" cookies, so a missing or shared key is a security
-> risk. Generate a strong random value with:
->
-> ```bash
-> python -c 'import secrets; print(secrets.token_urlsafe(64))'
-> ```
->
-> Paste the output as the `SECRET_KEY` value in your `.env` file. Use a **different**
-> key per deployment, and never commit it to version control. (The test suite is
-> exempt and auto-generates a throwaway key when running under `pytest`.)
-
-**Step 5: Start the application**
-```bash
-# IMPORTANT: Make all shell scripts executable first
-chmod +x *.sh
-./startweb.sh
-```
-
-**Step 6: Complete Setup**
-1. Open your browser to `http://localhost:5006`
-2. Complete the setup wizard and create your admin account
-
----
-
-## 🪟 Windows Manual Install
-
-**Step 1: Install Prerequisites**
-
-1. **Install Python 3.11+**
-   - Open PowerShell as Administrator, type `python` (opens Microsoft Store)
-   - Install Python 3.11 or download from [python.org](https://www.python.org/downloads/windows/)
-   - ✅ Check "Add Python to PATH" during installation
-
-2. **Install Git**
-   - Download from [Git for Windows](https://gitforwindows.org/) and install with default settings
-
-3. **Install Visual C++ Build Tools**
-   - Download [Visual Studio Build Tools](https://visualstudio.microsoft.com/downloads/)
-   - Install "C++ build tools" workload
-
-4. **Install PostgreSQL**
-   - Download from [PostgreSQL for Windows](https://www.postgresql.org/download/windows/)
-   - Install with default settings and remember the `postgres` user password
-
-**Step 2: Set up PostgreSQL**
-Open pgAdmin (installed with PostgreSQL):
-1. Connect to your PostgreSQL server
-2. Right-click "Databases" → "Create" → "Database"
-3. Name: `sharewarez` → Click "Save"
-
-**Step 3: Clone and set up the application**
-Open PowerShell and run:
-```powershell
-# Clone the repository
-git clone --depth 1 https://github.com/DouwJacobs/sharewarez.git
-cd sharewarez
-
-# Create and activate virtual environment
-python -m venv venv
-Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
-.\venv\Scripts\Activate.ps1
-
-# Install dependencies
-python -m pip install -r requirements.txt
-```
-
-**Step 4: Configure Application**
-```powershell
-# Copy configuration files and edit
-copy config.py.example config.py
-copy .env.example .env
-notepad .env
-```
-
-**Important**: Update these values in your `.env` file:
-- `DATABASE_URL=postgresql://postgres:your_postgres_password@localhost:5432/sharewarez`
-- `DATA_FOLDER_WAREZ=C:\Path\To\Your\Games\Folder`
-- `SECRET_KEY=your_secure_random_key_here`
-
-> **⚠️ SECRET_KEY is mandatory.** The application **will refuse to start** if `SECRET_KEY`
-> is unset or still has the placeholder/example value. This is intentional: the secret
-> key signs session and "remember me" cookies, so a missing or shared key is a security
-> risk. Generate a strong random value with:
->
-> ```powershell
-> python -c "import secrets; print(secrets.token_urlsafe(64))"
-> ```
->
-> Paste the output as the `SECRET_KEY` value in your `.env` file. Use a **different**
-> key per deployment, and never commit it to version control. (The test suite is
-> exempt and auto-generates a throwaway key when running under `pytest`.)
-
-**Step 5: Start the application**
-```powershell
-# Start the application
-.\startweb_windows.cmd
-```
-
-**Step 6: Complete Setup**
-1. Open your browser to `http://localhost:5006`
-2. Complete the setup wizard and create your admin account
-
----
-
-## 🐳 Docker Install
-
-The published image is [`douwjacobs/gamelibrary`](https://hub.docker.com/r/douwjacobs/gamelibrary). The Compose configuration uses `latest` by default; set `GAME_LIBRARY_IMAGE=douwjacobs/gamelibrary:v1` in `.env` to remain on the v1 release line.
-
-**Quick Docker Setup:**
-```bash
-# Clone the repository
-git clone https://github.com/DouwJacobs/sharewarez.git
-cd sharewarez
-
-# Copy and configure environment file
+git clone --depth 1 https://github.com/DouwJacobs/sharewarez.git gamelibrary
+cd gamelibrary
 cp .env.docker.example .env
-# Edit .env file with your game directory path:
-# DATA_FOLDER_WAREZ=/path/to/your/games
+```
 
-# Pull and start GameLibrary
+### 2. Configure `.env`
+
+The deployment uses the published image:
+
+```env
+GAME_LIBRARY_IMAGE=douwjacobs/gamelibrary:latest
+```
+
+At minimum, change these values:
+
+```env
+# Absolute path on the Docker host. The container mounts it read-only at /storage.
+DATA_FOLDER_WAREZ=/absolute/path/to/your/games
+
+# Persistent artwork, themes, and other library data.
+LIBRARY_HOST_PATH=./data/library
+
+# Generate with: openssl rand -hex 32
+SECRET_KEY=replace-with-a-unique-random-value
+
+POSTGRES_USER=gamelibrary
+POSTGRES_PASSWORD=replace-with-a-strong-password
+POSTGRES_DB=gamelibrary
+DATABASE_URL=postgresql://gamelibrary:replace-with-a-strong-password@db:5432/gamelibrary
+```
+
+`POSTGRES_PASSWORD` and the password inside `DATABASE_URL` must match. URL-encode the password if it contains reserved URL characters.
+
+### 3. Start GameLibrary
+
+```bash
 docker compose pull
 docker compose up -d
 ```
 
-**What it includes:**
-- ✅ Complete PostgreSQL database setup
-- ✅ Automatic application configuration
-- ✅ Persistent data storage
-- ✅ Ready-to-use on port 5006
+Open [http://localhost:5006](http://localhost:5006) and complete the setup wizard to create the administrator account.
 
-**Step-by-step:**
-1. Clone repository and navigate to folder
-2. Copy `.env.docker.example` to `.env`
-3. Edit `.env` file - set `DATA_FOLDER_WAREZ` to your games directory
-4. Optionally set `LIBRARY_HOST_PATH` to change where cover images and themes are stored (defaults to `./data/library`)
-5. Run `docker compose pull && docker compose up -d`
-6. Open browser to `http://localhost:5006`
-7. Complete setup wizard and create admin account
+## Updating
 
-**Management commands:**
+The `latest` tag tracks the latest published GameLibrary release:
+
 ```bash
-# View logs
+docker compose pull
+docker compose up -d
+```
+
+Docker recreates the application container while retaining the PostgreSQL volume and configured library storage.
+
+## Common commands
+
+```bash
+# View application and database logs
 docker compose logs -f
 
-# Stop containers
+# Show container status
+docker compose ps
+
+# Restart the application
+docker compose restart app
+
+# Stop the deployment without deleting its data
 docker compose down
-
-# Update to the latest published GameLibrary image
-docker compose pull && docker compose up -d
-
-# Reset database (if needed)
-docker compose exec app /app/startweb-docker.sh --force-setup
 ```
 
----
+## Storage and ports
 
-## 🔧 Post-Installation
+| Resource | Docker location | Purpose |
+| --- | --- | --- |
+| `${DATA_FOLDER_WAREZ}` | `/storage` (read-only) | Game files exposed for scanning and downloads |
+| `${LIBRARY_HOST_PATH}` | `/app/sharewarez/static/library` | Artwork, themes, and persistent library assets |
+| `db_data` volume | PostgreSQL data directory | Accounts, settings, and library metadata |
+| Port `5006` | Application HTTP port | GameLibrary web interface |
 
-**Database Reset (if needed):**
-- Linux: `./startweb.sh --force-setup`
-- Windows: `.\startweb_windows.cmd --force-setup`
+To expose a different host port, change the Compose mapping from `5006:5006` to, for example, `8080:5006`.
 
-**Updating the application:**
-1. Stop the application (Ctrl+C)
-2. `git pull` → `pip install -r requirements.txt`
-3. Restart with startup script
+## Performance
 
-**Troubleshooting:**
-- Port 5006 in use: Change port in startup script or set PORT environment variable
-- Database errors: Check PostgreSQL is running and credentials are correct
-- Linux permissions: Ensure read access to game directories
+The default deployment uses two application workers for concurrent users and streaming downloads. For a small memory-constrained installation, set `WEB_WORKERS=1`. Database pool settings can normally remain at their supplied defaults.
 
-## 🔧 Additional Settings
-- 🌐 Default port: `5006` (configurable via PORT environment variable)
-- 👥 Go the admin dashboard for further configuration
+## Support and credits
 
-## 🌐 Changing the Port Number
-
-The application runs on port `5006` by default. To change this:
-
-**For Linux/Windows installations:**
-1. Edit your `.env` file
-2. Add or modify: `PORT=8080` (replace 8080 with your desired port)
-3. Restart the application
-
-**For Docker installations:**
-- Docker containers always use port `5006` internally
-- The external port is mapped via docker-compose.yml (also defaults to 5006)
-- To change external port, edit the `ports` section in docker-compose.yml
-- Docker starts two web workers by default. Set `WEB_WORKERS=1` for the lowest
-  memory use or increase it for unusually busy installations.
-
-**Examples:**
-```bash
-# In .env file - run on port 8080
-PORT=8080
-
-# In .env file - run on port 3000
-PORT=3000
-```
-
-## 🔧 Supported platforms to play in browser 
-- Most 8, 16 and 32 bit retro consoles work, see webretro repo for more full list
-- PSX, Sega MS, Sega 32x not working at the moment
-- Sega Saturn working on single file games and some audio issues
-- Files must be unzipped. ZIP, 7z, and RAR are not yet supported by the browser-based emulator integration.
-
-## 💬 Support
-- 📝 Open an issue on GitHub
-- 💭 Join our Discord community https://discord.gg/WTwp236zU7
-
-## 📝 3rd party code
-- 💭 Thanks to BinBashBanana's webretro we can now run ROMs in the browser.
-- 🌐 Check out his project here: https://github.com/BinBashBanana/webretro
+- Report problems through [GitHub Issues](https://github.com/DouwJacobs/sharewarez/issues)
+- Join the [Discord community](https://discord.gg/WTwp236zU7)
+- GameLibrary was forked from [SharewareZ](https://github.com/axewater/sharewarez)
+- Browser-based retro gaming is powered by [Webretro](https://github.com/BinBashBanana/webretro)
