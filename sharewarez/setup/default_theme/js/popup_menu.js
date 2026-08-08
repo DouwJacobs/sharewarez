@@ -190,6 +190,7 @@ document.addEventListener('DOMContentLoaded', function() {
             document.querySelectorAll('.popup-menu').forEach(function(menu) {
                 if (menu.id !== 'popupMenu-' + uuid) {
                     menu.style.display = 'none';
+                    document.getElementById(menu.id.replace('popupMenu-', 'menuButton-'))?.setAttribute('aria-expanded', 'false');
                     // Show favorite button and game status elements for other cards
                     var otherCard = menu.closest('.game-card') || menu.closest('.game-card-coverimage');
                     if (otherCard) {
@@ -351,6 +352,7 @@ document.addEventListener('DOMContentLoaded', function() {
     window.addEventListener('click', function() {
         document.querySelectorAll('.popup-menu').forEach(function(menu) {
             menu.style.display = 'none';
+            document.getElementById(menu.id.replace('popupMenu-', 'menuButton-'))?.setAttribute('aria-expanded', 'false');
             // Show favorite button and game status elements when menu closes
             // Handle both library page (.game-card) and game details page (.game-card-coverimage)
             var gameCard = menu.closest('.game-card') || menu.closest('.game-card-coverimage');

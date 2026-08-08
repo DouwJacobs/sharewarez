@@ -100,6 +100,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     // Close all other dropdowns first
                     document.querySelectorAll('.status-dropdown').forEach(d => {
                         d.style.display = 'none';
+                        d.previousElementSibling?.setAttribute('aria-expanded', 'false');
                     });
 
                     dropdown.style.display = isVisible ? 'none' : 'block';
@@ -249,6 +250,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!e.target.closest('.game-status-btn') && !e.target.closest('.status-dropdown')) {
             document.querySelectorAll('.status-dropdown').forEach(dropdown => {
                 dropdown.style.display = 'none';
+                dropdown.previousElementSibling?.setAttribute('aria-expanded', 'false');
             });
         }
     });
@@ -258,6 +260,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (e.target.closest('[id^="menuButton-"]')) {
             document.querySelectorAll('.status-dropdown').forEach(dropdown => {
                 dropdown.style.display = 'none';
+                dropdown.previousElementSibling?.setAttribute('aria-expanded', 'false');
             });
         }
     });
