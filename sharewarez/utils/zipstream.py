@@ -11,6 +11,43 @@ from sharewarez.utils.security import is_safe_path
 from sharewarez.utils.event_logging import log_system_event
 
 
+def _build_zipstream(
+    source_path: str,
+    compression_level: int,
+    enable_zip64: bool,
+    excluded_folders: list,
+):
+    """Build the archive manifest without blocking the ASGI event loop."""
+    from zipfile import ZIP_STORED, ZIP_DEFLATED
+
+    compression_method = ZIP_DEFLATED if compression_level > 0 else ZIP_STORED
+    archive = zipstream.ZipFile(
+        mode='w', compression=compression_method, allowZip64=enable_zip64
+    )
+
+    if os.path.isfile(source_path):
+        archive.write(source_path, arcname=os.path.basename(source_path))
+    else:
+        excluded = {folder.lower() for folder in excluded_folders}
+        for root, dirs, files in os.walk(source_path):
+            dirs[:] = [directory for directory in dirs if directory.lower() not in excluded]
+            for file_name in files:
+                if file_name.lower() == 'sharewarez.json':
+                    continue
+                file_path = os.path.join(root, file_name)
+                archive.write(file_path, arcname=os.path.relpath(file_path, source_path))
+
+    return iter(archive)
+
+
+def _next_zipstream_chunk(iterator):
+    """Return an explicit completion flag because StopIteration cannot cross a Future."""
+    try:
+        return True, next(iterator)
+    except StopIteration:
+        return False, b''
+
+
 async def async_generate_zipstream_chunks(
     source_path: str, 
     chunk_size: int = 65536,
@@ -45,37 +82,23 @@ async def async_generate_zipstream_chunks(
         if not os.path.exists(source_path):
             raise FileNotFoundError(f"Source path does not exist: {source_path}")
         
-        # Initialize zipstream with proper API and ZIP64 support
-        from zipfile import ZIP_STORED, ZIP_DEFLATED
-        compression_method = ZIP_DEFLATED if compression_level > 0 else ZIP_STORED
-        zs = zipstream.ZipFile(mode='w', compression=compression_method, allowZip64=enable_zip64)
-        
-        # Add files to ZIP stream
-        if os.path.isfile(source_path):
-            # Single file
-            file_name = os.path.basename(source_path)
-            zs.write(source_path, arcname=file_name)
-        else:
-            # Directory - walk and add files while excluding certain folders
-            for root, dirs, files in os.walk(source_path):
-                # Filter out excluded directories
-                dirs[:] = [d for d in dirs if d.lower() not in [f.lower() for f in excluded_folders]]
-                
-                for file in files:
-                    if file.lower() == 'sharewarez.json':
-                        continue
-                    file_path = os.path.join(root, file)
-                    # Create relative path for archive
-                    rel_path = os.path.relpath(file_path, source_path)
-                    zs.write(file_path, arcname=rel_path)
-        
-        # Generate chunks asynchronously
-        for chunk in zs:
+        iterator = await asyncio.to_thread(
+            _build_zipstream,
+            source_path,
+            compression_level,
+            enable_zip64,
+            excluded_folders,
+        )
+
+        # Pull one chunk at a time in a worker thread. This keeps memory bounded
+        # by consumer backpressure while leaving the event loop free for other users.
+        while True:
+            has_chunk, chunk = await asyncio.to_thread(_next_zipstream_chunk, iterator)
+            if not has_chunk:
+                break
             if chunk:
                 yield chunk
-                # Allow other coroutines to run
-                await asyncio.sleep(0)
-                
+
     except Exception as e:
         log_system_event(f"Error in zipstream generation for {source_path}: {str(e)}")
         raise
