@@ -120,6 +120,95 @@
     color: rgb(var(--theme-accent-soft-rgb, 154, 177, 255)) !important;
 }
 
+/* Theme bridge: third-party and Bootstrap controls should inherit the active
+   theme instead of falling back to Bootstrap blue. Semantic success, warning,
+   and danger colors intentionally remain distinct. */
+:is(.btn-primary, .page-item.active .page-link, .nav-pills .nav-link.active) {
+    --bs-btn-bg: rgb(var(--theme-accent-rgb, 98, 122, 239));
+    --bs-btn-border-color: rgb(var(--theme-accent-rgb, 98, 122, 239));
+    --bs-btn-hover-bg: color-mix(in srgb, rgb(var(--theme-accent-rgb, 98, 122, 239)) 82%, black);
+    --bs-btn-hover-border-color: rgb(var(--theme-accent-soft-rgb, 154, 177, 255));
+    --bs-btn-active-bg: color-mix(in srgb, rgb(var(--theme-accent-rgb, 98, 122, 239)) 74%, black);
+    --bs-btn-active-border-color: rgb(var(--theme-accent-soft-rgb, 154, 177, 255));
+    background-color: rgb(var(--theme-accent-rgb, 98, 122, 239));
+    border-color: rgb(var(--theme-accent-soft-rgb, 154, 177, 255));
+}
+
+.btn-primary:hover,
+.btn-primary:focus-visible {
+    background-color: color-mix(in srgb, rgb(var(--theme-accent-rgb, 98, 122, 239)) 82%, black);
+    border-color: rgb(var(--theme-accent-soft-rgb, 154, 177, 255));
+    box-shadow: 0 0 0 .2rem rgba(var(--theme-accent-rgb, 98, 122, 239), .2);
+}
+
+:is(.btn-outline-primary, .page-link) {
+    color: rgb(var(--theme-accent-soft-rgb, 154, 177, 255));
+    border-color: rgba(var(--theme-accent-soft-rgb, 154, 177, 255), .42);
+}
+
+:is(.btn-outline-primary, .page-link):hover,
+:is(.btn-outline-primary, .page-link):focus-visible {
+    color: #fff;
+    background: rgba(var(--theme-accent-rgb, 98, 122, 239), .24);
+    border-color: rgb(var(--theme-accent-soft-rgb, 154, 177, 255));
+}
+
+:is(.form-control, .form-select, .input-glass, .admin-input, .dropdown-menu, .list-group-item, .ck.ck-editor__main > .ck-editor__editable) {
+    color: var(--text-white);
+    background-color: color-mix(in srgb, var(--theme-panel-bg, rgba(18, 18, 28, .94)) 82%, transparent) !important;
+    border-color: rgba(var(--theme-accent-soft-rgb, 154, 177, 255), .2) !important;
+}
+
+:is(.form-control, .form-select, .input-glass, .admin-input):hover {
+    border-color: rgba(var(--theme-accent-soft-rgb, 154, 177, 255), .38) !important;
+}
+
+:is(.form-control, .form-select, .input-glass, .admin-input):focus {
+    color: var(--text-white);
+    background-color: color-mix(in srgb, var(--theme-panel-bg, rgba(18, 18, 28, .94)) 96%, white 4%) !important;
+    border-color: rgb(var(--theme-accent-soft-rgb, 154, 177, 255)) !important;
+    box-shadow: 0 0 0 .2rem rgba(var(--theme-accent-rgb, 98, 122, 239), .18) !important;
+}
+
+.form-check-input:checked {
+    background-color: rgb(var(--theme-accent-rgb, 98, 122, 239));
+    border-color: rgb(var(--theme-accent-soft-rgb, 154, 177, 255));
+}
+
+.form-check-input:focus {
+    border-color: rgb(var(--theme-accent-soft-rgb, 154, 177, 255));
+    box-shadow: 0 0 0 .2rem rgba(var(--theme-accent-rgb, 98, 122, 239), .18);
+}
+
+:is(.dropdown-item, .list-group-item-action):hover,
+:is(.dropdown-item, .list-group-item-action):focus {
+    color: #fff;
+    background: rgba(var(--theme-accent-rgb, 98, 122, 239), .16);
+}
+
+:is(.card, .accordion-item, .offcanvas, .ck.ck-toolbar) {
+    color: var(--text-white);
+    background: var(--theme-panel-bg, rgba(18, 18, 28, .94)) !important;
+    border-color: rgba(var(--theme-accent-soft-rgb, 154, 177, 255), .18) !important;
+}
+
+:is(.nav-tabs, .nav-pills) .nav-link {
+    color: var(--text-muted-light);
+    border-color: transparent;
+}
+
+:is(.nav-tabs, .nav-pills) .nav-link:hover,
+:is(.nav-tabs, .nav-pills) .nav-link:focus-visible {
+    color: rgb(var(--theme-accent-soft-rgb, 154, 177, 255));
+    border-color: rgba(var(--theme-accent-soft-rgb, 154, 177, 255), .24);
+    background: rgba(var(--theme-accent-rgb, 98, 122, 239), .1);
+}
+
+::selection {
+    color: #fff;
+    background: rgba(var(--theme-accent-rgb, 98, 122, 239), .72);
+}
+
 .dataTables_wrapper :is(.dataTables_filter input, .dataTables_length select) {
     background: color-mix(in srgb, var(--theme-panel-bg, #12121c) 88%, black) !important;
     border-color: rgba(var(--theme-accent-soft-rgb, 154, 177, 255), .22) !important;
