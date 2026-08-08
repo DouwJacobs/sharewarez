@@ -19,32 +19,41 @@
 
 /* Filters live with the library content rather than in the global sidebar. */
 .library-browser-panel .container-filtersandsort {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 10px;
-    margin: 18px 0 6px;
-    padding: 12px 14px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 14px;
-    background: rgba(255, 255, 255, 0.025);
+    display: block;
+    margin: 20px 0 10px;
+    padding: 0;
+    overflow: hidden;
+    border: 1px solid rgba(var(--theme-accent-soft-rgb, 154, 177, 255), 0.2);
+    border-radius: 16px;
+    background: color-mix(in srgb, var(--theme-panel-bg, rgba(16, 18, 31, 0.94)) 90%, transparent);
+    box-shadow: 0 14px 38px rgba(0, 0, 0, 0.18);
 }
 
 .library-browser-panel .filters-heading {
     justify-content: space-between;
+    min-height: 62px;
     border: 0;
-    padding: 0;
+    padding: 12px 16px;
     background: transparent;
     cursor: pointer;
     display: flex;
     align-items: center;
-    gap: 7px;
+    gap: 14px;
     width: 100%;
-    color: rgba(226, 231, 255, 0.9);
+    color: var(--text-white);
     font-size: 0.78rem;
     font-weight: 700;
     letter-spacing: 0.1em;
     text-transform: uppercase;
+}
+
+.library-browser-panel .filters-heading:hover {
+    background: rgba(var(--theme-accent-rgb, 98, 122, 239), 0.08);
+}
+
+.library-browser-panel .filters-heading:focus-visible {
+    outline: 2px solid rgb(var(--theme-accent-soft-rgb, 154, 177, 255));
+    outline-offset: -3px;
 }
 
 .library-browser-panel .filters-heading > span {
@@ -53,7 +62,43 @@
     gap: 7px;
 }
 
+.library-browser-panel .filters-heading-copy {
+    min-width: 0;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 3px;
+    text-align: left;
+}
+
+.library-browser-panel .filters-heading-title {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.library-browser-panel .filters-heading-title > i {
+    color: rgb(var(--theme-accent-soft-rgb, 154, 177, 255));
+}
+
+.library-browser-panel .filters-heading-description {
+    color: var(--text-muted);
+    font-size: 0.76rem;
+    font-weight: 500;
+    letter-spacing: 0;
+    text-transform: none;
+}
+
 .library-browser-panel .filters-toggle-icon {
+    display: inline-flex;
+    width: 32px;
+    height: 32px;
+    flex: 0 0 32px;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(var(--theme-accent-soft-rgb, 154, 177, 255), 0.18);
+    border-radius: 9px;
+    background: rgba(var(--theme-accent-rgb, 98, 122, 239), 0.08);
+    color: rgb(var(--theme-accent-soft-rgb, 154, 177, 255));
     transition: transform 0.2s ease;
 }
 
@@ -62,70 +107,82 @@
 }
 
 .library-browser-panel .library-filters-body {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: flex-end;
-    gap: 12px;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(140px, 1fr));
+    align-items: start;
+    gap: 16px;
     width: 100%;
+    padding: 16px;
+    border-top: 1px solid rgba(var(--theme-accent-soft-rgb, 154, 177, 255), 0.14);
 }
 
-.library-browser-panel .sorting-dropdown,
 .library-browser-panel .library-filters,
 .library-browser-panel #filterForm,
-.library-browser-panel .library-filters .form-group,
-.library-browser-panel .button-group {
-    display: flex;
-    align-items: center;
-    gap: 8px;
+.library-browser-panel .library-filters .form-group {
     margin: 0;
 }
 
 .library-browser-panel #filterForm {
-    align-items: flex-end;
+    display: contents;
 }
 
 .library-browser-panel .sorting-dropdown {
-    flex: 0 0 auto;
+    display: grid;
+    gap: 7px;
 }
 
 .library-browser-panel .library-filters {
-    flex: 1 1 auto;
+    display: contents;
+}
+
+.library-browser-panel .library-filter-fields {
+    display: contents;
 }
 
 .library-browser-panel .library-filters .form-group {
-    flex: 1 1 150px;
+    display: flex;
     flex-direction: column;
     align-items: stretch;
+    gap: 7px;
     min-width: 0;
+}
+
+.library-browser-panel .sorting-controls {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 44px;
+    gap: 8px;
 }
 
 .library-browser-panel .container-filtersandsort select.form-control,
 .library-browser-panel .container-filtersandsort #sortSelect,
 .library-browser-panel .container-filtersandsort button {
-    height: 34px;
+    min-height: 44px;
     margin: 0;
     border-radius: 8px;
 }
 
 .library-browser-panel .container-filtersandsort select.form-control,
 .library-browser-panel .container-filtersandsort #sortSelect {
+    width: 100%;
+    min-width: 0;
+    min-height: 44px;
     line-height: 1.2;
-    padding: 6px 28px 6px 9px;
+    padding: 8px 32px 8px 12px;
 }
 
 .library-browser-panel .container-filtersandsort label {
     display: block;
     margin: 0;
-    color: rgba(226, 231, 255, 0.66);
-    font-size: 0.72rem;
-    font-weight: 600;
+    color: var(--text-muted);
+    font-size: 0.74rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
 }
 
 .library-browser-panel .rating-slider {
-    width: 150px;
-    height: 34px;
-    margin: 0 auto 0 0;
-    align-self: flex-start;
+    width: 100%;
+    height: 44px;
+    margin: 0;
 }
 
 .library-browser-panel .rating-slider::-webkit-slider-runnable-track {
@@ -133,48 +190,94 @@
 }
 
 .library-browser-panel .library-filters .filter-rating-group {
-    flex: 0 1 170px;
-    align-items: flex-start;
+    grid-column: auto;
+}
+
+.library-browser-panel .rating-value {
+    display: inline-flex;
+    min-width: 28px;
+    height: 22px;
+    align-items: center;
+    justify-content: center;
+    margin-left: 5px;
+    padding: 0 7px;
+    border-radius: 999px;
+    background: rgba(var(--theme-accent-rgb, 98, 122, 239), 0.16);
+    color: rgb(var(--theme-accent-soft-rgb, 154, 177, 255));
+    font-size: 0.72rem;
+}
+
+.library-browser-panel .button-group {
+    display: flex;
+    justify-content: flex-end;
+    grid-column: 1 / -1;
+    gap: 10px;
+    padding-top: 14px;
+    border-top: 1px solid rgba(var(--theme-accent-soft-rgb, 154, 177, 255), 0.12);
 }
 
 .library-browser-panel .button-group .btn {
-    min-width: 72px;
-    padding: 0 12px;
+    display: inline-flex;
+    min-width: 120px;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 0 16px;
     line-height: 1;
 }
 
-@media (max-width: 900px) {
-    .library-browser-panel .library-filters,
-    .library-browser-panel #filterForm {
-        flex-wrap: wrap;
+@media (max-width: 1100px) {
+    .library-browser-panel .library-filters-body {
+        grid-template-columns: repeat(3, minmax(130px, 1fr));
     }
 }
 
 @media (max-width: 768px) {
     .library-browser-panel .container-filtersandsort {
-        padding: 10px;
+        margin-top: 14px;
+        border-radius: 14px;
     }
 
-    .library-browser-panel .library-filters-body,
-    .library-browser-panel .library-filters,
-    .library-browser-panel #filterForm {
-        width: 100%;
+    .library-browser-panel .filters-heading {
+        min-height: 58px;
+        padding: 10px 12px;
+    }
+
+    .library-browser-panel .filters-heading-description {
+        display: none;
+    }
+
+    .library-browser-panel .library-filters-body {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 14px;
+        padding: 14px 12px;
     }
 
     .library-browser-panel .sorting-dropdown,
-    .library-browser-panel .library-filters .form-group,
-    .library-browser-panel .library-filters .filter-rating-group,
-    .library-browser-panel .button-group {
-        flex: 1 1 100%;
-        width: 100%;
+    .library-browser-panel .library-filters .filter-rating-group {
+        grid-column: 1 / -1;
     }
 
-    .library-browser-panel .rating-slider {
-        width: 100%;
+    .library-browser-panel .button-group {
+        display: grid;
+        grid-template-columns: 1fr 1.35fr;
     }
 
     .library-browser-panel .button-group .btn {
-        flex: 1;
+        width: 100%;
+        min-width: 0;
+        padding: 0 10px;
+    }
+}
+
+@media (max-width: 360px) {
+    .library-browser-panel .library-filters-body {
+        grid-template-columns: 1fr;
+    }
+
+    .library-browser-panel .sorting-dropdown,
+    .library-browser-panel .library-filters .filter-rating-group {
+        grid-column: auto;
     }
 }
 
