@@ -3,7 +3,7 @@ from flask import render_template, request, jsonify
 from flask_login import login_required, current_user
 from sharewarez.models import User
 from sharewarez import db
-from sqlalchemy import select, func
+from sqlalchemy import select, func, or_
 from . import admin2_bp
 from uuid import uuid4
 from sharewarez.utils.event_logging import log_system_event
@@ -113,8 +113,45 @@ def check_admin_protection(user_id, new_role=None, new_state=None):
 @login_required
 @admin_required
 def manage_users():
-    users = db.session.execute(select(User)).scalars().all()
-    return render_template('admin/admin_manage_users.html', users=users)
+    page = request.args.get('page', 1, type=int)
+    search = request.args.get('q', '').strip()
+    role = request.args.get('role', '').strip().lower()
+    state = request.args.get('state', '').strip().lower()
+
+    statement = select(User)
+    if search:
+        pattern = f'%{search}%'
+        statement = statement.where(or_(
+            User.name.ilike(pattern),
+            User.email.ilike(pattern),
+            User.about.ilike(pattern),
+        ))
+    if role in VALID_ROLES:
+        statement = statement.where(User.role == role)
+    if state in {'active', 'disabled'}:
+        statement = statement.where(User.state.is_(state == 'active'))
+
+    pagination = db.paginate(
+        statement.order_by(func.lower(User.name)),
+        page=page,
+        per_page=50,
+        error_out=False,
+    )
+    if pagination.pages and page > pagination.pages:
+        pagination = db.paginate(
+            statement.order_by(func.lower(User.name)),
+            page=pagination.pages,
+            per_page=50,
+            error_out=False,
+        )
+    return render_template(
+        'admin/admin_manage_users.html',
+        users=pagination.items,
+        pagination=pagination,
+        search=search,
+        role_filter=role,
+        state_filter=state,
+    )
 
 @admin2_bp.route('/admin/api/user/<int:user_id>', methods=['GET', 'PUT', 'DELETE'])
 @login_required

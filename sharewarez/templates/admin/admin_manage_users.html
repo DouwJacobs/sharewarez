@@ -1,10 +1,6 @@
 {% extends "base.html" %}
+{% from "partials/ui_components.html" import pagination as render_pagination %}
 {% block content %}
-{% block head %}
-    <!-- Add DataTables CSS -->
-    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css">
-    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.bootstrap5.min.css">
-{% endblock %}
 
 <link rel="stylesheet" href="{{ 'css/admin/admin_manage_users.css'|theme_asset }}">
 <main class="users-management-page">
@@ -18,6 +14,31 @@
         </div>
         <button class="btn btn-primary" id="addNewUserBtn"><i class="fas fa-user-plus" aria-hidden="true"></i> Add User</button>
     </header>
+    <form class="users-management-filters" method="get" role="search">
+        <div class="users-filter-search">
+            <label class="visually-hidden" for="userSearch">Search users</label>
+            <input class="form-control" id="userSearch" name="q" type="search" value="{{ search }}" placeholder="Search name, email, or description">
+        </div>
+        <div>
+            <label class="visually-hidden" for="userRole">Role</label>
+            <select class="form-select" id="userRole" name="role">
+                <option value="">All roles</option>
+                <option value="admin"{% if role_filter == 'admin' %} selected{% endif %}>Admin</option>
+                <option value="user"{% if role_filter == 'user' %} selected{% endif %}>User</option>
+            </select>
+        </div>
+        <div>
+            <label class="visually-hidden" for="userState">Status</label>
+            <select class="form-select" id="userState" name="state">
+                <option value="">All statuses</option>
+                <option value="active"{% if state_filter == 'active' %} selected{% endif %}>Active</option>
+                <option value="disabled"{% if state_filter == 'disabled' %} selected{% endif %}>Disabled</option>
+            </select>
+        </div>
+        <button class="btn btn-primary" type="submit">Apply</button>
+        {% if search or role_filter or state_filter %}<a class="btn btn-secondary" href="{{ url_for('admin2.manage_users') }}">Clear</a>{% endif %}
+    </form>
+    <p class="users-results-summary">{{ pagination.total }} user{% if pagination.total != 1 %}s{% endif %} found</p>
     <div class="table-responsive">
         <table id="usersTable" class="table table-dark table-hover display responsive nowrap">
             <thead>
@@ -68,10 +89,15 @@
                         {% endif %}
                     </td>
                 </tr>
+                {% else %}
+                <tr>
+                    <td colspan="8" class="users-empty-result">No users match these filters.</td>
+                </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
+    {{ render_pagination(pagination, 'admin2.manage_users', {'q': search, 'role': role_filter, 'state': state_filter}) }}
 </section>
 </main>
 
@@ -185,9 +211,6 @@
         </div>
     </div>
 </div>
-<script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.js"></script>
-
 <script src="{{ 'js/admin_manage_users.js'|theme_asset }}"></script>
-<script src="{{ url_for('static', filename='library/themes/default/js/admin/users_table.js') }}"></script>
 
 {% endblock %}
