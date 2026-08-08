@@ -1,170 +1,102 @@
 {% extends "base.html" %}
 
-{% block content %}
+{% macro game_card(game) %}
+<a class="home-game-card" href="{{ url_for('games.game_details', game_uuid=game.uuid) }}" aria-label="View {{ game.name }}">
+    <span class="home-game-cover"><img src="{{ game.cover_url }}" alt="Cover for {{ game.name }}" loading="lazy"></span>
+    <span class="home-game-info">
+        <strong title="{{ game.name }}">{{ game.name }}</strong>
+        <span>{% if game.rating %}<i class="fas fa-star" aria-hidden="true"></i> {{ game.rating }}{% elif game.genres %}{{ game.genres[0] }}{% else %}{{ game.size }}{% endif %}</span>
+    </span>
+</a>
+{% endmacro %}
 
+{% block content %}
 <link rel="stylesheet" href="{{ 'css/games/discover.css'|theme_asset }}">
 
-<script src="{{ 'js/library_slideshow.js'|theme_asset }}"></script>
+<main class="home-page">
+    {% if featured_game %}
+    <section class="home-hero" style="--home-hero-image: url('{{ featured_game.backdrop_url }}')" aria-labelledby="home-featured-title">
+        <div class="home-hero-content">
+            <p class="home-eyebrow"><i class="fas fa-sparkles" aria-hidden="true"></i> Featured from your library</p>
+            <h1 id="home-featured-title">{{ featured_game.name }}</h1>
+            {% if featured_game.summary %}<p class="home-hero-summary">{{ featured_game.summary }}</p>{% endif %}
+            <div class="home-hero-meta">
+                {% if featured_game.rating %}<span><i class="fas fa-star" aria-hidden="true"></i> {{ featured_game.rating }}</span>{% endif %}
+                {% if featured_game.genres %}<span>{{ featured_game.genres[:2]|join(' · ') }}</span>{% endif %}
+                {% if featured_game.library_name %}<span>{{ featured_game.library_name }}</span>{% endif %}
+            </div>
+            <div class="home-hero-actions">
+                <a class="btn btn-primary" href="{{ url_for('games.game_details', game_uuid=featured_game.uuid) }}"><i class="fas fa-circle-play" aria-hidden="true"></i> View game</a>
+                <a class="btn btn-secondary" href="{{ url_for('library.library') }}"><i class="fas fa-layer-group" aria-hidden="true"></i> Browse library</a>
+            </div>
+        </div>
+    </section>
+    {% else %}
+    <section class="home-welcome">
+        <p class="home-eyebrow">Your game library</p>
+        <h1>Ready when your collection is</h1>
+        <p>Games and personalized recommendations will appear here after a library has been added and scanned.</p>
+        {% if current_user.role == 'admin' %}<a class="btn btn-primary" href="{{ url_for('library.admin_libraries') }}">Add a library</a>{% endif %}
+    </section>
+    {% endif %}
 
-<script src="{{ 'js/popup_menu.js'|theme_asset }}"></script>
+    <section class="home-overview" aria-label="Your library overview">
+        <a href="{{ url_for('library.library') }}"><i class="fas fa-gamepad"></i><span><strong>{{ library_stats.games }}</strong>Games available</span></a>
+        <a href="{{ url_for('site.favorites') }}"><i class="fas fa-heart"></i><span><strong>{{ library_stats.favorites }}</strong>Favorites</span></a>
+        <a href="{{ url_for('library.library') }}"><i class="fas fa-circle-play"></i><span><strong>{{ library_stats.playing }}</strong>Playing</span></a>
+        <a href="{{ url_for('library.library') }}"><i class="fas fa-circle-check"></i><span><strong>{{ library_stats.completed }}</strong>Completed</span></a>
+    </section>
 
+    {% if continue_games or recent_downloads or recent_requests %}
+    <div class="home-personal-grid">
+        {% if continue_games %}
+        <section class="home-section home-continue" aria-labelledby="continue-title">
+            <header class="home-section-header"><div><p class="home-eyebrow">Pick up where you left off</p><h2 id="continue-title">Continue playing</h2></div><a href="{{ url_for('library.library') }}">View library <i class="fas fa-arrow-right"></i></a></header>
+            <div class="home-card-rail">{% for game in continue_games %}{{ game_card(game) }}{% endfor %}</div>
+        </section>
+        {% endif %}
 
-    <main class="discovery-panel">
-        <header class="discovery-page-header">
-            <p class="discovery-eyebrow">Explore your collection</p>
-            <h1 class="discovery-header">{{ loc.heading }}</h1>
-        </header>
-            <div class="discovery-libraries-container">
-                    {% for section in visible_sections %}
-                        {% if section.identifier == 'libraries' and section_data.libraries %}
-                        <div class="discovery-library-label">{{ loc.label }}</div>
-                            <div class="libraries-list">
-                                {% for library in section_data.libraries %}
-                                    <div class="library-item">
-                                        <a href="{{ url_for('library.library', library_uuid=library['uuid']) }}" class="library-link">
-                                            <img src="{{ library['image_url'] }}" alt="{{ library['name'] }}" class="library-cover">
-                                            <div class="library-name">{{ library['name'] }}</div>
-                                        </a>
-                                    </div>
-                                {% endfor %}
-                            </div>
-                        {% endif %}
+        {% if recent_downloads or recent_requests %}
+        <aside class="home-activity" aria-labelledby="activity-title">
+            <header class="home-section-header"><div><p class="home-eyebrow">Latest updates</p><h2 id="activity-title">Your activity</h2></div></header>
+            <div class="home-activity-list">
+                {% for item in recent_downloads %}
+                <a href="{{ url_for('download.downloads') }}"><span class="home-activity-icon"><i class="fas fa-download"></i></span><span><strong>{{ item.content_title or item.game.name }}</strong><small>Download · {{ item.status|replace('_', ' ')|title }}</small></span><i class="fas fa-chevron-right"></i></a>
+                {% endfor %}
+                {% for item in recent_requests %}
+                <a href="{{ url_for('game_requests.requests_page') }}"><span class="home-activity-icon"><i class="fas fa-paper-plane"></i></span><span><strong>{{ item.game_request.game_name }}</strong><small>Request · {{ item.game_request.status|replace('_', ' ')|title }}</small></span><i class="fas fa-chevron-right"></i></a>
+                {% endfor %}
+            </div>
+        </aside>
+        {% endif %}
+    </div>
+    {% endif %}
 
-                        {% if section.identifier == 'latest_games' and section_data.latest_games %}
-                            <div class="discovery-latest-games-label">{{ loc.latestgames.title }}</div>
-                            <div class="discovery-latest-games-container">
-                                {% for game in section_data.latest_games %}
-                                <div class="game-card-container">
-                                    <div class="game-card" onmouseover="showDetails(this, '{{ game.uuid }}')" onmouseout="hideDetails()" data-name="{{ game.name }}" data-size="{{ game.size }}" data-genres="{{ game.genres|join(', ') }}">
-                                        {% with game_uuid=game.uuid, game_url=game.url %}
-                                        {% endwith %}
-                                        {% if game.cover_url %}
-                                            <a href="{{ url_for('games.game_details', game_uuid=game.uuid) }}">
-                                                <img src="{{ url_for('static', filename='library/images/' ~ game.cover_url) }}" alt="{{ game.name }}" class="game-cover">
-                                            </a>
-                                        {% else %}
-                                            <a href="{{ url_for('games.game_details', game_uuid=game.uuid) }}">
-                                                <img src="{{ url_for('static', filename='newstyle/default_cover.jpg') }}" alt="Default Cover Image" class="game-cover">
-                                            </a>
-                                        {% endif %}
-                                        <div id="details-{{ game.uuid }}" class="popup-game-details hidden">
-                                            <!-- Details and screenshots will be injected here by JavaScript -->
-                                        </div>
-                                    </div>
-                                </div>
-                                {% endfor %}
-                            </div>
-                        {% endif %}
+    <section class="home-quick-discover" aria-labelledby="quick-discover-title">
+        <div><p class="home-eyebrow">Find something different</p><h2 id="quick-discover-title">What are you in the mood for?</h2></div>
+        <div class="home-quick-links">
+            <a href="{{ url_for('library.library', sort_by='rating', sort_order='desc') }}"><i class="fas fa-trophy"></i> Highly rated</a>
+            <a href="{{ url_for('library.library', sort_by='date_identified', sort_order='desc') }}"><i class="fas fa-clock"></i> Recently added</a>
+            <a href="{{ url_for('library.library', genre='Adventure') }}"><i class="fas fa-compass"></i> Adventure</a>
+            <a href="{{ url_for('library.library', genre='Indie') }}"><i class="fas fa-gem"></i> Hidden gems</a>
+        </div>
+    </section>
 
-                        {% if section.identifier == 'most_downloaded' and section_data.most_downloaded %}
-                            <div class="discovery-most-downloaded-label">{{ loc.mostdownloaded.title }}</div>
-                            <div class="discovery-most-downloaded-container">
-                                {% for game in section_data.most_downloaded %}
-                                    <div class="game-card-container">
-                                        <div class="game-card" onmouseover="showDetails(this, '{{ game.uuid }}', 'most-downloaded')" onmouseout="hideDetails()" data-name="{{ game.name }}" data-size="{{ game.size }}" data-genres="{{ game.genres|join(', ') }}">                                       
-                                            {% with game_uuid=game.uuid, game_url=game.url %}
-                                            {% endwith %}
-                                            {% if game.cover_url %}
-                                                <a href="{{ url_for('games.game_details', game_uuid=game.uuid) }}">
-                                                    <img src="{{ url_for('static', filename='library/images/' ~ game.cover_url) }}" alt="{{ game.name }}" class="game-cover">
-                                                </a>
-                                            {% else %}
-                                                <a href="{{ url_for('games.game_details', game_uuid=game.uuid) }}">
-                                                    <img src="{{ url_for('static', filename='newstyle/default_cover.jpg') }}" alt="Default Cover Image" class="game-cover">
-                                                </a>
-                                            {% endif %}
-                                            <div id="details-{{ game.uuid }}-most-downloaded" class="popup-game-details hidden">
-                                                <!-- Details and screenshots will be injected here by JavaScript -->
-                                            </div>
-                                        </div>
-                                    </div>
-                                {% endfor %}
-                            </div>
-                        {% endif %}
-
-                        {% if section.identifier == 'highest_rated' and section_data.highest_rated %}
-                            <div class="discovery-highest-rated-label">{{ loc.highestrated.title }}</div>
-                            <div class="discovery-highest-rated-container">
-                                {% for game in section_data.highest_rated %}
-                                    <div class="game-card-container">
-                                        <div class="game-card" onmouseover="showDetails(this, '{{ game.uuid }}', 'highest-rated')" onmouseout="hideDetails()" data-name="{{ game.name }}" data-size="{{ game.size }}" data-genres="{{ game.genres|join(', ') }}">
-                                            {% with game_uuid=game.uuid, game_url=game.url %}
-                                            {% endwith %}
-                                            {% if game.cover_url %}
-                                                <a href="{{ url_for('games.game_details', game_uuid=game.uuid) }}">
-                                                    <img src="{{ url_for('static', filename='library/images/' ~ game.cover_url) }}" alt="{{ game.name }}" class="game-cover">
-                                                </a>
-                                            {% else %}
-                                                <a href="{{ url_for('games.game_details', game_uuid=game.uuid) }}">
-                                                    <img src="{{ url_for('static', filename='newstyle/default_cover.jpg') }}" alt="Default Cover Image" class="game-cover">
-                                                </a>
-                                            {% endif %}
-                                            <div id="details-{{ game.uuid }}-highest-rated" class="popup-game-details hidden">
-                                                <!-- Details and screenshots will be injected here by JavaScript -->
-                                            </div>
-                                        </div>
-                                    </div>
-                                {% endfor %}							
-                            </div>
-                        {% endif %}
-
-                        {% if section.identifier == 'last_updated' and section_data.last_updated %}
-                            <div class="discovery-last-updated-label">{{ loc.lastupdated.title }}</div>
-                            <div class="discovery-last-updated-container">
-                                {% for game in section_data.last_updated %}
-                                    <div class="game-card-container">
-                                        <div class="game-card" onmouseover="showDetails(this, '{{ game.uuid }}', 'last-updated')" onmouseout="hideDetails()" data-name="{{ game.name }}" data-size="{{ game.size }}" data-genres="{{ game.genres|join(', ') }}">
-                                            {% with game_uuid=game.uuid, game_url=game.url %}
-                                            {% endwith %}
-                                            {% if game.cover_url %}
-                                                <a href="{{ url_for('games.game_details', game_uuid=game.uuid) }}">
-                                                    <img src="{{ url_for('static', filename='library/images/' ~ game.cover_url) }}" alt="{{ game.name }}" class="game-cover">
-                                                </a>
-                                            {% else %}
-                                                <a href="{{ url_for('games.game_details', game_uuid=game.uuid) }}">
-                                                    <img src="{{ url_for('static', filename='newstyle/default_cover.jpg') }}" alt="Default Cover Image" class="game-cover">
-                                                </a>
-                                            {% endif %}
-                                            <div id="details-{{ game.uuid }}-last-updated" class="popup-game-details hidden">
-                                                <!-- Details and screenshots will be injected here by JavaScript -->
-                                            </div>
-                                        </div>
-                                    </div>
-                                {% endfor %}							
-                            </div>
-                        {% endif %}
-
-                        {% if section.identifier == 'most_favorited' %}
-                        {% if section_data.most_favorited %}
-                            <div class="discovery-most-favorited-label">Most Favorited Games</div>
-                            <div class="discovery-most-favorited-container">
-                                {% for game in section_data.most_favorited %}
-                                    <div class="game-card-container">
-                                        <div class="game-card" onmouseover="showDetails(this, '{{ game.uuid }}', 'most-favorited')" onmouseout="hideDetails()" data-name="{{ game.name }}" data-size="{{ game.size }}" data-genres="{{ game.genres|join(', ') }}">
-                                            {% with game_uuid=game.uuid, game_url=game.url %}
-                                            {% endwith %}
-                                            {% if game.cover_url %}
-                                                <a href="{{ url_for('games.game_details', game_uuid=game.uuid) }}">
-                                                    <img src="{{ url_for('static', filename='library/images/' ~ game.cover_url) }}" alt="{{ game.name }}" class="game-cover">
-                                                </a>
-                                            {% else %}
-                                                <a href="{{ url_for('games.game_details', game_uuid=game.uuid) }}">
-                                                    <img src="{{ url_for('static', filename='newstyle/default_cover.jpg') }}" alt="Default Cover Image" class="game-cover">
-                                                </a>
-                                            {% endif %}
-                                            <div id="details-{{ game.uuid }}-most-favorited" class="popup-game-details hidden">
-                                                <!-- Details and screenshots will be injected here by JavaScript -->
-                                            </div>
-                                        </div>
-                                    </div>
-                                {% endfor %}							
-                            </div>
-                        {% else %}
-                            <br>
-                            <p>No favorited games yet!</p>
-                        {% endif %}
-                    {% endif %}
-                    {% endfor %}
-                </div>
-    </main>
+    {% for section in visible_sections %}
+        {% set games = section_data.get(section.identifier) %}
+        {% if section.identifier == 'libraries' and games %}
+        <section class="home-section" aria-labelledby="home-libraries-title">
+            <header class="home-section-header"><div><p class="home-eyebrow">Your collection</p><h2 id="home-libraries-title">Game libraries</h2></div><a href="{{ url_for('library.library') }}">Browse all <i class="fas fa-arrow-right"></i></a></header>
+            <div class="home-library-rail">
+                {% for library in games %}<a href="{{ url_for('library.library', library_uuid=library.uuid) }}"><img src="{{ library.image_url or url_for('static', filename='newstyle/default_cover.jpg') }}" alt=""><strong>{{ library.name }}</strong><span>Explore library <i class="fas fa-arrow-right"></i></span></a>{% endfor %}
+            </div>
+        </section>
+        {% elif games %}
+        <section class="home-section" aria-labelledby="section-{{ section.identifier }}">
+            <header class="home-section-header"><div><p class="home-eyebrow">Discover</p><h2 id="section-{{ section.identifier }}">{{ section.name }}</h2></div><a href="{{ url_for('library.library') }}">View all <i class="fas fa-arrow-right"></i></a></header>
+            <div class="home-card-rail">{% for game in games %}{{ game_card(game) }}{% endfor %}</div>
+        </section>
+        {% endif %}
+    {% endfor %}
+</main>
 {% endblock %}
