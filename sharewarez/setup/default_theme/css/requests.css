@@ -329,6 +329,11 @@
     .admin-request-filters .request-toolbar { grid-template-columns: 1fr; }
     .request-sort-label { min-width: 0; }
 
+    .admin-request-grid {
+        grid-template-columns: 1fr;
+        gap: .85rem;
+    }
+
     .admin-request-filters .request-filter-chips {
         display: none;
     }
