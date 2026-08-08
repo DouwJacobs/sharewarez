@@ -364,6 +364,8 @@ The application runs on port `5006` by default. To change this:
 - Docker containers always use port `5006` internally
 - The external port is mapped via docker-compose.yml (also defaults to 5006)
 - To change external port, edit the `ports` section in docker-compose.yml
+- Docker starts two web workers by default. Set `WEB_WORKERS=1` for the lowest
+  memory use or increase it for unusually busy installations.
 
 **Examples:**
 ```bash

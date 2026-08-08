@@ -58,6 +58,13 @@ print('✅ Initialization completed - starting workers...')
 export SHAREWAREZ_MIGRATIONS_COMPLETE=true
 export SHAREWAREZ_INITIALIZATION_COMPLETE=true
 
-# Start uvicorn for Docker (bind to all interfaces, multiple workers for better performance)
-# Note: Using 4 workers to match non-Docker performance
-uvicorn asgi:asgi_app --host 0.0.0.0 --port 5006 --workers 4
+# Two workers balance concurrent browsing/streaming with the memory footprint of
+# a full Flask application per worker. Operators can tune this for their host.
+WEB_WORKERS="${WEB_WORKERS:-2}"
+if ! [[ "$WEB_WORKERS" =~ ^[1-9][0-9]*$ ]]; then
+    echo "Invalid WEB_WORKERS value '$WEB_WORKERS'; expected a positive integer."
+    exit 1
+fi
+
+echo "Starting ${WEB_WORKERS} web worker(s)..."
+uvicorn asgi:asgi_app --host 0.0.0.0 --port 5006 --workers "$WEB_WORKERS"
