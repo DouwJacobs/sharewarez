@@ -34,14 +34,22 @@
                     </select>
                 </label>
             </div>
-            <div class="request-filter-chips type-filters" aria-label="Filter by type">
-                <a class="request-filter-chip{% if not selected_type %} active{% endif %}" href="{{ url_for('game_requests.admin_requests', status=selected_status, q=search_term, sort=selected_sort) }}">All Types <span>{{ type_counts.values()|sum }}</span></a>
-                <a class="request-filter-chip{% if selected_type == 'new_game' %} active{% endif %}" href="{{ url_for('game_requests.admin_requests', status=selected_status, type='new_game', q=search_term, sort=selected_sort) }}"><i class="fas fa-plus-circle"></i> New Game <span>{{ type_counts.get('new_game', 0) }}</span></a>
-                <a class="request-filter-chip{% if selected_type == 'update' %} active{% endif %}" href="{{ url_for('game_requests.admin_requests', status=selected_status, type='update', q=search_term, sort=selected_sort) }}"><i class="fas fa-arrows-rotate"></i> Update <span>{{ type_counts.get('update', 0) }}</span></a>
-            </div>
-            <div class="request-filter-chips" aria-label="Filter by status">
-                <a class="request-filter-chip{% if not selected_status %} active{% endif %}" href="{{ url_for('game_requests.admin_requests', status='all', type=selected_type, q=search_term, sort=selected_sort) }}">All Statuses <span>{{ status_counts.values()|sum }}</span></a>
-                {% for status in statuses %}<a class="request-filter-chip{% if selected_status == status %} active{% endif %}" href="{{ url_for('game_requests.admin_requests', status=status, type=selected_type, q=search_term, sort=selected_sort) }}">{{ status|replace('_', ' ')|title }} <span>{{ status_counts.get(status, 0) }}</span></a>{% endfor %}
+            <div class="request-desktop-filters">
+                <div class="request-filter-group">
+                    <span class="request-filter-label">Type</span>
+                    <div class="request-filter-chips" aria-label="Filter by type">
+                        <a class="request-filter-chip{% if not selected_type %} active{% endif %}" href="{{ url_for('game_requests.admin_requests', status=selected_status, q=search_term, sort=selected_sort) }}">All <span>{{ type_counts.values()|sum }}</span></a>
+                        <a class="request-filter-chip{% if selected_type == 'new_game' %} active{% endif %}" href="{{ url_for('game_requests.admin_requests', status=selected_status, type='new_game', q=search_term, sort=selected_sort) }}"><i class="fas fa-plus-circle"></i> New Game <span>{{ type_counts.get('new_game', 0) }}</span></a>
+                        <a class="request-filter-chip{% if selected_type == 'update' %} active{% endif %}" href="{{ url_for('game_requests.admin_requests', status=selected_status, type='update', q=search_term, sort=selected_sort) }}"><i class="fas fa-arrows-rotate"></i> Update <span>{{ type_counts.get('update', 0) }}</span></a>
+                    </div>
+                </div>
+                <div class="request-filter-group">
+                    <span class="request-filter-label">Status</span>
+                    <div class="request-filter-chips" aria-label="Filter by status">
+                        <a class="request-filter-chip{% if not selected_status %} active{% endif %}" href="{{ url_for('game_requests.admin_requests', status='all', type=selected_type, q=search_term, sort=selected_sort) }}">All <span>{{ status_counts.values()|sum }}</span></a>
+                        {% for status in statuses %}<a class="request-filter-chip{% if selected_status == status %} active{% endif %}" href="{{ url_for('game_requests.admin_requests', status=status, type=selected_type, q=search_term, sort=selected_sort) }}">{{ status|replace('_', ' ')|title }} <span>{{ status_counts.get(status, 0) }}</span></a>{% endfor %}
+                    </div>
+                </div>
             </div>
         </form>
     </section>

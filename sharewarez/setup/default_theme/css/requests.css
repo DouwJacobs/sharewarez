@@ -151,19 +151,22 @@
 .request-results-empty i { color: var(--theme-primary, #03b2f8); font-size: 1.5rem; }
 
 /* Admin request library */
-.admin-request-filters form { display: grid; gap: 1rem; }
+.admin-request-filters form { display: grid; width: min(1100px, 100%); margin: 0 auto; gap: .85rem; }
 .admin-request-search {
     display: flex;
     flex-direction: row;
     align-items: center;
     gap: .75rem;
-    width: min(680px, 100%);
-    margin: 0 auto;
+    width: 100%;
+    margin: 0;
 }
 .admin-request-search > i { flex: none; color: var(--theme-primary, #03b2f8); }
 .admin-request-search input { flex: 1; padding: 0; text-align: left; height: 100%; }
 .admin-request-search input::placeholder { text-align: left; }
-.request-filter-chips { display: flex; flex-wrap: wrap; justify-content: center; gap: .45rem; }
+.request-desktop-filters { display: grid; gap: .65rem; padding-top: .15rem; }
+.request-filter-group { display: grid; grid-template-columns: 54px minmax(0, 1fr); align-items: center; gap: .75rem; }
+.request-filter-label { color: var(--theme-text-secondary, #b9c0d0); font-size: .76rem; font-weight: 700; }
+.request-filter-chips { display: flex; flex-wrap: wrap; justify-content: flex-start; gap: .4rem; }
 .request-filter-chip { display: inline-flex; align-items: center; gap: .4rem; padding: .45rem .65rem; border: 1px solid var(--theme-border-color, rgba(255,255,255,.1)); border-radius: 999px; color: var(--theme-text-secondary, #b9c0d0); text-decoration: none; }
 .request-filter-chip span { min-width: 1.35rem; padding: .08rem .35rem; border-radius: 999px; background: var(--theme-inner-card-bg, rgba(255,255,255,.08)); text-align: center; font-size: .7rem; }
 .request-filter-chip:hover, .request-filter-chip.active { border-color: var(--theme-primary, #03b2f8); background: color-mix(in srgb, var(--theme-primary, #03b2f8) 14%, transparent); color: var(--theme-text-primary, #fff); }
@@ -259,8 +262,6 @@
     .request-history-card > img, .admin-request-card > img { width: 64px; height: 92px; }
 }
 
-.type-filters { margin-bottom: 0.5rem; }
-
 .admin-request-tile-header {
     display: flex;
     justify-content: space-between;
@@ -349,7 +350,7 @@
         gap: .3rem .65rem;
     }
 
-    .admin-request-filters .request-filter-chips {
+    .request-desktop-filters {
         display: none;
     }
 
