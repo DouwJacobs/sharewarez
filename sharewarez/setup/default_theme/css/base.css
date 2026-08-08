@@ -1193,6 +1193,55 @@ form textarea:focus {
     }
 }
 
+.pwa-update-notice {
+    position: fixed;
+    right: 18px;
+    bottom: 18px;
+    z-index: 2500;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 10px 11px 10px 14px;
+    border: 1px solid rgba(var(--theme-accent-soft-rgb, 154, 177, 255), .28);
+    border-radius: 13px;
+    background: var(--theme-panel-bg, rgba(18, 19, 31, .98));
+    box-shadow: 0 18px 48px rgba(0, 0, 0, .4);
+    color: var(--text-white);
+    font-size: .86rem;
+    font-weight: 700;
+}
+
+.pwa-update-notice span,
+.pwa-update-notice button {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+}
+
+.pwa-update-notice i {
+    color: rgb(var(--theme-accent-soft-rgb, 154, 177, 255));
+}
+
+.pwa-update-notice button {
+    min-height: 36px;
+    padding: 0 12px;
+    border: 1px solid rgba(var(--theme-accent-soft-rgb, 154, 177, 255), .3);
+    border-radius: 9px;
+    background: rgba(var(--theme-accent-rgb, 98, 122, 239), .18);
+    color: var(--text-white);
+    cursor: pointer;
+    font: inherit;
+}
+
+@media (max-width: 600px) {
+    .pwa-update-notice {
+        right: 12px;
+        bottom: 12px;
+        left: 12px;
+        justify-content: space-between;
+    }
+}
+
 /* === APPLICATION BUTTON SYSTEM ===
    Loaded after legacy rules so Bootstrap classes share one product language. */
 .btn {

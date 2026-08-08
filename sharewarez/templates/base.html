@@ -32,7 +32,7 @@
     <meta name="apple-mobile-web-app-title" content="{{ site_title }}">
     <link rel="manifest" href="{{ url_for('site.pwa_manifest', revision=pwa_revision) }}">
     <link rel="icon" type="image/png" href="{{ url_for('static', filename=brand_logo_path) }}">
-    <link rel="apple-touch-icon" sizes="192x192" href="{{ url_for('site.pwa_icon', size=192, revision=pwa_revision) }}">
+    <link rel="apple-touch-icon" sizes="192x192" href="{{ url_for('site.pwa_icon', size=192, maskable=1, revision=pwa_revision) }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -235,6 +235,7 @@
             <a href="{{ url_for('settings.settings_profile_view') }}"><i class="fas fa-user"></i> Profile</a>
             <a href="{{ url_for('login.invites') }}"><i class="fas fa-envelope"></i> Invites</a>
             <a href="{{ url_for('settings.account_pw') }}"><i class="fas fa-key"></i> Change Password</a>
+            <button type="button" class="pwa-install-action" data-pwa-install hidden><i class="fas fa-download"></i> Install app</button>
             <a href="{{ url_for('site.logout') }}"><i class="fas fa-right-from-bracket"></i> Logout</a>
         </div>
     </div>
@@ -302,6 +303,7 @@
             <a href="{{ url_for('settings.settings_profile_view') }}" class="account-menu-option"><i class="fas fa-user"></i> Profile</a>
             <a href="{{ url_for('login.invites') }}" class="account-menu-option"><i class="fas fa-envelope"></i> Invites</a>
             <a href="{{ url_for('settings.account_pw') }}" class="account-menu-option"><i class="fas fa-key"></i> Change Password</a>
+            <button type="button" class="account-menu-option pwa-install-action" data-pwa-install hidden><i class="fas fa-download"></i> Install app</button>
             <a href="{{ url_for('site.logout') }}" class="account-menu-option"><i class="fas fa-right-from-bracket"></i> Logout</a>
         </div>
         <div id="userAccountIcon" class="user-account-icon" role="button" tabindex="0" aria-label="Open account menu">
@@ -551,6 +553,7 @@ document.addEventListener('DOMContentLoaded', function () {
 {% if not is_setup_mode %}
 <script src="{{ 'js/attract_mode_idle.js'|theme_asset }}"></script>
 <script src="{{ 'js/global-search.js'|theme_asset }}"></script>
+<script src="{{ url_for('static', filename='js/pwa.js') }}"></script>
 {% endif %}
 
 </body>
