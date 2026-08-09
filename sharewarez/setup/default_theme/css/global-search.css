@@ -26,11 +26,12 @@
 .global-search-result small, .global-search-hint { color: var(--text-muted); }
 .global-search-hint { margin: 0; padding: 1.4rem; text-align: center; }
 body.global-search-open { overflow: hidden; }
-body.global-search-open .content-global-search { visibility:hidden }
 @media (min-width:769px) {
     .global-search { display:block;padding:0;pointer-events:none }
     .global-search-backdrop { display:none }
     .global-search-dialog { position:fixed;left:var(--search-anchor-left,50%);top:var(--search-anchor-top,1rem);width:var(--search-anchor-width,min(680px,calc(100vw - 2rem)));pointer-events:auto;transform:none }
+    .global-search-input-wrap { display:none }
+    .global-search-dialog:has(.global-search-results[hidden]) { display:none }
     body.global-search-open { overflow:auto }
 }
 @media (max-width: 768px) {

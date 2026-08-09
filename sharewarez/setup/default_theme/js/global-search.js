@@ -35,7 +35,13 @@ document.addEventListener('DOMContentLoaded', () => {
             button.setAttribute('role', 'option');
             button.innerHTML = '<i class="fas fa-clock-rotate-left" aria-hidden="true"></i><span></span>';
             button.querySelector('span').textContent = query;
-            button.addEventListener('click', () => { input.value = query; input.dispatchEvent(new Event('input')); input.focus(); });
+            button.addEventListener('click', () => {
+                const target = activeInput();
+                target.value = query;
+                input.value = query;
+                input.dispatchEvent(new Event('input'));
+                target.focus();
+            });
             results.append(button);
         });
     };
@@ -45,43 +51,57 @@ document.addEventListener('DOMContentLoaded', () => {
             if (response.ok) renderSuggestions((await response.json()).suggestions || []);
         } catch (_) { renderSuggestions([]); }
     };
-    const open = () => {
-        palette.hidden = false;
+    const isDesktop = () => window.matchMedia('(min-width: 769px)').matches;
+    const inlineSearch = document.querySelector('[data-global-search-inline]');
+    const activeInput = () => isDesktop() && inlineSearch ? inlineSearch : input;
+    const positionDesktopResults = () => {
         const anchor = document.querySelector('.content-global-search');
-        if (anchor && window.matchMedia('(min-width: 769px)').matches) {
-            const rect = anchor.getBoundingClientRect();
-            palette.style.setProperty('--search-anchor-left', `${rect.left}px`);
-            palette.style.setProperty('--search-anchor-top', `${rect.top}px`);
-            palette.style.setProperty('--search-anchor-width', `${rect.width}px`);
+        if (!anchor || !isDesktop()) return;
+        const rect = anchor.getBoundingClientRect();
+        palette.style.setProperty('--search-anchor-left', `${rect.left}px`);
+        palette.style.setProperty('--search-anchor-top', `${rect.bottom + 6}px`);
+        palette.style.setProperty('--search-anchor-width', `${rect.width}px`);
+    };
+    const open = (focusInput = true) => {
+        if (isDesktop() && focusInput && inlineSearch) {
+            inlineSearch.focus();
+            inlineSearch.select();
+            return;
         }
-        document.body.classList.add('global-search-open'); input.focus(); input.select();
-        if (input.value.trim().length < 2) loadSuggestions();
+        palette.hidden = false;
+        document.body.classList.add('global-search-open');
+        positionDesktopResults();
+        requestAnimationFrame(positionDesktopResults);
+        if (focusInput) { input.focus(); input.select(); }
+        if (activeInput().value.trim().length < 2) loadSuggestions();
     };
     const close = () => { palette.hidden = true; document.body.classList.remove('global-search-open'); activeIndex = -1; };
 
-    document.querySelectorAll('[data-global-search-open]').forEach(button => button.addEventListener('click', open));
+    document.querySelectorAll('[data-global-search-open]').forEach(button => button.addEventListener('click', () => open(true)));
     document.querySelectorAll('[data-global-search-close]').forEach(button => button.addEventListener('click', close));
     document.addEventListener('pointerdown', event => {
         if (!palette.hidden && !event.target.closest('.global-search-dialog') && !event.target.closest('[data-global-search-inline]')) close();
     });
     document.querySelectorAll('[data-global-search-inline]').forEach(inlineInput => {
-        inlineInput.addEventListener('focus', () => { input.value = inlineInput.value; open(); if (input.value.length >= 2) input.dispatchEvent(new Event('input')); });
-        inlineInput.addEventListener('input', () => { input.value = inlineInput.value; open(); input.dispatchEvent(new Event('input')); });
+        inlineInput.addEventListener('focus', () => { input.value = inlineInput.value; open(false); if (input.value.length >= 2) input.dispatchEvent(new Event('input')); });
+        inlineInput.addEventListener('input', () => { input.value = inlineInput.value; open(false); input.dispatchEvent(new Event('input')); });
     });
     document.addEventListener('keydown', event => {
-        if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') { event.preventDefault(); palette.hidden ? open() : close(); }
+        if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') { event.preventDefault(); palette.hidden ? open(true) : close(); }
         else if (!palette.hidden && event.key === 'Escape') close();
     });
 
-    input.addEventListener('keydown', event => {
+    const handleNavigation = event => {
         if (event.key === 'ArrowDown') { event.preventDefault(); setActive(activeIndex + 1); }
         else if (event.key === 'ArrowUp') { event.preventDefault(); setActive(activeIndex - 1); }
         else if (event.key === 'Enter' && items()[activeIndex]) { items()[activeIndex].click(); }
-    });
+    };
+    input.addEventListener('keydown', handleNavigation);
+    inlineSearch?.addEventListener('keydown', handleNavigation);
 
     input.addEventListener('input', () => {
         clearTimeout(timer);
-        const query = input.value.trim();
+        const query = activeInput().value.trim();
         if (saveButton) saveButton.hidden = query.length < 2;
         activeIndex = -1;
         if (query.length < 2) { loadSuggestions(); return; }
@@ -120,7 +140,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     saveButton?.addEventListener('click', async () => {
-        const query = input.value.trim();
+        const query = activeInput().value.trim();
         if (query.length < 2) return;
         const token = document.querySelector('meta[name="csrf-token"]')?.content || '';
         const response = await fetch('/api/global-search/saved', {
