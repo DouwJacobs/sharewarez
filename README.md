@@ -80,6 +80,29 @@ docker compose up -d
 
 Docker recreates the application container while retaining the PostgreSQL volume and configured library storage.
 
+## Release versioning
+
+`VERSION` is the authoritative semantic version for the application, browser
+asset cache keys, container metadata, and published Docker tags.
+
+```bash
+# Inspect or validate the current version
+python3 scripts/version.py current
+python3 scripts/version.py check
+
+# Prepare the next release
+python3 scripts/version.py bump patch  # or: minor / major
+git add VERSION
+git commit -m "chore: bump version to v$(python3 scripts/version.py current)"
+git tag "v$(python3 scripts/version.py current)"
+git push origin main --tags
+```
+
+A matching `vX.Y.Z` tag publishes `X.Y.Z`, `vX.Y.Z`, and `latest` images to
+Docker Hub. The release workflow stops if the Git tag and `VERSION` disagree.
+For a local release build, use `./scripts/build-images.sh`; the Docker build
+also rejects missing or mismatched version metadata.
+
 ## Common commands
 
 ```bash

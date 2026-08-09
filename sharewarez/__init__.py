@@ -14,13 +14,15 @@ from datetime import datetime
 from urllib.parse import urlparse, urlunparse
 from flask_caching import Cache
 from sharewarez.utils.db import check_postgres_port_open
+from sharewarez.version import __version__
 
 db = SQLAlchemy()
 login_manager = LoginManager()
 mail = Mail()
 cache = Cache(config={'CACHE_TYPE': 'SimpleCache'})
 app_start_time = datetime.now()
-app_version = '1.2.1'
+# Backwards-compatible template/API name. VERSION is the authoritative source.
+app_version = __version__
 
 
 def create_app():

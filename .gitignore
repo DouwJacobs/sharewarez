@@ -18,7 +18,6 @@ sharewarez/static/library/images
 /.codebuddy/*
 .codebuddy
 /.git
-/.github
 /sharewarez/static/library/zips/
 CLAUDE.md
 AGENTS.md
@@ -63,7 +62,6 @@ logs/
 # Development
 .git/
 .gitignore
-.github/
 .claude/
 .codebuddy/
 CLAUDE.md
