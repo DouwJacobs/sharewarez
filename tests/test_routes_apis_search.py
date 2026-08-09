@@ -48,6 +48,13 @@ def test_search_returns_game_and_library_results(client, search_records):
     assert any(result['title'] == library.name and result['type'] == 'Library' for result in library_results)
 
 
+def test_search_tolerates_typographical_errors(client, search_records):
+    user, _, game = search_records
+    login(client, user)
+    results = client.get('/api/global-search?q=Comander%20Ken').get_json()['results']
+    assert any(result['title'] == game.name and result['type'] == 'Game' for result in results)
+
+
 def test_admin_search_returns_request_results(client, search_records, db_session):
     user, _, _ = search_records
     login(client, user)

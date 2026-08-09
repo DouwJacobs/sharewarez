@@ -24,7 +24,7 @@ in the destination library; the completion message reports the skipped count.
 - [x] Nested/grouped collections and collection artwork
 - [x] Private versus shared collections
 - [x] Collection import/export
-- [ ] Unified full-text and fuzzy search
+- [x] Unified full-text and fuzzy search
 - [ ] Search suggestions, saved searches, and keyboard navigation
 - [ ] Game series, editions, DLC, update, extra, remake, and platform relationships
 - [ ] Metadata provenance and conflict resolution
