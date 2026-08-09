@@ -224,9 +224,9 @@ class TestDownloadGameRoute:
                 game_uuid=test_game.uuid
             ).first()
             assert download_request is not None
-            assert download_request.content_type == 'update'
-            assert download_request.content_title == 'Update 1.1'
-            assert download_request.game_update_id == test_game_update.id
+            assert download_request.content_type == 'game'
+            assert download_request.content_title == test_game.name
+            assert download_request.game_update_id is None
             assert download_request.status == 'available'  # Now instant streaming
 
             # Verify game download count increased

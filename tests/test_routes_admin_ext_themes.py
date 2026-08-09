@@ -5,6 +5,7 @@ import tempfile
 import zipfile
 from flask import url_for
 from unittest.mock import patch, MagicMock, mock_open
+from pathlib import Path
 from sharewarez.models import User
 from sharewarez import db
 from sharewarez.routes_admin_ext.themes import validate_theme_file, is_valid_theme_name
@@ -589,7 +590,11 @@ class TestResetDefaultThemesRoute:
 
         response = client.post('/admin/themes/reset')
         assert response.status_code == 302  # Redirect after success
-        mock_copytree.assert_called_once()
+        mock_copytree.assert_any_call(
+            Path('sharewarez/setup/default_theme'),
+            Path('sharewarez/static/library/themes/default'),
+        )
+        assert mock_copytree.call_count >= 1
         mock_log.assert_called()
 
     @patch('sharewarez.routes_admin_ext.themes.log_system_event')

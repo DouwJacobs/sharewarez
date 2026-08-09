@@ -8,6 +8,7 @@ from sharewarez.models import User, InviteToken, UserPreference
 from sqlalchemy import select, func
 from sharewarez.utils.functions import square_image
 from sharewarez.utils.processors import get_global_settings
+from sharewarez.utils.themes import ThemeManager
 from sharewarez import cache
 from sharewarez import db
 

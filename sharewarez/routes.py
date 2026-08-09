@@ -16,6 +16,7 @@ from sharewarez import db, cache
 from datetime import datetime, timezone
 from itsdangerous import URLSafeTimedSerializer
 from jinja2 import pass_context
+from PIL import Image as PILImage
 
 from sharewarez.forms import (
     ScanFolderForm, CsrfProtectForm,
@@ -466,8 +467,6 @@ def upload_image(game_uuid):
 
     # Further validate the file's data to ensure it's a valid image
     try:
-        from PIL import Image as PILImage
-
         img = PILImage.open(file)
         img.verify()  # Verify that it is, in fact, an image
         img = PILImage.open(file)
@@ -478,7 +477,7 @@ def upload_image(game_uuid):
     max_width, max_height = 1200, 1600
     if image_type == 'cover':
         if img.width > max_width or img.height > max_height:
-            img.thumbnail((max_width, max_height), PILImage.ANTIALIAS)
+            img.thumbnail((max_width, max_height), PILImage.LANCZOS)
     file.seek(0) 
     # Efficient file size check
     if file.content_length > 3 * 1024 * 1024:  # 3MB in bytes

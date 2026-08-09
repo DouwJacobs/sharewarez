@@ -32,6 +32,8 @@ class TestDiscordNotificationRoute:
         app = create_app()
         app.config['TESTING'] = True
         app.config['WTF_CSRF_ENABLED'] = False
+        with app.app_context():
+            db.create_all()
         return app
     
     @pytest.fixture

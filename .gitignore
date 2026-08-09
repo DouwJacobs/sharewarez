@@ -72,6 +72,8 @@ letsrebuild.md
 !docs/FEATURE_ROADMAP.md
 !docs/DATABASE_MIGRATIONS.md
 !docs/BACKUP_RESTORE.md
+!docs/LOCAL_QUALITY_GATE.md
+!docs/ARCHITECTURE.md
 .vscode
 
 # IDE

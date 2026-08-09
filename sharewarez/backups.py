@@ -77,7 +77,10 @@ def prune_backups(directory=None, retain=None):
     retain = int(retain if retain is not None else os.getenv('BACKUP_RETENTION_COUNT', '10'))
     if retain < 1:
         raise ValueError('Backup retention must be at least 1.')
-    backups = sorted(directory.glob('gamelibrary-*.dump'), key=lambda item: item.stat().st_mtime, reverse=True)
+    backups = sorted(
+        directory.glob('gamelibrary-*.dump'),
+        key=lambda item: (item.stat().st_mtime_ns, item.name), reverse=True,
+    )
     removed = []
     for dump_path in backups[retain:]:
         manifest_path = dump_path.with_suffix('.json')

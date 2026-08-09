@@ -72,8 +72,6 @@ def sample_global_settings(db_session):
     
     settings = GlobalSettings(
         use_turbo_image_downloads=False,
-        max_concurrent_downloads=5,
-        image_download_timeout=30,
         update_folder_name='Updates',
         extras_folder_name='Extras'
     )
@@ -498,9 +496,9 @@ class TestRefreshImagesInBackground:
     """Test the refresh_images_in_background function."""
     
     @patch('sharewarez.utils.scanning.delete_game_images')
-    @patch('sharewarez.utils.game_core.process_and_save_image')
+    @patch('sharewarez.utils.game_core.store_image_url_for_download')
     @patch('sharewarez.utils.scanning.make_igdb_api_request')
-    def test_refresh_images_in_background_success(self, mock_api, mock_process_image, mock_delete_images,
+    def test_refresh_images_in_background_success(self, mock_api, mock_store_image, mock_delete_images,
                                                 app, db_session, sample_game, mock_igdb_response):
         """Test successful image refresh."""
         mock_api.return_value = mock_igdb_response
@@ -518,7 +516,7 @@ class TestRefreshImagesInBackground:
         
         # Should process cover and screenshots
         expected_calls = 3  # 1 cover + 2 screenshots
-        assert mock_process_image.call_count == expected_calls
+        assert mock_store_image.call_count == expected_calls
     
     @patch('sharewarez.utils.scanning.make_igdb_api_request')
     def test_refresh_images_in_background_api_error(self, mock_api, app, db_session, sample_game):

@@ -16,6 +16,15 @@ from sharewarez.utils.download import (
 )
 
 
+@pytest.fixture(autouse=True)
+def allow_temporary_download_root(app):
+    """Keep test files inside the download path security boundary."""
+    previous_root = app.config.get('DATA_FOLDER_WAREZ')
+    app.config['DATA_FOLDER_WAREZ'] = tempfile.gettempdir()
+    yield
+    app.config['DATA_FOLDER_WAREZ'] = previous_root
+
+
 def safe_cleanup_database(db_session):
     """Safely clean up database records respecting foreign key constraints.""" 
     from sqlalchemy import delete
@@ -202,7 +211,9 @@ class TestZipGame:
                                        sample_global_settings):
         """Test handling of non-existent source path."""
         # Set a non-existent path
-        sample_download_request.game.full_disk_path = '/nonexistent/path'
+        sample_download_request.game.full_disk_path = os.path.join(
+            tempfile.gettempdir(), 'gamelibrary-nonexistent-game'
+        )
         db_session.commit()
         
         zip_file_path = 'test_nonexistent.zip'
@@ -391,7 +402,9 @@ class TestZipFolder:
     
     def test_zip_folder_nonexistent_source(self, app, db_session, sample_download_request):
         """Test handling of non-existent source location."""
-        nonexistent_path = '/nonexistent/folder'
+        nonexistent_path = os.path.join(
+            tempfile.gettempdir(), 'gamelibrary-nonexistent-folder'
+        )
         file_name = 'test_nonexistent'
         
         # Call the function

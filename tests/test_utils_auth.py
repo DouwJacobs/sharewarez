@@ -124,12 +124,13 @@ class TestAuthenticateAndRedirect:
     def test_invalid_username(self, mock_url_for, mock_redirect, mock_flash, app, db_session):
         """Test authentication with invalid username."""
         with app.app_context():
+            with app.test_request_context('/login'):
             # Setup mocks
-            mock_url_for.return_value = '/login'
-            mock_redirect.return_value = 'login_redirect'
+                mock_url_for.return_value = '/login'
+                mock_redirect.return_value = 'login_redirect'
             
             # Call the function
-            result = _authenticate_and_redirect('nonexistent', 'password')
+                result = _authenticate_and_redirect('nonexistent', 'password')
             
             # Verify error flash message
             mock_flash.assert_called_once_with('Invalid username or password', 'error')
@@ -147,12 +148,13 @@ class TestAuthenticateAndRedirect:
                             app, db_session, test_user):
         """Test authentication with valid username but invalid password."""
         with app.app_context():
+            with app.test_request_context('/login'):
             # Setup mocks
-            mock_url_for.return_value = '/login'
-            mock_redirect.return_value = 'login_redirect'
+                mock_url_for.return_value = '/login'
+                mock_redirect.return_value = 'login_redirect'
             
             # Call the function
-            result = _authenticate_and_redirect(test_user.name, 'wrongpassword')
+                result = _authenticate_and_redirect(test_user.name, 'wrongpassword')
             
             # Verify error flash message
             mock_flash.assert_called_once_with('Invalid username or password', 'error')

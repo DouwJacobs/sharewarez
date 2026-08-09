@@ -317,7 +317,10 @@ class TestGameDetailsRouteResponse:
             response = client.get(f'/game_details/{test_game.uuid}')
 
         assert response.status_code == 200
-        assert len(mock_render.call_args.kwargs['game']['urls']) == 1
+        urls = mock_render.call_args.kwargs['game']['urls']
+        official_urls = [item for item in urls if item['type'] == 'official']
+        assert len(official_urls) == 1
+        assert official_urls[0]['url'] == 'https://example.com/official'
     
     def test_game_details_nfo_content_sanitized(self, client, test_user, test_game):
         """Test that NFO content is sanitized before being sent to template."""

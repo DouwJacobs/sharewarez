@@ -129,9 +129,7 @@ class TestSmtpSettings:
         mock_render.assert_called_once()
         args, kwargs = mock_render.call_args
         assert args[0] == 'admin/admin_manage_smtp_settings.html'
-        # Settings will be auto-created if they don't exist, so check it exists
-        assert kwargs['settings'] is not None
-        assert isinstance(kwargs['settings'], GlobalSettings)
+        assert kwargs['settings'] is None
     
     @patch('sharewarez.routes_smtp.render_template')
     def test_get_success_with_settings(self, mock_render, client, admin_user, db_session):
@@ -543,14 +541,11 @@ class TestSmtpTest:
         
         response = client.post('/admin/smtp_test')
         
-        # Since GlobalSettings is auto-created with None values, the route proceeds 
-        # but fails validation, returning 200 with success=false
-        assert response.status_code == 200
+        assert response.status_code == 400
         
         response_data = json.loads(response.data)
         assert response_data['success'] is False
-        # The message will be about invalid port number since settings exist but are None
-        assert 'port number' in response_data['message']
+        assert response_data['message'] == 'SMTP settings not configured'
     
     @patch('sharewarez.routes_smtp.SMTPTester')
     def test_post_success(self, mock_smtp_tester_class, client, admin_user, db_session):

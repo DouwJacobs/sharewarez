@@ -189,6 +189,7 @@ class TestSettingsProfileEdit:
             mock_form = MagicMock()
             mock_form.validate_on_submit.return_value = True
             mock_form.avatar.data = None
+            mock_form.about.data = ''
             mock_form_class.return_value = mock_form
             
             response = client.post('/settings_profile_edit', data={}, follow_redirects=False)
@@ -458,7 +459,7 @@ class TestSettingsPanel:
         # Verify template was rendered with correct arguments
         mock_render.assert_called_once()
         args, kwargs = mock_render.call_args
-        assert args[0] == 'settings/modal_preferences.html'
+        assert args[0] == 'settings/settings_panel.html'
         assert 'form' in kwargs
     
     def test_post_settings_panel_create_new_preferences(self, client, test_user, db_session):

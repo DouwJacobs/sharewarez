@@ -283,8 +283,9 @@ class TestGetFolderSizeInBytes:
 class TestGetFolderSizeInBytesUpdates:
     """Test cases for get_folder_size_in_bytes_updates function."""
     
-    def test_get_folder_size_updates_single_file(self, db_session):
+    def test_get_folder_size_updates_single_file(self, db_session, app):
         """Test get_folder_size_in_bytes_updates with single file."""
+        app.config['DATA_FOLDER_WAREZ'] = '/'
         with patch('os.path.isfile', return_value=True):
             with patch('os.path.getsize', return_value=2048):
                 result = get_folder_size_in_bytes_updates('/path/to/file.txt')
@@ -298,8 +299,9 @@ class TestGetFolderSizeInBytesUpdates:
                 assert result == 0
                 mock_print.assert_called()
     
-    def test_get_folder_size_updates_with_exclusions(self, db_session, sample_global_settings):
+    def test_get_folder_size_updates_with_exclusions(self, db_session, sample_global_settings, app):
         """Test get_folder_size_in_bytes_updates excludes update/extra folders."""
+        app.config['DATA_FOLDER_WAREZ'] = '/'
         mock_walk_data = [
             ('/test', ['Updates', 'Extras', 'normal'], []),
             ('/test/Updates', [], ['update.exe']),
@@ -628,6 +630,7 @@ class TestGetLibraryCount:
                     mock_scalars = MagicMock()
                     mock_scalars.all.return_value = mock_libraries
                     mock_execute.return_value.scalars.return_value = mock_scalars
+                    mock_execute.return_value.scalar_one.return_value = 3
                     
                     count = get_library_count()
                     assert count == 3
@@ -639,6 +642,7 @@ class TestGetLibraryCount:
             mock_scalars = MagicMock()
             mock_scalars.all.return_value = []
             mock_execute.return_value.scalars.return_value = mock_scalars
+            mock_execute.return_value.scalar_one.return_value = 0
             
             count = get_library_count()
             assert count == 0
@@ -652,6 +656,7 @@ class TestGetLibraryCount:
             mock_scalars = MagicMock()
             mock_scalars.all.return_value = mock_libraries
             mock_execute.return_value.scalars.return_value = mock_scalars
+            mock_execute.return_value.scalar_one.return_value = 3
             
             with patch('builtins.print') as mock_print:
                 count = get_library_count()
@@ -676,6 +681,7 @@ class TestGetGamesCount:
             mock_scalars = MagicMock()
             mock_scalars.all.return_value = mock_games
             mock_execute.return_value.scalars.return_value = mock_scalars
+            mock_execute.return_value.scalar_one.return_value = 5
             
             count = get_games_count()
             assert count == 5
@@ -687,6 +693,7 @@ class TestGetGamesCount:
             mock_scalars = MagicMock()
             mock_scalars.all.return_value = []
             mock_execute.return_value.scalars.return_value = mock_scalars
+            mock_execute.return_value.scalar_one.return_value = 0
             
             count = get_games_count()
             assert count == 0
@@ -700,6 +707,7 @@ class TestGetGamesCount:
             mock_scalars = MagicMock()
             mock_scalars.all.return_value = mock_games
             mock_execute.return_value.scalars.return_value = mock_scalars
+            mock_execute.return_value.scalar_one.return_value = 5
             
             with patch('builtins.print') as mock_print:
                 count = get_games_count()

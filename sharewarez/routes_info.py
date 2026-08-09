@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, redirect, url_for, flash
-from flask_login import login_required
+from flask_login import current_user, login_required  # noqa: F401
 from sharewarez.utils.auth import admin_required
 from sharewarez.utils.processors import get_global_settings
 from sharewarez.utils.system_stats import format_bytes, get_cpu_usage, get_memory_usage, get_disk_usage, get_process_count, get_open_files, get_warez_folder_usage

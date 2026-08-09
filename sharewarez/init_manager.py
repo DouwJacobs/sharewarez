@@ -75,8 +75,11 @@ class InitializationManager:
             database_url = os.getenv('DATABASE_URL')
             if database_url:
                 # Mask password for security
-                masked_url = database_url.split('@')[0].split(':')[0:2]
-                masked_url = ':'.join(masked_url) + ':***@' + database_url.split('@')[1] if '@' in database_url else database_url
+                masked_url = database_url
+                if '@' in database_url:
+                    credentials, location = database_url.rsplit('@', 1)
+                    scheme = credentials.split('://', 1)[0]
+                    masked_url = f'{scheme}://***:***@{location}'
                 print("🔧 Environment variables loaded successfully")
                 print(f"📊 DATABASE_URL found: {masked_url}")
             else:

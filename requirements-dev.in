@@ -1,0 +1,8 @@
+-r requirements.in
+
+pytest
+pytest-cov
+pip-audit
+pip-tools
+ruff
+mypy

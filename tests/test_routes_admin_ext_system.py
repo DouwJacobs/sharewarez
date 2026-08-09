@@ -268,7 +268,15 @@ class TestSystemLogsRoute:
         assert b'System startup completed' in response.data
         assert b'matching event' in response.data
 
-    def test_system_logs_preserves_filters_in_pagination(self, client, admin_user, sample_system_events):
+    def test_system_logs_preserves_filters_in_pagination(self, client, admin_user, sample_system_events, db_session):
+        db_session.add(SystemEvents(
+            event_type='log',
+            event_level='information',
+            event_text='System health check completed',
+            timestamp=datetime.now(),
+        ))
+        db_session.commit()
+
         with client.session_transaction() as sess:
             sess['_user_id'] = str(admin_user.id)
             sess['_fresh'] = True

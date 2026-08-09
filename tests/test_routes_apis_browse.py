@@ -126,7 +126,9 @@ class TestBrowseFoldersSS:
         response = client.get('/api/browse_folders_ss')
         assert response.status_code == 200
         
-        data = json.loads(response.data)
+        payload = json.loads(response.data)
+        assert payload['basePath'] == mock_filesystem['base_dir']
+        data = payload['items']
         assert isinstance(data, list)
         
         # Verify directories come first (isDir: True)
@@ -176,7 +178,7 @@ class TestBrowseFoldersSS:
         response = client.get('/api/browse_folders_ss')
         assert response.status_code == 200
         
-        data = json.loads(response.data)
+        data = json.loads(response.data)['items']
         assert isinstance(data, list)
         assert len(data) == 2
     
@@ -215,7 +217,7 @@ class TestBrowseFoldersSS:
         response = client.get('/api/browse_folders_ss', query_string={'path': request_path})
         assert response.status_code == 200
         
-        data = json.loads(response.data)
+        data = json.loads(response.data)['items']
         assert isinstance(data, list)
         assert len(data) == 1
         
@@ -283,7 +285,7 @@ class TestBrowseFoldersSS:
         
         data = json.loads(response.data)
         assert 'error' in data
-        assert 'SS folder browser: Folder not found' in data['error']
+        assert data['error'] == 'Scan location is unavailable.'
     
     @patch('sharewarez.routes_apis.browse.os')
     @patch('sharewarez.routes_apis.browse.current_app', new_callable=MagicMock)
@@ -343,7 +345,7 @@ class TestBrowseFoldersSS:
         response = client.get('/api/browse_folders_ss')
         assert response.status_code == 200
         
-        data = json.loads(response.data)
+        data = json.loads(response.data)['items']
         assert len(data) == 4
         
         # Verify metadata for each file
@@ -404,7 +406,7 @@ class TestBrowseFoldersSS:
         response = client.get('/api/browse_folders_ss')
         assert response.status_code == 200
         
-        data = json.loads(response.data)
+        data = json.loads(response.data)['items']
         assert len(data) == 4
         
         # Verify directories come first
@@ -456,6 +458,6 @@ class TestBrowseFoldersSS:
         response = client.get('/api/browse_folders_ss')
         assert response.status_code == 200
         
-        data = json.loads(response.data)
+        data = json.loads(response.data)['items']
         assert isinstance(data, list)
         assert len(data) == 0

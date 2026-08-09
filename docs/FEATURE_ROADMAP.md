@@ -66,8 +66,8 @@ committed; release version bumps are managed separately.
 - [x] Versioned CSS cache invalidation
 - [x] Automated tag-based container publishing workflow
 - [x] Alembic/Flask-Migrate schema migrations
-- [ ] Locked and audited dependencies
-- [ ] Required test, lint, type-check, migration, and container CI gates
+- [x] Locked and audited dependencies
+- [x] Required local test, lint, type-check, migration, and container gates
 - [ ] Non-root hardened container runtime
 - [ ] Central security headers and rate limiting
 - [ ] Encrypted integration credentials at rest

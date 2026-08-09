@@ -50,6 +50,7 @@ def test_search_returns_game_and_library_results(client, search_records):
 
 def test_admin_search_returns_request_results(client, search_records, db_session):
     user, _, _ = search_records
+    login(client, user)
     suffix = str(uuid4())[:8]
     game_request = GameRequest(
         igdb_id=1_700_000_000 + (uuid4().int % 300_000_000),

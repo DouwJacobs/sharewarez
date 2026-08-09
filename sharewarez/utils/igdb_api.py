@@ -2,6 +2,7 @@
 # This file contains functions for interacting with the IGDB API extracted from routes.py
 
 import requests
+import hashlib
 import time
 import threading
 import re
@@ -73,11 +74,18 @@ def make_igdb_api_request(endpoint_url, query_params):
     except Exception as e:
         return {"error": f"make_igdb_api_request An unexpected error occurred: {e}"}
     
-_access_token_cache = {"token": None, "expires_at": 0}
+_access_token_cache = {"token": None, "expires_at": 0, "credentials_key": None}
 
 def get_access_token(client_id, client_secret):
     now = time.time()
-    if _access_token_cache["token"] and _access_token_cache["expires_at"] > now + 60:
+    credentials_key = hashlib.sha256(
+        f'{client_id}\0{client_secret}'.encode('utf-8')
+    ).hexdigest()
+    if (
+        _access_token_cache["token"]
+        and _access_token_cache["expires_at"] > now + 60
+        and _access_token_cache["credentials_key"] == credentials_key
+    ):
         return _access_token_cache["token"]
 
     url = "https://id.twitch.tv/oauth2/token"
@@ -93,6 +101,7 @@ def get_access_token(client_id, client_secret):
         expires_in = data.get('expires_in', 3600)
         _access_token_cache["token"] = token
         _access_token_cache["expires_at"] = now + expires_in
+        _access_token_cache["credentials_key"] = credentials_key
         return token
     else:
         print("Failed to obtain access token")
@@ -190,4 +199,3 @@ class IGDBRateLimiter:
         """Release a concurrent request slot."""
         with self.lock:
             self.concurrent_requests = max(0, self.concurrent_requests - 1)
-

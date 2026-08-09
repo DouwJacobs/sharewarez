@@ -16,7 +16,7 @@ from sharewarez.utils.functions import (
     read_first_nfo_content, delete_associations_for_game,
     website_category_to_string,
     PLATFORM_IDS, format_size, download_image,
-    get_folder_size_in_bytes_updates
+    get_folder_size_in_bytes_updates, sanitize_string_input
 )
 from sharewarez.utils.igdb_api import make_igdb_api_request
 from sharewarez.utils.gamenames import generate_goty_variants

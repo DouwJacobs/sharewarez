@@ -674,11 +674,13 @@ class TestSendPasswordResetEmail:
     
     @patch('sharewarez.utils.smtp.send_email')
     @patch('sharewarez.utils.smtp.url_for')
-    def test_send_password_reset_email(self, mock_url_for, mock_send_email):
+    @patch('sharewarez.utils.processors.get_global_settings')
+    def test_send_password_reset_email(self, mock_get_settings, mock_url_for, mock_send_email):
         """Test sending password reset email."""
         # Setup mocks
         mock_url_for.return_value = 'https://example.com/reset/abc123'
         mock_send_email.return_value = True
+        mock_get_settings.return_value = {'site_title': 'Game Library'}
         
         # Test
         send_password_reset_email('user@example.com', 'abc123')
@@ -692,13 +694,13 @@ class TestSendPasswordResetEmail:
         
         # Check arguments
         assert args[0] == 'user@example.com'
-        assert args[1] == "Reset your SharewareZ password"
+        assert args[1] == "Reset your Game Library password"
         
         # Check that HTML content contains the reset URL
         html_content = args[2]
         assert 'https://example.com/reset/abc123' in html_content
         assert 'Reset your password' in html_content
-        assert 'The SharewareZ team' in html_content
+        assert 'The Game Library team' in html_content
 
 
 class TestSendInviteEmail:

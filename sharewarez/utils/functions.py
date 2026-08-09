@@ -2,6 +2,7 @@ import os
 import requests
 import re
 import html
+from PIL import Image as PILImage
 from urllib.parse import urlparse
 from wtforms.validators import ValidationError
 from sharewarez import db
@@ -31,8 +32,6 @@ def format_size(size_in_bytes):
 
 def square_image(image, size):
     """Create a square image with the given size."""
-    from PIL import Image as PILImage
-
     image.thumbnail((size, size))
     if image.size[0] != size or image.size[1] != size:
         new_image = PILImage.new('RGB', (size, size), color='black')

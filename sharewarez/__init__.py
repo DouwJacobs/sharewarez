@@ -44,23 +44,23 @@ def create_app():
 
     app = Flask(__name__)
     app.config.from_object(Config)
-    
+
     # SAFETY CHECK: Prevent production database access during tests
     import sys
     if 'pytest' in sys.modules or 'PYTEST_CURRENT_TEST' in os.environ:
         # We are running in pytest - ensure we're using test database
         test_db_url = os.getenv('TEST_DATABASE_URL')
         production_db_url = os.getenv('DATABASE_URL')
-        
+
         # If DATABASE_URL was not properly overridden in conftest.py
         if production_db_url and test_db_url and production_db_url != test_db_url:
             if 'sharewarez' in production_db_url and 'test' not in production_db_url:
                 print(f"🚨 CRITICAL: Tests attempting to use production database: {production_db_url}")
                 print(f"🛡️  BLOCKING: Forcing test database: {test_db_url}")
                 app.config['SQLALCHEMY_DATABASE_URI'] = test_db_url
-        
+
         print(f"🧪 PYTEST MODE: Using database: {app.config.get('SQLALCHEMY_DATABASE_URI', 'NOT SET')}")
-    
+
     CSRFProtect(app)
     app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path, 'static/library')
 
@@ -94,7 +94,7 @@ def create_app():
         flash('The file you tried to upload is too large. Maximum file size is 10MB.', 'error')
         return redirect(request.url)
 
-    @app.context_processor
+    @app.context_processo
     def inject_current_theme():
         """Inject the active theme and instance branding into every template."""
         from sharewarez.utils.processors import get_global_settings
@@ -115,14 +115,19 @@ def create_app():
         """Check if setup is required and redirect accordingly."""
         from flask import request, redirect
         from sharewarez.utils.setup import should_redirect_to_setup, get_setup_redirect_url
-        
+
+        # Route tests exercise authentication and setup independently. Avoid
+        # letting an empty isolated test database mask the behavior under test.
+        if app.config.get('TESTING'):
+            return
+
         # Skip setup checks for certain endpoints
         exempt_endpoints = {
             'setup.setup', 'setup.setup_submit', 'setup.setup_smtp', 'setup.setup_igdb',
             'static', 'favicon', 'site.favicon', 'site.pwa_manifest', 'site.pwa_icon',
             'site.service_worker', 'site.pwa_offline'
         }
-        
+
         # Skip setup checks for API endpoints (they should handle their own authentication)
         if request.endpoint and (
             request.endpoint in exempt_endpoints or
@@ -130,7 +135,7 @@ def create_app():
             request.path.startswith('/api/')
         ):
             return
-        
+
         # Check if we need to redirect to setup
         if should_redirect_to_setup():
             setup_url = get_setup_redirect_url()

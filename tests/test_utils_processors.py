@@ -90,6 +90,8 @@ class TestGetGlobalSettings:
 
         # Should return default values
         expected_defaults = {
+            'site_title': 'Game Library',
+            'brand_logo_path': 'newstyle/sharewarez_logo.png',
             'show_logo': True,
             'show_help_button': True,
             'enable_web_links': True,
@@ -103,6 +105,7 @@ class TestGetGlobalSettings:
             'enable_delete_game_on_disk': True,
             'enable_game_updates': True,
             'enable_game_extras': True,
+            'enable_game_requests': True,
             'discord_configured': False,
             'discord_manual_trigger_enabled': False,
             'app_version': app_version
@@ -127,6 +130,8 @@ class TestGetGlobalSettings:
 
         # Should return default values
         expected_defaults = {
+            'site_title': 'Game Library',
+            'brand_logo_path': 'newstyle/sharewarez_logo.png',
             'show_logo': True,
             'show_help_button': True,
             'enable_web_links': True,
@@ -140,6 +145,7 @@ class TestGetGlobalSettings:
             'enable_delete_game_on_disk': True,
             'enable_game_updates': True,
             'enable_game_extras': True,
+            'enable_game_requests': True,
             'discord_configured': False,
             'discord_manual_trigger_enabled': False,
             'app_version': app_version
@@ -242,6 +248,8 @@ class TestGetGlobalSettings:
             result = get_global_settings()
 
         expected_keys = {
+            'site_title',
+            'brand_logo_path',
             'show_logo',
             'show_help_button',
             'enable_web_links',
@@ -255,6 +263,7 @@ class TestGetGlobalSettings:
             'enable_delete_game_on_disk',
             'enable_game_updates',
             'enable_game_extras',
+            'enable_game_requests',
             'discord_configured',
             'discord_manual_trigger_enabled',
             'app_version'
@@ -275,7 +284,7 @@ class TestGetGlobalSettings:
 
         # Should not cause errors and return valid result
         assert isinstance(result, dict)
-        assert len(result) == 16  # Should have exactly 16 keys
+        assert len(result) == 19
         assert all(key in result for key in [
             'show_logo', 'show_help_button', 'enable_web_links',
             'enable_server_status', 'enable_newsletter', 'show_version',
@@ -294,7 +303,7 @@ class TestGetGlobalSettings:
             result = get_global_settings()
         
         for key, value in result.items():
-            if key != 'app_version':
+            if key not in {'app_version', 'site_title', 'brand_logo_path'}:
                 assert isinstance(value, bool), f"Key '{key}' should be boolean, got {type(value)}"
         
         assert isinstance(result['app_version'], str)

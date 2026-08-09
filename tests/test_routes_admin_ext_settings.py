@@ -194,7 +194,12 @@ class TestUpdateSettingsFields:
         assert global_settings.discord_notify_new_games == True
         assert global_settings.scan_thread_count == 3
         assert global_settings.update_folder_name == 'new_updates'
-        assert global_settings.settings == new_settings
+        assert all(
+            global_settings.settings[key] == value
+            for key, value in new_settings.items()
+        )
+        assert global_settings.settings['showSystemLogo'] is True
+        assert global_settings.settings['siteUrl'] == 'http://test.local'
 
     def test_update_settings_fields_invalid_scan_threads(self, db_session, global_settings):
         """Test updating with invalid scan thread count."""
