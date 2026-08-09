@@ -49,6 +49,26 @@ class Config(object):
     REMEMBER_COOKIE_SECURE = os.getenv('REMEMBER_COOKIE_SECURE', 'true').lower() == 'true'
     REMEMBER_COOKIE_HTTPONLY = True
     REMEMBER_COOKIE_SAMESITE = os.getenv('REMEMBER_COOKIE_SAMESITE', 'Lax')
+
+    # Only trust forwarded headers when every request reaches the app through
+    # the configured number of trusted proxies.
+    TRUST_PROXY_COUNT = int(os.getenv('TRUST_PROXY_COUNT', '0'))
+    TRUSTED_HOSTS = [
+        host.strip() for host in os.getenv('TRUSTED_HOSTS', '').split(',')
+        if host.strip()
+    ] or None
+    RATELIMIT_STORAGE_URI = os.getenv('RATELIMIT_STORAGE_URI', 'memory://')
+    RATELIMIT_DEFAULT = os.getenv('RATELIMIT_DEFAULT', '300 per minute')
+    RATELIMIT_ENABLED = os.getenv('RATELIMIT_ENABLED', 'true').lower() == 'true'
+    SECURITY_HSTS_ENABLED = os.getenv('SECURITY_HSTS_ENABLED', 'true').lower() == 'true'
+    SECURITY_CSP = os.getenv(
+        'SECURITY_CSP',
+        "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'self'; "
+        "form-action 'self'; img-src 'self' data: https:; font-src 'self' data: https:; "
+        "style-src 'self' 'unsafe-inline' https:; script-src 'self' 'unsafe-inline' https:; "
+        "connect-src 'self' https:; frame-src 'self' https://www.youtube.com "
+        "https://www.youtube-nocookie.com; media-src 'self' https:"
+    )
     
     # Zipstream configuration for streaming ZIP downloads
     ZIPSTREAM_CHUNK_SIZE = int(os.getenv('ZIPSTREAM_CHUNK_SIZE', 65536))  # 64KB chunks for memory efficiency

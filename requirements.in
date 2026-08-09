@@ -4,6 +4,7 @@ flask_sqlalchemy
 flask_migrate
 alembic
 flask_login
+flask_limiter
 flask_caching
 argon2_cffi
 pillow

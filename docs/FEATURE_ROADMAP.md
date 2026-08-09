@@ -69,5 +69,5 @@ committed; release version bumps are managed separately.
 - [x] Locked and audited dependencies
 - [x] Required local test, lint, type-check, migration, and container gates
 - [x] Non-root hardened container runtime
-- [ ] Central security headers and rate limiting
+- [x] Central security headers and rate limiting
 - [ ] Encrypted integration credentials at rest

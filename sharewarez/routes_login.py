@@ -9,6 +9,7 @@ from sharewarez.utils.smtp import send_email, send_password_reset_email, send_in
 from sharewarez.utils.processors import get_global_settings
 from sharewarez.utils.event_logging import log_system_event
 from sharewarez import cache
+from sharewarez.security import limiter
 from datetime import datetime, timedelta, timezone
 from sqlalchemy import func, select
 from itsdangerous import URLSafeTimedSerializer, SignatureExpired, BadSignature
@@ -39,6 +40,7 @@ def inject_settings():
     return get_global_settings()
 
 @login_bp.route('/login', methods=['GET', 'POST'])
+@limiter.limit('10 per minute', methods=['POST'])
 def login():
     next_page = get_safe_next_url()
     if current_user.is_authenticated:
@@ -75,6 +77,7 @@ def login():
 
 
 @login_bp.route('/register', methods=['GET', 'POST'])
+@limiter.limit('5 per minute', methods=['POST'])
 def register():
     if current_user.is_authenticated:
         return redirect(url_for('login.login'))
@@ -182,6 +185,7 @@ def register():
 
 
 @login_bp.route('/confirm/<token>')
+@limiter.limit('20 per minute')
 def confirm_email(token):
     try:
         email = get_serializer().loads(token, salt='email-confirm', max_age=900)  # 15 minutes
@@ -201,6 +205,7 @@ def confirm_email(token):
 
 
 @login_bp.route('/reset_password_request', methods=['GET', 'POST'])
+@limiter.limit('5 per minute', methods=['POST'])
 def reset_password_request():
     if current_user.is_authenticated:
         return redirect(url_for('login.login'))

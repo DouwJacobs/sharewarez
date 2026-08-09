@@ -16,6 +16,7 @@ from urllib.parse import urlparse, urlunparse
 from flask_caching import Cache
 from sharewarez.utils.db import check_postgres_port_open
 from sharewarez.version import __version__
+from sharewarez.security import init_http_security
 
 db = SQLAlchemy()
 migrate = Migrate(compare_type=True)
@@ -86,6 +87,7 @@ def create_app():
     mail.init_app(app)
     login_manager.login_view = 'login.login'
     cache.init_app(app)
+    init_http_security(app)
 
     @app.errorhandler(413)
     def request_entity_too_large(error):

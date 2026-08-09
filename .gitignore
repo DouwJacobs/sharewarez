@@ -75,6 +75,7 @@ letsrebuild.md
 !docs/LOCAL_QUALITY_GATE.md
 !docs/ARCHITECTURE.md
 !docs/CONTAINER_SECURITY.md
+!docs/HTTP_SECURITY.md
 .vscode
 
 # IDE
