@@ -17,6 +17,7 @@ from flask_caching import Cache
 from sharewarez.utils.db import check_postgres_port_open
 from sharewarez.version import __version__
 from sharewarez.security import init_http_security
+from sharewarez.observability import init_observability
 
 db = SQLAlchemy()
 migrate = Migrate(compare_type=True)
@@ -87,6 +88,7 @@ def create_app():
     mail.init_app(app)
     login_manager.login_view = 'login.login'
     cache.init_app(app)
+    init_observability(app)
     init_http_security(app)
 
     @app.errorhandler(413)
@@ -127,7 +129,7 @@ def create_app():
         exempt_endpoints = {
             'setup.setup', 'setup.setup_submit', 'setup.setup_smtp', 'setup.setup_igdb',
             'static', 'favicon', 'site.favicon', 'site.pwa_manifest', 'site.pwa_icon',
-            'site.service_worker', 'site.pwa_offline'
+            'site.service_worker', 'site.pwa_offline', 'health.live', 'health.ready'
         }
 
         # Skip setup checks for API endpoints (they should handle their own authentication)
@@ -159,6 +161,7 @@ def create_app():
     from sharewarez.routes_admin_ext import admin2_bp
     from sharewarez.routes_apis import apis_bp
     from sharewarez.routes_game_requests import game_requests_bp
+    from sharewarez.routes_health import health_bp
 
     # Register all blueprints
     app.register_blueprint(routes.bp)
@@ -175,6 +178,7 @@ def create_app():
     app.register_blueprint(info_bp)
     app.register_blueprint(apis_bp)
     app.register_blueprint(game_requests_bp)
+    app.register_blueprint(health_bp)
 
     with app.app_context():
         # Database initialization is handled by the InitializationManager before workers start

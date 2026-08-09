@@ -69,6 +69,8 @@ class Config(object):
         "connect-src 'self' https:; frame-src 'self' https://www.youtube.com "
         "https://www.youtube-nocookie.com; media-src 'self' https:"
     )
+    LOG_LEVEL = os.getenv('LOG_LEVEL', 'INFO').upper()
+    LOG_FORMAT = os.getenv('LOG_FORMAT', 'json').lower()
     
     # Zipstream configuration for streaming ZIP downloads
     ZIPSTREAM_CHUNK_SIZE = int(os.getenv('ZIPSTREAM_CHUNK_SIZE', 65536))  # 64KB chunks for memory efficiency

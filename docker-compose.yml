@@ -45,6 +45,8 @@ services:
       - RATELIMIT_STORAGE_URI=${RATELIMIT_STORAGE_URI:-memory://}
       - RATELIMIT_DEFAULT=${RATELIMIT_DEFAULT:-300 per minute}
       - SECURITY_HSTS_ENABLED=${SECURITY_HSTS_ENABLED:-true}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - LOG_FORMAT=${LOG_FORMAT:-json}
     volumes:
       - "${DATA_FOLDER_WAREZ}:/storage:ro"
       - "${LIBRARY_HOST_PATH:-./data/library}:/app/sharewarez/static/library"
@@ -53,7 +55,7 @@ services:
       db:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:5006/ || exit 1"]
+      test: ["CMD-SHELL", "curl -fsS http://localhost:5006/health/ready || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
