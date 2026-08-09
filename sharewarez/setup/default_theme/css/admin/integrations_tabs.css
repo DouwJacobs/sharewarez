@@ -1,8 +1,16 @@
 /* Integrations Tabs Styling */
+.integrations-page{width:min(1080px,calc(100% - 2rem));margin:2rem auto 4rem}.integrations-header{margin-bottom:1.25rem}.integrations-eyebrow{margin:0 0 .35rem;color:var(--btn-primary);font-size:.75rem;font-weight:800;letter-spacing:.14em;text-transform:uppercase}.integrations-header h1{margin:0;font-size:clamp(1.8rem,3vw,2.5rem)}.integrations-header>p:last-child{margin:.45rem 0 0;color:var(--text-muted)}.integrations-panel{padding:clamp(1rem,2.5vw,1.5rem);border:1px solid var(--border-light);border-radius:var(--border-radius-lg,16px);background:var(--theme-card-background,var(--card-background));box-shadow:var(--shadow-glass)}
 
 .integrations-nav-tabs {
+    display:grid;
+    grid-template-columns:repeat(3,minmax(0,1fr));
+    gap:.5rem;
     border-bottom: 2px solid rgba(255, 255, 255, 0.1);
-    margin-bottom: 2rem;
+    margin-bottom: 1rem;
+    padding:.35rem;
+    border:1px solid var(--border-light);
+    border-radius:12px;
+    background:color-mix(in srgb,var(--theme-panel-bg) 75%,transparent);
 }
 
 .integrations-nav-item {
@@ -10,12 +18,13 @@
 }
 
 .integrations-nav-link {
+    width:100%;
     background: rgba(0, 0, 0, 0.2);
     border: 1px solid rgba(255, 255, 255, 0.1);
     color: rgba(255, 255, 255, 0.7);
     padding: 1rem 1.5rem;
-    margin-right: 0.5rem;
-    border-radius: 8px 8px 0 0;
+    margin:0;
+    border-radius:8px;
     transition: all 0.3s ease;
     font-weight: 500;
 }
@@ -39,16 +48,14 @@
 }
 
 .integrations-tab-content {
-    background: rgba(0, 0, 0, 0.1);
-    border-radius: 0 8px 8px 8px;
-    padding: 2rem;
+    background: color-mix(in srgb,var(--theme-panel-bg) 72%,transparent);
+    border-radius:12px;
+    padding:clamp(1rem,3vw,2rem);
     backdrop-filter: blur(5px);
     border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.integrations-tab-pane {
-    min-height: 400px;
-}
+.integrations-tab-pane{min-height:0}.integrations-tab-pane form,.integrations-tab-pane .settings-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem 1.25rem}.integrations-tab-pane form .button-group,.integrations-tab-pane form>p,.integrations-tab-pane form>.form-group:first-child,.integrations-tab-pane .settings-form>.form-group:first-child,.integrations-tab-pane .settings-form>.message,.integrations-tab-pane .settings-form>#testResults,.integrations-tab-pane .settings-form>.last-tested{grid-column:1/-1}.integrations-tab-pane .form-group{margin:0}.integrations-tab-pane .button-group{display:flex;flex-wrap:wrap}.integrations-tab-pane .button-group .btn{flex:1;min-width:11rem}.integrations-tab-pane .settings-form>.btn{width:100%;margin:0!important}.integrations-tab-pane input:not([type=checkbox]),.integrations-tab-pane select{width:100%}
 
 .tab-content-wrapper h4 {
     color: rgb(var(--theme-accent-rgb, 0, 150, 255));
@@ -66,6 +73,7 @@
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
+    .integrations-page{width:min(100% - 1rem,1080px);margin-top:1rem}.integrations-panel{padding:.75rem}.integrations-nav-tabs{grid-template-columns:1fr}.integrations-tab-pane form,.integrations-tab-pane .settings-form{grid-template-columns:1fr}.integrations-tab-pane form>*,.integrations-tab-pane .settings-form>*{grid-column:1!important}
     .integrations-nav-link {
         padding: 0.75rem 1rem;
         font-size: 0.9rem;

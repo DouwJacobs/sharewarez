@@ -68,15 +68,8 @@ input[type="checkbox"] {
     cursor: pointer;
 }
 
-.card {
-    width: 70%;
-    margin: 0 auto;
-    padding: var(--spacing-lg);
-}
-
 @media (max-width: 768px) {
-    .smtp-settings-container,
-    .card {
+    .smtp-settings-container {
         width: 100%;
         max-width: 100%;
         min-width: 0;

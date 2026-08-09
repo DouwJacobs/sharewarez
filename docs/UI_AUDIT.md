@@ -179,3 +179,8 @@ Desktop measurement finds later discovery cards beyond the viewport, while docum
 - Verify every page stays within the document viewport; tables/carousels may use intentional internal scrolling.
 - Compare standard/admin page gutters, top spacing, H1 styles, and breadcrumbs.
 - Confirm buttons, focus rings, muted text, status chips, and destructive actions meet contrast expectations.
+## Admin operations UI follow-up (2026-08-09)
+
+- `/admin/integrations` previously inherited a global `.card { width: 70% }` rule from the SMTP stylesheet, nested several card surfaces, and rendered all settings in one tall column. It now has a dedicated responsive page shell, segmented service tabs, flatter panels, and two-column fields on desktop that collapse to one column on mobile.
+- `/admin/new_server_info` previously combined centered legacy status styles, five narrow diagnostic columns, and a long single-column sequence of tables. It now uses a left-aligned status header, three-column diagnostic cards, four-column resource cards, a two-column information grid, and bounded scrollable tables. All structures collapse without horizontal overflow at 390px.
+- Integration detail forms remain the canonical place to configure and test SMTP, Discord, and IGDB; Server Info remains a read-only diagnostic summary.

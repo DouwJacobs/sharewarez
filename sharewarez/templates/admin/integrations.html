@@ -10,10 +10,13 @@
 <link rel="stylesheet" href="{{ 'css/admin/integrations_tabs.css'|theme_asset }}">
 
 
-<div class="container-settings mt-4">
-    <div class="card">
-        <h2><i class="fas fa-plug"></i> Integrations Management</h2>
-        <p>Manage all your external service integrations in one place.</p>
+<main class="integrations-page">
+    <header class="integrations-header">
+        <p class="integrations-eyebrow">Administration</p>
+        <h1>Integrations</h1>
+        <p>Connect email, game metadata, and notification services.</p>
+    </header>
+    <section class="integrations-panel">
 
         <!-- Nav tabs -->
         <ul class="integrations-nav-tabs nav nav-tabs" id="integrationTabs" role="tablist">
@@ -80,8 +83,8 @@
             </div>
 
         </div>
-    </div>
-</div>
+    </section>
+</main>
 
 <!-- Embed current settings as JSON for JavaScript -->
 <script id="currentSettings" type="application/json">{{ current_settings|tojson }}</script>
