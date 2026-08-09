@@ -234,7 +234,7 @@ def discover():
         if collection.is_featured:
             featured_games = games[:8]
         elif collection.show_on_discover and games:
-            collection_rows.append({'name': collection.name, 'slug': collection.slug, 'description': collection.description, 'games': games})
+            collection_rows.append({'name': collection.name, 'slug': collection.slug, 'description': collection.description, 'artwork_url': collection.artwork_url, 'group_name': collection.parent.name if collection.parent else None, 'games': games})
 
     if not featured_games and featured_candidates:
         featured_games = [featured_candidates[0]]

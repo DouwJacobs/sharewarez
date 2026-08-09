@@ -17,7 +17,7 @@ committed; release version bumps are managed separately.
 ## Discovery and organization
 
 - [x] Smart collections based on validated library rules
-- [ ] Nested/grouped collections and collection artwork
+- [x] Nested/grouped collections and collection artwork
 - [ ] Private versus shared collections
 - [ ] Collection import/export
 - [ ] Unified full-text and fuzzy search

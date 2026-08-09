@@ -29,6 +29,13 @@ def _collection_name_exists(name, collection_id=None):
     return db.session.execute(query).scalar_one_or_none() is not None
 
 
+def _set_parent_choices(form, collection_id=None):
+    roots = db.session.execute(
+        select(Collection).where(Collection.parent_id.is_(None), Collection.id != collection_id).order_by(Collection.name)
+    ).scalars().all()
+    form.parent_id.choices = [(0, 'No group')] + [(item.id, item.name) for item in roots]
+
+
 @admin2_bp.route('/admin/collections')
 @login_required
 @admin_required
@@ -51,6 +58,7 @@ def collections():
 @admin_required
 def add_collection():
     form = CollectionForm()
+    _set_parent_choices(form)
     if form.validate_on_submit():
         smart_rules = None
         if form.is_smart.data:
@@ -65,6 +73,8 @@ def add_collection():
                 name=form.name.data.strip(),
                 slug=unique_collection_slug(form.name.data),
                 description=(form.description.data or '').strip() or None,
+                artwork_url=(form.artwork_url.data or '').strip() or None,
+                parent_id=form.parent_id.data or None,
                 show_on_discover=form.show_on_discover.data,
                 display_order=form.display_order.data or 0,
                 is_smart=form.is_smart.data,
@@ -93,7 +103,9 @@ def edit_collection(collection_id):
         .where(Collection.id == collection_id)
     ).scalar_one_or_none() or abort(404)
     form = CollectionForm(obj=item)
+    _set_parent_choices(form, item.id)
     if request.method == 'GET':
+        form.parent_id.data = item.parent_id or 0
         form.game_order.data = ','.join(link.game_uuid for link in item.game_links)
         form.smart_rules.data = json.dumps(item.smart_rules, indent=2) if item.smart_rules else ''
 
@@ -113,6 +125,8 @@ def edit_collection(collection_id):
                 item.slug = unique_collection_slug(item.name, item.id)
                 item.show_on_discover = form.show_on_discover.data
                 item.display_order = form.display_order.data or 0
+                item.parent_id = form.parent_id.data or None
+                item.artwork_url = (form.artwork_url.data or '').strip() or None
                 item.is_smart = wants_smart
                 item.smart_rules = smart_rules
                 item.smart_sort = form.smart_sort.data

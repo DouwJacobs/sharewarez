@@ -144,3 +144,27 @@ def test_collection_editor_explains_smart_rules_json(client, db_session):
     assert b'between 1 and 20 conditions' in response.data
     assert b'not_contains' in response.data
     assert b'Size uses the stored byte count' in response.data
+
+
+def test_admin_can_group_collection_and_set_artwork(client, db_session):
+    suffix = uuid4().hex[:8]
+    admin = User(user_id=str(uuid4()), name=f'group-admin-{suffix}', email=f'group-{suffix}@example.test', role='admin', is_email_verified=True)
+    admin.set_password('test-password')
+    group = Collection(name=f'Genres {suffix}', slug=f'genres-{suffix}')
+    db_session.add_all([admin, group])
+    db_session.commit()
+    with client.session_transaction() as session:
+        session['_user_id'] = str(admin.id)
+        session['_fresh'] = True
+
+    response = client.post('/admin/collections/new', data={
+        'name': f'RPG {suffix}', 'description': 'Role-playing games',
+        'parent_id': str(group.id), 'artwork_url': 'https://example.test/rpg.jpg',
+        'display_order': '1', 'smart_sort': 'name', 'smart_sort_order': 'asc',
+        'smart_limit': '24', 'game_order': '', 'submit': 'Save collection',
+    })
+
+    assert response.status_code == 302
+    child = db_session.query(Collection).filter_by(name=f'RPG {suffix}').one()
+    assert child.parent_id == group.id
+    assert child.artwork_url == 'https://example.test/rpg.jpg'

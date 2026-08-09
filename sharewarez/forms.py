@@ -63,6 +63,8 @@ class LoginForm(FlaskForm):
 class CollectionForm(FlaskForm):
     name = StringField('Collection name', validators=[DataRequired(), Length(min=2, max=120)])
     description = TextAreaField('Description', validators=[Optional(), Length(max=1000)])
+    artwork_url = StringField('Artwork URL', validators=[Optional(), Length(max=1024)])
+    parent_id = SelectField('Collection group', coerce=int, choices=[(0, 'No group')], default=0)
     show_on_discover = BooleanField('Show as a row on Discover')
     display_order = IntegerField('Discover row order', validators=[Optional(), NumberRange(min=0, max=9999)], default=0)
     game_order = HiddenField('Selected games')

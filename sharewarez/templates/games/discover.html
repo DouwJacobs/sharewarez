@@ -120,9 +120,9 @@
     </section>
 
     {% for collection in collection_rows %}
-    <section class="home-section home-curated-collection" aria-labelledby="collection-{{ collection.slug }}">
+    <section class="home-section home-curated-collection{% if collection.artwork_url %} has-collection-artwork{% endif %}" aria-labelledby="collection-{{ collection.slug }}"{% if collection.artwork_url %} style="--collection-artwork:url('{{ collection.artwork_url|e }}')"{% endif %}>
         <header class="home-section-header">
-            <div><p class="home-eyebrow">Curated collection</p><h2 id="collection-{{ collection.slug }}">{{ collection.name }}</h2>{% if collection.description %}<p>{{ collection.description }}</p>{% endif %}</div>
+            <div><p class="home-eyebrow">{{ collection.group_name or 'Curated collection' }}</p><h2 id="collection-{{ collection.slug }}">{{ collection.name }}</h2>{% if collection.description %}<p>{{ collection.description }}</p>{% endif %}</div>
             <a href="{{ url_for('library.library', collection=collection.slug) }}">View collection <i class="fas fa-arrow-right"></i></a>
         </header>
         <div class="home-card-rail">{% for game in collection.games %}{{ game_card(game) }}{% endfor %}</div>

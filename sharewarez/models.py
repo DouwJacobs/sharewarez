@@ -777,6 +777,8 @@ class Collection(db.Model):
     name = db.Column(db.String(120), unique=True, nullable=False)
     slug = db.Column(db.String(140), unique=True, nullable=False, index=True)
     description = db.Column(db.Text, nullable=True)
+    artwork_url = db.Column(db.String(1024), nullable=True)
+    parent_id = db.Column(db.Integer, db.ForeignKey('collections.id', ondelete='SET NULL'), nullable=True, index=True)
     show_on_discover = db.Column(db.Boolean, nullable=False, default=False, index=True)
     is_featured = db.Column(db.Boolean, nullable=False, default=False, index=True)
     display_order = db.Column(db.Integer, nullable=False, default=0)
@@ -799,6 +801,8 @@ class Collection(db.Model):
         passive_deletes=True,
         order_by='CollectionGame.display_order',
     )
+    parent = db.relationship('Collection', remote_side=[id], back_populates='children')
+    children = db.relationship('Collection', back_populates='parent', order_by='Collection.display_order', passive_deletes=True)
 
     @property
     def games(self):

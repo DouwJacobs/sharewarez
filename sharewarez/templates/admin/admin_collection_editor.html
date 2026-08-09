@@ -34,6 +34,18 @@
                     {{ form.description(class="form-control", rows="4", placeholder="Tell users what ties these games together") }}
                 </div>
                 {% if not (collection and collection.is_featured) %}
+                <div class="collection-field">
+                    {{ form.parent_id.label(class="form-label") }}
+                    {{ form.parent_id(class="form-control") }}
+                    <small>Optionally nest this row under a top-level collection group.</small>
+                </div>
+                <div class="collection-field">
+                    {{ form.artwork_url.label(class="form-label") }}
+                    {{ form.artwork_url(class="form-control", placeholder="https://…/collection-banner.jpg") }}
+                    <small>Optional banner artwork shown behind the collection heading on Discover.</small>
+                </div>
+                {% endif %}
+                {% if not (collection and collection.is_featured) %}
                 <label class="collection-switch">
                     {{ form.show_on_discover() }}
                     <span><strong>Show on Discover</strong><small>Display this collection as a horizontal game row.</small></span>

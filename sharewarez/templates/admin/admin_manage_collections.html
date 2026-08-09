@@ -20,13 +20,14 @@
         <div class="collection-list">
             {% for collection in collections %}
             <article class="collection-admin-row{% if collection.is_featured %} is-featured{% endif %}">
-                <div class="collection-admin-icon"><i class="fas {{ 'fa-star' if collection.is_featured else 'fa-layer-group' }}" aria-hidden="true"></i></div>
+                <div class="collection-admin-icon"{% if collection.artwork_url %} style="background-image:url('{{ collection.artwork_url|e }}')"{% endif %}><i class="fas {{ 'fa-star' if collection.is_featured else 'fa-layer-group' }}" aria-hidden="true"></i></div>
                 <div class="collection-admin-summary">
                     <div class="collection-admin-title">
                         <h2>{{ collection.name }}</h2>
                         {% if collection.is_featured %}<span class="collection-badge">Discover hero</span>{% endif %}
                         {% if collection.show_on_discover %}<span class="collection-badge">Discover row</span>{% endif %}
                         {% if collection.is_smart %}<span class="collection-badge">Smart</span>{% endif %}
+                        {% if collection.parent %}<span class="collection-badge">Group: {{ collection.parent.name }}</span>{% endif %}
                     </div>
                     <p>{{ collection.description or 'No description yet.' }}</p>
                     {% set collection_count = collection.games|length %}

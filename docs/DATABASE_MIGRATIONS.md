@@ -32,3 +32,4 @@ downgrade where practical. Commit model and migration changes together.
 
 Production containers apply upgrades automatically. Operators can inspect the
 current revision with `flask db current` inside the application container.
+Revision `20260809_03` adds optional one-level collection grouping and collection artwork URLs. Existing collections remain top-level and require no data conversion.
