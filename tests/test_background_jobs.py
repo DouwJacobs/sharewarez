@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta, timezone
 from uuid import uuid4
+from unittest.mock import patch
 
 import pytest
 from sqlalchemy import delete
@@ -101,3 +102,33 @@ def test_anonymous_user_cannot_inspect_jobs(client, app):
         job_id = enqueue('system.noop').id
     response = client.get(f'/api/background-jobs/{job_id}')
     assert response.status_code == 302
+
+
+def test_library_scan_task_runs_existing_scanner(app, db_session):
+    from sharewarez.platform import LibraryPlatform
+    from sharewarez.models import Library
+
+    with app.app_context():
+        library = Library(name=f'queue-library-{uuid4().hex[:8]}', platform=LibraryPlatform.PCWIN)
+        db.session.add(library)
+        db.session.commit()
+        job = enqueue('library.scan', {
+            'library_uuid': library.uuid,
+            'folder_path': '/storage/test-library',
+            'scan_mode': 'folders',
+            'remove_missing': True,
+        })
+        claimed = claim_next('scan-worker')
+
+        with patch('sharewarez.utilities.scan_and_add_games') as scanner:
+            execute(claimed, 'scan-worker')
+
+        scanner.assert_called_once_with(
+            '/storage/test-library', scan_mode='folders',
+            library_uuid=library.uuid, remove_missing=True,
+            download_missing_images=False, force_updates_extras_scan=False,
+            fetch_hltb=False, force_hltb_refetch=False,
+        )
+        completed = db.session.get(BackgroundJob, job.id)
+        assert completed.status == 'completed'
+        assert completed.result['library_uuid'] == library.uuid

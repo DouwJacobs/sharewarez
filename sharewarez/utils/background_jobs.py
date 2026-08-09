@@ -181,3 +181,28 @@ def worker_identity():
 def noop_task(context, payload):
     context.heartbeat(100, 'Completed')
     return {'echo': payload}
+
+
+@register_task('library.scan')
+def library_scan_task(context, payload):
+    """Run the existing scanner in the persistent worker process."""
+    from sharewarez.models import Library
+    from sharewarez.utilities import scan_and_add_games
+
+    library_uuid = payload['library_uuid']
+    library = db.session.get(Library, library_uuid)
+    if library is None:
+        raise ValueError(f"Library not found: {library_uuid}")
+    context.heartbeat(1, f"Scanning {library.name}")
+    scan_and_add_games(
+        payload['folder_path'],
+        scan_mode=payload.get('scan_mode', 'folders'),
+        library_uuid=library_uuid,
+        remove_missing=bool(payload.get('remove_missing')),
+        download_missing_images=bool(payload.get('download_missing_images')),
+        force_updates_extras_scan=bool(payload.get('force_updates_extras_scan')),
+        fetch_hltb=bool(payload.get('fetch_hltb')),
+        force_hltb_refetch=bool(payload.get('force_hltb_refetch')),
+    )
+    context.heartbeat(99, f"Finished scanning {library.name}")
+    return {'library_uuid': library_uuid, 'folder_path': payload['folder_path']}

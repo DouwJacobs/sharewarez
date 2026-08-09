@@ -25,6 +25,7 @@ from sharewarez.utils.gamenames import get_game_names_from_folder, get_game_name
 from sharewarez.utils.scanning import process_game_with_fallback, process_game_updates, process_game_extras, is_scan_job_running
 from sharewarez.utils.igdb_api import IGDBRateLimiter
 from sharewarez.utils.security import is_safe_path, get_allowed_base_directories
+from sharewarez.utils.background_jobs import enqueue
 
 
 @dataclass(frozen=True)
@@ -666,14 +667,26 @@ def handle_auto_scan(auto_form):
             session['active_tab'] = 'auto'
             return redirect(url_for('library.library'))
 
-        @copy_current_request_context
-        def start_scan():
-            scan_and_add_games(full_path, scan_mode, library_uuid, remove_missing, download_missing_images=download_missing_images, force_updates_extras_scan=force_updates_extras_scan, fetch_hltb=fetch_hltb, force_hltb_refetch=force_hltb_refetch)
-
-        thread = Thread(target=start_scan, daemon=True)
-        thread.start()
+        background_job = enqueue(
+            'library.scan',
+            {
+                'folder_path': full_path,
+                'scan_mode': scan_mode,
+                'library_uuid': library_uuid,
+                'remove_missing': remove_missing,
+                'download_missing_images': download_missing_images,
+                'force_updates_extras_scan': force_updates_extras_scan,
+                'fetch_hltb': fetch_hltb,
+                'force_hltb_refetch': force_hltb_refetch,
+            },
+            queue='default',
+            max_attempts=3,
+        )
         
-        flash(f"Auto-scan started for folder: {full_path} and library name: {library.name}", 'info')
+        flash(
+            f"Auto-scan queued for {library.name} (job {background_job.id}).",
+            'info',
+        )
         session['active_tab'] = 'auto'
     else:
         flash(f"Auto-scan form validation failed: {auto_form.errors}")
