@@ -63,7 +63,7 @@ in the destination library; the completion message reports the skipped count.
 - [ ] Automated accessibility testing
 - [ ] Grid, compact-grid, and table library layouts
 - [ ] Persistent density and page-layout preferences
-- [ ] Mobile bottom navigation
+- [x] Mobile bottom navigation
 
 ## Engineering foundations
 

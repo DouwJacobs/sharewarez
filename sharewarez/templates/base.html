@@ -353,6 +353,22 @@
     {% block content %}{% endblock %}
 </div>
 
+{% if current_user.is_authenticated and not is_setup_mode %}
+<nav class="mobile-bottom-nav" aria-label="Primary navigation">
+    {% if show_discovery %}
+    <a href="{{ url_for('discover.discover') }}"{% if request.path.startswith('/discover') %} class="active" aria-current="page"{% endif %}><i class="fas fa-compass" aria-hidden="true"></i><span>Discover</span></a>
+    {% endif %}
+    <a href="{{ url_for('library.library') }}"{% if request.path.startswith('/library') %} class="active" aria-current="page"{% endif %}><i class="fas fa-gamepad" aria-hidden="true"></i><span>Library</span></a>
+    {% if enable_game_requests %}
+    <a href="{{ url_for('game_requests.requests_page') }}"{% if request.path.startswith('/requests') %} class="active" aria-current="page"{% endif %}><i class="fas fa-paper-plane" aria-hidden="true"></i><span>Requests</span></a>
+    {% endif %}
+    <a href="{{ url_for('download.downloads') }}"{% if request.path.startswith('/downloads') %} class="active" aria-current="page"{% endif %}><i class="fas fa-download" aria-hidden="true"></i><span>Downloads</span></a>
+    {% if show_favorites %}
+    <a href="{{ url_for('site.favorites') }}"{% if request.path.startswith('/favorites') %} class="active" aria-current="page"{% endif %}><i class="fas fa-heart" aria-hidden="true"></i><span>Favorites</span></a>
+    {% endif %}
+</nav>
+{% endif %}
+
 
 <!-- Add this near the end of base.html -->
 {% include 'partials/delete_game_modal.html' %}
