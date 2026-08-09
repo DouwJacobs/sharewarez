@@ -52,6 +52,9 @@ export DATABASE_URL="$TEST_DATABASE_URL"
 export SECRET_KEY="quality-gate-only-secret-key-not-for-production"
 export BACKUP_BEFORE_UPGRADE=false
 
+echo "==> Smoke-testing the application factory"
+"$PYTHON_BIN" -c "from sharewarez import create_app; app = create_app(); assert app.name == 'sharewarez'"
+
 echo "==> Running full test suite"
 for test_module in tests/test_*.py; do
     echo "    $test_module"

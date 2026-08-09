@@ -74,6 +74,7 @@ letsrebuild.md
 !docs/BACKUP_RESTORE.md
 !docs/LOCAL_QUALITY_GATE.md
 !docs/ARCHITECTURE.md
+!docs/CONTAINER_SECURITY.md
 .vscode
 
 # IDE

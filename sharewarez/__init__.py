@@ -94,7 +94,7 @@ def create_app():
         flash('The file you tried to upload is too large. Maximum file size is 10MB.', 'error')
         return redirect(request.url)
 
-    @app.context_processo
+    @app.context_processor
     def inject_current_theme():
         """Inject the active theme and instance branding into every template."""
         from sharewarez.utils.processors import get_global_settings
