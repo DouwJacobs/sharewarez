@@ -51,6 +51,65 @@
                     {{ form.smart_rules.label(class="form-label") }}
                     {{ form.smart_rules(class="form-control", rows="10", placeholder='{"match":"all","conditions":[{"field":"genre","operator":"equals","value":"RPG"}]}') }}
                     <small>Fields: name, library, genre, theme, tag, platform, developer, publisher, rating, release_year, size, downloads, has_updates, and has_extras.</small>
+                    <details class="smart-rules-help">
+                        <summary><i class="fas fa-circle-question" aria-hidden="true"></i> How to write smart rules JSON</summary>
+                        <div class="smart-rules-help-content">
+                            <p>Use one JSON object with a <code>match</code> mode and between 1 and 20 conditions. Choose <code>all</code> when every condition must match, or <code>any</code> when one condition is enough.</p>
+                            <pre><code>{
+  "match": "all",
+  "conditions": [
+    {"field": "genre", "operator": "equals", "value": "RPG"},
+    {"field": "rating", "operator": "gte", "value": 80}
+  ]
+}</code></pre>
+
+                            <h3>Fields and operators</h3>
+                            <div class="smart-rules-help-table-wrap">
+                                <table class="smart-rules-help-table">
+                                    <thead><tr><th>Value type</th><th>Fields</th><th>Operators</th><th>Example value</th></tr></thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>Text</td>
+                                            <td><code>name</code>, <code>library</code>, <code>genre</code>, <code>theme</code>, <code>tag</code>, <code>platform</code>, <code>developer</code>, <code>publisher</code></td>
+                                            <td><code>equals</code>, <code>not_equals</code>, <code>contains</code>, <code>not_contains</code></td>
+                                            <td><code>"RPG"</code></td>
+                                        </tr>
+                                        <tr>
+                                            <td>Number</td>
+                                            <td><code>rating</code>, <code>release_year</code>, <code>size</code>, <code>downloads</code></td>
+                                            <td><code>equals</code>, <code>not_equals</code>, <code>gte</code>, <code>lte</code>, <code>gt</code>, <code>lt</code></td>
+                                            <td><code>80</code></td>
+                                        </tr>
+                                        <tr>
+                                            <td>Boolean</td>
+                                            <td><code>has_updates</code>, <code>has_extras</code></td>
+                                            <td><code>equals</code></td>
+                                            <td><code>true</code> or <code>false</code></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <h3>More examples</h3>
+                            <p class="smart-rules-example-label">Games from either of two platforms:</p>
+                            <pre><code>{
+  "match": "any",
+  "conditions": [
+    {"field": "platform", "operator": "equals", "value": "Windows"},
+    {"field": "platform", "operator": "equals", "value": "Linux"}
+  ]
+}</code></pre>
+                            <p class="smart-rules-example-label">Recent games with updates:</p>
+                            <pre><code>{
+  "match": "all",
+  "conditions": [
+    {"field": "release_year", "operator": "gte", "value": 2020},
+    {"field": "has_updates", "operator": "equals", "value": true}
+  ]
+}</code></pre>
+                            <p class="smart-rules-note"><strong>JSON rules:</strong> use double quotes around names and text, lowercase <code>true</code>/<code>false</code> without quotes, and no comments or trailing commas. Text comparisons are case-insensitive. Size uses the stored byte count. Sorting and result limits are configured in the fields below, not inside this JSON.</p>
+                        </div>
+                    </details>
                 </div>
                 <div class="collection-field">
                     {{ form.smart_sort.label(class="form-label") }}

@@ -87,6 +87,49 @@
 .collection-field small,
 .collection-switch small { display: block; margin-top: 5px; color: var(--text-muted); }
 .collection-field textarea { resize: vertical; min-height: 110px; }
+.smart-rules-help {
+    margin-top: 10px;
+    border: 1px solid var(--border-color, rgba(255,255,255,.1));
+    border-radius: 10px;
+    background: var(--input-background, rgba(0,0,0,.12));
+}
+.smart-rules-help summary {
+    padding: 11px 12px;
+    color: var(--primary-color, #7795ff);
+    font-weight: 700;
+    cursor: pointer;
+}
+.smart-rules-help summary i { margin-right: 6px; }
+.smart-rules-help-content { padding: 2px 12px 14px; }
+.smart-rules-help-content p { color: var(--text-muted); line-height: 1.55; }
+.smart-rules-help-content h3 { margin: 18px 0 8px; font-size: .92rem; }
+.smart-rules-help-content pre {
+    max-width: 100%;
+    margin: 10px 0;
+    padding: 12px;
+    overflow-x: auto;
+    border: 1px solid var(--border-color, rgba(255,255,255,.1));
+    border-radius: 8px;
+    color: var(--text-color, #fff);
+    background: color-mix(in srgb, var(--card-background, #151621) 80%, #000);
+    font-size: .78rem;
+    line-height: 1.5;
+    white-space: pre;
+}
+.smart-rules-help-content code { color: inherit; }
+.smart-rules-help-table-wrap { max-width: 100%; overflow-x: auto; }
+.smart-rules-help-table { width: 100%; min-width: 680px; border-collapse: collapse; font-size: .78rem; }
+.smart-rules-help-table th,
+.smart-rules-help-table td {
+    padding: 9px;
+    border: 1px solid var(--border-color, rgba(255,255,255,.1));
+    vertical-align: top;
+    text-align: left;
+}
+.smart-rules-help-table th { color: var(--text-color); background: color-mix(in srgb, var(--primary-color) 12%, transparent); }
+.smart-rules-help-table td { color: var(--text-muted); }
+.smart-rules-example-label { margin: 12px 0 4px !important; color: var(--text-color) !important; font-weight: 700; }
+.smart-rules-note { margin-bottom: 0; }
 .collection-order-field { max-width: 180px; }
 .collection-switch { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 18px; cursor: pointer; }
 .collection-switch input { flex: 0 0 auto; margin-top: 4px; }

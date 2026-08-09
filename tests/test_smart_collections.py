@@ -121,3 +121,26 @@ def test_admin_can_create_smart_collection(client, db_session):
     assert collection.smart_sort == 'rating'
     assert collection.smart_limit == 12
     assert collection.game_links == []
+
+
+def test_collection_editor_explains_smart_rules_json(client, db_session):
+    suffix = uuid4().hex[:8]
+    admin = User(
+        user_id=str(uuid4()), name=f'smart-help-admin-{suffix}',
+        email=f'smart-help-admin-{suffix}@example.test', role='admin',
+        is_email_verified=True,
+    )
+    admin.set_password('test-password')
+    db_session.add(admin)
+    db_session.commit()
+    with client.session_transaction() as session:
+        session['_user_id'] = str(admin.id)
+        session['_fresh'] = True
+
+    response = client.get('/admin/collections/new')
+
+    assert response.status_code == 200
+    assert b'How to write smart rules JSON' in response.data
+    assert b'between 1 and 20 conditions' in response.data
+    assert b'not_contains' in response.data
+    assert b'Size uses the stored byte count' in response.data
