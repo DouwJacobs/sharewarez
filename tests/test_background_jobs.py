@@ -1,0 +1,103 @@
+from datetime import datetime, timedelta, timezone
+from uuid import uuid4
+
+import pytest
+from sqlalchemy import delete
+
+from sharewarez import db
+from sharewarez.models import BackgroundJob, User
+from sharewarez.utils.background_jobs import (
+    claim_next,
+    enqueue,
+    execute,
+    recover_stale_jobs,
+)
+
+
+@pytest.fixture(autouse=True)
+def clean_background_jobs(db_session):
+    db_session.execute(delete(BackgroundJob))
+    db_session.commit()
+    yield
+    db_session.execute(delete(BackgroundJob))
+    db_session.commit()
+
+
+@pytest.fixture
+def jobs_admin(db_session):
+    suffix = uuid4().hex[:8]
+    user = User(
+        user_id=str(uuid4()), name=f'jobs-admin-{suffix}',
+        email=f'jobs-admin-{suffix}@example.test', role='admin',
+        is_email_verified=True,
+    )
+    user.set_password('test-password')
+    db_session.add(user)
+    db_session.commit()
+    return user
+
+
+def login(client, user):
+    with client.session_transaction() as session:
+        session['_user_id'] = str(user.id)
+        session['_fresh'] = True
+
+
+def test_job_is_claimed_and_completed(app, db_session):
+    with app.app_context():
+        job = enqueue('system.noop', {'value': 42})
+        claimed = claim_next('test-worker')
+        assert claimed.id == job.id
+        assert claimed.status == 'running'
+        assert claimed.attempts == 1
+
+        execute(claimed, 'test-worker')
+        completed = db.session.get(BackgroundJob, job.id)
+        assert completed.status == 'completed'
+        assert completed.progress == 100
+        assert completed.result == {'echo': {'value': 42}}
+        assert completed.locked_by is None
+
+
+def test_stale_job_is_requeued(app, db_session):
+    with app.app_context():
+        job = BackgroundJob(
+            task_name='system.noop', status='running', attempts=1,
+            max_attempts=3, locked_by='dead-worker',
+            heartbeat_at=datetime.now(timezone.utc) - timedelta(minutes=10),
+        )
+        db.session.add(job)
+        db.session.commit()
+
+        assert recover_stale_jobs(stale_after_seconds=60) == 1
+        db.session.refresh(job)
+        assert job.status == 'queued'
+        assert job.locked_by is None
+        assert job.progress_message == 'Recovered after worker interruption'
+
+
+def test_admin_can_list_cancel_and_retry_jobs(client, app, db_session, jobs_admin):
+    with app.app_context():
+        job = enqueue('system.noop', {'source': 'test'}, created_by_id=jobs_admin.id)
+        job_id = job.id
+    login(client, jobs_admin)
+
+    response = client.get('/api/background-jobs')
+    assert response.status_code == 200
+    assert response.get_json()['jobs'][0]['id'] == job_id
+
+    response = client.post(f'/api/background-jobs/{job_id}/cancel')
+    assert response.status_code == 200
+    assert response.get_json()['status'] == 'cancelled'
+
+    response = client.post(f'/api/background-jobs/{job_id}/retry')
+    assert response.status_code == 200
+    assert response.get_json()['status'] == 'queued'
+    assert response.get_json()['attempts'] == 0
+
+
+def test_anonymous_user_cannot_inspect_jobs(client, app):
+    with app.app_context():
+        job_id = enqueue('system.noop').id
+    response = client.get(f'/api/background-jobs/{job_id}')
+    assert response.status_code == 302

@@ -598,6 +598,36 @@ class ScanJob(db.Model):
     current_processing = db.Column(db.String(255), nullable=True)  # "Processing: Game Name (450/1000)"
     last_progress_update = db.Column(db.DateTime, nullable=True)
 
+
+class BackgroundJob(db.Model):
+    """Persistent unit of work executed by the dedicated job worker."""
+
+    __tablename__ = 'background_jobs'
+    __table_args__ = (
+        db.Index('ix_background_jobs_claim', 'status', 'available_at', 'created_at'),
+    )
+
+    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    task_name = db.Column(db.String(100), nullable=False)
+    queue = db.Column(db.String(50), nullable=False, default='default')
+    status = db.Column(db.String(20), nullable=False, default='queued')
+    payload = db.Column(JSONEncodedDict, nullable=False, default=dict)
+    result = db.Column(JSONEncodedDict, nullable=True)
+    progress = db.Column(db.Integer, nullable=False, default=0)
+    progress_message = db.Column(db.String(255), nullable=True)
+    attempts = db.Column(db.Integer, nullable=False, default=0)
+    max_attempts = db.Column(db.Integer, nullable=False, default=3)
+    available_at = db.Column(db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
+    created_at = db.Column(db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
+    started_at = db.Column(db.DateTime, nullable=True)
+    completed_at = db.Column(db.DateTime, nullable=True)
+    heartbeat_at = db.Column(db.DateTime, nullable=True)
+    locked_by = db.Column(db.String(100), nullable=True)
+    cancel_requested = db.Column(db.Boolean, nullable=False, default=False)
+    error_message = db.Column(db.Text, nullable=True)
+    created_by_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'), nullable=True)
+    created_by = db.relationship('User')
+
 class UnmatchedFolder(db.Model):
     __tablename__ = 'unmatched_folders'
     id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))

@@ -65,5 +65,11 @@ wait_for_postgres
 
 echo "🎮 Starting SharewareZ Docker container..."
 
+if [[ "${1:-}" == "worker" ]]; then
+    shift
+    echo "Starting persistent background worker..."
+    exec python3 -m sharewarez.job_worker "$@"
+fi
+
 # Pass all arguments through to startweb-docker.sh
-/app/startweb-docker.sh "$@"
+exec /app/startweb-docker.sh "$@"

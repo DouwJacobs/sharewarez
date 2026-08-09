@@ -33,6 +33,31 @@ class DatabaseManager:
             igdb_client_secret VARCHAR(255),
             igdb_last_tested TIMESTAMP
         );
+
+        CREATE TABLE IF NOT EXISTS background_jobs (
+            id VARCHAR(36) PRIMARY KEY,
+            task_name VARCHAR(100) NOT NULL,
+            queue VARCHAR(50) NOT NULL DEFAULT 'default',
+            status VARCHAR(20) NOT NULL DEFAULT 'queued',
+            payload TEXT NOT NULL DEFAULT '{}',
+            result TEXT,
+            progress INTEGER NOT NULL DEFAULT 0,
+            progress_message VARCHAR(255),
+            attempts INTEGER NOT NULL DEFAULT 0,
+            max_attempts INTEGER NOT NULL DEFAULT 3,
+            available_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            started_at TIMESTAMP,
+            completed_at TIMESTAMP,
+            heartbeat_at TIMESTAMP,
+            locked_by VARCHAR(100),
+            cancel_requested BOOLEAN NOT NULL DEFAULT FALSE,
+            error_message TEXT,
+            created_by_id INTEGER REFERENCES users(id) ON DELETE SET NULL
+        );
+
+        CREATE INDEX IF NOT EXISTS ix_background_jobs_claim
+        ON background_jobs(status, available_at, created_at);
         
         ALTER TABLE global_settings
         ADD COLUMN IF NOT EXISTS site_url VARCHAR(255) DEFAULT 'http://127.0.0.1:5006';
