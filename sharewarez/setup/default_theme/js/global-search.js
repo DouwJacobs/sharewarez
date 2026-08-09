@@ -20,9 +20,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const renderSuggestions = suggestions => {
         results.replaceChildren();
         if (!suggestions.length) {
-            results.innerHTML = '<p class="global-search-hint">Type at least two characters to search.</p>';
+            results.hidden = true;
             return;
         }
+        results.hidden = false;
         const heading = document.createElement('p');
         heading.className = 'global-search-section-label';
         heading.textContent = 'Saved searches';
@@ -87,6 +88,7 @@ document.addEventListener('DOMContentLoaded', () => {
         timer = setTimeout(async () => {
             if (controller) controller.abort();
             controller = new AbortController();
+            results.hidden = false;
             results.innerHTML = '<p class="global-search-hint">Searching…</p>';
             try {
                 const response = await fetch(`/api/global-search?q=${encodeURIComponent(query)}`, {signal: controller.signal});

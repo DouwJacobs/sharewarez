@@ -12,6 +12,7 @@
 .global-search-input-wrap input { flex: 1; border: 0; outline: 0; background: transparent; color: var(--text-white); font-size: 1.1rem; }
 .content-global-search input::-webkit-search-cancel-button,.global-search-input-wrap input::-webkit-search-cancel-button { display:none;-webkit-appearance:none }
 .global-search-save { display:grid; width:34px; height:34px; flex:0 0 auto; place-items:center; border:1px solid var(--theme-border-color,var(--border-light)); border-radius:8px; background:transparent; color:var(--theme-primary-color,var(--btn-primary)); }
+.global-search-save[hidden],.global-search-results[hidden] { display:none }
 .global-search-save:hover,.global-search-save:focus-visible { background:rgba(var(--theme-accent-rgb,98,122,239),.14); }
 .global-search-results { max-height: min(58vh, 520px); overflow-y: auto; padding: .5rem; }
 .global-search-result { display: flex; align-items: center; gap: .8rem; padding: .75rem; border-radius: var(--border-radius-sm); color: var(--text-white); text-decoration: none; }
