@@ -8,6 +8,7 @@ from sharewarez.utils.status import get_system_info, get_config_values, get_acti
 from sharewarez import app_version, app_start_time
 from sharewarez import cache
 from sharewarez.utils.event_logging import log_system_event
+from sharewarez.utils.instance_health import get_instance_diagnostics
 
 info_bp = Blueprint('info', __name__)
 
@@ -41,6 +42,7 @@ def admin_server_status():
         active_users = get_active_users()
         log_info = get_log_info()
         database_info = get_database_info()
+        diagnostics = get_instance_diagnostics()
         
         # Format usage statistics
         for usage in [memory_usage, disk_usage, warez_usage]:
@@ -74,7 +76,8 @@ def admin_server_status():
         log_count=log_info['count'],
         active_users=active_users,
         latest_log=log_info['latest'],
-        database_info=database_info
+        database_info=database_info,
+        diagnostics=diagnostics,
     )
 
 
@@ -104,6 +107,7 @@ def new_server_info():
         active_users = get_active_users()
         log_info = get_log_info()
         database_info = get_database_info()
+        diagnostics = get_instance_diagnostics()
 
         log_system_event("Admin accessed new server info page", event_type='audit', event_level='information')
 
@@ -125,5 +129,6 @@ def new_server_info():
         log_count=log_info['count'],
         active_users=active_users,
         latest_log=log_info['latest'],
-        database_info=database_info
+        database_info=database_info,
+        diagnostics=diagnostics,
     )

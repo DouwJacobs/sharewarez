@@ -32,3 +32,8 @@ processor after one successful initialization/migration pass. A normal Docker
 stop is forwarded to both processes. If either process exits unexpectedly, its
 sibling is stopped and the container exits so `restart: unless-stopped` recovers
 the full application unit. Use `docker compose logs -f app` for both streams.
+# Admin instance diagnostics
+
+`/admin/new_server_info` is the single operator-facing instance health dashboard. It combines local database readiness, stale background-job detection, and safe configuration/test-state summaries for SMTP, Discord, and IGDB. It deliberately does not perform outbound network calls during page rendering and never displays integration secrets. Each integration card links to its existing configuration tab under `/admin/integrations`.
+
+Download counts and transfer reporting remain on `/admin/statistics`; they are not duplicated in instance health.

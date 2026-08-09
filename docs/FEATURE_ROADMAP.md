@@ -11,7 +11,7 @@ committed; release version bumps are managed separately.
 - [x] Recurring scan schedules
 - [x] Background-job administration page
 - [x] Backup, restore, validation, retention, and pre-upgrade snapshots
-- [ ] Instance health dashboard and integration diagnostics
+- [x] Instance health dashboard and integration diagnostics
 - [x] Structured, redacted application logging
 
 ## Discovery and organization

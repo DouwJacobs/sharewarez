@@ -1,6 +1,7 @@
 import json
 
 from sharewarez.observability import JsonFormatter
+from sharewarez.utils.instance_health import get_instance_diagnostics
 
 
 def test_health_endpoints(client):
@@ -38,3 +39,15 @@ def test_json_formatter_exposes_only_structured_fields():
     assert payload['request_id'] == 'request-123'
     assert payload['path'] == '/login'
     assert 'query' not in payload
+
+
+def test_instance_diagnostics_are_safe_and_aggregated(app):
+    with app.app_context():
+        diagnostics = get_instance_diagnostics()
+
+    assert diagnostics['database']['status'] == 'healthy'
+    assert diagnostics['jobs']['status'] in {'healthy', 'warning'}
+    assert [item['name'] for item in diagnostics['integrations']] == [
+        'SMTP', 'Discord', 'IGDB',
+    ]
+    assert all('secret' not in item and 'password' not in item for item in diagnostics['integrations'])
