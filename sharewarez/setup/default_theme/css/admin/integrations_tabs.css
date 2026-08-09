@@ -55,7 +55,7 @@
     border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.integrations-tab-pane{min-height:0}.integrations-tab-pane form,.integrations-tab-pane .settings-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem 1.25rem}.integrations-tab-pane form .button-group,.integrations-tab-pane form>p,.integrations-tab-pane form>.form-group:first-child,.integrations-tab-pane .settings-form>.form-group:first-child,.integrations-tab-pane .settings-form>.message,.integrations-tab-pane .settings-form>#testResults,.integrations-tab-pane .settings-form>.last-tested{grid-column:1/-1}.integrations-tab-pane .form-group{margin:0}.integrations-tab-pane .button-group{display:flex;flex-wrap:wrap}.integrations-tab-pane .button-group .btn{flex:1;min-width:11rem}.integrations-tab-pane .settings-form>.btn{width:100%;margin:0!important}.integrations-tab-pane input:not([type=checkbox]),.integrations-tab-pane select{width:100%}
+.integrations-tab-pane{min-height:0}.integrations-tab-pane:not(#discord) form,.integrations-tab-pane .settings-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem 1.25rem}.integrations-tab-pane:not(#discord) form .button-group,.integrations-tab-pane:not(#discord) form>p,.integrations-tab-pane:not(#discord) form>.form-group:first-child,.integrations-tab-pane .settings-form>.form-group:first-child,.integrations-tab-pane .settings-form>.message,.integrations-tab-pane .settings-form>#testResults,.integrations-tab-pane .settings-form>.last-tested{grid-column:1/-1}.integrations-tab-pane .form-group{margin:0}.integrations-tab-pane .button-group{display:flex;flex-wrap:wrap}.integrations-tab-pane .button-group .btn{flex:1;min-width:11rem}.integrations-tab-pane .settings-form>.btn{width:100%;margin:0!important}.integrations-tab-pane input:not([type=checkbox]),.integrations-tab-pane select{width:100%}
 
 .tab-content-wrapper h4 {
     color: rgb(var(--theme-accent-rgb, 0, 150, 255));
@@ -73,7 +73,7 @@
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
-    .integrations-page{width:min(100% - 1rem,1080px);margin-top:1rem}.integrations-panel{padding:.75rem}.integrations-nav-tabs{grid-template-columns:1fr}.integrations-tab-pane form,.integrations-tab-pane .settings-form{grid-template-columns:1fr}.integrations-tab-pane form>*,.integrations-tab-pane .settings-form>*{grid-column:1!important}
+    .integrations-page{width:min(100% - 1rem,1080px);margin-top:1rem}.integrations-panel{padding:.75rem}.integrations-nav-tabs{grid-template-columns:1fr}.integrations-tab-pane:not(#discord) form,.integrations-tab-pane .settings-form{grid-template-columns:1fr}.integrations-tab-pane:not(#discord) form>*,.integrations-tab-pane .settings-form>*{grid-column:1!important}
     .integrations-nav-link {
         padding: 0.75rem 1rem;
         font-size: 0.9rem;

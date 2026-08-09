@@ -30,7 +30,7 @@
                     <h2 id="health-diagnostics-title">Service diagnostics</h2>
                     <p>Configuration and local readiness checks. No credentials or secret values are displayed.</p>
                 </div>
-                <span class="health-overall health-{{ diagnostics.overall }}">{{ diagnostics.overall|title }}</span>
+                <div class="health-diagnostics-meta"><span class="health-overall health-{{ diagnostics.overall }}">{{ diagnostics.overall|title }}</span><small>Checked {{ diagnostics.checked_at.strftime('%H:%M:%S UTC') }}</small></div>
             </div>
             <div class="health-card-grid">
                 <article class="health-card health-{{ diagnostics.database.status }}"><i class="fas fa-database"></i><div><h3>Database</h3><p>{{ diagnostics.database.message }}</p></div></article>
@@ -42,7 +42,6 @@
                 </article>
                 {% endfor %}
             </div>
-            <p class="health-checked">Checked {{ diagnostics.checked_at.strftime('%Y-%m-%d %H:%M:%S UTC') }}</p>
         </section>
         <!-- System Resources -->
         <div class="info-block">

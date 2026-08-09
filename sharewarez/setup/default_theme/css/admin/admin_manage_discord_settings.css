@@ -70,29 +70,34 @@
 
 /* Discord Settings Container */
 .discord-settings-container {
-    display: flex;
-    flex-direction: row;
-    gap: 1.5rem;
-    align-items: flex-start;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1rem;
+    align-items: stretch;
 }
 
 /* Connection Settings Section */
 .connection-settings-section {
-    flex: 1;
     min-width: 0; /* Allow shrinking */
 }
+.connection-settings-section > h4{margin-bottom:.45rem}.connection-settings-section>.text-muted{margin-bottom:.75rem!important}
 
 .connection-card {
     background: rgba(0, 0, 0, 0.3);
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 10px;
-    padding: 1rem;
+    padding: .9rem;
 }
+.discord-settings-container form{display:block}.connection-card form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.75rem}.connection-card form>.mb-3{margin:0!important}.connection-card form>.mb-3:first-of-type{grid-column:1/-1}.connection-card form>.d-flex{grid-column:1/-1;display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));gap:.75rem}.connection-card .input-glass{width:100%;min-height:42px}.connection-card .btn{width:100%;min-height:42px;margin:0!important}
 
 /* Notification Settings Section */
 .notification-settings-section {
-    flex: 1;
     min-width: 0; /* Allow shrinking */
+    margin-top:0!important;
+    padding:.9rem;
+    border:1px solid var(--border-light);
+    border-radius:10px;
+    background:color-mix(in srgb,var(--theme-panel-bg) 72%,transparent);
 }
 
 .notification-settings-section h5 {
@@ -113,10 +118,12 @@
     background: rgba(0, 0, 0, 0.2);
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 6px;
-    padding: 0.75rem;
+    padding:.65rem .75rem;
     transition: all 0.3s ease;
+    min-height:86px;
     height: 100%;
 }
+.notification-settings-section .alert{padding:.7rem .8rem;margin-bottom:.75rem}.notification-settings-section form{display:grid;grid-template-columns:1fr;gap:.75rem;align-items:start}.notification-settings-section form>.row{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:.65rem;margin:0}.notification-settings-section form>.row>[class*=col-]{width:auto;padding:0}.notification-settings-section form>.row>.col-12{grid-column:auto}.notification-settings-section form>.mt-3{display:flex;justify-content:flex-end;margin:0!important}.notification-settings-section form>.mt-3 .btn{width:auto;min-height:42px;white-space:nowrap}@media (min-width:993px){.connection-card form{grid-template-columns:minmax(15rem,2fr) minmax(10rem,1fr) minmax(12rem,1fr) minmax(14rem,auto);align-items:end}.connection-card form>.mb-3:first-of-type,.connection-card form>.d-flex{grid-column:auto}.notification-card{min-height:96px}}
 
 .notification-card:hover {
     background: rgba(0, 0, 0, 0.3);
@@ -205,7 +212,7 @@
 /* Responsive improvements */
 @media (max-width: 992px) {
     .discord-settings-container {
-        flex-direction: column;
+        grid-template-columns:1fr;
         gap: 1.5rem;
     }
 
@@ -216,6 +223,7 @@
 }
 
 @media (max-width: 768px) {
+    .connection-card form,.notification-settings-section form,.notification-settings-section form>.row{grid-template-columns:1fr}.connection-card form>*{grid-column:1!important}.notification-settings-section form>.row>.col-12{grid-column:1}.notification-settings-section form>.mt-3 .btn{width:100%}
     .notification-card {
         padding: 0.6rem;
     }
