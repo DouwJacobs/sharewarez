@@ -42,8 +42,8 @@ def test_search_requires_two_characters(client, search_records):
 def test_search_returns_game_and_library_results(client, search_records):
     user, library, game = search_records
     login(client, user)
-    game_results = client.get('/api/global-search?q=Commander').get_json()['results']
-    library_results = client.get('/api/global-search?q=Arcade').get_json()['results']
+    game_results = client.get(f'/api/global-search?q={game.name}').get_json()['results']
+    library_results = client.get(f'/api/global-search?q={library.name}').get_json()['results']
     assert any(result['title'] == game.name and result['type'] == 'Game' for result in game_results)
     assert any(result['title'] == library.name and result['type'] == 'Library' for result in library_results)
 
@@ -51,8 +51,24 @@ def test_search_returns_game_and_library_results(client, search_records):
 def test_search_tolerates_typographical_errors(client, search_records):
     user, _, game = search_records
     login(client, user)
-    results = client.get('/api/global-search?q=Comander%20Ken').get_json()['results']
+    misspelled = game.name.replace('Commander Keen', 'Comander Ken')
+    results = client.get(f'/api/global-search?q={misspelled}').get_json()['results']
     assert any(result['title'] == game.name and result['type'] == 'Game' for result in results)
+
+
+def test_user_can_save_and_remove_search_suggestions(client, search_records):
+    user, _, _ = search_records
+    login(client, user)
+
+    saved = client.post('/api/global-search/saved', json={'query': 'Commander Keen'})
+    assert saved.status_code == 200
+    assert saved.get_json()['saved_searches'] == ['Commander Keen']
+    suggestions = client.get('/api/global-search?q=').get_json()['suggestions']
+    assert suggestions == ['Commander Keen']
+
+    removed = client.delete('/api/global-search/saved', json={'query': 'Commander Keen'})
+    assert removed.status_code == 200
+    assert removed.get_json()['saved_searches'] == []
 
 
 def test_admin_search_returns_request_results(client, search_records, db_session):

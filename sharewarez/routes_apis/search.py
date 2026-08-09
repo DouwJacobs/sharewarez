@@ -4,7 +4,7 @@ from sqlalchemy import func, literal, or_, select
 from sqlalchemy.orm import selectinload
 
 from sharewarez import db
-from sharewarez.models import Game, GameRequest, Library, User
+from sharewarez.models import Game, GameRequest, Library, User, UserPreference
 from sharewarez.utils.processors import get_global_settings
 from . import apis_bp
 
@@ -33,8 +33,10 @@ def _ranked_search(model, title_column, text_columns, query, limit):
 def global_search():
     """Return compact, permission-aware results for the global command palette."""
     query = request.args.get('q', '').strip()
+    preferences = current_user.preferences
+    saved_searches = list(preferences.saved_searches or []) if preferences else []
     if len(query) < 2:
-        return jsonify({'query': query, 'results': []})
+        return jsonify({'query': query, 'results': [], 'suggestions': saved_searches})
 
     results = []
     games = db.session.execute(
@@ -98,4 +100,26 @@ def global_search():
         } for title, subtitle, url, icon in settings_pages if lowered in f'{title} {subtitle}'.lower())
 
     results.sort(key=lambda item: (-item.get('score', 0), item['title'].lower()))
-    return jsonify({'query': query, 'results': results[:20]})
+    return jsonify({'query': query, 'results': results[:20], 'suggestions': saved_searches})
+
+
+@apis_bp.route('/global-search/saved', methods=['POST', 'DELETE'])
+@login_required
+def saved_global_searches():
+    query = ((request.get_json(silent=True) or {}).get('query') or '').strip()
+    if not 2 <= len(query) <= 80:
+        return jsonify({'error': 'Saved searches must contain 2 to 80 characters.'}), 400
+    preferences = current_user.preferences
+    if preferences is None:
+        preferences = UserPreference(user_id=current_user.id)
+        db.session.add(preferences)
+    saved = list(preferences.saved_searches or [])
+    if request.method == 'POST':
+        saved = [item for item in saved if item.casefold() != query.casefold()]
+        saved.insert(0, query)
+        saved = saved[:12]
+    else:
+        saved = [item for item in saved if item.casefold() != query.casefold()]
+    preferences.saved_searches = saved
+    db.session.commit()
+    return jsonify({'saved_searches': saved})

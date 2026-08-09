@@ -324,6 +324,7 @@
         <div class="global-search-input-wrap">
             <i class="fas fa-magnifying-glass" aria-hidden="true"></i>
             <input id="globalSearchInput" type="search" autocomplete="off" placeholder="Search games, libraries{% if current_user.role == 'admin' %}, requests, users, and settings{% endif %}…" aria-label="Search games, libraries{% if current_user.role == 'admin' %}, requests, users, and settings{% endif %}" aria-controls="globalSearchResults">
+            <button id="globalSearchSave" class="global-search-save" type="button" hidden aria-label="Save this search"><i class="fas fa-bookmark" aria-hidden="true"></i></button>
             <kbd>Esc</kbd>
         </div>
         <div id="globalSearchResults" class="global-search-results" role="listbox"><p class="global-search-hint">Type at least two characters to search.</p></div>

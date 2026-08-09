@@ -695,6 +695,7 @@ class UserPreference(db.Model):
     default_sort = db.Column(db.String(50), default='name')
     default_sort_order = db.Column(db.String(4), default='asc')
     theme = db.Column(db.String(50), default='default')
+    saved_searches = db.Column(JSONEncodedDict, nullable=False, default=list)
     
     user = db.relationship('User', back_populates='preferences')
 
