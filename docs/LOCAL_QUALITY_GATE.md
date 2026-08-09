@@ -11,9 +11,10 @@ python -m pip install -r requirements-dev.txt
 The gate verifies that the production lockfile is current, audits dependencies,
 runs correctness lint and focused static typing, compiles Python sources, starts
 an isolated PostgreSQL 17.6 database, runs every test module against a freshly
-recreated database to prevent legacy state leakage, checks the single
-Alembic head and authoritative version, validates Compose, builds the production
-container, and smoke-compiles the packaged application.
+recreated database to prevent legacy state leakage, applies migrations to a
+freshly initialized schema, checks the single Alembic head and authoritative
+version, validates Compose, builds the production container, and smoke-compiles
+the packaged application.
 
 Set `SKIP_CONTAINER_BUILD=true` only for fast development feedback. It is not a
 valid release result. `TEST_DB_PORT` and `QUALITY_IMAGE_TAG` may be overridden

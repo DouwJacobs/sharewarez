@@ -21,9 +21,31 @@ python -c 'import secrets; print(secrets.token_urlsafe(48))'
 ```
 
 Back up the key outside the database. Losing or changing the active key makes
-stored credentials unreadable. Before changing either key, record the current
-integration values; deploy the new key and re-enter each credential. Automated
-dual-key rotation is not yet provided.
+stored credentials unreadable.
+
+## Rotate the encryption key
+
+Take a verified backup and stop both application services so no credential can
+be changed during rotation. Keep the database running, then execute the atomic
+rotation using the old and new values only in the one-off process environment:
+
+```bash
+docker compose stop app worker
+read -rsp 'Current credential key: ' OLD_CREDENTIAL_ENCRYPTION_KEY && echo
+read -rsp 'Replacement credential key: ' NEW_CREDENTIAL_ENCRYPTION_KEY && echo
+export OLD_CREDENTIAL_ENCRYPTION_KEY NEW_CREDENTIAL_ENCRYPTION_KEY
+docker compose run --rm --no-deps \
+  -e OLD_CREDENTIAL_ENCRYPTION_KEY \
+  -e NEW_CREDENTIAL_ENCRYPTION_KEY \
+  --entrypoint python app -m sharewarez.credentials
+unset OLD_CREDENTIAL_ENCRYPTION_KEY NEW_CREDENTIAL_ENCRYPTION_KEY
+```
+
+If any value cannot be decrypted, the entire transaction rolls back. After a
+successful command, replace `CREDENTIAL_ENCRYPTION_KEY` in `.env` with the new
+value and restart app and worker. If the dedicated key was previously unset,
+use the current `SECRET_KEY` as the old value. Never change the configured key
+before rotation.
 
 Database backups now contain ciphertext, but they still contain other sensitive
 application data and must retain restricted access.
