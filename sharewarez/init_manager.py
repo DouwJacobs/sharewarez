@@ -106,6 +106,17 @@ class InitializationManager:
                 table_names = set(inspect(engine).get_table_names())
                 is_versioned = 'alembic_version' in table_names
                 has_application_schema = {'users', 'games'}.issubset(table_names)
+                has_existing_data_schema = bool(table_names - {'alembic_version'})
+                from sharewarez.utils.migrations import database_needs_upgrade
+                if (
+                    has_existing_data_schema and database_needs_upgrade(Config.SQLALCHEMY_DATABASE_URI)
+                    and os.getenv('BACKUP_BEFORE_UPGRADE', 'false').lower() in {'1', 'true', 'yes'}
+                ):
+                    from sharewarez.backups import create_backup
+                    backup_path = create_backup(
+                        Config.SQLALCHEMY_DATABASE_URI, reason='pre-upgrade'
+                    )
+                    print(f"✅ Pre-upgrade backup verified: {backup_path}")
                 if not is_versioned or not has_application_schema:
                     models.db.metadata.create_all(engine)
                     print("✅ Database tables bootstrapped")

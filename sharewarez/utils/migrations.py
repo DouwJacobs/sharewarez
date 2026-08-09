@@ -35,3 +35,13 @@ def current_revision(database_uri):
             return connection.execute(text('SELECT version_num FROM alembic_version')).scalar()
     finally:
         engine.dispose()
+
+
+def head_revision():
+    from alembic.script import ScriptDirectory
+
+    return ScriptDirectory.from_config(alembic_config('postgresql://unused/unused')).get_current_head()
+
+
+def database_needs_upgrade(database_uri):
+    return current_revision(database_uri) != head_revision()

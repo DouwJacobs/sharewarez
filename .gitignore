@@ -71,6 +71,7 @@ letsrebuild.md
 !docs/UI_AUDIT.md
 !docs/FEATURE_ROADMAP.md
 !docs/DATABASE_MIGRATIONS.md
+!docs/BACKUP_RESTORE.md
 .vscode
 
 # IDE

@@ -29,3 +29,19 @@ def test_versioned_database_skips_legacy_schema_reconciler(app, db_session):
 
     legacy.assert_not_called()
     upgrade.assert_called_once_with(database_uri)
+
+
+def test_pending_migration_creates_pre_upgrade_backup(app, db_session, monkeypatch):
+    database_uri = app.config['SQLALCHEMY_DATABASE_URI']
+    upgrade_database(database_uri)
+    monkeypatch.setenv('BACKUP_BEFORE_UPGRADE', 'true')
+
+    with (
+        patch('sharewarez.utils.migrations.database_needs_upgrade', return_value=True),
+        patch('sharewarez.backups.create_backup', return_value='/backups/pre-upgrade.dump') as backup,
+        patch('sharewarez.utils.migrations.upgrade_database') as upgrade,
+    ):
+        assert InitializationManager()._phase2_database_structure() is True
+
+    backup.assert_called_once_with(database_uri, reason='pre-upgrade')
+    upgrade.assert_called_once_with(database_uri)
