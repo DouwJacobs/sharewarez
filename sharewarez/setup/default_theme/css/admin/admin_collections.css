@@ -45,7 +45,7 @@
     padding: 16px;
     border: 1px solid var(--border-color, rgba(255,255,255,.1));
     border-radius: 14px;
-    background: var(--card-background, rgba(20,21,32,.6));
+    background: color-mix(in srgb, var(--theme-panel-bg, rgba(20,21,32,.92)) 82%, transparent);
 }
 .collection-admin-row.is-featured { border-color: color-mix(in srgb, var(--primary-color, #7795ff) 55%, transparent); }
 .collection-admin-icon {
@@ -83,7 +83,7 @@
     padding: 20px;
     border: 1px solid var(--border-color, rgba(255,255,255,.1));
     border-radius: 14px;
-    background: color-mix(in srgb, var(--card-background, #151621) 88%, transparent);
+    background: color-mix(in srgb, var(--theme-panel-bg, #151621) 88%, transparent);
 }
 .collection-editor-settings h2 { margin: 0 0 18px; font-size: 1.1rem; }
 .collection-field { margin-bottom: 18px; }
@@ -114,7 +114,7 @@
     border: 1px solid var(--border-color, rgba(255,255,255,.1));
     border-radius: 8px;
     color: var(--text-color, #fff);
-    background: color-mix(in srgb, var(--card-background, #151621) 80%, #000);
+    background: color-mix(in srgb, var(--theme-panel-bg, #151621) 84%, black);
     font-size: .78rem;
     line-height: 1.5;
     white-space: pre;
@@ -149,7 +149,7 @@
     overflow-y: auto;
     border: 1px solid var(--border-color);
     border-radius: 10px;
-    background: var(--card-background, #151621);
+    background: var(--theme-panel-bg, #151621);
 }
 .collection-search-result {
     display: flex;

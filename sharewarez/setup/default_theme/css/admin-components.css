@@ -788,10 +788,10 @@
 .admin-ui .info-block {
     position: relative;
     overflow: hidden;
-    background: linear-gradient(145deg, rgba(18, 18, 28, 0.96), rgba(12, 12, 20, 0.98)) !important;
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: var(--theme-card-background, linear-gradient(145deg, rgba(18, 18, 28, 0.96), rgba(12, 12, 20, 0.98))) !important;
+    border: 1px solid var(--theme-border-color, rgba(255, 255, 255, 0.08));
     border-radius: 18px;
-    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.025), 0 18px 48px rgba(0, 0, 0, 0.46), 0 0 60px rgba(80, 120, 255, 0.05);
+    box-shadow: 0 0 0 1px rgba(var(--theme-accent-soft-rgb, 255, 255, 255), 0.025), 0 18px 48px rgba(0, 0, 0, 0.46), 0 0 60px rgba(var(--theme-accent-rgb, 80, 120, 255), 0.05);
 }
 
 .admin-ui .glass-panel::before,
@@ -925,9 +925,9 @@
 
 .admin-ui .nav-tabs .nav-link:hover,
 .admin-ui .nav-tabs .nav-link.active {
-    background: rgba(98, 122, 239, 0.14);
-    border-color: rgba(154, 177, 255, 0.24);
-    color: #fff;
+    background: rgba(var(--theme-accent-rgb, 98, 122, 239), 0.14);
+    border-color: rgba(var(--theme-accent-soft-rgb, 154, 177, 255), 0.24);
+    color: var(--theme-text-primary, #fff);
 }
 
 @media (max-width: 768px) {

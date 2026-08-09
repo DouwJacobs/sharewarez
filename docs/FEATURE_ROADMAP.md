@@ -33,6 +33,7 @@ in the destination library; the completion message reports the skipped count.
 
 - [ ] In-app notification center
 - [ ] Per-event email, Discord, webhook, and in-app preferences
+- [ ] Admin-managed templates for welcome, invite, password, request, download, and other user-facing emails
 - [ ] Play history and time played
 - [ ] Personal ratings, reviews, notes, tags, completion dates, and backlog priority
 - [ ] Granular roles and permissions
