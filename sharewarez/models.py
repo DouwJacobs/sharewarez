@@ -5,6 +5,7 @@ from sqlalchemy.dialects.sqlite import JSON
 from sqlalchemy.orm import relationship
 from sqlalchemy.types import TypeDecorator, TEXT
 from argon2 import PasswordHasher
+from sharewarez.utils.secrets import EncryptedString
 from argon2.exceptions import VerifyMismatchError
 import uuid, json
 from uuid import uuid4
@@ -703,12 +704,12 @@ class GlobalSettings(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     settings = db.Column(JSONEncodedDict)  # Store all settings in a single JSON-encoded column
     last_updated = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
-    discord_webhook_url = db.Column(db.String(512), nullable=True)
+    discord_webhook_url = db.Column(EncryptedString(), nullable=True)
     # SMTP Settings
     smtp_server = db.Column(db.String(255), nullable=True)
     smtp_port = db.Column(db.Integer, nullable=True)
     smtp_username = db.Column(db.String(255), nullable=True)
-    smtp_password = db.Column(db.String(255), nullable=True)
+    smtp_password = db.Column(EncryptedString(), nullable=True)
     smtp_use_tls = db.Column(db.Boolean, default=True)
     smtp_default_sender = db.Column(db.String(255), nullable=True)
     smtp_last_tested = db.Column(db.DateTime, nullable=True)
@@ -718,7 +719,7 @@ class GlobalSettings(db.Model):
     enable_delete_game_on_disk = db.Column(db.Boolean, default=True)
     # IGDB Settings
     igdb_client_id = db.Column(db.String(255), nullable=True)
-    igdb_client_secret = db.Column(db.String(255), nullable=True)
+    igdb_client_secret = db.Column(EncryptedString(), nullable=True)
     igdb_last_tested = db.Column(db.DateTime, nullable=True)
     enable_game_updates = db.Column(db.Boolean, default=False)
     update_folder_name = db.Column(db.String(255), default='updates')

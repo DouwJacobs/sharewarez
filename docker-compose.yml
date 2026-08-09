@@ -29,6 +29,7 @@ services:
       - DATA_FOLDER_WAREZ=/storage
       - UPLOAD_FOLDER=/app/sharewarez/static/library
       - SECRET_KEY=${SECRET_KEY}
+      - CREDENTIAL_ENCRYPTION_KEY=${CREDENTIAL_ENCRYPTION_KEY:-}
       - DEV_MODE=${DEV_MODE:-false}
       - WEB_WORKERS=${WEB_WORKERS:-2}
       - DB_POOL_SIZE=${DB_POOL_SIZE:-2}
@@ -80,6 +81,7 @@ services:
       - DATA_FOLDER_WAREZ=/storage
       - UPLOAD_FOLDER=/app/sharewarez/static/library
       - SECRET_KEY=${SECRET_KEY}
+      - CREDENTIAL_ENCRYPTION_KEY=${CREDENTIAL_ENCRYPTION_KEY:-}
       - DEV_MODE=false
       - DB_POOL_SIZE=${DB_POOL_SIZE:-2}
       - DB_MAX_OVERFLOW=${DB_MAX_OVERFLOW:-2}

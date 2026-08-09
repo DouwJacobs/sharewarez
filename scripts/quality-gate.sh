@@ -55,6 +55,11 @@ export BACKUP_BEFORE_UPGRADE=false
 echo "==> Smoke-testing the application factory"
 "$PYTHON_BIN" -c "from sharewarez import create_app; app = create_app(); assert app.name == 'sharewarez'"
 
+echo "==> Applying migrations to a freshly initialized PostgreSQL schema"
+"$PYTHON_BIN" -c "from sharewarez import create_app, db; app = create_app(); app.app_context().push(); db.create_all()"
+"$PYTHON_BIN" -m flask --app sharewarez:create_app db stamp 20260809_01
+"$PYTHON_BIN" -m flask --app sharewarez:create_app db upgrade
+
 echo "==> Running full test suite"
 for test_module in tests/test_*.py; do
     echo "    $test_module"

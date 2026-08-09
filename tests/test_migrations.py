@@ -1,9 +1,14 @@
 from unittest.mock import patch
 
+from alembic import command
+from sqlalchemy import text
+
 from sharewarez.init_manager import InitializationManager
-from sharewarez.utils.migrations import current_revision, upgrade_database
+from sharewarez.models import GlobalSettings
+from sharewarez.utils.migrations import alembic_config, current_revision, upgrade_database
 
 
+HEAD_REVISION = '20260809_02'
 BASELINE_REVISION = '20260809_01'
 
 
@@ -11,11 +16,33 @@ def test_alembic_baseline_upgrade_is_idempotent(app):
     database_uri = app.config['SQLALCHEMY_DATABASE_URI']
 
     upgrade_database(database_uri)
-    assert current_revision(database_uri) == BASELINE_REVISION
+    assert current_revision(database_uri) == HEAD_REVISION
 
     upgrade_database(database_uri)
-    assert current_revision(database_uri) == BASELINE_REVISION
+    assert current_revision(database_uri) == HEAD_REVISION
 
+
+def test_credential_migration_encrypts_legacy_plaintext(app, db_session):
+    database_uri = app.config['SQLALCHEMY_DATABASE_URI']
+    command.downgrade(alembic_config(database_uri), BASELINE_REVISION)
+    db_session.execute(text(
+        "INSERT INTO global_settings (settings, last_updated, discord_webhook_url, "
+        "smtp_password, igdb_client_secret) VALUES "
+        "('{}', now(), 'https://discord.example/legacy', 'smtp-legacy', 'igdb-legacy')"
+    ))
+    db_session.commit()
+
+    upgrade_database(database_uri)
+
+    stored = db_session.execute(text(
+        'SELECT discord_webhook_url, smtp_password, igdb_client_secret '
+        'FROM global_settings ORDER BY id DESC LIMIT 1'
+    )).one()
+    assert all(value.startswith('enc:v1:') for value in stored)
+    settings = db_session.query(GlobalSettings).order_by(GlobalSettings.id.desc()).first()
+    assert settings.discord_webhook_url == 'https://discord.example/legacy'
+    assert settings.smtp_password == 'smtp-legacy'
+    assert settings.igdb_client_secret == 'igdb-legacy'
 
 def test_versioned_database_skips_legacy_schema_reconciler(app, db_session):
     database_uri = app.config['SQLALCHEMY_DATABASE_URI']

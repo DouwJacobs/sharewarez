@@ -31,6 +31,7 @@ class Config(object):
     # YOU CAN LEAVE ALL THESE SETTINGS AT DEFAULT:
     UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), 'sharewarez/static/library')
     SECRET_KEY = _load_secret_key()
+    CREDENTIAL_ENCRYPTION_KEY = os.getenv('CREDENTIAL_ENCRYPTION_KEY')
     IMAGE_SAVE_PATH = os.path.join(os.path.dirname(__file__), 'sharewarez/static/library/images')
     IGDB_API_ENDPOINT = os.getenv('IGDB_API_ENDPOINT', 'https://api.igdb.com/v4/games')
     SQLALCHEMY_TRACK_MODIFICATIONS = False

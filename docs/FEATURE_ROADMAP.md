@@ -70,4 +70,4 @@ committed; release version bumps are managed separately.
 - [x] Required local test, lint, type-check, migration, and container gates
 - [x] Non-root hardened container runtime
 - [x] Central security headers and rate limiting
-- [ ] Encrypted integration credentials at rest
+- [x] Encrypted integration credentials at rest

@@ -7,6 +7,7 @@ flask_login
 flask_limiter
 flask_caching
 argon2_cffi
+cryptography
 pillow
 WTForms_SQLAlchemy
 requests
