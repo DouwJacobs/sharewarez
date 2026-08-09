@@ -1,10 +1,11 @@
 from uuid import uuid4
 
 import pytest
+from sqlalchemy import select
 
-from sharewarez.models import Collection, Game, Genre, Library, User
+from sharewarez.models import Collection, CollectionGame, Game, Genre, Library, User
 from sharewarez.platform import LibraryPlatform
-from sharewarez.utils.collections import evaluate_smart_collection, parse_smart_rules
+from sharewarez.utils.collections import collection_visibility_clause, evaluate_smart_collection, parse_smart_rules
 
 
 def make_library(db_session):
@@ -168,3 +169,39 @@ def test_admin_can_group_collection_and_set_artwork(client, db_session):
     child = db_session.query(Collection).filter_by(name=f'RPG {suffix}').one()
     assert child.parent_id == group.id
     assert child.artwork_url == 'https://example.test/rpg.jpg'
+
+
+def test_private_collections_are_only_listed_for_owner_or_admin(client, db_session):
+    suffix = uuid4().hex[:8]
+    owner = User(user_id=str(uuid4()), name=f'owner-{suffix}', email=f'owner-{suffix}@example.test', role='user', is_email_verified=True)
+    other = User(user_id=str(uuid4()), name=f'other-{suffix}', email=f'other-{suffix}@example.test', role='user', is_email_verified=True)
+    owner.set_password('test-password')
+    other.set_password('test-password')
+    library = make_library(db_session)
+    game = Game(name=f'Private game {suffix}', library_uuid=library.uuid)
+    shared = Collection(name=f'Shared {suffix}', slug=f'shared-{suffix}', visibility='shared', owner=owner)
+    private = Collection(name=f'Private {suffix}', slug=f'private-{suffix}', visibility='private', owner=owner)
+    db_session.add_all([owner, other, game, shared, private])
+    db_session.flush()
+    db_session.add_all([
+        CollectionGame(collection=shared, game=game, display_order=0),
+        CollectionGame(collection=private, game=game, display_order=0),
+    ])
+    db_session.commit()
+
+    def login(user):
+        with client.session_transaction() as session:
+            session['_user_id'] = str(user.id)
+            session['_fresh'] = True
+
+    login(other)
+    response = client.get('/api/collections')
+    assert response.status_code == 200
+    slugs = {item['slug'] for item in response.get_json()}
+    assert shared.slug in slugs
+    assert private.slug not in slugs
+
+    owner_slugs = set(db_session.execute(
+        select(Collection.slug).where(collection_visibility_clause(owner))
+    ).scalars())
+    assert owner_slugs >= {shared.slug, private.slug}

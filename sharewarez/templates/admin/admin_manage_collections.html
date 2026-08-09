@@ -27,6 +27,7 @@
                         {% if collection.is_featured %}<span class="collection-badge">Discover hero</span>{% endif %}
                         {% if collection.show_on_discover %}<span class="collection-badge">Discover row</span>{% endif %}
                         {% if collection.is_smart %}<span class="collection-badge">Smart</span>{% endif %}
+                        <span class="collection-badge">{{ collection.visibility|title }}</span>
                         {% if collection.parent %}<span class="collection-badge">Group: {{ collection.parent.name }}</span>{% endif %}
                     </div>
                     <p>{{ collection.description or 'No description yet.' }}</p>

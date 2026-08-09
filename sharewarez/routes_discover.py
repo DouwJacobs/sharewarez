@@ -20,7 +20,7 @@ from flask_login import current_user, login_required
 from sharewarez.models import Image
 from sharewarez.utils.processors import get_global_settings
 from sharewarez import cache
-from sharewarez.utils.collections import evaluate_smart_collection
+from sharewarez.utils.collections import collection_visibility_clause, evaluate_smart_collection
 
 discover_bp = Blueprint('discover', __name__)
 
@@ -160,7 +160,10 @@ def discover():
     featured_candidates = section_data.get('highest_rated') or section_data.get('latest_games') or []
     curated_collections = db.session.execute(
         select(Collection)
-        .where((Collection.is_featured.is_(True)) | (Collection.show_on_discover.is_(True)))
+        .where(
+            (Collection.is_featured.is_(True)) | (Collection.show_on_discover.is_(True)),
+            collection_visibility_clause(current_user),
+        )
         .order_by(Collection.is_featured.desc(), Collection.display_order, Collection.name)
     ).scalars().all()
 

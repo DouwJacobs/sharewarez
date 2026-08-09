@@ -8,7 +8,7 @@ from sharewarez.models import GlobalSettings
 from sharewarez.utils.migrations import alembic_config, current_revision, upgrade_database
 
 
-HEAD_REVISION = '20260809_02'
+HEAD_REVISION = '20260809_04'
 BASELINE_REVISION = '20260809_01'
 
 

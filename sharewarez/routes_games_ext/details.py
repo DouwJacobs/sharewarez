@@ -11,6 +11,7 @@ from sharewarez.utils.functions import format_size, sanitize_string_input, get_u
 from sharewarez.utils.game_core import get_game_by_uuid
 from sharewarez.utils.security import sanitize_path_for_logging
 from sharewarez.utils.event_logging import log_system_event
+from sharewarez.utils.collections import collection_visibility_clause
 from urllib.parse import urlparse
 
 from . import games_bp
@@ -260,7 +261,7 @@ def game_details(game_uuid):
         collections = db.session.execute(
             select(Collection)
             .join(CollectionGame)
-            .where(CollectionGame.game_uuid == game.uuid)
+            .where(CollectionGame.game_uuid == game.uuid, collection_visibility_clause(current_user))
             .order_by(Collection.is_featured.desc(), Collection.name)
         ).scalars().all()
 

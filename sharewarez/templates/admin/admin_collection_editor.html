@@ -46,6 +46,11 @@
                 </div>
                 {% endif %}
                 {% if not (collection and collection.is_featured) %}
+                <div class="collection-field">
+                    {{ form.visibility.label(class="form-label") }}
+                    {{ form.visibility(class="form-control") }}
+                    <small>Shared collections are visible to all signed-in users. Private collections are visible only to their owner and administrators.</small>
+                </div>
                 <label class="collection-switch">
                     {{ form.show_on_discover() }}
                     <span><strong>Show on Discover</strong><small>Display this collection as a horizontal game row.</small></span>

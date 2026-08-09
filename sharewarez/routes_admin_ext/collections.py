@@ -1,7 +1,7 @@
 import json
 
 from flask import abort, flash, jsonify, redirect, render_template, request, url_for
-from flask_login import login_required
+from flask_login import current_user, login_required
 from sqlalchemy import func, select
 from sqlalchemy.orm import selectinload
 
@@ -75,6 +75,8 @@ def add_collection():
                 description=(form.description.data or '').strip() or None,
                 artwork_url=(form.artwork_url.data or '').strip() or None,
                 parent_id=form.parent_id.data or None,
+                visibility=form.visibility.data,
+                owner_id=current_user.id,
                 show_on_discover=form.show_on_discover.data,
                 display_order=form.display_order.data or 0,
                 is_smart=form.is_smart.data,
@@ -127,6 +129,9 @@ def edit_collection(collection_id):
                 item.display_order = form.display_order.data or 0
                 item.parent_id = form.parent_id.data or None
                 item.artwork_url = (form.artwork_url.data or '').strip() or None
+                item.visibility = form.visibility.data
+                if item.owner_id is None:
+                    item.owner_id = current_user.id
                 item.is_smart = wants_smart
                 item.smart_rules = smart_rules
                 item.smart_sort = form.smart_sort.data

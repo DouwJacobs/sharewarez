@@ -18,7 +18,7 @@ committed; release version bumps are managed separately.
 
 - [x] Smart collections based on validated library rules
 - [x] Nested/grouped collections and collection artwork
-- [ ] Private versus shared collections
+- [x] Private versus shared collections
 - [ ] Collection import/export
 - [ ] Unified full-text and fuzzy search
 - [ ] Search suggestions, saved searches, and keyboard navigation

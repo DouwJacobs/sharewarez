@@ -1,7 +1,7 @@
 import json
 import re
 
-from sqlalchemy import and_, extract, func, not_, or_, select
+from sqlalchemy import and_, extract, func, not_, or_, select, true
 
 from sharewarez import db
 from sharewarez.models import Collection, CollectionGame, Developer, Game, GameTag, Genre, Library, Platform, Publisher, Theme
@@ -24,6 +24,13 @@ SMART_SORTS = {
     'downloads': Game.times_downloaded,
     'size': Game.size,
 }
+
+
+def collection_visibility_clause(user):
+    """Return the SQL predicate for collections visible to a signed-in user."""
+    if getattr(user, 'role', None) == 'admin':
+        return true()
+    return or_(Collection.visibility == 'shared', Collection.owner_id == user.id)
 
 
 def slugify_collection_name(value):

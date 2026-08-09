@@ -1,10 +1,11 @@
 # /sharewarez/routes_apis/library.py
 from flask import jsonify, request, url_for
-from flask_login import login_required
+from flask_login import current_user, login_required
 from sharewarez import db
 from sharewarez.models import Collection, Library
 from sharewarez.utils.auth import admin_required
 from sqlalchemy import select
+from sharewarez.utils.collections import collection_visibility_clause
 from . import apis_bp
 
 @apis_bp.route('/get_libraries')
@@ -28,7 +29,7 @@ def get_libraries():
 def get_collections():
     collections = db.session.execute(
         select(Collection)
-        .where(Collection.game_links.any())
+        .where(Collection.game_links.any(), collection_visibility_clause(current_user))
         .order_by(Collection.is_featured.desc(), Collection.name)
     ).scalars().all()
     return jsonify([{'slug': item.slug, 'name': item.name} for item in collections])
