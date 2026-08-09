@@ -21,6 +21,25 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log("Applied setting for:", key, "; Value:", currentSettings[key]);
     });
 
+    const mobileNavItems = ['discover', 'library', 'requests', 'downloads', 'favorites'];
+    const savedMobileOrder = Array.isArray(currentSettings.mobileNavOrder)
+        ? currentSettings.mobileNavOrder
+        : mobileNavItems;
+    const mobileNavSlots = Array.from(document.querySelectorAll('.mobile-nav-slot'));
+    mobileNavSlots.forEach(function(select, index) {
+        select.value = savedMobileOrder[index] || mobileNavItems[index];
+    });
+    function updateMobileNavOptions() {
+        const selected = mobileNavSlots.map(select => select.value);
+        mobileNavSlots.forEach(function(select) {
+            Array.from(select.options).forEach(function(option) {
+                option.disabled = option.value !== select.value && selected.includes(option.value);
+            });
+        });
+    }
+    mobileNavSlots.forEach(select => select.addEventListener('change', updateMobileNavOptions));
+    updateMobileNavOptions();
+
     // Form submission handler
     document.getElementById('settingsForm').addEventListener('submit', function(e) {
         e.preventDefault();
@@ -61,8 +80,16 @@ document.addEventListener('DOMContentLoaded', function() {
             notifyRequesterRequestEmail: document.getElementById('notifyRequesterRequestEmail').checked,
             notifyAdminRequestEmail: document.getElementById('notifyAdminRequestEmail').checked,
             notifyDiscordNewRequests: document.getElementById('notifyDiscordNewRequests').checked,
-            notifyDiscordRequestUpdates: document.getElementById('notifyDiscordRequestUpdates').checked
+            notifyDiscordRequestUpdates: document.getElementById('notifyDiscordRequestUpdates').checked,
+            mobileNavOrder: (function() {
+                const pinned = mobileNavSlots.map(select => select.value);
+                return pinned.concat(mobileNavItems.filter(item => !pinned.includes(item)));
+            })()
         };
+        if (new Set(settings.mobileNavOrder).size !== mobileNavItems.length) {
+            alert('Each mobile navigation position must use a different destination.');
+            return;
+        }
         console.log("Settings to be saved:", settings);
 
         fetch('/admin/settings', {

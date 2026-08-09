@@ -7,6 +7,10 @@ Collection portability uses the versioned `gamestack.collection` JSON format.
 Imports revalidate smart rules and skip manual game UUIDs that are unavailable
 in the destination library; the completion message reports the skipped count.
 
+Mobile navigation uses four administrator-ordered primary destinations plus a
+More menu for overflow, administrative, help, and account destinations. The
+desktop sidebar remains the full navigation surface.
+
 ## Reliability and operations
 
 - [x] Persistent background-job queue

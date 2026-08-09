@@ -4,6 +4,16 @@ from sqlalchemy import select
 from sharewarez import app_version
 import json
 
+MOBILE_NAV_DEFAULT = ['discover', 'library', 'requests', 'downloads', 'favorites']
+
+
+def normalize_mobile_nav_order(value):
+    if not isinstance(value, list) or len(value) != len(MOBILE_NAV_DEFAULT):
+        return MOBILE_NAV_DEFAULT.copy()
+    if set(value) != set(MOBILE_NAV_DEFAULT):
+        return MOBILE_NAV_DEFAULT.copy()
+    return value
+
 def get_loc(page):
     
     with open(f'sharewarez/static/localization/en/{page}.json', 'r', encoding='utf8') as f:
@@ -34,6 +44,7 @@ def get_global_settings():
         'enableServerStatusFeature': True,
         'enableNewsletterFeature': True,
         'enableGameRequests': True,
+        'mobileNavOrder': MOBILE_NAV_DEFAULT.copy(),
         'showVersion': True,
         'defaultTheme': 'default',
         'enableDeleteGameOnDisk': True,
@@ -55,6 +66,7 @@ def get_global_settings():
             'enable_server_status': settings_record.settings.get('enableServerStatusFeature', False),
             'enable_newsletter': settings_record.settings.get('enableNewsletterFeature', False),
             'enable_game_requests': settings.get('enableGameRequests', True),
+            'mobile_nav_order': normalize_mobile_nav_order(settings.get('mobileNavOrder')),
             'show_version': settings_record.settings.get('showVersion', False),
             'show_discovery': settings.get('showDiscovery', True),
             'show_favorites': settings.get('showFavorites', True),
@@ -78,6 +90,7 @@ def get_global_settings():
         'enable_server_status': True,
         'enable_newsletter': True,
         'enable_game_requests': True,
+        'mobile_nav_order': MOBILE_NAV_DEFAULT.copy(),
         'show_version': True,
         'show_discovery': True,
         'show_favorites': True,

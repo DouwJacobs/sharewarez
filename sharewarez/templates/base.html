@@ -354,18 +354,27 @@
 </div>
 
 {% if current_user.is_authenticated and not is_setup_mode %}
+{% set mobile_nav = namespace(links=[]) %}
+{% for item_id in mobile_nav_order %}
+    {% if item_id == 'discover' and show_discovery %}{% set mobile_nav.links = mobile_nav.links + [{'id': item_id, 'label': 'Discover', 'icon': 'fa-compass', 'href': url_for('discover.discover'), 'active': request.path.startswith('/discover')}] %}
+    {% elif item_id == 'library' %}{% set mobile_nav.links = mobile_nav.links + [{'id': item_id, 'label': 'Library', 'icon': 'fa-gamepad', 'href': url_for('library.library'), 'active': request.path.startswith('/library')}] %}
+    {% elif item_id == 'requests' and enable_game_requests %}{% set mobile_nav.links = mobile_nav.links + [{'id': item_id, 'label': 'Requests', 'icon': 'fa-paper-plane', 'href': url_for('game_requests.requests_page'), 'active': request.path.startswith('/requests')}] %}
+    {% elif item_id == 'downloads' %}{% set mobile_nav.links = mobile_nav.links + [{'id': item_id, 'label': 'Downloads', 'icon': 'fa-download', 'href': url_for('download.downloads'), 'active': request.path.startswith('/downloads')}] %}
+    {% elif item_id == 'favorites' and show_favorites %}{% set mobile_nav.links = mobile_nav.links + [{'id': item_id, 'label': 'Favorites', 'icon': 'fa-heart', 'href': url_for('site.favorites'), 'active': request.path.startswith('/favorites')}] %}
+    {% endif %}
+{% endfor %}
 <nav class="mobile-bottom-nav" aria-label="Primary navigation">
-    {% if show_discovery %}
-    <a href="{{ url_for('discover.discover') }}"{% if request.path.startswith('/discover') %} class="active" aria-current="page"{% endif %}><i class="fas fa-compass" aria-hidden="true"></i><span>Discover</span></a>
-    {% endif %}
-    <a href="{{ url_for('library.library') }}"{% if request.path.startswith('/library') %} class="active" aria-current="page"{% endif %}><i class="fas fa-gamepad" aria-hidden="true"></i><span>Library</span></a>
-    {% if enable_game_requests %}
-    <a href="{{ url_for('game_requests.requests_page') }}"{% if request.path.startswith('/requests') %} class="active" aria-current="page"{% endif %}><i class="fas fa-paper-plane" aria-hidden="true"></i><span>Requests</span></a>
-    {% endif %}
-    <a href="{{ url_for('download.downloads') }}"{% if request.path.startswith('/downloads') %} class="active" aria-current="page"{% endif %}><i class="fas fa-download" aria-hidden="true"></i><span>Downloads</span></a>
-    {% if show_favorites %}
-    <a href="{{ url_for('site.favorites') }}"{% if request.path.startswith('/favorites') %} class="active" aria-current="page"{% endif %}><i class="fas fa-heart" aria-hidden="true"></i><span>Favorites</span></a>
-    {% endif %}
+    {% for item in mobile_nav.links[:4] %}<a href="{{ item.href }}"{% if item.active %} class="active" aria-current="page"{% endif %}><i class="fas {{ item.icon }}" aria-hidden="true"></i><span>{{ item.label }}</span></a>{% endfor %}
+    <details class="mobile-more">
+        <summary aria-label="More navigation"><i class="fas fa-ellipsis" aria-hidden="true"></i><span>More</span></summary>
+        <div class="mobile-more-menu">
+            {% for item in mobile_nav.links[4:] %}<a href="{{ item.href }}"{% if item.active %} class="active" aria-current="page"{% endif %}><i class="fas {{ item.icon }}" aria-hidden="true"></i><span>{{ item.label }}</span></a>{% endfor %}
+            {% if show_trailers %}<a href="{{ url_for('site.random_trailers') }}"{% if request.path.startswith('/trailers') %} class="active" aria-current="page"{% endif %}><i class="fas fa-film" aria-hidden="true"></i><span>Trailers</span></a>{% endif %}
+            {% if current_user.role == 'admin' %}<a href="{{ url_for('site.admin_dashboard') }}"{% if request.path.startswith('/admin') %} class="active" aria-current="page"{% endif %}><i class="fas fa-shield-halved" aria-hidden="true"></i><span>Administration</span></a>{% endif %}
+            {% if show_help_button %}<a href="{{ url_for('site.helpfaq') }}"{% if request.path.startswith('/help') %} class="active" aria-current="page"{% endif %}><i class="fas fa-circle-question" aria-hidden="true"></i><span>Help</span></a>{% endif %}
+            <a href="{{ url_for('settings.settings_profile_view') }}"><i class="fas fa-user" aria-hidden="true"></i><span>Profile</span></a>
+        </div>
+    </details>
 </nav>
 {% endif %}
 

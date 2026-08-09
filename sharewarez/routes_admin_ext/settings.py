@@ -20,6 +20,7 @@ MIN_BATCH_SIZE = 10
 MAX_BATCH_SIZE = 1000
 DEFAULT_BATCH_SIZE = 200
 DEFAULT_DOWNLOAD_THREADS = 8
+MOBILE_NAV_ITEMS = ('discover', 'library', 'requests', 'downloads', 'favorites')
 
 # Default settings configuration
 DEFAULT_SETTINGS = {
@@ -43,6 +44,7 @@ DEFAULT_SETTINGS = {
     'showFavorites': True,
     'showTrailers': True,
     'showPlayStatus': True,
+    'mobileNavOrder': list(MOBILE_NAV_ITEMS),
     'enableDeleteGameOnDisk': True,
     'enableGameUpdates': True,
     'enableGameExtras': True,
@@ -158,6 +160,14 @@ def validate_settings_data(settings_data):
     request_limit = settings_data.get('maxActiveRequestsPerUser')
     if request_limit is not None and (not isinstance(request_limit, int) or not 1 <= request_limit <= 100):
         errors.append("Active game request limit must be between 1 and 100")
+
+    mobile_nav_order = settings_data.get('mobileNavOrder')
+    if mobile_nav_order is not None and (
+        not isinstance(mobile_nav_order, list)
+        or len(mobile_nav_order) != len(MOBILE_NAV_ITEMS)
+        or set(mobile_nav_order) != set(MOBILE_NAV_ITEMS)
+    ):
+        errors.append("Mobile navigation order must contain every available item exactly once")
 
     return errors
 

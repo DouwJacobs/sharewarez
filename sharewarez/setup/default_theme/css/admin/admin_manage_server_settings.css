@@ -146,6 +146,12 @@
     margin-bottom: 14px;
 }
 
+.mobile-nav-order-fields {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0 10px;
+}
+
 .settings-requests-section {
     margin-top: 18px !important;
 }
@@ -205,6 +211,10 @@
     }
 
     .settings-inline-fields {
+        grid-template-columns: 1fr;
+    }
+
+    .mobile-nav-order-fields {
         grid-template-columns: 1fr;
     }
 }

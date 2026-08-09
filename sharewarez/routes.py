@@ -1122,7 +1122,7 @@ def _theme_asset_fingerprint(full_path, modified_ns, size):
 @bp.app_template_filter('theme_asset')
 @pass_context
 def theme_asset_filter(_template_context, path):
-    """Resolve a themed URL and fingerprint CSS for automatic cache busting."""
+    """Resolve a themed URL and fingerprint CSS/JS for automatic cache busting."""
     from flask_login import current_user
 
     from sharewarez.utils.themes import resolve_theme_id
@@ -1141,7 +1141,7 @@ def theme_asset_filter(_template_context, path):
         full_path = os.path.join(current_app.static_folder, relative_path)
 
     version_kwargs = {}
-    if str(path).lower().endswith('.css') and os.path.isfile(full_path):
+    if str(path).lower().endswith(('.css', '.js')) and os.path.isfile(full_path):
         stat = os.stat(full_path)
         version_kwargs['v'] = _theme_asset_fingerprint(
             full_path, stat.st_mtime_ns, stat.st_size,

@@ -238,6 +238,20 @@
                                     Show Trailers
                                 </label>
                             </div>
+
+                            <hr class="my-3">
+                            <h6><i class="fas fa-mobile-screen"></i> Mobile navigation</h6>
+                            <p class="form-text">Choose the four destinations pinned before the More menu.</p>
+                            <div class="mobile-nav-order-fields">
+                                {% for slot in range(1, 5) %}
+                                <div class="form-group">
+                                    <label class="form-label" for="mobileNavSlot{{ slot }}">Position {{ slot }}</label>
+                                    <select class="form-select form-select-sm mobile-nav-slot" id="mobileNavSlot{{ slot }}">
+                                        <option value="discover">Discover</option><option value="library">Library</option><option value="requests">Requests</option><option value="downloads">Downloads</option><option value="favorites">Favorites</option>
+                                    </select>
+                                </div>
+                                {% endfor %}
+                            </div>
                         </div>
                     </div>
                 </div>

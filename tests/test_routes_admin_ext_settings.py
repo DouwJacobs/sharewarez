@@ -85,6 +85,12 @@ def clean_settings(db_session):
 
 class TestValidateSettingsData:
     """Test the validate_settings_data function."""
+
+    def test_mobile_navigation_order_validation(self):
+        valid = ['library', 'discover', 'downloads', 'favorites', 'requests']
+        assert validate_settings_data({'mobileNavOrder': valid}) == []
+        errors = validate_settings_data({'mobileNavOrder': ['library'] * 5})
+        assert any('every available item exactly once' in error for error in errors)
     
     def test_validate_settings_valid_data(self):
         """Test validation with valid settings data."""

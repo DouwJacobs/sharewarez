@@ -5,6 +5,12 @@
 
 @media (max-width: 768px) {
 
+    #mobileMenuToggle,
+    #sidebar,
+    #sidebarBackdrop {
+        display: none !important;
+    }
+
     #content {
         padding-bottom: calc(82px + env(safe-area-inset-bottom)) !important;
     }
@@ -26,7 +32,8 @@
         backdrop-filter: blur(18px);
     }
 
-    .mobile-bottom-nav a {
+    .mobile-bottom-nav > a,
+    .mobile-bottom-nav > .mobile-more > summary {
         display: flex;
         min-width: 0;
         min-height: 52px;
@@ -40,13 +47,58 @@
         font-weight: 700;
         line-height: 1;
         text-decoration: none;
+        cursor: pointer;
+        list-style: none;
     }
 
-    .mobile-bottom-nav a i {
+    .mobile-bottom-nav > a i,
+    .mobile-bottom-nav > .mobile-more > summary i {
         font-size: 1.05rem;
     }
 
-    .mobile-bottom-nav a.active {
+    .mobile-bottom-nav > a.active,
+    .mobile-bottom-nav > .mobile-more[open] > summary {
+        background: rgba(var(--theme-accent-rgb, 98, 122, 239), 0.15);
+        color: rgb(var(--theme-accent-soft-rgb, 154, 177, 255));
+    }
+
+    .mobile-more {
+        position: relative;
+        min-width: 0;
+    }
+
+    .mobile-more > summary::-webkit-details-marker {
+        display: none;
+    }
+
+    .mobile-more-menu {
+        position: absolute;
+        right: 4px;
+        bottom: calc(100% + 12px);
+        display: grid;
+        width: min(270px, calc(100vw - 20px));
+        padding: 8px;
+        border: 1px solid rgba(var(--theme-accent-soft-rgb, 154, 177, 255), 0.22);
+        border-radius: 14px;
+        background: var(--theme-panel-bg, rgba(18, 19, 31, 0.98));
+        box-shadow: 0 18px 45px rgba(0, 0, 0, 0.45);
+        backdrop-filter: blur(18px);
+    }
+
+    .mobile-more-menu a {
+        display: flex;
+        min-height: 46px;
+        align-items: center;
+        gap: 12px;
+        padding: 0 13px;
+        border-radius: 9px;
+        color: var(--theme-text-primary, #f5f7ff);
+        font-size: 0.86rem;
+        font-weight: 650;
+        text-decoration: none;
+    }
+
+    .mobile-more-menu a:is(:hover, :focus-visible, .active) {
         background: rgba(var(--theme-accent-rgb, 98, 122, 239), 0.15);
         color: rgb(var(--theme-accent-soft-rgb, 154, 177, 255));
     }
