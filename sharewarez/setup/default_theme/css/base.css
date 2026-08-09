@@ -1193,6 +1193,29 @@ form textarea:focus {
     }
 }
 
+/* Respect the operating-system motion preference across every page. */
+@media (prefers-reduced-motion: reduce) {
+    html:focus-within {
+        scroll-behavior: auto !important;
+    }
+
+    *,
+    *::before,
+    *::after {
+        scroll-behavior: auto !important;
+        transition-duration: 0.01ms !important;
+        transition-delay: 0ms !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+    }
+
+    .app-spinner,
+    .button-spinner {
+        animation-duration: 1.5s !important;
+        animation-iteration-count: infinite !important;
+    }
+}
+
 .pwa-update-notice {
     position: fixed;
     right: 18px;

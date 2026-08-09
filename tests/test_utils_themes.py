@@ -128,6 +128,17 @@ class TestBuilderThemes:
         with pytest.raises(ValueError, match='RRGGBB'):
             theme_manager.save_builder_theme(data)
 
+    def test_builder_rejects_low_contrast_palette(self, theme_manager, tmp_path):
+        theme_manager.theme_folder = str(tmp_path)
+        data = self.palette()
+        data['text_secondary'] = '#333333'
+        with pytest.raises(ValueError, match='Theme contrast is too low'):
+            theme_manager.save_builder_theme(data)
+
+    def test_wcag_contrast_ratio(self):
+        assert ThemeManager.contrast_ratio('#ffffff', '#000000') == pytest.approx(21)
+        assert ThemeManager.contrast_ratio('#777777', '#ffffff') == pytest.approx(4.478, rel=0.001)
+
 
 class TestGetDefaultTheme:
     """Tests for get_default_theme method."""
@@ -178,6 +189,16 @@ class TestDefaultThemeControlSystem:
         assert '--control-height-sm: 34px' in css
         assert '.form-select' in css
         assert '.input-group > :is(.form-control, .form-select, .btn)' in css
+
+    def test_default_theme_has_global_reduced_motion_policy(self):
+        from pathlib import Path
+
+        installed = Path('sharewarez/static/library/themes/default/css/base.css').read_text()
+        setup = Path('sharewarez/setup/default_theme/css/base.css').read_text()
+        assert installed == setup
+        assert '@media (prefers-reduced-motion: reduce)' in installed
+        assert 'transition-duration: 0.01ms !important' in installed
+        assert 'animation-iteration-count: 1 !important' in installed
 
     def test_mobile_header_exposes_account_menu_with_accessible_targets(self):
         from pathlib import Path

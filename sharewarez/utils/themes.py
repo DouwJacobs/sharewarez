@@ -117,6 +117,37 @@ class ThemeManager:
         value = value.lstrip('#')
         return tuple(int(value[index:index + 2], 16) for index in (0, 2, 4))
 
+    @classmethod
+    def contrast_ratio(cls, foreground, background):
+        """Return the WCAG contrast ratio for two #RRGGBB colors."""
+        def luminance(color):
+            channels = []
+            for channel in cls._rgb(color):
+                value = channel / 255
+                channels.append(value / 12.92 if value <= 0.04045 else ((value + 0.055) / 1.055) ** 2.4)
+            return 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2]
+
+        light, dark = sorted((luminance(foreground), luminance(background)), reverse=True)
+        return (light + 0.05) / (dark + 0.05)
+
+    @classmethod
+    def _validate_builder_contrast(cls, palette):
+        surfaces = ('background', 'sidebar', 'card', 'panel')
+        failures = []
+        for text_key in ('text_primary', 'text_secondary'):
+            for surface_key in surfaces:
+                ratio = cls.contrast_ratio(palette[text_key], palette[surface_key])
+                if ratio < 4.5:
+                    failures.append(f"{text_key} on {surface_key} ({ratio:.2f}:1)")
+        focus_ratio = cls.contrast_ratio(palette['accent_soft'], palette['background'])
+        if focus_ratio < 3:
+            failures.append(f"accent_soft on background ({focus_ratio:.2f}:1)")
+        if failures:
+            raise ValueError(
+                "Theme contrast is too low. Required: 4.5:1 for text and 3:1 for focus accents. "
+                + "Failed: " + ", ".join(failures)
+            )
+
     def save_builder_theme(self, data, theme_id=None):
         """Create or update a theme produced by the visual builder."""
         name = str(data.get('name', '')).strip()
@@ -133,6 +164,7 @@ class ThemeManager:
                 'text_primary', 'text_secondary'
             )
         }
+        self._validate_builder_contrast(palette)
         target_id = secure_filename(name) if theme_id is None else secure_filename(theme_id)
         if not target_id or target_id in ('default', 'Default'):
             raise ValueError('Choose a different theme name.')

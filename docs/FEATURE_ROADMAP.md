@@ -59,7 +59,7 @@ in the destination library; the completion message reports the skipped count.
 - [ ] Offline-capable PWA library browsing
 - [ ] Push notifications and update-available prompt
 - [ ] Complete keyboard navigation and dialog focus management
-- [ ] Reduced-motion and theme contrast validation
+- [x] Reduced-motion and theme contrast validation
 - [ ] Automated accessibility testing
 - [ ] Grid, compact-grid, and table library layouts
 - [ ] Persistent density and page-layout preferences
