@@ -66,6 +66,14 @@ class CollectionForm(FlaskForm):
     show_on_discover = BooleanField('Show as a row on Discover')
     display_order = IntegerField('Discover row order', validators=[Optional(), NumberRange(min=0, max=9999)], default=0)
     game_order = HiddenField('Selected games')
+    is_smart = BooleanField('Smart collection')
+    smart_rules = TextAreaField('Smart rules', validators=[Optional(), Length(max=10000)])
+    smart_sort = SelectField('Sort smart results', choices=[
+        ('name', 'Name'), ('rating', 'Rating'), ('release_date', 'Release date'),
+        ('date_added', 'Date added'), ('downloads', 'Downloads'), ('size', 'Size'),
+    ], default='name')
+    smart_sort_order = SelectField('Sort direction', choices=[('asc', 'Ascending'), ('desc', 'Descending')], default='asc')
+    smart_limit = IntegerField('Maximum games', validators=[Optional(), NumberRange(min=1, max=200)], default=24)
     submit = SubmitField('Save collection')
     
 class ResetPasswordRequestForm(FlaskForm):

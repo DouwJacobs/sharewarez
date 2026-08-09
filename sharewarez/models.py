@@ -779,6 +779,11 @@ class Collection(db.Model):
     show_on_discover = db.Column(db.Boolean, nullable=False, default=False, index=True)
     is_featured = db.Column(db.Boolean, nullable=False, default=False, index=True)
     display_order = db.Column(db.Integer, nullable=False, default=0)
+    is_smart = db.Column(db.Boolean, nullable=False, default=False, index=True)
+    smart_rules = db.Column(JSONEncodedDict, nullable=True)
+    smart_sort = db.Column(db.String(30), nullable=False, default='name')
+    smart_sort_order = db.Column(db.String(4), nullable=False, default='asc')
+    smart_limit = db.Column(db.Integer, nullable=False, default=24)
     created_at = db.Column(db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
     updated_at = db.Column(
         db.DateTime,
@@ -796,6 +801,9 @@ class Collection(db.Model):
 
     @property
     def games(self):
+        if self.is_smart:
+            from sharewarez.utils.collections import evaluate_smart_collection
+            return evaluate_smart_collection(self)
         return [link.game for link in self.game_links]
 
     def __repr__(self):

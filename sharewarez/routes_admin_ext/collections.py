@@ -1,3 +1,5 @@
+import json
+
 from flask import abort, flash, jsonify, redirect, render_template, request, url_for
 from flask_login import login_required
 from sqlalchemy import func, select
@@ -7,7 +9,10 @@ from sharewarez import db
 from sharewarez.forms import CollectionForm, CsrfProtectForm
 from sharewarez.models import Collection, CollectionGame, Game, Image
 from sharewarez.utils.auth import admin_required
-from sharewarez.utils.collections import replace_collection_games, unique_collection_slug
+from sharewarez.utils.collections import (
+    parse_smart_rules, replace_collection_games,
+    smart_collection_statement, unique_collection_slug,
+)
 from sharewarez.utils.event_logging import log_system_event
 
 from . import admin2_bp
@@ -47,18 +52,30 @@ def collections():
 def add_collection():
     form = CollectionForm()
     if form.validate_on_submit():
+        smart_rules = None
+        if form.is_smart.data:
+            try:
+                smart_rules = parse_smart_rules(form.smart_rules.data)
+            except ValueError as exc:
+                form.smart_rules.errors.append(str(exc))
         if _collection_name_exists(form.name.data):
             form.name.errors.append('A collection with this name already exists.')
-        else:
+        elif not form.errors:
             item = Collection(
                 name=form.name.data.strip(),
                 slug=unique_collection_slug(form.name.data),
                 description=(form.description.data or '').strip() or None,
                 show_on_discover=form.show_on_discover.data,
                 display_order=form.display_order.data or 0,
+                is_smart=form.is_smart.data,
+                smart_rules=smart_rules,
+                smart_sort=form.smart_sort.data,
+                smart_sort_order=form.smart_sort_order.data,
+                smart_limit=form.smart_limit.data or 24,
             )
             db.session.add(item)
-            replace_collection_games(item, _ordered_uuids(form.game_order.data))
+            if not item.is_smart:
+                replace_collection_games(item, _ordered_uuids(form.game_order.data))
             db.session.commit()
             log_system_event(f'Collection created: {item.name}', event_type='collection')
             flash('Collection created.', 'success')
@@ -78,18 +95,34 @@ def edit_collection(collection_id):
     form = CollectionForm(obj=item)
     if request.method == 'GET':
         form.game_order.data = ','.join(link.game_uuid for link in item.game_links)
+        form.smart_rules.data = json.dumps(item.smart_rules, indent=2) if item.smart_rules else ''
 
     if form.validate_on_submit():
+        smart_rules = None
+        wants_smart = bool(form.is_smart.data and not item.is_featured)
+        if wants_smart:
+            try:
+                smart_rules = parse_smart_rules(form.smart_rules.data)
+            except ValueError as exc:
+                form.smart_rules.errors.append(str(exc))
         if _collection_name_exists(form.name.data, item.id):
             form.name.errors.append('A collection with this name already exists.')
-        else:
+        elif not form.errors:
             if not item.is_featured:
                 item.name = form.name.data.strip()
                 item.slug = unique_collection_slug(item.name, item.id)
                 item.show_on_discover = form.show_on_discover.data
                 item.display_order = form.display_order.data or 0
+                item.is_smart = wants_smart
+                item.smart_rules = smart_rules
+                item.smart_sort = form.smart_sort.data
+                item.smart_sort_order = form.smart_sort_order.data
+                item.smart_limit = form.smart_limit.data or 24
             item.description = (form.description.data or '').strip() or None
-            replace_collection_games(item, _ordered_uuids(form.game_order.data))
+            if item.is_smart:
+                item.game_links.clear()
+            else:
+                replace_collection_games(item, _ordered_uuids(form.game_order.data))
             db.session.commit()
             log_system_event(f'Collection updated: {item.name}', event_type='collection')
             flash('Collection updated.', 'success')
@@ -135,3 +168,24 @@ def search_collection_games():
         seen.add(game_uuid)
         results.append({'uuid': game_uuid, 'name': name, 'cover_url': cover_url})
     return jsonify({'games': results})
+
+
+@admin2_bp.route('/admin/api/collections/smart-preview', methods=['POST'])
+@login_required
+@admin_required
+def preview_smart_collection():
+    data = request.get_json(silent=True) or {}
+    try:
+        rules = parse_smart_rules(data.get('rules'))
+        statement = smart_collection_statement(
+            rules, data.get('sort', 'name'), data.get('sort_order', 'asc'),
+            min(int(data.get('limit', 24)), 50),
+        )
+    except (TypeError, ValueError) as exc:
+        return jsonify({'error': str(exc)}), 400
+    games = db.session.execute(statement).scalars().unique().all()
+    return jsonify({'count': len(games), 'games': [
+        {'uuid': game.uuid, 'name': game.name, 'rating': game.rating,
+         'library_name': game.library.name if game.library else None}
+        for game in games
+    ]})

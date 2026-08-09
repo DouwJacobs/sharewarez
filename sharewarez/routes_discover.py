@@ -20,6 +20,7 @@ from flask_login import current_user, login_required
 from sharewarez.models import Image
 from sharewarez.utils.processors import get_global_settings
 from sharewarez import cache
+from sharewarez.utils.collections import evaluate_smart_collection
 
 discover_bp = Blueprint('discover', __name__)
 
@@ -165,7 +166,7 @@ def discover():
 
     collection_games = {collection.id: [] for collection in curated_collections}
     if curated_collections:
-        collection_ids = list(collection_games)
+        collection_ids = [collection.id for collection in curated_collections if not collection.is_smart]
         ranked_links = select(
             CollectionGame.collection_id,
             CollectionGame.game_uuid,
@@ -175,15 +176,19 @@ def discover():
                 order_by=CollectionGame.display_order,
             ).label('row_number'),
         ).where(CollectionGame.collection_id.in_(collection_ids)).subquery()
-        curated_rows = db.session.execute(
-            select(ranked_links.c.collection_id, Game)
-            .join(Game, Game.uuid == ranked_links.c.game_uuid)
-            .options(selectinload(Game.genres), selectinload(Game.library))
-            .where(ranked_links.c.row_number <= 12)
-            .order_by(ranked_links.c.collection_id, ranked_links.c.display_order)
-        ).all()
-        for collection_id, game in curated_rows:
-            collection_games[collection_id].append(game)
+        if collection_ids:
+            curated_rows = db.session.execute(
+                select(ranked_links.c.collection_id, Game)
+                .join(Game, Game.uuid == ranked_links.c.game_uuid)
+                .options(selectinload(Game.genres), selectinload(Game.library))
+                .where(ranked_links.c.row_number <= 12)
+                .order_by(ranked_links.c.collection_id, ranked_links.c.display_order)
+            ).all()
+            for collection_id, game in curated_rows:
+                collection_games[collection_id].append(game)
+        for collection in curated_collections:
+            if collection.is_smart:
+                collection_games[collection.id] = evaluate_smart_collection(collection, limit=12)
 
     curated_games = list({
         game.uuid: game

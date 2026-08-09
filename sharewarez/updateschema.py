@@ -87,6 +87,13 @@ class DatabaseManager:
 
         CREATE INDEX IF NOT EXISTS ix_library_scan_schedules_due
         ON library_scan_schedules(is_enabled, next_run);
+
+        ALTER TABLE collections ADD COLUMN IF NOT EXISTS is_smart BOOLEAN NOT NULL DEFAULT FALSE;
+        ALTER TABLE collections ADD COLUMN IF NOT EXISTS smart_rules TEXT;
+        ALTER TABLE collections ADD COLUMN IF NOT EXISTS smart_sort VARCHAR(30) NOT NULL DEFAULT 'name';
+        ALTER TABLE collections ADD COLUMN IF NOT EXISTS smart_sort_order VARCHAR(4) NOT NULL DEFAULT 'asc';
+        ALTER TABLE collections ADD COLUMN IF NOT EXISTS smart_limit INTEGER NOT NULL DEFAULT 24;
+        CREATE INDEX IF NOT EXISTS ix_collections_is_smart ON collections(is_smart);
         
         ALTER TABLE global_settings
         ADD COLUMN IF NOT EXISTS site_url VARCHAR(255) DEFAULT 'http://127.0.0.1:5006';

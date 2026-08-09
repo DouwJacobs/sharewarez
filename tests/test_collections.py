@@ -28,6 +28,8 @@ def test_collection_preserves_curated_game_order(db_session):
         name=f'Collection Library {uuid4().hex[:8]}',
         platform=LibraryPlatform.PCWIN,
     )
+    db_session.add(library)
+    db_session.flush()
     games = [
         Game(name=f'Collection Game {index} {uuid4().hex[:6]}', library_uuid=library.uuid)
         for index in range(3)
@@ -37,7 +39,7 @@ def test_collection_preserves_curated_game_order(db_session):
         slug=f'rpg-favourites-{uuid4().hex[:8]}',
         show_on_discover=True,
     )
-    db_session.add_all([library, collection, *games])
+    db_session.add_all([collection, *games])
     db_session.flush()
     db_session.add_all([
         CollectionGame(collection=collection, game=games[2], display_order=0),
@@ -60,12 +62,14 @@ def test_deleting_collection_does_not_delete_games(db_session):
         name=f'Delete Collection Library {uuid4().hex[:8]}',
         platform=LibraryPlatform.PCWIN,
     )
+    db_session.add(library)
+    db_session.flush()
     game = Game(name=f'Persistent Game {uuid4().hex[:8]}', library_uuid=library.uuid)
     collection = Collection(
         name=f'Temporary Collection {uuid4().hex[:8]}',
         slug=f'temporary-{uuid4().hex[:8]}',
     )
-    db_session.add_all([library, game, collection])
+    db_session.add_all([game, collection])
     db_session.flush()
     db_session.add(CollectionGame(collection=collection, game=game, display_order=0))
     db_session.commit()

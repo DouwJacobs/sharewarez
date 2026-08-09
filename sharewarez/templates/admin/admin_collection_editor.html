@@ -43,12 +43,33 @@
                     {{ form.display_order(class="form-control", min="0", max="9999") }}
                     <small>Lower numbers appear first.</small>
                 </div>
+                <label class="collection-switch">
+                    {{ form.is_smart() }}
+                    <span><strong>Smart collection</strong><small>Populate this collection automatically from validated library rules.</small></span>
+                </label>
+                <div class="collection-field">
+                    {{ form.smart_rules.label(class="form-label") }}
+                    {{ form.smart_rules(class="form-control", rows="10", placeholder='{"match":"all","conditions":[{"field":"genre","operator":"equals","value":"RPG"}]}') }}
+                    <small>Fields: name, library, genre, theme, tag, platform, developer, publisher, rating, release_year, size, downloads, has_updates, and has_extras.</small>
+                </div>
+                <div class="collection-field">
+                    {{ form.smart_sort.label(class="form-label") }}
+                    {{ form.smart_sort(class="form-control") }}
+                </div>
+                <div class="collection-field">
+                    {{ form.smart_sort_order.label(class="form-label") }}
+                    {{ form.smart_sort_order(class="form-control") }}
+                </div>
+                <div class="collection-field">
+                    {{ form.smart_limit.label(class="form-label") }}
+                    {{ form.smart_limit(class="form-control", min="1", max="200") }}
+                </div>
                 {% endif %}
             </section>
 
             <section class="collection-game-picker" aria-labelledby="collectionGamesHeading">
                 <div class="collection-picker-heading">
-                    <div><h2 id="collectionGamesHeading">Games</h2><p>Search, add, and arrange the display order.</p></div>
+                    <div><h2 id="collectionGamesHeading">Manual games</h2><p>Used when Smart collection is disabled. Search, add, and arrange the display order.</p></div>
                     <span class="collection-count" data-selected-count>{{ collection.game_links|length if collection else 0 }}</span>
                 </div>
                 <label class="collection-search">
