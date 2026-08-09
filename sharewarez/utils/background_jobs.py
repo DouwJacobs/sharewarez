@@ -46,6 +46,35 @@ def enqueue(task_name, payload=None, *, queue='default', max_attempts=3, created
     return job
 
 
+def cancel_job(job: BackgroundJob):
+    """Request cancellation while preserving cooperative worker shutdown."""
+    if job.status not in {'queued', 'running'}:
+        raise ValueError('Job is not cancellable')
+    job.cancel_requested = True
+    if job.status == 'queued':
+        job.status = 'cancelled'
+        job.completed_at = datetime.now(timezone.utc)
+    db.session.commit()
+    return job
+
+
+def retry_job(job: BackgroundJob):
+    """Reset a terminal job so the worker can claim it again."""
+    if job.status not in {'failed', 'cancelled'}:
+        raise ValueError('Only failed or cancelled jobs can be retried')
+    job.status = 'queued'
+    job.cancel_requested = False
+    job.attempts = 0
+    job.available_at = datetime.now(timezone.utc)
+    job.started_at = job.completed_at = job.heartbeat_at = None
+    job.locked_by = None
+    job.error_message = None
+    job.progress = 0
+    job.progress_message = 'Retry queued'
+    db.session.commit()
+    return job
+
+
 def claim_next(worker_id: str, queue='default'):
     """Atomically claim one runnable job using PostgreSQL row locking."""
     now = datetime.now(timezone.utc)

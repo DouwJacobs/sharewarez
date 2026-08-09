@@ -1,5 +1,3 @@
-from datetime import datetime, timezone
-
 from flask import jsonify, request
 from flask_login import login_required
 from sqlalchemy import select
@@ -7,6 +5,7 @@ from sqlalchemy import select
 from sharewarez import db
 from sharewarez.models import BackgroundJob
 from sharewarez.utils.auth import admin_required
+from sharewarez.utils.background_jobs import cancel_job, retry_job
 from . import apis_bp
 
 
@@ -57,13 +56,10 @@ def cancel_background_job(job_id):
     job = db.session.get(BackgroundJob, job_id)
     if job is None:
         return jsonify({'error': 'Job not found'}), 404
-    if job.status not in {'queued', 'running'}:
-        return jsonify({'error': 'Job is not cancellable'}), 409
-    job.cancel_requested = True
-    if job.status == 'queued':
-        job.status = 'cancelled'
-        job.completed_at = datetime.now(timezone.utc)
-    db.session.commit()
+    try:
+        cancel_job(job)
+    except ValueError as exc:
+        return jsonify({'error': str(exc)}), 409
     return jsonify(_serialize(job))
 
 
@@ -74,16 +70,8 @@ def retry_background_job(job_id):
     job = db.session.get(BackgroundJob, job_id)
     if job is None:
         return jsonify({'error': 'Job not found'}), 404
-    if job.status not in {'failed', 'cancelled'}:
-        return jsonify({'error': 'Only failed or cancelled jobs can be retried'}), 409
-    job.status = 'queued'
-    job.cancel_requested = False
-    job.attempts = 0
-    job.available_at = datetime.now(timezone.utc)
-    job.started_at = job.completed_at = job.heartbeat_at = None
-    job.locked_by = None
-    job.error_message = None
-    job.progress = 0
-    job.progress_message = 'Retry queued'
-    db.session.commit()
+    try:
+        retry_job(job)
+    except ValueError as exc:
+        return jsonify({'error': str(exc)}), 409
     return jsonify(_serialize(job))

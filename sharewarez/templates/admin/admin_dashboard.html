@@ -87,6 +87,12 @@
                     </a>
                     <span class="button-label">System Logs</span>
                 </div>
+                <div class="admin-button-item" data-toggle="tooltip" title="Monitor and manage background work">
+                    <a href="{{ url_for('admin2.background_jobs') }}" class="btn btn-circle" aria-label="Manage background jobs">
+                        <i class="fas fa-tasks"></i>
+                    </a>
+                    <span class="button-label">Background Jobs</span>
+                </div>
                 {% if enable_server_status %}
                 <div class="admin-button-item" data-toggle="tooltip" title="View server information">
                     <a href="{{ url_for('info.new_server_info') }}" class="btn btn-circle" aria-label="View server status">

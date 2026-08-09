@@ -101,6 +101,50 @@ def test_admin_can_list_cancel_and_retry_jobs(client, app, db_session, jobs_admi
     assert response.get_json()['attempts'] == 0
 
 
+def test_admin_job_page_filters_and_displays_details(client, app, db_session, jobs_admin):
+    with app.app_context():
+        queued = enqueue('system.noop', {'source': 'visible'}, created_by_id=jobs_admin.id)
+        failed = BackgroundJob(
+            task_name='library.scan', status='failed', queue='maintenance',
+            payload={'source': 'hidden'}, error_message='Filesystem unavailable',
+        )
+        db.session.add(failed)
+        db.session.commit()
+        queued_id = queued.id
+    login(client, jobs_admin)
+
+    response = client.get('/admin/background-jobs?status=queued&q=system.noop')
+
+    assert response.status_code == 200
+    assert b'Background jobs' in response.data
+    assert queued_id.encode() in response.data
+    assert b'Filesystem unavailable' not in response.data
+    assert b'Payload' in response.data
+
+
+def test_admin_job_page_can_cancel_and_retry(client, app, db_session, jobs_admin):
+    with app.app_context():
+        job_id = enqueue('system.noop', {'source': 'ui'}).id
+    login(client, jobs_admin)
+
+    response = client.post(f'/admin/background-jobs/{job_id}/cancel')
+    assert response.status_code == 302
+    with app.app_context():
+        assert db.session.get(BackgroundJob, job_id).status == 'cancelled'
+
+    response = client.post(f'/admin/background-jobs/{job_id}/retry')
+    assert response.status_code == 302
+    with app.app_context():
+        job = db.session.get(BackgroundJob, job_id)
+        assert job.status == 'queued'
+        assert job.progress_message == 'Retry queued'
+
+
+def test_anonymous_user_cannot_open_job_admin_page(client):
+    response = client.get('/admin/background-jobs')
+    assert response.status_code == 302
+
+
 def test_anonymous_user_cannot_inspect_jobs(client, app):
     with app.app_context():
         job_id = enqueue('system.noop').id

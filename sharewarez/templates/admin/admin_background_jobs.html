@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% from "partials/ui_components.html" import pagination as render_pagination %}
+{% block styles %}
+{{ super() }}
+<link rel="stylesheet" href="{{ 'css/admin/admin_background_jobs.css'|theme_asset }}">
+{% endblock %}
+{% block content %}
+<main class="jobs-admin-shell">
+    <header class="jobs-header">
+        <div><p class="jobs-eyebrow">Operations</p><h1>Background jobs</h1><p>Monitor queued work, inspect failures, and safely cancel or retry jobs.</p></div>
+        <a class="btn btn-secondary" href="{{ url_for('admin2.background_jobs', status=status_filter, q=search, per_page=per_page) }}"><i class="fas fa-sync-alt" aria-hidden="true"></i> Refresh</a>
+    </header>
+    <section class="job-summary" aria-label="Job status summary">
+        {% for status in statuses %}<a class="job-summary-card status-{{ status }}{% if status_filter == status %} is-active{% endif %}" href="{{ url_for('admin2.background_jobs', status=status, q=search, per_page=per_page) }}"><span>{{ status|title }}</span><strong>{{ counts.get(status, 0) }}</strong></a>{% endfor %}
+    </section>
+    <form class="job-filters card" method="get">
+        <label>Search<input type="search" name="q" value="{{ search }}" placeholder="Task, queue, job ID, message"></label>
+        <label>Status<select name="status"><option value="">All statuses</option>{% for status in statuses %}<option value="{{ status }}"{% if status_filter == status %} selected{% endif %}>{{ status|title }}</option>{% endfor %}</select></label>
+        <label>Per page<select name="per_page">{% for size in (10, 25, 50, 100) %}<option value="{{ size }}"{% if per_page == size %} selected{% endif %}>{{ size }}</option>{% endfor %}</select></label>
+        <button class="btn btn-primary" type="submit">Apply</button>{% if search or status_filter %}<a class="btn btn-secondary" href="{{ url_for('admin2.background_jobs') }}">Clear</a>{% endif %}
+    </form>
+    <section class="job-list" aria-live="polite">
+        {% for job in pagination.items %}
+        <details class="job-card card status-{{ job.status }}">
+            <summary><span class="job-state">{{ job.status|title }}</span><span class="job-main"><strong>{{ job.task_name }}</strong><small>{{ job.id }}</small></span><span class="job-progress"><span style="--job-progress: {{ job.progress }}%"></span><small>{{ job.progress }}%</small></span><time datetime="{{ job.created_at.isoformat() }}">{{ job.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</time></summary>
+            <div class="job-details">
+                <dl><div><dt>Queue</dt><dd>{{ job.queue }}</dd></div><div><dt>Attempts</dt><dd>{{ job.attempts }} / {{ job.max_attempts }}</dd></div><div><dt>Worker</dt><dd>{{ job.locked_by or '—' }}</dd></div><div><dt>Started</dt><dd>{{ job.started_at.strftime('%Y-%m-%d %H:%M:%S') if job.started_at else '—' }}</dd></div><div><dt>Completed</dt><dd>{{ job.completed_at.strftime('%Y-%m-%d %H:%M:%S') if job.completed_at else '—' }}</dd></div><div><dt>Heartbeat</dt><dd>{{ job.heartbeat_at.strftime('%Y-%m-%d %H:%M:%S') if job.heartbeat_at else '—' }}</dd></div></dl>
+                {% if job.progress_message %}<p class="job-message"><strong>Progress:</strong> {{ job.progress_message }}</p>{% endif %}{% if job.error_message %}<pre class="job-error">{{ job.error_message }}</pre>{% endif %}
+                <div class="job-data"><details><summary>Payload</summary><pre>{{ job.payload|tojson(indent=2) }}</pre></details>{% if job.result is not none %}<details><summary>Result</summary><pre>{{ job.result|tojson(indent=2) }}</pre></details>{% endif %}</div>
+                <div class="job-actions">{% if job.status in ('queued', 'running') %}<form method="post" action="{{ url_for('admin2.cancel_background_job', job_id=job.id) }}" onsubmit="return confirm('Cancel this job?');">{{ csrf_form.hidden_tag() }}<button class="btn btn-danger" type="submit">Cancel</button></form>{% elif job.status in ('failed', 'cancelled') %}<form method="post" action="{{ url_for('admin2.retry_background_job', job_id=job.id) }}">{{ csrf_form.hidden_tag() }}<button class="btn btn-primary" type="submit">Retry</button></form>{% endif %}</div>
+            </div>
+        </details>
+        {% else %}<div class="job-empty card"><i class="fas fa-check-circle" aria-hidden="true"></i><h2>No jobs found</h2><p>There are no background jobs matching these filters.</p></div>{% endfor %}
+    </section>
+    {{ render_pagination(pagination, 'admin2.background_jobs', {'status': status_filter, 'q': search, 'per_page': per_page}) }}
+</main>
+{% endblock %}

@@ -9,7 +9,7 @@ committed; release version bumps are managed separately.
 - [x] Dedicated worker service with retries, cancellation, and recovery
 - [x] Incremental filesystem fingerprints for library scans
 - [x] Recurring scan schedules
-- [ ] Background-job administration page
+- [x] Background-job administration page
 - [ ] Backup, restore, validation, retention, and pre-upgrade snapshots
 - [ ] Instance health dashboard and integration diagnostics
 - [ ] Structured, redacted application logging
