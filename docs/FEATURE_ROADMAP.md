@@ -41,7 +41,7 @@ in the destination library; the completion message reports the skipped count.
 
 ## Downloads and delivery
 
-- [ ] HTTP range and resumable downloads
+- [x] HTTP range and resumable downloads
 - [ ] Per-user quotas and concurrency limits
 - [ ] Bandwidth limits and queue priorities
 - [ ] Download expiration and active-transfer monitoring

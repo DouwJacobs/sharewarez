@@ -88,7 +88,7 @@ def get_content_type_for_file(file_path, filename):
     return mime_type if mime_type else 'application/octet-stream'
 
 
-async def async_generate_file_chunks(file_path, chunk_size=2097152):
+async def async_generate_file_chunks(file_path, chunk_size=2097152, start=0, length=None):
     """
     Async generator that yields file chunks for streaming downloads.
     
@@ -111,11 +111,17 @@ async def async_generate_file_chunks(file_path, chunk_size=2097152):
                         event_type='download', event_level='information')
         
         async with aiofiles.open(file_path, 'rb') as file:
-            while True:
-                chunk = await file.read(chunk_size)
+            if start:
+                await file.seek(start)
+            remaining = length
+            while remaining is None or remaining > 0:
+                read_size = chunk_size if remaining is None else min(chunk_size, remaining)
+                chunk = await file.read(read_size)
                 if not chunk:
                     break
                 yield chunk
+                if remaining is not None:
+                    remaining -= len(chunk)
                 
         log_system_event(f"Completed async file stream: {os.path.basename(file_path)}", 
                         event_type='download', event_level='information')
@@ -134,7 +140,9 @@ async def async_generate_file_chunks(file_path, chunk_size=2097152):
         raise
 
 
-async def create_async_streaming_response(file_path, filename, chunk_size=2097152):
+async def create_async_streaming_response(
+    file_path, filename, chunk_size=2097152, start=0, length=None
+):
     """
     Create an async streaming response for file downloads.
     This function returns an async generator and headers for ASGI usage.
@@ -165,15 +173,19 @@ async def create_async_streaming_response(file_path, filename, chunk_size=209715
         content_type = get_content_type_for_file(file_path, filename)
         
         # Create headers for download
+        response_length = file_size - start if length is None else length
         headers = {
             'content-type': content_type,
             'content-disposition': f'attachment; filename="{secure_name}"',
-            'content-length': str(file_size),
+            'content-length': str(response_length),
+            'accept-ranges': 'bytes',
             'cache-control': 'no-cache'
         }
         
         # Return the async generator and headers
-        async_generator = async_generate_file_chunks(file_path, chunk_size)
+        async_generator = async_generate_file_chunks(
+            file_path, chunk_size, start=start, length=response_length
+        )
         return async_generator, headers
         
     except Exception as e:

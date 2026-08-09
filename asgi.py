@@ -18,6 +18,37 @@ from sharewarez.utils.event_logging import log_system_event
 from sqlalchemy import select
 
 
+def parse_single_byte_range(range_header, file_size):
+    """Return an inclusive (start, end) tuple for one valid HTTP byte range."""
+    if not range_header:
+        return None
+    if file_size <= 0 or not range_header.startswith("bytes="):
+        raise ValueError("Invalid byte range")
+
+    value = range_header[6:].strip()
+    if not value or "," in value or "-" not in value:
+        raise ValueError("Only one byte range is supported")
+
+    start_text, end_text = value.split("-", 1)
+    try:
+        if not start_text:
+            suffix_length = int(end_text)
+            if suffix_length <= 0:
+                raise ValueError
+            start = max(0, file_size - suffix_length)
+            end = file_size - 1
+        else:
+            start = int(start_text)
+            end = file_size - 1 if not end_text else int(end_text)
+            if start < 0 or end < start or start >= file_size:
+                raise ValueError
+            end = min(end, file_size - 1)
+    except (TypeError, ValueError):
+        raise ValueError("Invalid byte range") from None
+
+    return start, end
+
+
 # Proper ASGI application with lifespan protocol support
 class LazyASGIApp:
     def __init__(self):
@@ -148,7 +179,7 @@ class LazyASGIApp:
             # Stream the file
             filename = os.path.basename(file_path)
             log_system_event(f"Async file download: {filename}", event_type='download', event_level='information')
-            await self._stream_file(send, file_path, filename)
+            await self._stream_file(send, file_path, filename, scope)
     
     async def _handle_rom_download(self, scope, receive, send, path):
         """Handle ROM file downloads for emulator"""
@@ -211,7 +242,7 @@ class LazyASGIApp:
             filename = os.path.basename(game.full_disk_path)
             log_system_event(f"ROM file downloaded for WebRetro: {game.name}", 
                            event_type='download', event_level='information')
-            await self._stream_file(send, game.full_disk_path, filename)
+            await self._stream_file(send, game.full_disk_path, filename, scope)
     
     async def _get_user_from_session(self, scope):
         """Extract user ID from Flask session cookie"""
@@ -272,15 +303,40 @@ class LazyASGIApp:
                            event_type='security', event_level='warning')
             return None
     
-    async def _stream_file(self, send, file_path, filename):
+    async def _stream_file(self, send, file_path, filename, scope):
         """Stream a file asynchronously"""
         try:
-            async_generator, headers = await create_async_streaming_response(file_path, filename)
+            file_size = os.path.getsize(file_path)
+            request_headers = dict(scope.get("headers", []))
+            range_header = request_headers.get(b"range", b"").decode("ascii", "ignore")
+            try:
+                byte_range = parse_single_byte_range(range_header, file_size)
+            except ValueError:
+                await self._send_error(
+                    send,
+                    416,
+                    "Requested range is not satisfiable",
+                    extra_headers=[(b"content-range", f"bytes */{file_size}".encode())],
+                )
+                return
+
+            status = 200
+            start = 0
+            length = file_size
+            if byte_range:
+                start, end = byte_range
+                length = end - start + 1
+                status = 206
+            async_generator, headers = await create_async_streaming_response(
+                file_path, filename, start=start, length=length
+            )
+            if byte_range:
+                headers["content-range"] = f"bytes {start}-{end}/{file_size}"
             
             # Send HTTP response start
             await send({
                 "type": "http.response.start",
-                "status": 200,
+                "status": status,
                 "headers": [(k.encode(), v.encode()) for k, v in headers.items()]
             })
             
@@ -392,17 +448,19 @@ class LazyASGIApp:
                     # Connection already closed, nothing more we can do
                     pass
     
-    async def _send_error(self, send, status_code, message):
+    async def _send_error(self, send, status_code, message, extra_headers=None):
         """Send an HTTP error response"""
         response_body = json.dumps({"error": message}).encode()
         
+        headers = [
+            (b"content-type", b"application/json"),
+            (b"content-length", str(len(response_body)).encode())
+        ]
+        headers.extend(extra_headers or [])
         await send({
             "type": "http.response.start",
             "status": status_code,
-            "headers": [
-                (b"content-type", b"application/json"),
-                (b"content-length", str(len(response_body)).encode())
-            ]
+            "headers": headers
         })
         
         await send({
