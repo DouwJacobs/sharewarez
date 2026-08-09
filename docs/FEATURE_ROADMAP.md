@@ -3,6 +3,10 @@
 This checklist tracks planned product work. A checked item is implemented and
 committed; release version bumps are managed separately.
 
+Collection portability uses the versioned `gamestack.collection` JSON format.
+Imports revalidate smart rules and skip manual game UUIDs that are unavailable
+in the destination library; the completion message reports the skipped count.
+
 ## Reliability and operations
 
 - [x] Persistent background-job queue
@@ -19,7 +23,7 @@ committed; release version bumps are managed separately.
 - [x] Smart collections based on validated library rules
 - [x] Nested/grouped collections and collection artwork
 - [x] Private versus shared collections
-- [ ] Collection import/export
+- [x] Collection import/export
 - [ ] Unified full-text and fuzzy search
 - [ ] Search suggestions, saved searches, and keyboard navigation
 - [ ] Game series, editions, DLC, update, extra, remake, and platform relationships

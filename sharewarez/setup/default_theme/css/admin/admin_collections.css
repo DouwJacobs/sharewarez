@@ -22,6 +22,8 @@
 .collection-picker-heading p { margin: 0; }
 
 .collections-admin-header h1 { font-size: 1.75rem; }
+.collection-header-actions { display: flex; align-items: center; gap: 10px; }
+.collection-header-actions form { margin: 0; }
 .collections-admin-header > div > p:last-child,
 .collection-picker-heading p { margin-top: 6px; color: var(--text-muted, rgba(210,215,230,.7)); }
 
@@ -201,6 +203,8 @@
     .collection-editor-card { padding: 16px; }
     .collections-admin-header { align-items: flex-start; flex-direction: column; }
     .collections-admin-header .btn { width: 100%; }
+    .collection-header-actions { width: 100%; }
+    .collection-header-actions > * { flex: 1; }
     .collection-editor-grid { grid-template-columns: 1fr; }
 }
 

@@ -1,4 +1,6 @@
 from uuid import uuid4
+from io import BytesIO
+import json
 
 import pytest
 from sqlalchemy import select
@@ -205,3 +207,36 @@ def test_private_collections_are_only_listed_for_owner_or_admin(client, db_sessi
         select(Collection.slug).where(collection_visibility_clause(owner))
     ).scalars())
     assert owner_slugs >= {shared.slug, private.slug}
+
+
+def test_admin_can_export_and_import_collection_json(client, db_session):
+    suffix = uuid4().hex[:8]
+    admin = User(user_id=str(uuid4()), name=f'portable-admin-{suffix}', email=f'portable-{suffix}@example.test', role='admin', is_email_verified=True)
+    admin.set_password('test-password')
+    library = make_library(db_session)
+    game = Game(name=f'Portable game {suffix}', library_uuid=library.uuid)
+    source = Collection(name=f'Portable {suffix}', slug=f'portable-{suffix}', visibility='private', owner=admin)
+    db_session.add_all([admin, game, source])
+    db_session.flush()
+    db_session.add(CollectionGame(collection=source, game=game, display_order=0))
+    db_session.commit()
+    with client.session_transaction() as session:
+        session['_user_id'] = str(admin.id)
+        session['_fresh'] = True
+
+    exported = client.get(f'/admin/collections/{source.id}/export')
+    assert exported.status_code == 200
+    assert exported.mimetype == 'application/json'
+    payload = json.loads(exported.data)
+    assert payload['format'] == 'gamestack.collection'
+    assert payload['collection']['games'][0]['uuid'] == game.uuid
+
+    payload['collection']['name'] = f'Imported {suffix}'
+    imported = client.post('/admin/collections/import', data={
+        'collection_file': (BytesIO(json.dumps(payload).encode()), 'collection.json'),
+    }, content_type='multipart/form-data')
+    assert imported.status_code == 302
+    saved = db_session.query(Collection).filter_by(name=f'Imported {suffix}').one()
+    assert saved.visibility == 'private'
+    assert saved.owner_id == admin.id
+    assert [link.game_uuid for link in saved.game_links] == [game.uuid]

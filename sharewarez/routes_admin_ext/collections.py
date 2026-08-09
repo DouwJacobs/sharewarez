@@ -1,6 +1,7 @@
 import json
+from io import BytesIO
 
-from flask import abort, flash, jsonify, redirect, render_template, request, url_for
+from flask import abort, flash, jsonify, redirect, render_template, request, send_file, url_for
 from flask_login import current_user, login_required
 from sqlalchemy import func, select
 from sqlalchemy.orm import selectinload
@@ -34,6 +35,21 @@ def _set_parent_choices(form, collection_id=None):
         select(Collection).where(Collection.parent_id.is_(None), Collection.id != collection_id).order_by(Collection.name)
     ).scalars().all()
     form.parent_id.choices = [(0, 'No group')] + [(item.id, item.name) for item in roots]
+
+
+def _collection_export(item):
+    return {
+        'format': 'gamestack.collection', 'version': 1,
+        'collection': {
+            'name': item.name, 'description': item.description, 'artwork_url': item.artwork_url,
+            'parent': item.parent.name if item.parent else None, 'visibility': item.visibility,
+            'show_on_discover': item.show_on_discover, 'display_order': item.display_order,
+            'is_smart': item.is_smart, 'smart_rules': item.smart_rules,
+            'smart_sort': item.smart_sort, 'smart_sort_order': item.smart_sort_order,
+            'smart_limit': item.smart_limit,
+            'games': [{'uuid': link.game_uuid, 'name': link.game.name} for link in item.game_links],
+        },
+    }
 
 
 @admin2_bp.route('/admin/collections')
@@ -162,6 +178,80 @@ def delete_collection(collection_id):
     db.session.commit()
     log_system_event(f'Collection deleted: {name}', event_type='collection')
     flash('Collection deleted.', 'success')
+    return redirect(url_for('admin2.collections'))
+
+
+@admin2_bp.route('/admin/collections/<int:collection_id>/export')
+@login_required
+@admin_required
+def export_collection(collection_id):
+    item = db.session.execute(
+        select(Collection).options(selectinload(Collection.game_links).selectinload(CollectionGame.game)).where(Collection.id == collection_id)
+    ).scalar_one_or_none() or abort(404)
+    payload = json.dumps(_collection_export(item), indent=2).encode('utf-8')
+    return send_file(BytesIO(payload), mimetype='application/json', as_attachment=True, download_name=f'{item.slug}.collection.json')
+
+
+@admin2_bp.route('/admin/collections/import', methods=['POST'])
+@login_required
+@admin_required
+def import_collection():
+    csrf_form = CsrfProtectForm()
+    if not csrf_form.validate_on_submit():
+        abort(400)
+    upload = request.files.get('collection_file')
+    if upload is None or not upload.filename:
+        flash('Choose a collection JSON file to import.', 'error')
+        return redirect(url_for('admin2.collections'))
+    raw = upload.read(262145)
+    if len(raw) > 262144:
+        flash('Collection imports must be 256 KB or smaller.', 'error')
+        return redirect(url_for('admin2.collections'))
+    try:
+        payload = json.loads(raw.decode('utf-8'))
+        if payload.get('format') != 'gamestack.collection' or payload.get('version') != 1:
+            raise ValueError('Unsupported collection export format or version.')
+        data = payload['collection']
+        name = str(data['name']).strip()
+        if not 2 <= len(name) <= 120:
+            raise ValueError('Collection name must contain 2 to 120 characters.')
+        if _collection_name_exists(name):
+            raise ValueError(f'A collection named "{name}" already exists.')
+        is_smart = bool(data.get('is_smart'))
+        rules = parse_smart_rules(data.get('smart_rules')) if is_smart else None
+        visibility = data.get('visibility', 'shared')
+        if visibility not in {'shared', 'private'}:
+            raise ValueError('Visibility must be shared or private.')
+        sort = data.get('smart_sort', 'name')
+        sort_order = data.get('smart_sort_order', 'asc')
+        limit = max(1, min(int(data.get('smart_limit', 24)), 200))
+        smart_collection_statement(rules, sort, sort_order, limit) if is_smart else None
+        parent = None
+        if data.get('parent'):
+            parent = db.session.execute(select(Collection).where(Collection.parent_id.is_(None), func.lower(Collection.name) == str(data['parent']).lower())).scalar_one_or_none()
+        game_entries = data.get('games') or []
+        if not isinstance(game_entries, list) or len(game_entries) > 2000:
+            raise ValueError('Games must be a list containing at most 2,000 entries.')
+        requested_uuids = [str(entry.get('uuid', '')).strip() for entry in game_entries if isinstance(entry, dict)]
+        existing_uuids = set(db.session.execute(select(Game.uuid).where(Game.uuid.in_(requested_uuids))).scalars()) if requested_uuids else set()
+        item = Collection(
+            name=name, slug=unique_collection_slug(name), description=(str(data.get('description') or '').strip()[:1000] or None),
+            artwork_url=(str(data.get('artwork_url') or '').strip()[:1024] or None), parent=parent,
+            visibility=visibility, owner_id=current_user.id, show_on_discover=bool(data.get('show_on_discover')),
+            display_order=max(0, min(int(data.get('display_order', 0)), 9999)), is_smart=is_smart,
+            smart_rules=rules, smart_sort=sort, smart_sort_order=sort_order, smart_limit=limit,
+        )
+        db.session.add(item)
+        if not is_smart:
+            replace_collection_games(item, [uuid for uuid in requested_uuids if uuid in existing_uuids])
+        db.session.commit()
+    except (KeyError, TypeError, ValueError, UnicodeDecodeError, json.JSONDecodeError) as exc:
+        db.session.rollback()
+        flash(f'Collection import failed: {exc}', 'error')
+        return redirect(url_for('admin2.collections'))
+    missing = len(set(requested_uuids) - existing_uuids) if not is_smart else 0
+    log_system_event(f'Collection imported: {item.name}', event_type='collection')
+    flash(f'Collection imported. {missing} unavailable game(s) were skipped.' if missing else 'Collection imported.', 'success')
     return redirect(url_for('admin2.collections'))
 
 

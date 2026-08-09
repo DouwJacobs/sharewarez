@@ -12,9 +12,13 @@
                 <h1>Collections</h1>
                 <p>Group games for discovery, browsing, and the featured spotlight.</p>
             </div>
-            <a class="btn btn-primary" href="{{ url_for('admin2.add_collection') }}">
-                <i class="fas fa-plus" aria-hidden="true"></i> New collection
-            </a>
+            <div class="collection-header-actions">
+                <form method="post" action="{{ url_for('admin2.import_collection') }}" enctype="multipart/form-data">
+                    {{ csrf_form.hidden_tag() }}
+                    <label class="btn btn-secondary"><i class="fas fa-file-import" aria-hidden="true"></i> Import JSON<input class="visually-hidden" type="file" name="collection_file" accept="application/json,.json" required onchange="this.form.submit()"></label>
+                </form>
+                <a class="btn btn-primary" href="{{ url_for('admin2.add_collection') }}"><i class="fas fa-plus" aria-hidden="true"></i> New collection</a>
+            </div>
         </header>
 
         <div class="collection-list">
@@ -35,6 +39,7 @@
                     <span>{{ collection_count }} game{{ '' if collection_count == 1 else 's' }}</span>
                 </div>
                 <div class="collection-admin-actions">
+                    <a class="btn btn-secondary" href="{{ url_for('admin2.export_collection', collection_id=collection.id) }}" aria-label="Export {{ collection.name }}"><i class="fas fa-file-export" aria-hidden="true"></i></a>
                     <a class="btn btn-secondary" href="{{ url_for('admin2.edit_collection', collection_id=collection.id) }}">
                         <i class="fas fa-pencil-alt" aria-hidden="true"></i> Edit
                     </a>
