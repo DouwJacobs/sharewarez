@@ -25,13 +25,13 @@ Periodically test restoration on a separate PostgreSQL instance.
 ## Restore
 
 A restore replaces database objects and must be performed while the application
-and worker are stopped. Keep PostgreSQL running:
+container is stopped. Keep PostgreSQL running:
 
 ```bash
-docker compose stop app worker
+docker compose stop app
 docker compose run --rm --no-deps app \
   python -m sharewarez.backups restore /backups/FILE.dump --confirm sharewarez
-docker compose up -d app worker
+docker compose up -d app
 ```
 
 The confirmation must exactly match the target database name. Restore validates

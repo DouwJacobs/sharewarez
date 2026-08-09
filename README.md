@@ -80,10 +80,11 @@ docker compose up -d
 
 Docker recreates the application container while retaining the PostgreSQL volume and configured library storage.
 
-GameLibrary also runs a dedicated `worker` service. Background jobs are stored
-in PostgreSQL, retried with backoff, recovered after interrupted workers, and
-can be inspected, cancelled, or retried through the authenticated admin API at
-`/api/background-jobs`.
+The application container runs both the web server and persistent background-job
+processor. Background jobs are stored in PostgreSQL, retried with backoff,
+recovered after interruptions, and can be inspected, cancelled, or retried
+through the authenticated admin API at `/api/background-jobs`. If either
+internal process exits, the container stops so Docker restarts the complete app.
 
 Automatic scans use recursive filesystem fingerprints. If names, sizes, and
 modification times have not changed since the last successful scan, metadata
@@ -120,8 +121,8 @@ also rejects missing or mismatched version metadata.
 # View application and database logs
 docker compose logs -f
 
-# Follow background worker activity
-docker compose logs -f worker
+# Follow web and background-job activity
+docker compose logs -f app
 
 # Show container status
 docker compose ps

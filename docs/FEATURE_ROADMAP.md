@@ -6,7 +6,7 @@ committed; release version bumps are managed separately.
 ## Reliability and operations
 
 - [x] Persistent background-job queue
-- [x] Dedicated worker service with retries, cancellation, and recovery
+- [x] Persistent background-job processor with retries, cancellation, and recovery
 - [x] Incremental filesystem fingerprints for library scans
 - [x] Recurring scan schedules
 - [x] Background-job administration page

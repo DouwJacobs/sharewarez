@@ -1,10 +1,11 @@
 #!/bin/bash
+set -Eeuo pipefail
 
 echo "🚀 SharewareZ container starting up..."
 
 
 # Extract database connection info from DATABASE_URL if available
-if [[ -n "$DATABASE_URL" ]]; then
+if [[ -n "${DATABASE_URL:-}" ]]; then
     # Parse DATABASE_URL for connection details
     # Format: postgresql://user:password@host:port/database
     DB_HOST=$(echo $DATABASE_URL | sed -n 's/.*@\([^:]*\):.*/\1/p')
@@ -64,12 +65,6 @@ except Exception as e:
 wait_for_postgres
 
 echo "🎮 Starting SharewareZ Docker container..."
-
-if [[ "${1:-}" == "worker" ]]; then
-    shift
-    echo "Starting persistent background worker..."
-    exec python3 -m sharewarez.job_worker "$@"
-fi
 
 # Pass all arguments through to startweb-docker.sh
 exec /app/startweb-docker.sh "$@"

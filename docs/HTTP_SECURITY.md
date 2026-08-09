@@ -26,6 +26,6 @@ The default policy is 300 requests per minute per client. Login is limited to
 links to 20. Limits return HTTP 429.
 
 `memory://` requires no extra service and is suitable for one host, but each web
-worker maintains independent counters. Multi-host deployments should configure
+application instance maintains independent counters. Multi-host deployments should configure
 a Flask-Limiter-compatible shared `RATELIMIT_STORAGE_URI` and install its client
 dependency in a reviewed dependency update.

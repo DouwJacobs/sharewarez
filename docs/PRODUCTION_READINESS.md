@@ -11,9 +11,8 @@ in `FEATURE_ROADMAP.md` are post-release enhancements, not release blockers.
   suite pass from isolated databases.
 - A fresh schema reaches the single Alembic head and the production image
   builds with the authoritative semantic version.
-- App and worker use the same image, database, secret keys, and persistent
-  mounts. Containers run without root, Linux capabilities, or a writable root
-  filesystem.
+- The app supervises web and background-job processes as one failure domain.
+  It runs without root, Linux capabilities, or a writable root filesystem.
 - Readiness checks include PostgreSQL; liveness remains database-independent.
 - Integration credentials are encrypted at rest and have a tested offline key
   rotation procedure.
@@ -38,7 +37,7 @@ in `FEATURE_ROADMAP.md` are post-release enhancements, not release blockers.
 
 ## Rollback
 
-Stop app and worker before database recovery. Restore the verified pre-upgrade
+Stop the app before database recovery. Restore the verified pre-upgrade
 archive and matching library assets, use the same secret/encryption key that was
 active when the backup was created, then deploy the prior immutable image tag.
 Follow `BACKUP_RESTORE.md`; never downgrade a populated schema ad hoc.

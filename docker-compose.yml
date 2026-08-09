@@ -48,6 +48,7 @@ services:
       - SECURITY_HSTS_ENABLED=${SECURITY_HSTS_ENABLED:-true}
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
       - LOG_FORMAT=${LOG_FORMAT:-json}
+      - JOB_POLL_SECONDS=${JOB_POLL_SECONDS:-1}
     volumes:
       - "${DATA_FOLDER_WAREZ}:/storage:ro"
       - "${LIBRARY_HOST_PATH:-./data/library}:/app/sharewarez/static/library"
@@ -61,44 +62,6 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
-
-  worker:
-    image: ${GAME_LIBRARY_IMAGE:-douwjacobs/gamelibrary:latest}
-    container_name: gamelibrary-worker
-    restart: unless-stopped
-    user: "10001:10001"
-    read_only: true
-    init: true
-    security_opt:
-      - no-new-privileges:true
-    cap_drop:
-      - ALL
-    tmpfs:
-      - /tmp:rw,nosuid,nodev,noexec,size=256m,mode=1777
-    command: ["worker"]
-    environment:
-      - DATABASE_URL=${DATABASE_URL}
-      - DATA_FOLDER_WAREZ=/storage
-      - UPLOAD_FOLDER=/app/sharewarez/static/library
-      - SECRET_KEY=${SECRET_KEY}
-      - CREDENTIAL_ENCRYPTION_KEY=${CREDENTIAL_ENCRYPTION_KEY:-}
-      - DEV_MODE=false
-      - DB_POOL_SIZE=${DB_POOL_SIZE:-2}
-      - DB_MAX_OVERFLOW=${DB_MAX_OVERFLOW:-2}
-      - DB_POOL_RECYCLE=${DB_POOL_RECYCLE:-1800}
-      - JOB_POLL_SECONDS=${JOB_POLL_SECONDS:-1}
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - POSTGRES_DB=${POSTGRES_DB}
-      - RATELIMIT_ENABLED=false
-    volumes:
-      - "${DATA_FOLDER_WAREZ}:/storage:ro"
-      - "${LIBRARY_HOST_PATH:-./data/library}:/app/sharewarez/static/library"
-    depends_on:
-      db:
-        condition: service_healthy
-      app:
-        condition: service_healthy
 
   db:
     image: postgres:17.6

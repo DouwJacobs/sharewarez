@@ -1,17 +1,18 @@
 # Container runtime security
 
 GameLibrary application images run as the fixed unprivileged identity
-`10001:10001`. Compose also makes the application and worker root filesystems
-read-only, drops all Linux capabilities, prevents privilege escalation, and
-provides a size-limited temporary filesystem. Game storage remains read-only.
+`10001:10001`. Compose makes the combined web/background application root
+filesystem read-only, drops all Linux capabilities, prevents privilege
+escalation, and provides a size-limited temporary filesystem. Game storage
+remains read-only.
 
 ## Existing deployment migration
 
-Before starting an upgraded image, stop the application and worker and grant
+Before starting an upgraded image, stop the application and grant
 the container identity ownership of the two writable host directories:
 
 ```bash
-docker compose stop app worker
+docker compose stop app
 mkdir -p ./data/library ./data/backups
 sudo chown -R 10001:10001 ./data/library ./data/backups
 docker compose up -d
@@ -32,5 +33,5 @@ docker compose exec app test -w /backups
 docker compose exec app sh -c 'test ! -w /app'
 ```
 
-The app service performs migrations and pre-upgrade backups. The worker mounts
-the shared library directory but does not mount the backup directory.
+The app service performs migrations and pre-upgrade backups, then supervises
+the web server and persistent background-job processor in the same container.

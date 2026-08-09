@@ -1,4 +1,5 @@
 #!/bin/bash
+set -Eeuo pipefail
 
 # Docker-specific application startup script
 # This script is designed to run inside the Docker container
@@ -6,7 +7,7 @@
 
 # Parse arguments
 FORCE_SETUP=false
-if [[ "$1" == "--force-setup" || "$1" == "-fs" ]]; then
+if [[ "${1:-}" == "--force-setup" || "${1:-}" == "-fs" ]]; then
     FORCE_SETUP=true
 fi
 
@@ -66,5 +67,45 @@ if ! [[ "$WEB_WORKERS" =~ ^[1-9][0-9]*$ ]]; then
     exit 1
 fi
 
+web_pid=''
+job_pid=''
+
+stop_children() {
+    trap - TERM INT
+    [[ -n "$web_pid" ]] && kill -TERM "$web_pid" 2>/dev/null || true
+    [[ -n "$job_pid" ]] && kill -TERM "$job_pid" 2>/dev/null || true
+    [[ -n "$web_pid" ]] && wait "$web_pid" 2>/dev/null || true
+    [[ -n "$job_pid" ]] && wait "$job_pid" 2>/dev/null || true
+}
+
+handle_shutdown() {
+    echo "Stopping web and background-job processes..."
+    stop_children
+    exit 0
+}
+
+trap handle_shutdown TERM INT
+
+echo "Starting persistent background-job processor..."
+python3 -m sharewarez.job_worker &
+job_pid=$!
+
 echo "Starting ${WEB_WORKERS} web worker(s)..."
-uvicorn asgi:asgi_app --host 0.0.0.0 --port 5006 --workers "$WEB_WORKERS"
+uvicorn asgi:asgi_app --host 0.0.0.0 --port 5006 --workers "$WEB_WORKERS" &
+web_pid=$!
+
+# The two processes form one application unit. If either exits unexpectedly,
+# stop its sibling and fail the container so Docker can restart both cleanly.
+set +e
+wait -n "$web_pid" "$job_pid"
+child_status=$?
+set -e
+
+if kill -0 "$web_pid" 2>/dev/null; then
+    echo "Background-job processor exited unexpectedly (status ${child_status})."
+else
+    echo "Web server exited unexpectedly (status ${child_status})."
+fi
+stop_children
+[[ "$child_status" -ne 0 ]] && exit "$child_status"
+exit 1
