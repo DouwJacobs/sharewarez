@@ -29,7 +29,7 @@
 
 .collections-eyebrow {
     margin-bottom: 5px !important;
-    color: var(--primary-color, #7795ff);
+    color: var(--theme-primary-color, var(--primary-color, #7795ff));
     font-size: .72rem;
     font-weight: 800;
     letter-spacing: .12em;
@@ -47,15 +47,15 @@
     border-radius: 14px;
     background: color-mix(in srgb, var(--theme-panel-bg, rgba(20,21,32,.92)) 82%, transparent);
 }
-.collection-admin-row.is-featured { border-color: color-mix(in srgb, var(--primary-color, #7795ff) 55%, transparent); }
+.collection-admin-row.is-featured { border-color: color-mix(in srgb, var(--theme-primary-color, var(--primary-color, #7795ff)) 55%, transparent); }
 .collection-admin-icon {
     display: grid;
     width: 48px;
     height: 48px;
     place-items: center;
     border-radius: 12px;
-    color: var(--primary-color, #7795ff);
-    background: color-mix(in srgb, var(--primary-color, #7795ff) 16%, transparent);
+    color: var(--theme-primary-color, var(--primary-color, #7795ff));
+    background: color-mix(in srgb, var(--theme-primary-color, var(--primary-color, #7795ff)) 16%, transparent);
 }
 .collection-admin-title { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
 .collection-admin-title h2 { margin: 0; font-size: 1.05rem; }
@@ -65,15 +65,15 @@
 .collection-count {
     padding: 4px 8px;
     border-radius: 999px;
-    color: var(--primary-color, #7795ff);
-    background: color-mix(in srgb, var(--primary-color, #7795ff) 15%, transparent);
+    color: var(--theme-primary-color, var(--primary-color, #7795ff));
+    background: color-mix(in srgb, var(--theme-primary-color, var(--primary-color, #7795ff)) 15%, transparent);
     font-size: .72rem;
     font-weight: 800;
 }
 .collection-admin-actions { display: flex; align-items: center; gap: 8px; }
 .collection-admin-actions form { margin: 0; }
 .collection-empty { padding: 56px 20px; text-align: center; color: var(--text-muted); }
-.collection-empty i { font-size: 2rem; color: var(--primary-color); }
+.collection-empty i { font-size: 2rem; color: var(--theme-primary-color, var(--primary-color)); }
 
 .collection-editor-shell { max-width: 1240px; }
 .collection-editor-grid { display: grid; grid-template-columns: minmax(280px, .8fr) minmax(420px, 1.2fr); gap: 24px; margin-top: 22px; }
@@ -98,7 +98,7 @@
 }
 .smart-rules-help summary {
     padding: 11px 12px;
-    color: var(--primary-color, #7795ff);
+    color: var(--theme-primary-color, var(--primary-color, #7795ff));
     font-weight: 700;
     cursor: pointer;
 }
@@ -129,7 +129,7 @@
     vertical-align: top;
     text-align: left;
 }
-.smart-rules-help-table th { color: var(--text-color); background: color-mix(in srgb, var(--primary-color) 12%, transparent); }
+.smart-rules-help-table th { color: var(--text-color); background: color-mix(in srgb, var(--theme-primary-color, var(--primary-color)) 12%, transparent); }
 .smart-rules-help-table td { color: var(--text-muted); }
 .smart-rules-example-label { margin: 12px 0 4px !important; color: var(--text-color) !important; font-weight: 700; }
 .smart-rules-note { margin-bottom: 0; }
@@ -165,7 +165,7 @@
     text-align: left;
 }
 .collection-search-result:last-child { border-bottom: 0; }
-.collection-search-result:hover { background: color-mix(in srgb, var(--primary-color) 13%, transparent); }
+.collection-search-result:hover { background: color-mix(in srgb, var(--theme-primary-color, var(--primary-color)) 13%, transparent); }
 .collection-search-result:disabled { opacity: .55; }
 .collection-selected-list { display: grid; gap: 8px; min-height: 116px; margin-top: 16px; }
 .collection-selected-game {
@@ -192,7 +192,7 @@
     color: var(--text-color);
     background: transparent;
 }
-.collection-order-actions button:hover { color: var(--primary-color); border-color: var(--primary-color); }
+.collection-order-actions button:hover { color: var(--theme-primary-color, var(--primary-color)); border-color: var(--theme-primary-color, var(--primary-color)); }
 .collection-order-actions [data-remove]:hover { color: var(--danger-color, #ef476f); border-color: var(--danger-color, #ef476f); }
 .collection-selected-empty { display: grid; place-items: center; align-content: center; gap: 8px; color: var(--text-muted); }
 .collection-editor-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--border-color); }
