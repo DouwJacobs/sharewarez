@@ -617,16 +617,58 @@ class BackgroundJob(db.Model):
     progress_message = db.Column(db.String(255), nullable=True)
     attempts = db.Column(db.Integer, nullable=False, default=0)
     max_attempts = db.Column(db.Integer, nullable=False, default=3)
-    available_at = db.Column(db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
-    created_at = db.Column(db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
-    started_at = db.Column(db.DateTime, nullable=True)
-    completed_at = db.Column(db.DateTime, nullable=True)
-    heartbeat_at = db.Column(db.DateTime, nullable=True)
+    available_at = db.Column(db.DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
+    created_at = db.Column(db.DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
+    started_at = db.Column(db.DateTime(timezone=True), nullable=True)
+    completed_at = db.Column(db.DateTime(timezone=True), nullable=True)
+    heartbeat_at = db.Column(db.DateTime(timezone=True), nullable=True)
     locked_by = db.Column(db.String(100), nullable=True)
     cancel_requested = db.Column(db.Boolean, nullable=False, default=False)
     error_message = db.Column(db.Text, nullable=True)
     created_by_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'), nullable=True)
     created_by = db.relationship('User')
+
+
+class LibraryScanState(db.Model):
+    """Last successful filesystem fingerprint for an incremental scan target."""
+
+    __tablename__ = 'library_scan_states'
+    __table_args__ = (
+        db.UniqueConstraint('library_uuid', 'folder_path', 'scan_mode', name='uq_library_scan_state_target'),
+    )
+
+    id = db.Column(db.Integer, primary_key=True)
+    library_uuid = db.Column(db.String(36), db.ForeignKey('libraries.uuid', ondelete='CASCADE'), nullable=False)
+    folder_path = db.Column(db.String(1024), nullable=False)
+    scan_mode = db.Column(db.String(20), nullable=False, default='folders')
+    fingerprint = db.Column(db.String(64), nullable=False)
+    entry_count = db.Column(db.Integer, nullable=False, default=0)
+    total_size = db.Column(db.BigInteger, nullable=False, default=0)
+    scanned_at = db.Column(db.DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
+    library = db.relationship('Library')
+
+
+class LibraryScanSchedule(db.Model):
+    """Recurring incremental scan definition dispatched by the job worker."""
+
+    __tablename__ = 'library_scan_schedules'
+    __table_args__ = (
+        db.Index('ix_library_scan_schedules_due', 'is_enabled', 'next_run'),
+    )
+
+    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    library_uuid = db.Column(db.String(36), db.ForeignKey('libraries.uuid', ondelete='CASCADE'), nullable=False)
+    folder_path = db.Column(db.String(1024), nullable=False)
+    scan_mode = db.Column(db.String(20), nullable=False, default='folders')
+    interval_minutes = db.Column(db.Integer, nullable=False, default=1440)
+    options = db.Column(JSONEncodedDict, nullable=False, default=dict)
+    is_enabled = db.Column(db.Boolean, nullable=False, default=True)
+    next_run = db.Column(db.DateTime(timezone=True), nullable=False)
+    last_run = db.Column(db.DateTime(timezone=True), nullable=True)
+    last_job_id = db.Column(db.String(36), db.ForeignKey('background_jobs.id', ondelete='SET NULL'), nullable=True)
+    created_at = db.Column(db.DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
+    library = db.relationship('Library')
+    last_job = db.relationship('BackgroundJob')
 
 class UnmatchedFolder(db.Model):
     __tablename__ = 'unmatched_folders'

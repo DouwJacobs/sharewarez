@@ -45,11 +45,11 @@ class DatabaseManager:
             progress_message VARCHAR(255),
             attempts INTEGER NOT NULL DEFAULT 0,
             max_attempts INTEGER NOT NULL DEFAULT 3,
-            available_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            started_at TIMESTAMP,
-            completed_at TIMESTAMP,
-            heartbeat_at TIMESTAMP,
+            available_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            started_at TIMESTAMPTZ,
+            completed_at TIMESTAMPTZ,
+            heartbeat_at TIMESTAMPTZ,
             locked_by VARCHAR(100),
             cancel_requested BOOLEAN NOT NULL DEFAULT FALSE,
             error_message TEXT,
@@ -58,6 +58,35 @@ class DatabaseManager:
 
         CREATE INDEX IF NOT EXISTS ix_background_jobs_claim
         ON background_jobs(status, available_at, created_at);
+
+        CREATE TABLE IF NOT EXISTS library_scan_states (
+            id SERIAL PRIMARY KEY,
+            library_uuid VARCHAR(36) NOT NULL REFERENCES libraries(uuid) ON DELETE CASCADE,
+            folder_path VARCHAR(1024) NOT NULL,
+            scan_mode VARCHAR(20) NOT NULL DEFAULT 'folders',
+            fingerprint VARCHAR(64) NOT NULL,
+            entry_count INTEGER NOT NULL DEFAULT 0,
+            total_size BIGINT NOT NULL DEFAULT 0,
+            scanned_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            CONSTRAINT uq_library_scan_state_target UNIQUE (library_uuid, folder_path, scan_mode)
+        );
+
+        CREATE TABLE IF NOT EXISTS library_scan_schedules (
+            id VARCHAR(36) PRIMARY KEY,
+            library_uuid VARCHAR(36) NOT NULL REFERENCES libraries(uuid) ON DELETE CASCADE,
+            folder_path VARCHAR(1024) NOT NULL,
+            scan_mode VARCHAR(20) NOT NULL DEFAULT 'folders',
+            interval_minutes INTEGER NOT NULL DEFAULT 1440,
+            options TEXT NOT NULL DEFAULT '{}',
+            is_enabled BOOLEAN NOT NULL DEFAULT TRUE,
+            next_run TIMESTAMPTZ NOT NULL,
+            last_run TIMESTAMPTZ,
+            last_job_id VARCHAR(36) REFERENCES background_jobs(id) ON DELETE SET NULL,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE INDEX IF NOT EXISTS ix_library_scan_schedules_due
+        ON library_scan_schedules(is_enabled, next_run);
         
         ALTER TABLE global_settings
         ADD COLUMN IF NOT EXISTS site_url VARCHAR(255) DEFAULT 'http://127.0.0.1:5006';

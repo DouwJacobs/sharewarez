@@ -188,15 +188,33 @@ def library_scan_task(context, payload):
     """Run the existing scanner in the persistent worker process."""
     from sharewarez.models import Library
     from sharewarez.utilities import scan_and_add_games
+    from sharewarez.utils.incremental_scanning import (
+        filesystem_fingerprint, has_changed, save_scan_state,
+    )
 
     library_uuid = payload['library_uuid']
     library = db.session.get(Library, library_uuid)
     if library is None:
         raise ValueError(f"Library not found: {library_uuid}")
-    context.heartbeat(1, f"Scanning {library.name}")
+    scan_mode = payload.get('scan_mode', 'folders')
+    context.heartbeat(1, f"Indexing {library.name}")
+    fingerprint, entry_count, total_size = filesystem_fingerprint(payload['folder_path'], context)
+    force_scan = any(payload.get(key) for key in (
+        'force_updates_extras_scan', 'fetch_hltb', 'force_hltb_refetch',
+    ))
+    if not force_scan and not has_changed(
+        library_uuid, payload['folder_path'], scan_mode, fingerprint,
+    ):
+        context.heartbeat(99, f"No filesystem changes in {library.name}")
+        return {
+            'library_uuid': library_uuid, 'folder_path': payload['folder_path'],
+            'skipped': True, 'entry_count': entry_count, 'total_size': total_size,
+        }
+
+    context.heartbeat(10, f"Scanning changed library {library.name}")
     scan_and_add_games(
         payload['folder_path'],
-        scan_mode=payload.get('scan_mode', 'folders'),
+        scan_mode=scan_mode,
         library_uuid=library_uuid,
         remove_missing=bool(payload.get('remove_missing')),
         download_missing_images=bool(payload.get('download_missing_images')),
@@ -204,5 +222,12 @@ def library_scan_task(context, payload):
         fetch_hltb=bool(payload.get('fetch_hltb')),
         force_hltb_refetch=bool(payload.get('force_hltb_refetch')),
     )
+    save_scan_state(
+        library_uuid, payload['folder_path'], scan_mode,
+        fingerprint, entry_count, total_size,
+    )
     context.heartbeat(99, f"Finished scanning {library.name}")
-    return {'library_uuid': library_uuid, 'folder_path': payload['folder_path']}
+    return {
+        'library_uuid': library_uuid, 'folder_path': payload['folder_path'],
+        'skipped': False, 'entry_count': entry_count, 'total_size': total_size,
+    }

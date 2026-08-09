@@ -13,6 +13,7 @@ def run_worker():
     worker_id = worker_identity()
     poll_seconds = max(0.2, float(os.getenv('JOB_POLL_SECONDS', '1')))
     stopping = False
+    last_schedule_check = 0.0
 
     def stop(*_args):
         nonlocal stopping
@@ -25,6 +26,13 @@ def run_worker():
         recovered = recover_stale_jobs()
         app.logger.info("Background worker %s started; recovered %s job(s)", worker_id, recovered)
         while not stopping:
+            monotonic_now = time.monotonic()
+            if monotonic_now - last_schedule_check >= 30:
+                from sharewarez.utils.incremental_scanning import dispatch_due_schedules
+                dispatched = dispatch_due_schedules()
+                if dispatched:
+                    app.logger.info("Dispatched %s scheduled scan(s)", len(dispatched))
+                last_schedule_check = monotonic_now
             job = claim_next(worker_id)
             if job is None:
                 db.session.remove()

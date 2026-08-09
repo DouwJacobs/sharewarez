@@ -85,6 +85,12 @@ in PostgreSQL, retried with backoff, recovered after interrupted workers, and
 can be inspected, cancelled, or retried through the authenticated admin API at
 `/api/background-jobs`.
 
+Automatic scans use recursive filesystem fingerprints. If names, sizes, and
+modification times have not changed since the last successful scan, metadata
+processing is skipped. Administrators can manage recurring scans through
+`/api/scan-schedules`; schedules support intervals from 15 minutes to seven
+days and are dispatched safely when multiple workers are present.
+
 ## Release versioning
 
 `VERSION` is the authoritative semantic version for the application, browser
