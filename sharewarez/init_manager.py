@@ -6,7 +6,7 @@ that ensures proper startup order and eliminates duplication.
 
 import os
 import shutil
-from sqlalchemy import create_engine, select
+from sqlalchemy import create_engine, inspect, select
 from sqlalchemy.orm import sessionmaker
 from dotenv import load_dotenv
 
@@ -95,22 +95,28 @@ class InitializationManager:
             # Import config after environment is loaded
             from config import Config
 
-            # Create tables using pure SQLAlchemy
+            # Bootstrap legacy/unversioned databases once, then let Alembic
+            # exclusively own all ordered schema upgrades.
             engine = create_engine(Config.SQLALCHEMY_DATABASE_URI)
 
             try:
                 # Import models to register them with SQLAlchemy
                 from sharewarez import models
 
-                # Create all tables (idempotent operation)
-                models.db.metadata.create_all(engine)
-                print("✅ Database tables created")
+                table_names = set(inspect(engine).get_table_names())
+                is_versioned = 'alembic_version' in table_names
+                has_application_schema = {'users', 'games'}.issubset(table_names)
+                if not is_versioned or not has_application_schema:
+                    models.db.metadata.create_all(engine)
+                    print("✅ Database tables bootstrapped")
 
-                # Run schema migrations
-                from sharewarez.updateschema import DatabaseManager
-                db_manager = DatabaseManager()
-                db_manager.add_column_if_not_exists()
-                print("✅ Database migrations completed")
+                    from sharewarez.updateschema import DatabaseManager
+                    DatabaseManager().add_column_if_not_exists()
+                    print("✅ Legacy database schema reconciled")
+
+                from sharewarez.utils.migrations import upgrade_database
+                upgrade_database(Config.SQLALCHEMY_DATABASE_URI)
+                print("✅ Alembic migrations completed")
 
             finally:
                 engine.dispose()

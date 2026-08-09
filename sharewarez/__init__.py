@@ -8,6 +8,7 @@ from flask_mail import Mail
 from flask import Flask
 from flask_wtf.csrf import CSRFProtect
 from flask_sqlalchemy import SQLAlchemy
+from flask_migrate import Migrate
 from flask_login import LoginManager, current_user
 from config import Config
 from datetime import datetime
@@ -17,6 +18,7 @@ from sharewarez.utils.db import check_postgres_port_open
 from sharewarez.version import __version__
 
 db = SQLAlchemy()
+migrate = Migrate(compare_type=True)
 login_manager = LoginManager()
 mail = Mail()
 cache = Cache(config={'CACHE_TYPE': 'SimpleCache'})
@@ -79,6 +81,7 @@ def create_app():
     parsed_url = urlparse(app.config['SQLALCHEMY_DATABASE_URI'])
     check_postgres_port_open(parsed_url.hostname, 5432, 60, 2)
     db.init_app(app)
+    migrate.init_app(app, db)
     login_manager.init_app(app)
     mail.init_app(app)
     login_manager.login_view = 'login.login'

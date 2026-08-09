@@ -65,7 +65,7 @@ committed; release version bumps are managed separately.
 - [x] Single authoritative semantic version
 - [x] Versioned CSS cache invalidation
 - [x] Automated tag-based container publishing workflow
-- [ ] Alembic/Flask-Migrate schema migrations
+- [x] Alembic/Flask-Migrate schema migrations
 - [ ] Locked and audited dependencies
 - [ ] Required test, lint, type-check, migration, and container CI gates
 - [ ] Non-root hardened container runtime

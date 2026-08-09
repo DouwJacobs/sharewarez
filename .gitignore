@@ -70,6 +70,7 @@ letsrebuild.md
 !README.md
 !docs/UI_AUDIT.md
 !docs/FEATURE_ROADMAP.md
+!docs/DATABASE_MIGRATIONS.md
 .vscode
 
 # IDE
