@@ -1,5 +1,7 @@
 # sharewarez/routes.py
+import hashlib
 import uuid, json, os, shutil
+from functools import lru_cache
 from threading import Thread
 from flask import (
     render_template, flash, redirect, url_for, request, Blueprint,
@@ -1109,12 +1111,19 @@ def verify_file(full_path):
     else:
         return False
 
+@lru_cache(maxsize=512)
+def _theme_asset_fingerprint(full_path, modified_ns, size):
+    """Return a stable cache key while avoiding repeat file reads."""
+    del modified_ns, size
+    with open(full_path, 'rb') as asset_file:
+        return hashlib.file_digest(asset_file, 'sha256').hexdigest()[:12]
+
+
 @bp.app_template_filter('theme_asset')
 @pass_context
 def theme_asset_filter(_template_context, path):
-    """Resolve a themed URL and version CSS from the application release."""
+    """Resolve a themed URL and fingerprint CSS for automatic cache busting."""
     from flask_login import current_user
-    from sharewarez import app_version
 
     from sharewarez.utils.themes import resolve_theme_id
     current_theme = _template_context.get('current_theme') or resolve_theme_id(current_user, current_app)
@@ -1125,19 +1134,21 @@ def theme_asset_filter(_template_context, path):
     current_theme = secure_filename(current_theme) or 'default'
 
     # Check if themed asset exists
-    full_path = os.path.join(current_app.static_folder, 'library', 'themes', current_theme, path)
-    version = app_version if str(path).lower().endswith('.css') else None
-    version_kwargs = {'v': version} if version else {}
-    if os.path.exists(full_path):
-        return url_for(
-            'static',
-            filename=f'library/themes/{current_theme}/{path}',
-            **version_kwargs,
+    relative_path = f'library/themes/{current_theme}/{path}'
+    full_path = os.path.join(current_app.static_folder, relative_path)
+    if not os.path.exists(full_path):
+        relative_path = f'library/themes/default/{path}'
+        full_path = os.path.join(current_app.static_folder, relative_path)
+
+    version_kwargs = {}
+    if str(path).lower().endswith('.css') and os.path.isfile(full_path):
+        stat = os.stat(full_path)
+        version_kwargs['v'] = _theme_asset_fingerprint(
+            full_path, stat.st_mtime_ns, stat.st_size,
         )
 
-    # Fallback to default theme
     return url_for(
         'static',
-        filename=f'library/themes/default/{path}',
+        filename=relative_path,
         **version_kwargs,
     )
