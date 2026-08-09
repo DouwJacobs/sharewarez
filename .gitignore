@@ -78,6 +78,7 @@ letsrebuild.md
 !docs/HTTP_SECURITY.md
 !docs/OPERATIONS.md
 !docs/CREDENTIAL_ENCRYPTION.md
+!docs/PRODUCTION_READINESS.md
 .vscode
 
 # IDE

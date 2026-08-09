@@ -12,7 +12,7 @@ committed; release version bumps are managed separately.
 - [x] Background-job administration page
 - [x] Backup, restore, validation, retention, and pre-upgrade snapshots
 - [ ] Instance health dashboard and integration diagnostics
-- [ ] Structured, redacted application logging
+- [x] Structured, redacted application logging
 
 ## Discovery and organization
 
