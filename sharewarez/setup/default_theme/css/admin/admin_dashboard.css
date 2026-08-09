@@ -1,6 +1,5 @@
 body {
-    background-color: var(--admin-bg-dark);
-    color: var(--text-white);
+    background-color: color-mix(in srgb, var(--theme-panel-bg, #12121c) 55%, black);
 }
 
 /* Use the unified .admin-section from base.css */

@@ -1,130 +1,204 @@
-.game-library-container {
+.favorites-page {
+    box-sizing: border-box;
+    width: min(1440px, calc(100% - 48px));
+    margin: 24px auto 48px;
+    padding: 28px 32px 42px;
+    border: 1px solid var(--theme-border-color, rgba(255, 255, 255, 0.08));
+    border-radius: 20px;
+    background: var(--theme-panel-bg, rgba(16, 18, 31, 0.94));
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.36);
+    color: var(--theme-text-primary, var(--text-white));
+}
+
+.favorites-page-header {
+    margin-bottom: 24px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--theme-border-color, rgba(255, 255, 255, 0.08));
+}
+
+.favorites-page .discovery-eyebrow {
+    margin: 0 0 7px;
+    color: rgb(var(--theme-accent-soft-rgb, 154, 177, 255));
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+.favorites-page .discovery-header {
+    margin: 0;
+    color: var(--theme-text-primary, var(--text-white));
+    font-size: clamp(1.65rem, 3vw, 2.15rem);
+    font-weight: 700;
+    letter-spacing: -0.03em;
+}
+
+.favorites-page-description {
+    margin: 8px 0 0;
+    color: var(--theme-text-secondary, var(--text-muted));
+}
+
+.discovery-favorites-games {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 20px;
-    padding: 20px;
+    align-items: start;
+    justify-items: center;
+    gap: 18px;
+    padding: 0;
 }
 
-.game-card-container {
+.discovery-favorites-games .game-card-container {
     position: relative;
-    transition: transform 0.3s ease;
+    width: 100%;
+    max-width: 250px;
 }
 
-.game-card-container:hover {
-    transform: scale(1.2);
+.discovery-favorites-games .game-card {
+    width: 100%;
+    min-height: 334px;
+    margin: 0;
+}
+
+.discovery-favorites-games .game-cover-container,
+.discovery-favorites-games .game-cover-container > a {
+    display: block;
+    position: relative;
+    width: 100%;
+}
+
+.discovery-favorites-games .game-cover {
+    width: 100%;
+    max-width: none;
+    aspect-ratio: 3 / 4;
+    object-fit: cover;
+    background: var(--theme-card-background, var(--theme-panel-bg));
 }
 
 .favorite-count {
     position: absolute;
-    top: 5px;
-    right: 5px;
-    color: white;
+    z-index: 14;
+    top: 10px;
+    right: 10px;
+    display: grid;
+    width: 38px;
+    height: 38px;
+    place-items: center;
+    border: 1px solid rgba(var(--theme-accent-soft-rgb, 154, 177, 255), 0.22);
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--theme-panel-bg, #12121c) 84%, transparent);
+    backdrop-filter: blur(10px);
+    color: var(--theme-text-primary, var(--text-white));
+}
+
+.favorite-count .favorite-btn {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    width: 100%;
+    height: 100%;
+    place-items: center;
+    padding: 0;
+    border: 0;
+    border-radius: inherit;
+    background: transparent;
+    cursor: pointer;
+}
+
+.favorite-count .favorite-btn:hover {
+    background: rgba(var(--theme-accent-rgb, 98, 122, 239), 0.16);
+}
+
+.favorite-count .favorite-btn:focus-visible {
+    outline: 2px solid rgb(var(--theme-accent-soft-rgb, 154, 177, 255));
+    outline-offset: 2px;
+}
+
+.favorite-count .favorite-btn.processing {
+    cursor: wait;
+    opacity: 0.6;
+}
+
+.favorite-count .favorite-btn i {
+    color: var(--theme-danger, #ff69b4);
+    font-size: 1rem;
+}
+
+.favorite-count .favorite-number {
+    z-index: 2;
+    margin-top: 18px;
+    pointer-events: none;
+    color: var(--theme-text-primary, #fff);
+    font-size: 0.66rem;
+    font-weight: 800;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+}
+
+.favorites-empty-state {
     display: flex;
+    min-height: 300px;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
-    transition: all 0.3s ease;
-    width: 50px;
-    height: 50px;
-    z-index: 5;
-}
-
-.favorite-count i {
-    color: #ff69b4;
-    font-size: 2.5em; /* Larger heart icon */
-    position: absolute; /* To allow text to be placed on top */
-}
-
-.favorite-count span {
-    position: relative; /* To appear above the icon */
-    z-index: 1;
-    font-size: 1em;
-    font-weight: bold;
-    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
-}
-
-.game-card {
-    position: relative;
-    border-radius: 10px;
-    overflow: hidden;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(5px);
-    height: 100%;
-}
-
-.game-cover {
-    display: flex;
-    position: relative;
-    width: 100%;
-    height: auto;
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-    box-shadow: var(--shadow-box-game);
-}
-
-.game-card:hover {
-    z-index: 6;
-    box-shadow: var(--shadow-box-game-hover);
-}
-
-.no-favorites {
+    padding: 36px;
+    border: 1px solid rgba(var(--theme-accent-soft-rgb, 154, 177, 255), 0.18);
+    border-radius: 16px;
+    background: var(--theme-card-background, rgba(18, 18, 28, 0.9));
     text-align: center;
-    color: #fff;
-    font-size: 1.2em;
-    padding: 20px;
-    grid-column: 1 / -1;
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(5px);
-    border-radius: 10px;
-    margin: 20px 0;
 }
 
-.pagination {
-    display: flex;
-    justify-content: center;
-    gap: 10px;
-    margin: 20px 0;
-    padding: 10px;
+.favorites-empty-state > i {
+    margin-bottom: 14px;
+    color: rgb(var(--theme-accent-soft-rgb, 154, 177, 255));
+    font-size: 2.25rem;
 }
 
-.pagination a, .pagination span {
-    padding: 8px 16px;
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(5px);
-    border-radius: 5px;
-    color: white;
-    text-decoration: none;
-    transition: background-color 0.3s ease;
+.favorites-empty-state h2 {
+    margin: 0;
+    color: var(--theme-text-primary, var(--text-white));
+    font-size: 1.25rem;
 }
 
-.pagination a:hover {
-    background: rgba(255, 255, 255, 0.2);
+.favorites-empty-state p {
+    max-width: 360px;
+    margin: 8px 0 20px;
+    color: var(--theme-text-secondary, var(--text-muted));
 }
 
-.pagination .current-page {
-    background: rgba(255, 255, 255, 0.3);
-    font-weight: bold;
+.remove-favorite-modal .modal-content {
+    border-color: var(--theme-danger, #ef5a67);
+}
+
+.remove-favorite-modal h2 {
+    color: var(--theme-danger, #ef5a67);
 }
 
 @media (max-width: 768px) {
-    .game-library-container {
-        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-        gap: 15px;
-        padding: 15px;
+    .favorites-page {
+        width: calc(100% - 24px) !important;
+        margin: 12px !important;
+        padding: 22px 0 30px !important;
+        border: 0;
+        border-radius: 0;
+        background: transparent;
+        box-shadow: none;
     }
 
-    .game-cover {
-        height: 220px;
-    }
-}
-
-@media (max-width: 480px) {
-    .game-library-container {
-        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-        gap: 10px;
-        padding: 10px;
+    .favorites-page-header {
+        padding: 0 8px 20px;
     }
 
-    .game-cover {
-        height: 180px;
+    .discovery-favorites-container {
+        padding: 0 8px;
+    }
+
+    .discovery-favorites-games {
+        grid-template-columns: minmax(0, 280px);
+        justify-content: center;
+        gap: 18px;
+    }
+
+    .favorites-empty-state {
+        min-height: 280px;
+        padding: 28px 20px;
     }
 }

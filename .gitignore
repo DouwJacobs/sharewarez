@@ -21,6 +21,7 @@ sharewarez/static/library/images
 /.github
 /sharewarez/static/library/zips/
 CLAUDE.md
+AGENTS.md
 /.claude/*
 .claude/settings.local.json
 letsrebuild.md
@@ -69,6 +70,7 @@ CLAUDE.md
 letsrebuild.md
 *.md
 !README.md
+!docs/UI_AUDIT.md
 .vscode
 
 # IDE

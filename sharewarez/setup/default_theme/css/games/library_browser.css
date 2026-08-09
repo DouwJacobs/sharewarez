@@ -7,6 +7,17 @@
     gap: 18px;
 }
 
+/* Keep every card's footprint stable while artwork is loading or unavailable. */
+.game-library-container .game-cover {
+    aspect-ratio: 3 / 4;
+    background: var(--theme-panel-bg, rgba(18, 18, 28, 0.94));
+    object-fit: cover;
+}
+
+.game-library-container .game-card {
+    min-height: 334px;
+}
+
 .library-browser-page {
     margin: 24px;
 }
@@ -292,7 +303,7 @@
 
 .library-browser-header h1 {
     margin: 0;
-    color: #fff;
+    color: var(--theme-text-primary, var(--text-white));
     font-size: clamp(1.65rem, 3vw, 2.15rem);
     font-weight: 700;
     letter-spacing: -0.03em;
@@ -301,7 +312,7 @@
 
 .library-browser-eyebrow {
     margin: 0 0 7px;
-    color: rgba(176, 191, 255, 0.86);
+    color: rgb(var(--theme-accent-soft-rgb, 154, 177, 255));
     font-size: 0.78rem;
     font-weight: 700;
     letter-spacing: 0.12em;
@@ -314,7 +325,7 @@
     border: 1px solid rgba(154, 177, 255, 0.22);
     border-radius: 999px;
     background: rgba(98, 122, 239, 0.1);
-    color: rgba(226, 231, 255, 0.92);
+    color: var(--theme-text-primary, var(--text-white));
     font-size: 0.85rem;
     font-weight: 600;
     white-space: nowrap;
