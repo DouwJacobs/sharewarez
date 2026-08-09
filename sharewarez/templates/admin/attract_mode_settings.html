@@ -192,7 +192,7 @@
 </div>
 
 <!-- Include the attract mode admin JavaScript -->
-<link rel="stylesheet" href="{{ url_for('static', filename='library/themes/' + current_theme + '/css/admin_attract_mode.css') }}">
+<link rel="stylesheet" href="{{ 'css/admin_attract_mode.css'|theme_asset }}">
 <script src="{{ url_for('static', filename='library/themes/' + current_theme + '/js/admin_attract_mode.js') }}"></script>
 
 <!-- Pass settings data to JavaScript -->

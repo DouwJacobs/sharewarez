@@ -1113,8 +1113,9 @@ def verify_file(full_path):
 @bp.app_template_filter('theme_asset')
 @pass_context
 def theme_asset_filter(_template_context, path):
-    """Convert a relative theme path to the correct themed URL with fallback to default"""
+    """Resolve a themed URL and version CSS from the application release."""
     from flask_login import current_user
+    from sharewarez import app_version
 
     from sharewarez.utils.themes import resolve_theme_id
     current_theme = _template_context.get('current_theme') or resolve_theme_id(current_user, current_app)
@@ -1126,8 +1127,18 @@ def theme_asset_filter(_template_context, path):
 
     # Check if themed asset exists
     full_path = os.path.join(current_app.static_folder, 'library', 'themes', current_theme, path)
+    version = app_version if str(path).lower().endswith('.css') else None
+    version_kwargs = {'v': version} if version else {}
     if os.path.exists(full_path):
-        return url_for('static', filename=f'library/themes/{current_theme}/{path}')
+        return url_for(
+            'static',
+            filename=f'library/themes/{current_theme}/{path}',
+            **version_kwargs,
+        )
 
     # Fallback to default theme
-    return url_for('static', filename=f'library/themes/default/{path}')
+    return url_for(
+        'static',
+        filename=f'library/themes/default/{path}',
+        **version_kwargs,
+    )

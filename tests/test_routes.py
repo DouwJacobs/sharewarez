@@ -6,6 +6,7 @@ from unittest.mock import patch, Mock, MagicMock, mock_open
 from datetime import datetime, timezone
 from uuid import uuid4
 from io import BytesIO
+from flask import Flask
 from werkzeug.datastructures import FileStorage
 from sqlalchemy import select, func
 
@@ -1113,3 +1114,18 @@ class TestErrorHandling:
             
             response = client.post('/delete_all_unmatched_folders')
             assert response.status_code == 302  # Should redirect despite error
+
+
+class TestThemeAssetVersioning:
+    def test_css_uses_application_version_and_javascript_is_unchanged(self, tmp_path):
+        from sharewarez import app_version
+        from sharewarez.routes import theme_asset_filter
+
+        app = Flask(__name__, static_folder=str(tmp_path / 'static'))
+        with app.test_request_context('/'):
+            with patch('sharewarez.routes.os.path.exists', return_value=True):
+                css_url = theme_asset_filter({'current_theme': 'default'}, 'css/base.css')
+                js_url = theme_asset_filter({'current_theme': 'default'}, 'js/app.js')
+
+        assert css_url.endswith(f'/library/themes/default/css/base.css?v={app_version}')
+        assert js_url.endswith('/library/themes/default/js/app.js')
