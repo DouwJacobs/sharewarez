@@ -32,12 +32,15 @@ def test_storefront_deduplicates_families_and_hides_noisy_relationships():
         relationships=[
             SimpleNamespace(relationship_type='bundle', related_name='Bundle', related_igdb_id=1, related_game_uuid=None),
             SimpleNamespace(relationship_type='dlc', related_name='DLC', related_igdb_id=2, related_game_uuid=None),
-            SimpleNamespace(relationship_type='remake', related_name='Remake', related_igdb_id=3, related_game_uuid=None),
+            SimpleNamespace(relationship_type='expansion', related_name='Expansion', related_igdb_id=3, related_game_uuid=None),
+            SimpleNamespace(relationship_type='standalone_expansion', related_name='Standalone Expansion', related_igdb_id=4, related_game_uuid=None),
+            SimpleNamespace(relationship_type='remake', related_name='Remake', related_igdb_id=5, related_game_uuid=None),
         ],
     )
 
     assert serialize_game_families(game) == ["Assassin's Creed"]
-    assert [item['type'] for item in serialize_game_relationships(game, {'bundle', 'dlc'})] == ['remake']
+    hidden_types = {'bundle', 'dlc', 'expansion', 'standalone_expansion'}
+    assert [item['type'] for item in serialize_game_relationships(game, hidden_types)] == ['remake']
 
 
 def _library(db_session):

@@ -343,4 +343,39 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     });
+
+    // Handle bulk refresh of library metadata and supplemental content.
+    document.querySelectorAll('.bulk-refresh-lib-metadata').forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            const libraryUuid = this.getAttribute('data-library-uuid');
+            const libraryName = this.getAttribute('data-library-name');
+
+            if (!confirm(`Refresh metadata for every game in "${libraryName}"? This can take several minutes.`)) {
+                return;
+            }
+
+            this.disabled = true;
+            fetch(`/admin/api/library/${libraryUuid}/refresh_metadata`, {
+                method: 'POST',
+                headers: CSRFUtils.getHeaders({
+                    'Content-Type': 'application/json'
+                })
+            })
+            .then(async response => {
+                const data = await response.json();
+                if (!response.ok || !data.success) {
+                    throw new Error(data.message || 'Could not start bulk metadata refresh.');
+                }
+                $.notify(data.message, 'success');
+            })
+            .catch(error => {
+                console.error('Error starting bulk metadata refresh:', error);
+                $.notify(error.message || 'Failed to start bulk metadata refresh.', 'error');
+            })
+            .finally(() => {
+                this.disabled = false;
+            });
+        });
+    });
 });

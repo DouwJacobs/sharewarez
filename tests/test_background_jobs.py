@@ -120,6 +120,9 @@ def test_admin_job_page_filters_and_displays_details(client, app, db_session, jo
     assert queued_id.encode() in response.data
     assert b'Filesystem unavailable' not in response.data
     assert b'Payload' in response.data
+    assert b'Live updates' in response.data
+    assert b'admin_background_jobs.js' in response.data
+    assert f'data-job-id="{queued_id}"'.encode() in response.data
 
 
 def test_admin_job_page_can_cancel_and_retry(client, app, db_session, jobs_admin):

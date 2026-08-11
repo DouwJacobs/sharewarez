@@ -15,7 +15,19 @@
 }
 
 .game-library-container .game-card {
-    min-height: 334px;
+    min-height: 0;
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+}
+
+.game-library-container .game-card > a {
+    display: block;
+    line-height: 0;
+}
+
+.game-library-container .game-card:hover {
+    box-shadow: none !important;
 }
 
 .game-library-container .game-card-container.preview-open,

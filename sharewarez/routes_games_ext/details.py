@@ -163,7 +163,10 @@ def game_details(game_uuid):
             "steam_url": game.steam_url if game.steam_url else 'Not available',
             "times_downloaded": game.times_downloaded,
             "last_updated": game.last_updated.strftime('%Y-%m-%d') if game.last_updated else 'N/A',
-            "relationship_groups": serialize_game_relationships(game, excluded_types={'bundle', 'dlc'}),
+            "relationship_groups": serialize_game_relationships(
+                game,
+                excluded_types={'bundle', 'dlc', 'expansion', 'standalone_expansion'},
+            ),
             "series": sorted(group.name for group in game.groups if group.group_type == 'series'),
             "franchises": sorted(group.name for group in game.groups if group.group_type == 'franchise'),
             "families": serialize_game_families(game),

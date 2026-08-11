@@ -18,3 +18,15 @@ def test_library_hover_preview_uses_modern_accessible_structure():
     assert ".game-card-container.preview-open" in css
     assert "width: min(360px, calc(100vw - 32px));" in css
     assert "@media (hover: none), (pointer: coarse), (max-width: 768px)" in css
+
+
+def test_library_cards_follow_the_cover_height_at_fluid_grid_widths():
+    css = (ROOT / "sharewarez/setup/default_theme/css/games/library_browser.css").read_text(encoding="utf-8")
+
+    card_rule = css.split(".game-library-container .game-card {", 1)[1].split("}", 1)[0]
+    link_rule = css.split(".game-library-container .game-card > a {", 1)[1].split("}", 1)[0]
+
+    assert "min-height: 0;" in card_rule
+    assert "background: transparent !important;" in card_rule
+    assert "border: 0 !important;" in card_rule
+    assert "display: block;" in link_rule

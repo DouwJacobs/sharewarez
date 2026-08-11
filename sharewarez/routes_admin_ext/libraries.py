@@ -1,5 +1,5 @@
 from flask import render_template, request, redirect, url_for, flash, current_app, abort, jsonify
-from flask_login import login_required
+from flask_login import current_user, login_required
 from sharewarez.utils.auth import admin_required
 from sharewarez.models import Library, LibraryPlatform
 from sharewarez import db
@@ -238,5 +238,42 @@ def bulk_refresh_library_images(library_uuid):
         'success': True,
         'message': f'Bulk image refresh started for {len(games)} games in {library.name}.'
     })
+
+
+@admin2_bp.route('/admin/api/library/<library_uuid>/refresh_metadata', methods=['POST'])
+@login_required
+@admin_required
+def bulk_refresh_library_metadata(library_uuid):
+    """Refresh metadata and supplemental content for every game in a library."""
+    from sharewarez.models import Game
+    from sharewarez.utils.background_jobs import enqueue
+
+    library = db.session.execute(select(Library).filter_by(uuid=library_uuid)).scalar_one_or_none()
+    if not library:
+        return jsonify({'success': False, 'message': 'Library not found'}), 404
+
+    game_uuids = db.session.execute(
+        select(Game.uuid).filter_by(library_uuid=library_uuid)
+    ).scalars().all()
+    if not game_uuids:
+        return jsonify({'success': False, 'message': 'No games found in this library.'}), 400
+
+    job = enqueue(
+        'library.bulk_metadata_refresh',
+        {'library_uuid': library_uuid},
+        max_attempts=2,
+        created_by_id=current_user.id,
+    )
+
+    return jsonify({
+        'success': True,
+        'message': (
+            f'Bulk metadata refresh queued for {len(game_uuids)} games in {library.name}. '
+            'Track progress under Background Jobs.'
+        ),
+        'games_queued': len(game_uuids),
+        'job_id': job.id,
+        'job_url': url_for('admin2.background_jobs'),
+    }), 202
 
 

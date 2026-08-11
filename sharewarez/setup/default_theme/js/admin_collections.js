@@ -20,6 +20,88 @@ document.addEventListener('DOMContentLoaded', () => {
         emptyState.hidden = rows.length > 0;
     };
 
+    let dragState = null;
+
+    selectedList.addEventListener('pointerdown', event => {
+        const handle = event.target.closest('.collection-drag-handle');
+        const row = handle?.closest('.collection-selected-game');
+        if (!row) return;
+        event.preventDefault();
+        const rowRect = row.getBoundingClientRect();
+        dragState = {
+            handle,
+            row,
+            pointerId: event.pointerId,
+            startX: event.clientX,
+            startY: event.clientY,
+            offsetX: event.clientX - rowRect.left,
+            offsetY: event.clientY - rowRect.top,
+            width: rowRect.width,
+            height: rowRect.height,
+            preview: null,
+            moved: false
+        };
+        try {
+            handle.setPointerCapture?.(event.pointerId);
+        } catch (_error) {
+            // Pointer capture can be unavailable in older embedded browsers.
+        }
+        row.classList.add('collection-sortable-chosen');
+    });
+
+    selectedList.addEventListener('pointermove', event => {
+        if (!dragState || event.pointerId !== dragState.pointerId) return;
+        if (!dragState.moved && Math.hypot(
+            event.clientX - dragState.startX,
+            event.clientY - dragState.startY
+        ) < 5) return;
+        event.preventDefault();
+
+        if (!dragState.moved) {
+            dragState.moved = true;
+            dragState.preview = dragState.row.cloneNode(true);
+            dragState.preview.classList.remove('collection-sortable-chosen');
+            dragState.preview.classList.add('collection-sortable-preview');
+            dragState.preview.setAttribute('aria-hidden', 'true');
+            dragState.preview.style.width = `${dragState.width}px`;
+            dragState.preview.style.height = `${dragState.height}px`;
+            document.body.append(dragState.preview);
+        }
+
+        dragState.preview.style.left = `${event.clientX - dragState.offsetX}px`;
+        dragState.preview.style.top = `${event.clientY - dragState.offsetY}px`;
+
+        const target = document.elementFromPoint(event.clientX, event.clientY)
+            ?.closest('.collection-selected-game');
+        if (!target || target === dragState.row || !selectedList.contains(target)) return;
+
+        const targetRect = target.getBoundingClientRect();
+        const insertBeforeTarget = event.clientY < targetRect.top + (targetRect.height / 2);
+        selectedList.insertBefore(
+            dragState.row,
+            insertBeforeTarget ? target : target.nextElementSibling
+        );
+    });
+
+    const finishDrag = event => {
+        if (!dragState || event.pointerId !== dragState.pointerId) return;
+        dragState.row.classList.remove('collection-sortable-chosen');
+        dragState.preview?.remove();
+        try {
+            if (dragState.handle.hasPointerCapture?.(event.pointerId)) {
+                dragState.handle.releasePointerCapture(event.pointerId);
+            }
+        } catch (_error) {
+            // The pointer may already have been released by the browser.
+        }
+        const orderChanged = dragState.moved;
+        dragState = null;
+        if (orderChanged) sync();
+    };
+
+    selectedList.addEventListener('pointerup', finishDrag);
+    selectedList.addEventListener('pointercancel', finishDrag);
+
     const makeAction = (icon, label, attribute) => {
         const button = document.createElement('button');
         button.type = 'button';
@@ -39,6 +121,7 @@ document.addEventListener('DOMContentLoaded', () => {
         row.dataset.gameName = game.name;
         const handle = document.createElement('span');
         handle.className = 'collection-drag-handle';
+        handle.title = `Drag to reorder ${game.name}`;
         handle.innerHTML = '<i class="fas fa-grip-vertical" aria-hidden="true"></i>';
         const name = document.createElement('span');
         name.className = 'collection-game-name';

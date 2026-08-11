@@ -260,3 +260,72 @@ def library_scan_task(context, payload):
         'library_uuid': library_uuid, 'folder_path': payload['folder_path'],
         'skipped': False, 'entry_count': entry_count, 'total_size': total_size,
     }
+
+
+@register_task('library.bulk_metadata_refresh')
+def library_bulk_metadata_refresh_task(context, payload):
+    """Refresh every game's metadata while reporting aggregate job progress."""
+    from sharewarez.models import Game, Library
+    from sharewarez.utilities import refresh_game_metadata_and_updates
+
+    library_uuid = payload['library_uuid']
+    library = db.session.get(Library, library_uuid)
+    if library is None:
+        raise ValueError(f'Library not found: {library_uuid}')
+    library_name = library.name
+
+    games = db.session.execute(
+        select(Game.uuid, Game.name)
+        .where(Game.library_uuid == library_uuid)
+        .order_by(Game.name)
+    ).all()
+    total = len(games)
+    if total == 0:
+        context.heartbeat(99, f'No games found in {library_name}')
+        return {
+            'library_uuid': library_uuid,
+            'library_name': library_name,
+            'games_total': 0,
+            'games_succeeded': 0,
+            'games_failed': 0,
+            'failures': [],
+        }
+
+    succeeded = 0
+    failures = []
+    for index, (game_uuid, game_name) in enumerate(games, start=1):
+        context.check_cancelled()
+        context.heartbeat(
+            max(1, int(((index - 1) / total) * 98)),
+            f'Refreshing {index} of {total}: {game_name}',
+        )
+        try:
+            refresh_game_metadata_and_updates(game_uuid)
+            succeeded += 1
+        except Exception as exc:
+            db.session.rollback()
+            current_app.logger.exception(
+                '[BULK METADATA REFRESH] Error refreshing game %s', game_uuid
+            )
+            if len(failures) < 50:
+                failures.append({
+                    'game_uuid': game_uuid,
+                    'game_name': game_name,
+                    'error': str(exc)[:500],
+                })
+        finally:
+            db.session.remove()
+
+    failed = total - succeeded
+    context.heartbeat(
+        99,
+        f'Finished {library_name}: {succeeded} refreshed, {failed} failed',
+    )
+    return {
+        'library_uuid': library_uuid,
+        'library_name': library_name,
+        'games_total': total,
+        'games_succeeded': succeeded,
+        'games_failed': failed,
+        'failures': failures,
+    }

@@ -159,7 +159,7 @@
                 <div class="collection-selected-list" data-selected-list>
                     {% if collection %}{% for link in collection.game_links %}
                     <div class="collection-selected-game" data-game-uuid="{{ link.game_uuid }}" data-game-name="{{ link.game.name }}">
-                        <span class="collection-drag-handle"><i class="fas fa-grip-vertical" aria-hidden="true"></i></span>
+                        <span class="collection-drag-handle" title="Drag to reorder {{ link.game.name }}"><i class="fas fa-grip-vertical" aria-hidden="true"></i></span>
                         <span class="collection-game-name">{{ link.game.name }}</span>
                         <span class="collection-order-actions">
                             <button type="button" data-move="up" aria-label="Move {{ link.game.name }} up"><i class="fas fa-chevron-up"></i></button>

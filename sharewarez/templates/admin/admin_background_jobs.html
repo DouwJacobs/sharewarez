@@ -5,10 +5,10 @@
 <link rel="stylesheet" href="{{ 'css/admin/admin_background_jobs.css'|theme_asset }}">
 {% endblock %}
 {% block content %}
-<main class="app-page jobs-admin-shell">
+<main class="app-page jobs-admin-shell" data-live-refresh-url="{{ request.full_path }}">
     <header class="app-page-header jobs-header">
         <div><p class="jobs-eyebrow">Operations</p><h1>Background jobs</h1><p>Monitor queued work, inspect failures, and safely cancel or retry jobs.</p></div>
-        <a class="btn btn-secondary" href="{{ url_for('admin2.background_jobs', status=status_filter, q=search, per_page=per_page) }}"><i class="fas fa-sync-alt" aria-hidden="true"></i> Refresh</a>
+        <div class="jobs-header-actions"><span class="jobs-live-status" role="status"><span aria-hidden="true"></span> Live updates</span><a class="btn btn-secondary" href="{{ url_for('admin2.background_jobs', status=status_filter, q=search, per_page=per_page) }}"><i class="fas fa-sync-alt" aria-hidden="true"></i> Refresh</a></div>
     </header>
     <section class="job-summary" aria-label="Job status summary">
         {% for status in statuses %}<a class="job-summary-card status-{{ status }}{% if status_filter == status %} is-active{% endif %}" href="{{ url_for('admin2.background_jobs', status=status, q=search, per_page=per_page) }}"><span>{{ status|title }}</span><strong>{{ counts.get(status, 0) }}</strong></a>{% endfor %}
@@ -21,7 +21,7 @@
     </form>
     <section class="job-list" aria-live="polite">
         {% for job in pagination.items %}
-        <details class="job-card card status-{{ job.status }}">
+        <details class="job-card card status-{{ job.status }}" data-job-id="{{ job.id }}">
             <summary><span class="job-state">{{ job.status|title }}</span><span class="job-main"><strong>{{ job.task_name }}</strong><small>{{ job.id }}</small></span><span class="job-progress"><span style="--job-progress: {{ job.progress }}%"></span><small>{{ job.progress }}%</small></span><time datetime="{{ job.created_at.isoformat() }}">{{ job.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</time></summary>
             <div class="job-details">
                 <dl><div><dt>Queue</dt><dd>{{ job.queue }}</dd></div><div><dt>Attempts</dt><dd>{{ job.attempts }} / {{ job.max_attempts }}</dd></div><div><dt>Worker</dt><dd>{{ job.locked_by or '—' }}</dd></div><div><dt>Started</dt><dd>{{ job.started_at.strftime('%Y-%m-%d %H:%M:%S') if job.started_at else '—' }}</dd></div><div><dt>Completed</dt><dd>{{ job.completed_at.strftime('%Y-%m-%d %H:%M:%S') if job.completed_at else '—' }}</dd></div><div><dt>Heartbeat</dt><dd>{{ job.heartbeat_at.strftime('%Y-%m-%d %H:%M:%S') if job.heartbeat_at else '—' }}</dd></div></dl>
@@ -34,4 +34,5 @@
     </section>
     {{ render_pagination(pagination, 'admin2.background_jobs', {'status': status_filter, 'q': search, 'per_page': per_page}) }}
 </main>
+<script src="{{ 'js/admin_background_jobs.js'|theme_asset }}" defer></script>
 {% endblock %}
