@@ -75,8 +75,9 @@ def test_metadata_refresh_updates_igdb_fields_and_repairs_developer_placeholder(
          patch('sharewarez.utilities.is_safe_path', return_value=(True, None)), \
          patch('sharewarez.utilities.fetch_game_by_igdb_id', return_value=[metadata]), \
          patch('sharewarez.utilities.get_or_create_entity', return_value='Adventure'), \
-         patch('sharewarez.utilities.enumerate_companies', side_effect=assign_company), \
-         patch('sharewarez.utilities.read_first_nfo_content', return_value=None), \
+             patch('sharewarez.utilities.enumerate_companies', side_effect=assign_company), \
+             patch('sharewarez.utils.game_relationships.sync_game_relationships'), \
+             patch('sharewarez.utilities.read_first_nfo_content', return_value=None), \
          patch('sharewarez.utilities.get_folder_size_in_bytes_updates', return_value=1024), \
          patch('sharewarez.utilities._scan_enabled_supplemental_content'):
         refresh_result = refresh_game_metadata_and_updates(game.uuid)
@@ -110,8 +111,9 @@ def test_metadata_refresh_succeeds_when_game_path_is_unavailable():
          patch('sharewarez.utilities.db.session.execute', side_effect=results), \
          patch('sharewarez.utilities.db.session.commit'), \
          patch('sharewarez.utilities.os.path.isdir', return_value=False), \
-         patch('sharewarez.utilities.fetch_game_by_igdb_id', return_value=[{'name': 'Updated name'}]), \
-         patch('sharewarez.utilities.read_first_nfo_content') as read_nfo, \
+             patch('sharewarez.utilities.fetch_game_by_igdb_id', return_value=[{'name': 'Updated name'}]), \
+             patch('sharewarez.utils.game_relationships.sync_game_relationships'), \
+             patch('sharewarez.utilities.read_first_nfo_content') as read_nfo, \
          patch('sharewarez.utilities.get_folder_size_in_bytes_updates') as calculate_size, \
          patch('sharewarez.utilities._scan_enabled_supplemental_content') as scan_supplemental, \
          patch('sharewarez.utils.hltb.update_game_hltb_sync') as refresh_hltb:
