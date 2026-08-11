@@ -31,7 +31,7 @@
         <div class="game-library-container" id="gamesContainer">
             {% for game in games %}
             <div class="game-card-container">
-                <div class="game-card" onmouseover="showDetails(this, '{{ game.uuid }}')" onmouseout="hideDetails()" onfocusin="showDetails(this, '{{ game.uuid }}')" onfocusout="hideDetails()" data-name="{{ game.name }}" data-size="{{ game.size }}" data-genres="{{ game.genres|join(', ') }}" data-tags="{{ game.tags|join(', ') }}">
+                <div class="game-card" onmouseover="showDetails(this, '{{ game.uuid }}')" onmouseout="hideDetails()" onfocusin="showDetails(this, '{{ game.uuid }}')" onfocusout="hideDetails()" data-uuid="{{ game.uuid }}" data-name="{{ game.name }}" data-size="{{ game.size }}" data-genres="{{ game.genres|join(', ') }}" data-tags="{{ game.tags|join(', ') }}">
                     <button id="menuButton-{{ game.uuid }}" class="button-glass-hamburger" type="button" aria-label="Open actions for {{ game.name }}" aria-haspopup="menu" aria-expanded="false"><i class="fas fa-bars" aria-hidden="true"></i></button>
                     <button class="favorite-btn" data-game-uuid="{{ game.uuid }}"
                            data-is-favorite="{{ game.is_favorite|lower }}" data-game-name="{{ game.name }}" type="button" aria-label="{% if game.is_favorite %}Remove {{ game.name }} from favorites{% else %}Add {{ game.name }} to favorites{% endif %}">
@@ -97,7 +97,7 @@
                     {% if game.has_local_override %}
                     <div class="local-metadata-badge" title="Uses local metadata or images">L</div>
                     {% endif %}
-                    <div id="details-{{ game.uuid }}" class="popup-game-details hidden">
+                    <div id="details-{{ game.uuid }}" class="popup-game-details hidden" aria-hidden="true">
                         <!-- Details and screenshots will be injected here by JavaScript -->
                     </div>
                 </div>

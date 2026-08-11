@@ -14,6 +14,7 @@ function debounce(func, wait, immediate) {
 }
 
 const slideshowIntervals = {};
+const hoverPreviewMedia = window.matchMedia('(hover: hover) and (pointer: fine)');
 
 function escapeHtml(value) {
     const element = document.createElement('div');
@@ -76,21 +77,30 @@ const showDetailsDebounced = debounce(function(element, gameUuid, rowid) {
             }
         })
         .then(screenshots => {
-            let detailsHtml = '<div class="slideshow-container"><div class="slides-wrapper">';
+            let detailsHtml = '<div class="library-hover-preview-media"><div class="slides-wrapper">';
             screenshots.forEach((url, index) => {
-                detailsHtml += `<div class="screenshot-slide" style="display: ${index === 0 ? 'block' : 'none'};"><img src="${url}" class="screenshot"></div>`;
+                detailsHtml += `<div class="screenshot-slide" style="display: ${index === 0 ? 'block' : 'none'};"><img src="${escapeHtml(url)}" class="screenshot" alt=""></div>`;
             });
-            detailsHtml += '</div></div>'; // End slideshow container
+            if (!screenshots.length) {
+                detailsHtml += '<div class="library-hover-preview-placeholder"><i class="fas fa-image" aria-hidden="true"></i></div>';
+            }
+            detailsHtml += '</div><span class="library-hover-preview-kicker">Quick look</span></div>';
 
             const tags = (element.dataset.tags || '').split(', ').filter(Boolean);
+            const genres = (element.dataset.genres || '').split(', ').filter(Boolean);
             const tagsHtml = tags.length
-                ? `<div class="game-card-hover-tags"><span class="game-card-hover-label">Tags</span>${tags.map(tag => `<span class="chip">${escapeHtml(tag)}</span>`).join('')}</div>`
+                ? `<div class="game-card-hover-tags"><span class="game-card-hover-label">Tags</span><div class="library-hover-preview-chips">${tags.slice(0, 3).map(tag => `<span class="chip">${escapeHtml(tag)}</span>`).join('')}</div></div>`
                 : '';
+            const genresHtml = genres.length
+                ? `<div class="library-hover-preview-chips">${genres.slice(0, 3).map(genre => `<span class="chip">${escapeHtml(genre)}</span>`).join('')}</div>`
+                : '<span class="library-hover-preview-muted">No genres available</span>';
 
-            detailsHtml += `<div class="game-info-box" style="animation: fadein 0.5s;">
-                                <div class="game-name">${element.dataset.name}</div>
-                                <div class="game-size chip file-size-chip">${element.dataset.size}</div>
-                                <div>${element.dataset.genres.split(', ').map(genre => `<span class="chip">${genre}</span>`).join('')}</div>
+            detailsHtml += `<div class="game-info-box">
+                                <div class="library-hover-preview-heading">
+                                    <h3 class="game-name">${escapeHtml(element.dataset.name || 'Untitled game')}</h3>
+                                    <span class="game-size"><i class="fas fa-hard-drive" aria-hidden="true"></i>${escapeHtml(element.dataset.size || 'Unknown size')}</span>
+                                </div>
+                                ${genresHtml}
                                 ${tagsHtml}
                             </div>`;
 
@@ -98,6 +108,8 @@ const showDetailsDebounced = debounce(function(element, gameUuid, rowid) {
 
             startSlideshowForGameUuid(gameUuid);
             detailsDiv.classList.remove('hidden');
+            detailsDiv.setAttribute('aria-hidden', 'false');
+            element.closest('.game-card-container')?.classList.add('preview-open');
         })
         .catch(error => {
             console.error('Fetch error:', error);
@@ -106,33 +118,8 @@ const showDetailsDebounced = debounce(function(element, gameUuid, rowid) {
 	}
 }, 300); // 300 ms
 
-function adjustDetailsSizeForGameUuid(gameUuid) {
-    const gameCard = document.querySelector(`.game-card[data-uuid="${gameUuid}"]`);
-    if (!gameCard) return;
-
-    const coverImage = gameCard.querySelector('img.game-cover');
-    if (!coverImage) return;
-
-    const detailsDiv = document.getElementById(`details-${gameUuid}`);
-    if (!detailsDiv) return;
-
-    const coverWidth = coverImage.offsetWidth;
-    const coverHeight = coverImage.offsetHeight;
-
-    detailsDiv.style.width = `${coverWidth}px`;
-    detailsDiv.style.height = `${coverHeight}px`;
-}
-
-const debouncedResize = debounce(function() {
-    document.querySelectorAll('.popup-game-details').forEach(details => {
-        const gameUuid = details.id.replace('details-', '');
-        adjustDetailsSizeForGameUuid(gameUuid);
-    });
-}, 250);
-
-window.addEventListener('resize', debouncedResize);
-
 function showDetails(element, gameUuid, rowid) {
+	if (!hoverPreviewMedia.matches) return;
 	
 	if (rowid) {
 		var detailsDiv = document.getElementById(`details-${gameUuid}-${rowid}`);
@@ -147,22 +134,19 @@ function showDetails(element, gameUuid, rowid) {
     showDetailsDebounced(element, gameUuid, rowid);
 
     // Calculate the space needed for the popup
-    const popupWidth = 300; // Assuming a fixed width for the popup
+    const popupWidth = 360;
     const viewportWidth = window.innerWidth;
     const gameCardRect = element.getBoundingClientRect();
     const spaceOnRight = viewportWidth - gameCardRect.right;
 
     // Check if there's enough space on the right, if not, adjust to show on the left
-    if (spaceOnRight < popupWidth + 40) { // 20px for some margin
-        detailsDiv.style.left = 'auto'; // Reset left property
-        detailsDiv.style.right = '105%'; // Position to the left of the game card
+    if (spaceOnRight < popupWidth + 28) {
+        detailsDiv.style.left = 'auto';
+        detailsDiv.style.right = 'calc(100% + 14px)';
     } else {
-        detailsDiv.style.right = 'auto'; // Reset right property
-        detailsDiv.style.left = '105%'; // Default position to the right of the game card
+        detailsDiv.style.right = 'auto';
+        detailsDiv.style.left = 'calc(100% + 14px)';
     }
-
-    // Existing logic to show game details
-    showDetailsDebounced(element, gameUuid, rowid);
 }
 
 function hideDetails() {
@@ -171,5 +155,7 @@ function hideDetails() {
         const gameUuid = details.id.replace('details-', '');
         clearSlideshowForGameUuid(gameUuid); 
         details.classList.add('hidden');
+        details.setAttribute('aria-hidden', 'true');
+        details.closest('.game-card-container')?.classList.remove('preview-open');
     });
 }

@@ -10,6 +10,8 @@ Theme observed: Evergreen/custom dark-green theme
 
 `scripts/accessibility_audit.py` scans every Jinja template for baseline accessibility contracts, including document language, alternative text, accessible interactive names, labelled form controls, iframe titles, dialog semantics, and duplicate static IDs. The production quality gate runs this audit before the test suite, and `tests/test_accessibility_audit.py` verifies both the full template tree and each failure mode.
 
+The library's desktop-only hover preview uses a layered storefront surface with 16:9 artwork, concise metadata, bounded chips, edge-aware placement, and reduced-motion support. Touch and mobile layouts do not render hover-only content.
+
 ## Method
 
 The Flask route map was enumerated first. Page-producing GET routes were separated from APIs, downloads, static assets, and state-changing actions. Each concrete page below was then loaded in an authenticated administrator session at desktop and mobile widths. The audit checked the visible layout, content bounds, horizontal overflow, navigation, spacing, responsive stacking, control density, and computed theme colors. Key screens were also visually compared as screenshots.
