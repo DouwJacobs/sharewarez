@@ -89,3 +89,14 @@ def test_help_accordion_is_scoped_keyboard_accessible_and_theme_aware():
     assert '.help-card > .card-header' in css
     assert 'var(--theme-card-background' in css
     assert '.help-card kbd' in css
+    assert 'grid-template-columns: minmax(0, 1fr)' in css
+    assert '.help-card { align-self: start; }' in css
+
+
+def test_shared_page_header_only_uses_flex_for_standard_actions():
+    css = Path('sharewarez/setup/default_theme/css/components.css').read_text()
+    dashboard = Path('sharewarez/templates/admin/admin_dashboard.html').read_text()
+
+    assert '.app-page-header:has(> .app-page-actions)' in css
+    header = dashboard.split('<header class="app-page-header admin-dashboard-header">', 1)[1]
+    assert header.lstrip().startswith('<div>')

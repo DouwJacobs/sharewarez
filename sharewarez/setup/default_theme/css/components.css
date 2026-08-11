@@ -13,12 +13,16 @@
 .app-page--wide { max-width: 1600px; }
 
 .app-page-header {
-    display: flex;
+    display: block;
     min-width: 0;
+    margin: 0 0 var(--spacing-lg, 24px);
+}
+
+.app-page-header:has(> .app-page-actions) {
+    display: flex;
     align-items: flex-end;
     justify-content: space-between;
     gap: var(--spacing-lg, 24px);
-    margin: 0 0 var(--spacing-lg, 24px);
 }
 
 .app-page-header > :first-child { min-width: 0; }
@@ -72,10 +76,13 @@
     }
 
     .app-page-header {
+        margin-bottom: 16px;
+    }
+
+    .app-page-header:has(> .app-page-actions) {
         align-items: stretch;
         flex-direction: column;
         gap: 12px;
-        margin-bottom: 16px;
     }
 
     .app-page-actions { width: 100%; }
