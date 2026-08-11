@@ -101,7 +101,7 @@ def create_app():
     # --- END: Print masked PostgreSQL connection string ---
 
     parsed_url = urlparse(app.config['SQLALCHEMY_DATABASE_URI'])
-    check_postgres_port_open(parsed_url.hostname, 5432, 60, 2)
+    check_postgres_port_open(parsed_url.hostname, parsed_url.port or 5432, 60, 2)
     db.init_app(app)
     migrate.init_app(app, db)
     login_manager.init_app(app)
