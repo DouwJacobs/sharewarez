@@ -54,7 +54,24 @@
     backdrop-filter: var(--backdrop-blur);
 }
 
-.downloads-panel .dataTables_wrapper { margin-top: 0; }
+.downloads-panel .dataTables_wrapper {
+    margin-top: 0;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    overflow-x: auto;
+    overflow-y: hidden;
+}
+
+.downloads-panel .dataTables_wrapper > table {
+    min-width: 1120px;
+}
+
+.downloads-panel .dataTables_wrapper :is(th, td):last-child {
+    padding-right: 22px !important;
+}
 
 .downloads-filter-bar {
     display: flex;
@@ -187,7 +204,7 @@
     .downloads-page { width: 100%; margin: 0 auto 24px; }
     .downloads-page-header { align-items: flex-start; flex-direction: column; }
     .downloads-panel { padding: var(--spacing-sm); }
-    .downloads-table, .admin_manage_downloads-table { min-width: 820px; }
+    .downloads-table, .admin_manage_downloads-table { min-width: 1120px; }
     .downloads-filter-bar { align-items: stretch; flex-direction: column; }
 }
 

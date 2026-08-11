@@ -35,7 +35,6 @@
                 <button class="btn btn-danger btn-sm" type="button" data-bulk-action="delete">Delete</button>
                 <a class="btn btn-secondary btn-sm ms-auto" href="{{ url_for('admin2.system_logs', event_type='download_api') }}"><i class="fas fa-clipboard-list" aria-hidden="true"></i> Audit log</a>
             </div>
-            <div class="table-responsive">
             <table id="downloadsTable" class="admin_manage_downloads-table table table-dark table-striped">
                 <thead class="admin_manage_downloads-table-header">
                     <tr class="admin_manage_downloads-tr-headings">
@@ -89,7 +88,6 @@
                     {% endfor %}
                 </tbody>
             </table>
-            </div>
             {{ render_pagination(pagination, 'download.manage_downloads', {'status': status_filter, 'user': user_filter, 'content_type': content_type_filter}) }}
         {% else %}
             {{ empty_state('No download requests', 'No requests match the current filters.' if status_filter or user_filter else 'New user download activity will appear here.') }}
@@ -103,7 +101,8 @@ $(document).ready(function() {
         "order": [[1, "desc"]],
         "pageLength": 25,
         "theme": "dark",
-        "responsive": true,
+        "responsive": false,
+        "autoWidth": false,
         "paging": false,
         "searching": false,
         "info": false,
