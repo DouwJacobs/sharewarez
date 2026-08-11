@@ -47,6 +47,8 @@ for _ in $(seq 1 30); do
     sleep 1
 done
 docker exec "$TEST_DB_CONTAINER" pg_isready -U postgres -d sharewareztest >/dev/null
+docker exec "$TEST_DB_CONTAINER" psql -U postgres -d sharewareztest \
+    -v ON_ERROR_STOP=1 -c 'CREATE EXTENSION IF NOT EXISTS pg_trgm' >/dev/null
 
 export TEST_DATABASE_URL="postgresql://postgres:postgres@localhost:${TEST_DB_PORT}/sharewareztest"
 export DATABASE_URL="$TEST_DATABASE_URL"
@@ -69,6 +71,8 @@ for test_module in tests/test_*.py; do
     echo "    $test_module"
     docker exec "$TEST_DB_CONTAINER" dropdb --if-exists --force -U postgres sharewareztest
     docker exec "$TEST_DB_CONTAINER" createdb -U postgres sharewareztest
+    docker exec "$TEST_DB_CONTAINER" psql -U postgres -d sharewareztest \
+        -v ON_ERROR_STOP=1 -c 'CREATE EXTENSION IF NOT EXISTS pg_trgm' >/dev/null
     "$PYTHON_BIN" -m pytest -q "$test_module"
 done
 
