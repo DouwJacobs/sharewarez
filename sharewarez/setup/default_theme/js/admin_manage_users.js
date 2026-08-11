@@ -111,7 +111,11 @@ document.addEventListener('DOMContentLoaded', function() {
             state: document.getElementById('editState').checked,
             is_email_verified: document.getElementById('editEmailVerified').checked,
             password: document.getElementById('editPassword').value,
-            about: document.getElementById('editAbout').value
+            about: document.getElementById('editAbout').value,
+            monthly_download_quota_gb: (function() {
+                const value = document.getElementById('editMonthlyDownloadQuotaGb').value;
+                return value === '' ? null : parseFloat(value);
+            })()
         };
         updateUser(userId, userData);
     });
@@ -127,6 +131,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 document.getElementById('editState').checked = data.state;
                 document.getElementById('editEmailVerified').checked = data.is_email_verified;
                 document.getElementById('editAbout').value = data.about || '';
+                document.getElementById('editMonthlyDownloadQuotaGb').value = data.monthly_download_quota_gb ?? '';
                 document.getElementById('editPassword').value = '';
                 editModal.show();
             })

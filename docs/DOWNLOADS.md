@@ -23,5 +23,13 @@ all Uvicorn workers. A bandwidth value of `0` is unlimited; positive values
 are interpreted as decimal megabits per second and preserve HTTP range
 semantics.
 
+Monthly quotas use calendar months and measure bytes actually sent, including
+resumed ranges. Administrators set an instance default in **Server Settings →
+Downloads** and may give an individual user an inherited, unlimited, or custom
+GB allowance from **Administration → Users**. Before a response starts, the
+server reserves the expected transfer size atomically; interrupted transfers
+release unused capacity and retain only their delivered-byte usage. Generated
+ZIP reservations use the total size of their source files.
+
 When changing download delivery, preserve the path and ownership checks in
 `asgi.py` and run `tests/test_download_ranges.py` plus the download route tests.

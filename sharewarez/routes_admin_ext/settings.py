@@ -61,6 +61,7 @@ DEFAULT_SETTINGS = {
     'turboDownloadBatchSize': DEFAULT_BATCH_SIZE,
     'maxConcurrentDownloadsPerUser': 2,
     'downloadBandwidthLimitMbps': 0,
+    'defaultMonthlyDownloadQuotaGb': 0,
     'scanThreadCount': 1,
     'enableHltbIntegration': True,
     'hltbRateLimitDelay': 2.0,
@@ -156,6 +157,12 @@ def validate_settings_data(settings_data):
         not isinstance(bandwidth_limit, (int, float)) or not 0 <= bandwidth_limit <= 10000
     ):
         errors.append("Download bandwidth limit must be between 0 and 10000 Mbps")
+
+    quota_gb = settings_data.get('defaultMonthlyDownloadQuotaGb')
+    if quota_gb is not None and (
+        not isinstance(quota_gb, (int, float)) or not 0 <= quota_gb <= 100000
+    ):
+        errors.append("Default monthly download quota must be between 0 and 100000 GB")
 
     # Validate local metadata filename
     metadata_filename = settings_data.get('localMetadataFilename')

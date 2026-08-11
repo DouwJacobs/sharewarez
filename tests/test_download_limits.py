@@ -1,7 +1,8 @@
 import asyncio
 
-from sharewarez.utils.download_limits import throttle_chunks
+from sharewarez.utils.download_limits import estimate_path_bytes, throttle_chunks
 from sharewarez.routes_admin_ext.settings import validate_settings_data
+from sharewarez.routes_admin_ext.users import validate_monthly_download_quota
 
 
 def test_unlimited_throttle_preserves_chunks():
@@ -38,6 +39,7 @@ def test_download_delivery_settings_validation():
     assert validate_settings_data({
         "maxConcurrentDownloadsPerUser": 3,
         "downloadBandwidthLimitMbps": 25.5,
+        "defaultMonthlyDownloadQuotaGb": 250,
     }) == []
     errors = validate_settings_data({
         "maxConcurrentDownloadsPerUser": 0,
@@ -45,3 +47,19 @@ def test_download_delivery_settings_validation():
     })
     assert "Concurrent downloads per user must be between 1 and 20" in errors
     assert "Download bandwidth limit must be between 0 and 10000 Mbps" in errors
+
+
+def test_estimate_path_bytes_counts_directory_files(tmp_path):
+    (tmp_path / "one.bin").write_bytes(b"1234")
+    nested = tmp_path / "nested"
+    nested.mkdir()
+    (nested / "two.bin").write_bytes(b"567")
+    assert estimate_path_bytes(tmp_path) == 7
+
+
+def test_monthly_download_quota_validation():
+    assert validate_monthly_download_quota(None) == (True, "")
+    assert validate_monthly_download_quota(0) == (True, "")
+    assert validate_monthly_download_quota(25.5) == (True, "")
+    assert validate_monthly_download_quota(-1)[0] is False
+    assert validate_monthly_download_quota(True)[0] is False

@@ -66,6 +66,14 @@ def validate_about(about):
     
     return True, ""
 
+
+def validate_monthly_download_quota(value):
+    if value is None:
+        return True, ""
+    if isinstance(value, bool) or not isinstance(value, (int, float)) or not 0 <= value <= 100000:
+        return False, "Monthly download quota must be between 0 and 100000 GB"
+    return True, ""
+
 def check_email_unique(email, exclude_user_id=None):
     """Check if email is unique in the system"""
     query = db.session.execute(
@@ -241,7 +249,11 @@ def manage_user_api(user_id):
             'role': user.role,
             'state': user.state,
             'about': user.about,
-            'is_email_verified': user.is_email_verified
+            'is_email_verified': user.is_email_verified,
+            'monthly_download_quota_gb': (
+                None if user.monthly_download_quota_bytes is None
+                else user.monthly_download_quota_bytes / 1_000_000_000
+            ),
         })
     
     elif request.method == 'PUT':
@@ -331,6 +343,16 @@ def manage_user_api(user_id):
             if new_about != user.about:
                 changes.append("about field")
                 user.about = new_about
+
+        if 'monthly_download_quota_gb' in data:
+            quota_gb = data['monthly_download_quota_gb']
+            valid, error = validate_monthly_download_quota(quota_gb)
+            if not valid:
+                return jsonify({'success': False, 'message': error}), 400
+            quota_bytes = None if quota_gb is None else round(quota_gb * 1_000_000_000)
+            if quota_bytes != user.monthly_download_quota_bytes:
+                changes.append("monthly download quota")
+                user.monthly_download_quota_bytes = quota_bytes
         
         # Handle password change
         if data.get('password'):

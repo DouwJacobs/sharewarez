@@ -15,7 +15,13 @@ from sharewarez.models import DownloadRequest, Game, GlobalSettings
 from sharewarez.async_streaming import create_async_streaming_response, async_generate_zipstream_response
 from sharewarez.utils.security import is_safe_path, get_allowed_base_directories
 from sharewarez.utils.event_logging import log_system_event
-from sharewarez.utils.download_limits import acquire_download_slot, throttle_chunks
+from sharewarez.utils.download_limits import (
+    acquire_download_slot,
+    estimate_path_bytes,
+    finish_transfer,
+    reserve_transfer,
+    throttle_chunks,
+)
 from sqlalchemy import select
 
 
@@ -171,7 +177,7 @@ class LazyASGIApp:
             
             # Check if this is a streaming download (source path is a directory)
             if os.path.isdir(file_path):
-                await self._handle_streaming_download(send, download_request, file_path, bandwidth_limit)
+                await self._handle_streaming_download(send, download_request, file_path, user_id, bandwidth_limit)
                 return
             
             # Security validation for direct game files
@@ -194,7 +200,10 @@ class LazyASGIApp:
             # Stream the file
             filename = os.path.basename(file_path)
             log_system_event(f"Async file download: {filename}", event_type='download', event_level='information')
-            await self._stream_file(send, file_path, filename, scope, bandwidth_limit)
+            await self._stream_file(
+                send, file_path, filename, scope, user_id, bandwidth_limit,
+                download_request_id=download_request.id,
+            )
     
     async def _handle_rom_download(self, scope, receive, send, path, user_id, bandwidth_limit):
         """Handle ROM file downloads for emulator"""
@@ -251,7 +260,7 @@ class LazyASGIApp:
             filename = os.path.basename(game.full_disk_path)
             log_system_event(f"ROM file downloaded for WebRetro: {game.name}", 
                            event_type='download', event_level='information')
-            await self._stream_file(send, game.full_disk_path, filename, scope, bandwidth_limit)
+            await self._stream_file(send, game.full_disk_path, filename, scope, user_id, bandwidth_limit)
     
     async def _get_user_from_session(self, scope):
         """Extract user ID from Flask session cookie"""
@@ -312,8 +321,11 @@ class LazyASGIApp:
                            event_type='security', event_level='warning')
             return None
     
-    async def _stream_file(self, send, file_path, filename, scope, bandwidth_limit=0):
+    async def _stream_file(self, send, file_path, filename, scope, user_id=None, bandwidth_limit=0, download_request_id=None):
         """Stream a file asynchronously"""
+        transfer_id = None
+        bytes_sent = 0
+        completed = False
         try:
             file_size = os.path.getsize(file_path)
             request_headers = dict(scope.get("headers", []))
@@ -336,6 +348,16 @@ class LazyASGIApp:
                 start, end = byte_range
                 length = end - start + 1
                 status = 206
+            if user_id is not None:
+                transfer_id, _used_bytes, _quota_bytes = reserve_transfer(
+                    user_id, filename, length, download_request_id=download_request_id
+                )
+                if transfer_id is None:
+                    await self._send_error(
+                        send, 429, "Monthly download quota exceeded",
+                        extra_headers=[(b"retry-after", b"3600")],
+                    )
+                    return
             async_generator, headers = await create_async_streaming_response(
                 file_path, filename, start=start, length=length
             )
@@ -351,6 +373,7 @@ class LazyASGIApp:
             
             # Stream file chunks
             async for chunk in throttle_chunks(async_generator, bandwidth_limit):
+                bytes_sent += len(chunk)
                 await send({
                     "type": "http.response.body",
                     "body": chunk,
@@ -363,15 +386,22 @@ class LazyASGIApp:
                 "body": b"",
                 "more_body": False
             })
+            completed = True
             
         except Exception as e:
             log_system_event(f"Error streaming file {filename}: {str(e)}", 
                            event_type='download', event_level='error')
             # If we haven't started the response yet, send an error
             await self._send_error(send, 500, "Error streaming file")
+        finally:
+            if transfer_id is not None:
+                finish_transfer(transfer_id, bytes_sent, 'completed' if completed else 'interrupted')
     
-    async def _handle_streaming_download(self, send, download_request, source_path, bandwidth_limit=0):
+    async def _handle_streaming_download(self, send, download_request, source_path, user_id, bandwidth_limit=0):
         """Handle zipstream downloads for multi-file games"""
+        transfer_id = None
+        bytes_sent = 0
+        completed = False
         try:
             # Validate source path is within allowed directories
             allowed_bases = get_allowed_base_directories(self._flask_app)
@@ -403,6 +433,17 @@ class LazyASGIApp:
                 # Fallback to game name if file_location is not available
                 game = download_request.game
                 filename = f"{game.name}.zip" if game else "download.zip"
+
+            expected_bytes = estimate_path_bytes(source_path)
+            transfer_id, _used_bytes, _quota_bytes = reserve_transfer(
+                user_id, filename, expected_bytes, download_request_id=download_request.id
+            )
+            if transfer_id is None:
+                await self._send_error(
+                    send, 429, "Monthly download quota exceeded",
+                    extra_headers=[(b"retry-after", b"3600")],
+                )
+                return
             
             print(f"Starting zipstream download: {filename}")
             
@@ -420,6 +461,7 @@ class LazyASGIApp:
             
             # Stream ZIP chunks
             async for chunk in throttle_chunks(async_generator, bandwidth_limit):
+                bytes_sent += len(chunk)
                 await send({
                     "type": "http.response.body",
                     "body": chunk,
@@ -434,6 +476,7 @@ class LazyASGIApp:
             })
             
             print(f"Completed zipstream download: {filename}")
+            completed = True
             
         except Exception as e:
             # Use print and handle potential undefined filename
@@ -456,6 +499,9 @@ class LazyASGIApp:
                 except Exception:
                     # Connection already closed, nothing more we can do
                     pass
+        finally:
+            if transfer_id is not None:
+                finish_transfer(transfer_id, bytes_sent, 'completed' if completed else 'interrupted')
     
     async def _send_error(self, send, status_code, message, extra_headers=None):
         """Send an HTTP error response"""

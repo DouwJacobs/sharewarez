@@ -104,6 +104,25 @@
     margin: 2px;
 }
 
+.users-quota-input .form-control {
+    border-right: 0;
+}
+
+.users-input-suffix {
+    display: grid;
+    min-width: 48px;
+    place-items: center;
+    padding: 0 12px;
+    border: 1px solid rgba(var(--theme-accent-soft-rgb, 154, 177, 255), .2);
+    border-left: 0;
+    border-radius: 0 10px 10px 0;
+    background: color-mix(in srgb, var(--theme-card-bottom, #10111c) 88%, var(--theme-accent, #6074e8));
+    color: var(--theme-text-secondary, #c5ccdc);
+    font-size: .76rem;
+    font-weight: 700;
+    letter-spacing: .04em;
+}
+
 @media (max-width: 768px) {
     .users-management-page {
         width: calc(100% - 24px);

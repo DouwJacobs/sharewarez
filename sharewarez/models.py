@@ -310,6 +310,7 @@ class User(db.Model):
     )
     token_creation_time = db.Column(db.DateTime, nullable=True)
     invite_quota = db.Column(db.Integer, default=0) 
+    monthly_download_quota_bytes = db.Column(db.BigInteger, nullable=True)
     
     def set_password(self, password):
         # Now using Argon2 to hash new passwords
@@ -367,6 +368,23 @@ class DownloadRequest(db.Model):
     game_extra_id = db.Column(db.Integer, db.ForeignKey('game_extras.id', ondelete='SET NULL'), nullable=True)
     game_update = db.relationship('GameUpdate', foreign_keys=[game_update_id])
     game_extra = db.relationship('GameExtra', foreign_keys=[game_extra_id])
+
+
+class DownloadTransfer(db.Model):
+    __tablename__ = 'download_transfers'
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False, index=True)
+    download_request_id = db.Column(db.Integer, db.ForeignKey('download_requests.id', ondelete='SET NULL'), nullable=True)
+    filename = db.Column(db.String(512), nullable=False)
+    reserved_bytes = db.Column(db.BigInteger, nullable=False, default=0)
+    bytes_sent = db.Column(db.BigInteger, nullable=False, default=0)
+    status = db.Column(db.String(24), nullable=False, default='active', index=True)
+    started_at = db.Column(db.DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc), index=True)
+    ended_at = db.Column(db.DateTime(timezone=True), nullable=True)
+
+    user = db.relationship('User', foreign_keys=[user_id])
+    download_request = db.relationship('DownloadRequest', foreign_keys=[download_request_id])
 
 
 class GameRequest(db.Model):

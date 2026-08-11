@@ -1,7 +1,9 @@
 import asyncio
 import time
+from datetime import datetime, timezone
+from pathlib import Path
 
-from sqlalchemy import text
+from sqlalchemy import func, select, text
 
 
 class DownloadSlot:
@@ -58,3 +60,63 @@ async def throttle_chunks(chunks, megabits_per_second):
         if delay > 0:
             await asyncio.sleep(delay)
         yield chunk
+
+
+def estimate_path_bytes(path):
+    target = Path(path)
+    if target.is_file():
+        return target.stat().st_size
+    return sum(item.stat().st_size for item in target.rglob('*') if item.is_file())
+
+
+def reserve_transfer(user_id, filename, expected_bytes, download_request_id=None):
+    """Atomically reserve monthly quota and create an active transfer record."""
+    from sharewarez import db
+    from sharewarez.models import DownloadTransfer, GlobalSettings, User
+
+    user = db.session.execute(
+        select(User).where(User.id == user_id).with_for_update()
+    ).scalar_one()
+    settings_record = db.session.execute(select(GlobalSettings)).scalars().first()
+    settings = dict(settings_record.settings or {}) if settings_record else {}
+    default_gb = float(settings.get('defaultMonthlyDownloadQuotaGb', 0) or 0)
+    quota_bytes = user.monthly_download_quota_bytes
+    if quota_bytes is None:
+        quota_bytes = round(default_gb * 1_000_000_000)
+
+    now = datetime.now(timezone.utc)
+    month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    used_bytes = db.session.execute(
+        select(func.coalesce(func.sum(DownloadTransfer.reserved_bytes), 0)).where(
+            DownloadTransfer.user_id == user_id,
+            DownloadTransfer.started_at >= month_start,
+        )
+    ).scalar_one()
+    if quota_bytes and used_bytes + expected_bytes > quota_bytes:
+        db.session.rollback()
+        return None, used_bytes, quota_bytes
+
+    transfer = DownloadTransfer(
+        user_id=user_id,
+        download_request_id=download_request_id,
+        filename=filename[:512],
+        reserved_bytes=max(0, expected_bytes),
+        status='active',
+    )
+    db.session.add(transfer)
+    db.session.commit()
+    return transfer.id, used_bytes, quota_bytes
+
+
+def finish_transfer(transfer_id, bytes_sent, status):
+    from sharewarez import db
+    from sharewarez.models import DownloadTransfer
+
+    transfer = db.session.get(DownloadTransfer, transfer_id)
+    if transfer is None:
+        return
+    transfer.bytes_sent = max(0, bytes_sent)
+    transfer.reserved_bytes = transfer.bytes_sent
+    transfer.status = status
+    transfer.ended_at = datetime.now(timezone.utc)
+    db.session.commit()

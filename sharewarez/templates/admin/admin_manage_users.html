@@ -143,6 +143,11 @@
                                   rows="3" maxlength="256"></textarea>
                     </div>
                     <div class="mb-3">
+                        <label for="editMonthlyDownloadQuotaGb" class="form-label">Monthly download quota override</label>
+                        <div class="input-group users-quota-input"><input type="number" class="form-control" id="editMonthlyDownloadQuotaGb" min="0" max="100000" step="0.5" placeholder="Inherit server default"><span class="users-input-suffix">GB</span></div>
+                        <small class="form-text">Leave blank to inherit the server default; use 0 for unlimited.</small>
+                    </div>
+                    <div class="mb-3">
                         <label for="editPassword" class="form-label">New Password (leave blank to keep current)</label>
                         <input type="password" class="form-control" id="editPassword" autocomplete="new-password">
                     </div>
