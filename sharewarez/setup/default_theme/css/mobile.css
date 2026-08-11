@@ -132,8 +132,8 @@
         overflow-x: hidden;
     }
 
-    /* Mobile pages read better as a continuous surface. Flatten only page-level
-       shells; nested cards and controls retain their visual hierarchy. */
+    /* Keep page-level content in compact cards. The content gutter provides the
+       small mobile side margin used by the downloads page. */
     #content > .glass-panel,
     #content > .container > .glass-panel,
     #content > .container-settings,
@@ -153,10 +153,10 @@
     .newsletter-page,
     .settings-panel-page,
     .restricted-area-page {
-        background: transparent !important;
-        border: 0 !important;
-        border-radius: 0 !important;
-        box-shadow: none !important;
+        background: var(--theme-card-background, var(--bg-dark-secondary)) !important;
+        border: 1px solid var(--theme-border-color, var(--border-light)) !important;
+        border-radius: 14px !important;
+        box-shadow: var(--shadow-card, 0 14px 34px rgba(0, 0, 0, 0.28)) !important;
     }
 
     #content > .glass-panel,
@@ -169,10 +169,10 @@
     .newsletter-page,
     .settings-panel-page,
     .restricted-area-page {
-        width: calc(100% - 24px) !important;
-        margin: 8px 12px 20px !important;
-        padding-right: 0 !important;
-        padding-left: 0 !important;
+        width: 100% !important;
+        margin: 0 0 20px !important;
+        padding-right: 12px !important;
+        padding-left: 12px !important;
     }
 
     .discovery-panel,
@@ -447,6 +447,11 @@
     .modal-dialog {
         margin: 8px !important;
         max-width: calc(100vw - 16px) !important;
+    }
+
+    /* Dialogs must sit above the fixed 64px mobile header. */
+    .modal {
+        z-index: 1200;
     }
 
     .modal-content {
@@ -738,7 +743,16 @@
 
     .table-responsive > table,
     .dataTables_wrapper table {
+        display: table !important;
+        overflow: visible !important;
         margin-bottom: 0;
+    }
+
+    /* Exactly one element owns horizontal table scrolling. Bootstrap's
+       responsive wrapper is the scrollport; DataTables and the table are not. */
+    .table-responsive > .dataTables_wrapper,
+    .table-responsive .dataTables_wrapper {
+        overflow: visible !important;
     }
 
     .table :is(th, td) {
@@ -813,5 +827,103 @@
     canvas,
     svg {
         max-width: 100%;
+    }
+
+    /* =====================================================
+       CANONICAL MOBILE PAGE GUTTER
+       #content owns the single outer gutter. Route styles must not add a
+       second width reduction, auto margin, or Bootstrap container inset.
+       ===================================================== */
+    #content {
+        --mobile-page-gutter: 12px;
+    }
+
+    #content > :is(main, section, [class*="-page"]),
+    .admin-ui #content > :is(main, section, [class*="-page"]),
+    #content :is(
+        .home-page,
+        .favorites-page,
+        .library-browser-page,
+        .downloads-page,
+        .requests-page,
+        .trailers-page,
+        .user-invites-page,
+        .settings-panel-page,
+        .settings-password-page,
+        .profile-page,
+        .image-editor-page,
+        .restricted-area-page,
+        .users-management-page,
+        .admin_manage_libraries-library-container,
+        .collections-admin-shell,
+        .extensions-management-page,
+        .image-queue-page,
+        .statistics-page,
+        .server-info-page,
+        .admin_manage_invites-panel,
+        .newsletter-page,
+        .glass-panel-addgame,
+        .scan-management-page,
+        .scan-management-heading,
+        .admin_manage_scanjobs-nav-panel,
+        .jobs-admin-shell,
+        .integrations-page,
+        .logs-page
+    ) {
+        box-sizing: border-box !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        margin-right: 0 !important;
+        margin-left: 0 !important;
+    }
+
+    /* Bootstrap and legacy wrappers are layout-only on mobile. */
+    #content > .container,
+    #content > main > .container,
+    .admin-ui #content .container-settings-dashboard > .container,
+    .admin-ui #content .admin_manage_libraries-library-container > .container-settings {
+        width: 100% !important;
+        max-width: 100% !important;
+        margin-right: 0 !important;
+        margin-left: 0 !important;
+        padding-right: 0 !important;
+        padding-left: 0 !important;
+    }
+
+    /* Cards sit directly inside the content gutter, never inside a second one. */
+    #content :is(
+        .featured-carousel,
+        .storefront-noteworthy,
+        .home-overview,
+        .home-section,
+        .home-personal-grid,
+        .home-quick-discover,
+        .home-welcome,
+        .glass-panel-gamecard,
+        .glass-panel-addgame,
+        .library-browser-panel,
+        .scan-management-heading,
+        .admin_manage_scanjobs-nav-panel,
+        .admin-section,
+        .admin-panel
+    ) {
+        margin-right: 0 !important;
+        margin-left: 0 !important;
+    }
+
+    /* Favorites is itself the page card; its route stylesheet previously
+       flattened it after mobile.css had loaded. */
+    #content .favorites-page {
+        padding: 22px 16px 30px !important;
+        border: 1px solid var(--theme-border-color, var(--border-light)) !important;
+        border-radius: 14px !important;
+        background: var(--theme-card-background, var(--bg-dark-secondary)) !important;
+        box-shadow: var(--shadow-card, 0 14px 34px rgba(0, 0, 0, 0.28)) !important;
+    }
+
+    #content .favorites-page-header,
+    #content .discovery-favorites-container {
+        padding-right: 0 !important;
+        padding-left: 0 !important;
     }
 }

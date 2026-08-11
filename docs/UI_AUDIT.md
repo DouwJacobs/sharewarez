@@ -184,3 +184,25 @@ Desktop measurement finds later discovery cards beyond the viewport, while docum
 - `/admin/integrations` previously inherited a global `.card { width: 70% }` rule from the SMTP stylesheet, nested several card surfaces, and rendered all settings in one tall column. It now has a dedicated responsive page shell, segmented service tabs, flatter panels, and two-column fields on desktop that collapse to one column on mobile.
 - `/admin/new_server_info` previously combined centered legacy status styles, five narrow diagnostic columns, and a long single-column sequence of tables. It now uses a left-aligned status header, three-column diagnostic cards, four-column resource cards, a two-column information grid, and bounded scrollable tables. All structures collapse without horizontal overflow at 390px.
 - Integration detail forms remain the canonical place to configure and test SMTP, Discord, and IGDB; Server Info remains a read-only diagnostic summary.
+
+## Unified responsive layout contract (2026-08-11)
+
+The previous mobile implementation mixed route-owned margins, Bootstrap container gutters, and a shared `#content` gutter. Depending on the route, this produced zero, one, two, or three horizontal insets. Several route styles also flattened page cards after the shared mobile stylesheet had loaded.
+
+All new and migrated authenticated layouts now use these structural primitives from `components.css`:
+
+- `.app-page`: desktop rail and mobile page shell. On mobile it fills the width available inside the single 12 px `#content` gutter.
+- `.app-page-header`: shared title, description, count, and action alignment.
+- `.app-page-actions`: wrapping desktop/mobile action group.
+- `.app-surface`: themed bordered card with shared radius, shadow, and responsive padding.
+- `.app-stack` and `.app-grid`: shared inter-surface spacing.
+
+Primary user pages, modern admin pages, and the most visible legacy container-based admin pages have been migrated. Route-specific classes remain for content layout and identity only; they should not introduce viewport-relative mobile widths or horizontal margins. The explicit selector group in `mobile.css` is a compatibility adapter for remaining legacy templates and should shrink as those templates are touched.
+
+When adding or revising a page:
+
+1. Put `.app-page` on the outer authenticated page wrapper.
+2. Use one `.app-page-header` for the visible H1 and page actions.
+3. Put each major content region in `.app-surface`; use `.app-stack` when there is more than one.
+4. Do not add `width: calc(100% - ...)`, `margin-inline`, or Bootstrap `.container` padding at the mobile breakpoint.
+5. Keep tables and rails internally scrollable rather than widening the page.

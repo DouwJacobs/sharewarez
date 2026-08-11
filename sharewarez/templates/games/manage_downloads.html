@@ -7,10 +7,9 @@
 {% endblock %}
 
 {% block content %}
-<section class="downloads-page" aria-labelledby="downloads-page-title">
-    {{ page_header('My downloads', 'Track your requested files and return to a game whenever you need more details.', 'Library activity', 'fa-download', pagination.total, 'request') }}
-
-    <div class="downloads-panel">
+<section class="app-page downloads-page" aria-labelledby="downloads-page-title">
+    <div class="app-surface downloads-panel">
+        {{ page_header('My downloads', 'Track your requested files and return to a game whenever you need more details.', 'Library activity', 'fa-download', pagination.total, 'request') }}
         {% if download_requests %}
         <div class="table-responsive">
             <table class="table table-dark table-striped table-hover downloads-table">

@@ -131,6 +131,24 @@
     .users-management-filters .btn {
         width: 100%;
     }
+
+    #editUserModal .modal-dialog,
+    #addUserModal .modal-dialog {
+        display: flex;
+        min-height: calc(100dvh - 16px);
+        align-items: flex-start;
+    }
+
+    #editUserModal .modal-content,
+    #addUserModal .modal-content {
+        max-height: calc(100dvh - 16px);
+        overflow: hidden;
+    }
+
+    #editUserModal .modal-body,
+    #addUserModal .modal-body {
+        overflow-y: auto;
+    }
 }
 
 /* Active-theme bridge; legacy values remain fallbacks. */

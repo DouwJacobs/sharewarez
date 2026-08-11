@@ -7,7 +7,7 @@
 {% endblock %}
 
 {% block content %}
-<main class="admin-page themes-page">
+<main class="app-page admin-page themes-page">
     {% call admin_page_header('Themes', 'Install and manage visual themes for ' ~ site_title ~ '.', 'Appearance', 'fa-palette') %}
         <a href="{{ url_for('admin2.theme_readme') }}" class="btn btn-secondary">
             <i class="fas fa-book-open" aria-hidden="true"></i> Theme guide

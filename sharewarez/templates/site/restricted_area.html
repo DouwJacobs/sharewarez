@@ -5,7 +5,7 @@
 {% endblock %}
 
 {% block content %}
-<main class="restricted-area-page">
+<main class="app-page app-page--narrow restricted-area-page">
 {% if current_user.is_authenticated %}
 <div class="content-restricted">
     <img src="{{ url_for('static', filename=brand_logo_path) }}" alt="{{ site_title }} logo" class="login-logo">

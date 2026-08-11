@@ -2,14 +2,14 @@
 {% block content %}
 
 <link rel="stylesheet" href="{{ 'css/site/help.css'|theme_asset }}">
-<div class="help-container">
-    <div class="help-header">
+<main class="app-page help-container">
+    <header class="app-page-header help-header">
         <div class="help-title">
             <i class="fas fa-question-circle"></i>
             <h1>Help & FAQ</h1>
         </div>
         <p class="help-subtitle">Your complete guide to using {{ site_title }}</p>
-    </div>
+    </header>
 
     <div class="help-content-grid">
         <div class="help-card getting-started">
@@ -127,15 +127,18 @@
         </div>
     </div>
 
-</div>
+</main>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Toggle help cards
-    const cardHeaders = document.querySelectorAll('.card-header');
+    const cardHeaders = document.querySelectorAll('.help-card > .card-header');
     
     cardHeaders.forEach(header => {
-        header.addEventListener('click', function() {
+        header.setAttribute('role', 'button');
+        header.setAttribute('tabindex', '0');
+        header.setAttribute('aria-expanded', 'false');
+        const toggleCard = function() {
             const card = this.parentElement;
             const content = card.querySelector('.card-content');
             const icon = this.querySelector('.toggle-icon i');
@@ -145,21 +148,20 @@ document.addEventListener('DOMContentLoaded', function() {
             if (card.classList.contains('expanded')) {
                 content.style.maxHeight = content.scrollHeight + 'px';
                 icon.style.transform = 'rotate(180deg)';
+                this.setAttribute('aria-expanded', 'true');
             } else {
                 content.style.maxHeight = '0';
                 icon.style.transform = 'rotate(0deg)';
+                this.setAttribute('aria-expanded', 'false');
+            }
+        };
+        header.addEventListener('click', toggleCard);
+        header.addEventListener('keydown', function(event) {
+            if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                toggleCard.call(this);
             }
         });
-    });
-
-    // Auto-expand all cards
-    const allCards = document.querySelectorAll('.help-card');
-    allCards.forEach(card => {
-        card.classList.add('expanded');
-        const content = card.querySelector('.card-content');
-        const icon = card.querySelector('.toggle-icon i');
-        content.style.maxHeight = content.scrollHeight + 'px';
-        icon.style.transform = 'rotate(180deg)';
     });
 });
 </script>

@@ -7,10 +7,9 @@
 {% endblock %}
 
 {% block content %}
-<section class="downloads-page" aria-labelledby="downloads-page-title">
-    {{ page_header('Download requests', 'Review download activity, open the related game, or remove stale requests.', 'Administration', 'fa-shield-halved', pagination.total, 'request') }}
-
-    <div class="downloads-panel admin_manage_downloads-requests">
+<section class="app-page downloads-page" aria-labelledby="downloads-page-title">
+    <div class="app-surface downloads-panel admin_manage_downloads-requests">
+        {{ page_header('Download requests', 'Review download activity, open the related game, or remove stale requests.', 'Administration', 'fa-shield-halved', pagination.total, 'request') }}
         <form class="downloads-filter-bar" method="get">
             <label>Username <input class="form-control" type="search" name="user" value="{{ user_filter }}" placeholder="Filter by user"></label>
             <label>Status

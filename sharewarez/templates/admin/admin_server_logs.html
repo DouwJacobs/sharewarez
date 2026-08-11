@@ -3,7 +3,7 @@
 {% block content %}
 <link rel="stylesheet" href="{{ 'css/admin/admin_system_logs.css'|theme_asset }}">
 
-<main class="admin-page logs-page" aria-labelledby="logs-page-title">
+<main class="app-page admin-page logs-page" aria-labelledby="logs-page-title">
     {% call admin_page_header('System logs', 'Search operational events and review administrator activity.', 'Monitoring', 'fa-clipboard-list') %}
         <button type="button" class="btn btn-danger btn-sm" id="clearLogsBtn"><i class="fas fa-trash" aria-hidden="true"></i> Clear logs</button>
     {% endcall %}
@@ -15,7 +15,7 @@
         <article class="logs-summary-error"><span>Errors</span><strong>{{ summary.get('error', 0) }}</strong><small>failed operations</small></article>
     </section>
 
-    <section class="admin-panel logs-filter-panel" aria-labelledby="log-filters-title">
+    <section class="app-surface admin-panel logs-filter-panel" aria-labelledby="log-filters-title">
         <form method="get" action="{{ url_for('admin2.system_logs') }}" class="logs-filter-form">
             <div class="logs-search-field">
                 <label for="log-search" id="log-filters-title">Search logs</label>
@@ -30,7 +30,7 @@
         </form>
     </section>
 
-    <section class="admin-panel logs-results" aria-labelledby="logs-results-title">
+    <section class="app-surface admin-panel logs-results" aria-labelledby="logs-results-title">
         <div class="logs-results-heading">
             <div><p class="admin-panel-kicker">Event history</p><h2 id="logs-results-title">{{ logs.total }} matching event{% if logs.total != 1 %}s{% endif %}</h2></div>
             {% if logs.total %}<span>Newest first · page {{ logs.page }} of {{ logs.pages }}</span>{% endif %}

@@ -7,7 +7,7 @@
 {% endblock %}
 
 {% block content %}
-<main class="admin-page theme-builder-page">
+<main class="app-page admin-page theme-builder-page">
     {% call admin_page_header('Edit visual theme' if editing else 'Build a visual theme', 'Tune the shared colors used by navigation, cards, buttons, icons, forms, and tables.', 'Appearance', 'fa-wand-magic-sparkles') %}
         <a href="{{ url_for('admin2.manage_themes') }}" class="btn btn-secondary"><i class="fas fa-arrow-left" aria-hidden="true"></i> Back to themes</a>
     {% endcall %}

@@ -7,7 +7,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
 
-<main class="admin-manage-libraries-page" data-base-delete-url="{{ url_for('main.delete_full_library', library_uuid='') }}" data-delete-url="#" data-progress-url="{{ url_for('main.delete_library_progress', job_id='') }}" data-check-progress-url="{{ url_for('main.check_deletion_progress', job_id='') }}">
+<main class="app-page admin-manage-libraries-page" data-base-delete-url="{{ url_for('main.delete_full_library', library_uuid='') }}" data-delete-url="#" data-progress-url="{{ url_for('main.delete_library_progress', job_id='') }}" data-check-progress-url="{{ url_for('main.check_deletion_progress', job_id='') }}">
     <!-- Loading Spinner with Progress -->
     <div id="deleteSpinner" class="spinner-overlay" style="display: none;">
         <div class="spinner-container">
@@ -40,7 +40,7 @@
         </div>
     </div>
 </div>
-<div class="admin_manage_libraries-library-container">
+<div class="app-stack admin_manage_libraries-library-container">
     <div class="container-settings">
         <div class="card">
             <header class="libraries-management-header">

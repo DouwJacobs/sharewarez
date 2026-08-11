@@ -200,5 +200,8 @@
     .favorites-empty-state {
         min-height: 280px;
         padding: 28px 20px;
+        border: 0;
+        background: transparent;
+        box-shadow: none;
     }
 }

@@ -5,8 +5,8 @@
 <link rel="stylesheet" href="{{ 'css/admin/admin_background_jobs.css'|theme_asset }}">
 {% endblock %}
 {% block content %}
-<main class="jobs-admin-shell">
-    <header class="jobs-header">
+<main class="app-page jobs-admin-shell">
+    <header class="app-page-header jobs-header">
         <div><p class="jobs-eyebrow">Operations</p><h1>Background jobs</h1><p>Monitor queued work, inspect failures, and safely cancel or retry jobs.</p></div>
         <a class="btn btn-secondary" href="{{ url_for('admin2.background_jobs', status=status_filter, q=search, per_page=per_page) }}"><i class="fas fa-sync-alt" aria-hidden="true"></i> Refresh</a>
     </header>

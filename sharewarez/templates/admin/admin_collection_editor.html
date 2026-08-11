@@ -4,10 +4,10 @@
 <link rel="stylesheet" href="{{ 'css/admin/admin_collections.css'|theme_asset }}">
 {% endblock %}
 {% block content %}
-<main class="collections-admin-shell collection-editor-shell">
-    <form class="collection-editor-card card" method="post" data-collection-editor data-search-url="{{ url_for('admin2.search_collection_games') }}">
+<main class="app-page collections-admin-shell collection-editor-shell">
+    <form class="app-surface collection-editor-card card" method="post" data-collection-editor data-search-url="{{ url_for('admin2.search_collection_games') }}">
         {{ form.hidden_tag() }}
-        <header class="collections-admin-header">
+        <header class="app-page-header collections-admin-header">
             <div>
                 <p class="collections-eyebrow">{{ 'Featured spotlight' if collection and collection.is_featured else 'Content curation' }}</p>
                 <h1>{{ 'Edit collection' if collection else 'New collection' }}</h1>

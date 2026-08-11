@@ -2,13 +2,9 @@
 {% block content %}
 <link rel="stylesheet" href="{{ 'css/requests.css'|theme_asset }}">
 
-<main class="requests-page">
-    <header class="requests-hero">
-        <div><p class="eyebrow">Community wishlist</p><h1>Game Requests</h1><p>Search IGDB, choose the exact edition, and follow its progress.</p></div>
-    </header>
-
-    <section class="request-panel">
-        <h2>Find a game</h2>
+<main class="app-page app-stack requests-page">
+    <section class="app-surface requests-hero request-main-card">
+        <div><h1>Game Requests</h1><p>Search IGDB, choose the exact edition, and follow its progress.</p></div>
         <form id="requestSearchForm" class="request-search-wrap" role="search">
             <i class="fas fa-magnifying-glass request-search-icon" aria-hidden="true"></i>
             <input id="requestSearch" type="search" maxlength="100" placeholder="Search IGDB for a game or edition…" autocomplete="off" aria-label="Search IGDB games">
@@ -17,7 +13,7 @@
         <div id="requestSearchResults" class="request-results" role="region" aria-label="IGDB search results" aria-live="polite"></div>
     </section>
 
-    <section class="request-panel">
+    <section class="app-surface request-panel">
         <div class="request-section-heading request-user-summary">
             <div><h2>My requests</h2><p>{{ request_settings.activeRequestCount }} of {{ request_settings.maxActiveRequestsPerUser }} active requests used</p></div>
             <span class="request-quota" aria-label="{{ request_settings.activeRequestCount }} of {{ request_settings.maxActiveRequestsPerUser }} active requests used">{{ request_settings.maxActiveRequestsPerUser - request_settings.activeRequestCount }} remaining</span>

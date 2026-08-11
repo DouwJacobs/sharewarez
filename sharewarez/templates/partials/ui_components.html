@@ -1,5 +1,5 @@
 {% macro page_header(title, description='', eyebrow='', icon='', count=None, count_label='item') %}
-<header class="downloads-page-header">
+<header class="app-page-header downloads-page-header">
     <div>
         {% if eyebrow %}<p class="downloads-page-eyebrow">{% if icon %}<i class="fas {{ icon }}" aria-hidden="true"></i>{% endif %} {{ eyebrow }}</p>{% endif %}
         <h1 id="downloads-page-title">{{ title }}</h1>
@@ -10,13 +10,13 @@
 {% endmacro %}
 
 {% macro admin_page_header(title, description='', eyebrow='Administration', icon='fa-sliders', actions=None) %}
-<header class="admin-page-header">
+<header class="app-page-header admin-page-header">
     <div>
         <p class="admin-page-eyebrow"><i class="fas {{ icon }}" aria-hidden="true"></i> {{ eyebrow }}</p>
         <h1>{{ title }}</h1>
         {% if description %}<p class="admin-page-description">{{ description }}</p>{% endif %}
     </div>
-    {% if caller is defined %}<div class="admin-page-actions">{{ caller() }}</div>{% endif %}
+    {% if caller is defined %}<div class="app-page-actions admin-page-actions">{{ caller() }}</div>{% endif %}
 </header>
 {% endmacro %}
 

@@ -385,8 +385,8 @@
         box-shadow: var(--form-focus-shadow, 0 0 0 3px color-mix(in srgb, var(--theme-primary, #03b2f8) 18%, transparent));
     }
 
-    /* Match the mobile Library and Discover pages: the viewport supplies the
-       page gutter, while request content sits directly on the page surface. */
+    /* The page shell owns the viewport gutter; each request section remains a
+       consistent application surface. */
     .requests-page {
         width: 100%;
         max-width: none;
@@ -395,30 +395,27 @@
 
     .requests-page .requests-hero,
     .requests-page .request-panel {
-        padding-right: 0;
-        padding-left: 0;
-        border: 0;
-        border-radius: 0;
-        background: transparent;
-        box-shadow: none;
+        margin: 0;
+        padding: 16px;
+        border: 1px solid var(--theme-border-color, rgba(255,255,255,.1));
+        border-radius: 14px;
+        background: var(--theme-card-background, var(--theme-card-bg, rgba(20,22,34,.92)));
+        box-shadow: var(--shadow-card, 0 14px 34px rgba(0,0,0,.24));
     }
 
     .requests-page .requests-hero {
-        margin-bottom: 0;
-        padding-top: 1rem;
-        padding-bottom: 1.25rem;
-        border-bottom: 1px solid rgba(var(--theme-accent-soft-rgb, 154, 177, 255), .14);
+        padding-top: 16px;
+        padding-bottom: 16px;
     }
 
     .requests-page .request-panel {
-        margin-bottom: .5rem;
-        padding-top: 1.1rem;
-        padding-bottom: 1.1rem;
+        padding-top: 16px;
+        padding-bottom: 16px;
     }
 
     .requests-page .request-panel + .request-panel,
     .requests-page .request-detail-layout + .request-panel {
-        border-top: 1px solid rgba(var(--theme-accent-soft-rgb, 154, 177, 255), .12);
+        border-top-color: var(--theme-border-color, rgba(255,255,255,.1));
     }
 }
 /* User request progress and compact, progressive search results. */

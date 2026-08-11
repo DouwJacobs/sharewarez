@@ -1,3 +1,90 @@
+/* === APPLICATION PAGE LAYOUT ===
+   These structural primitives are shared by user and admin routes. Route CSS
+   should style content within them, not redefine viewport gutters. */
+.app-page {
+    box-sizing: border-box;
+    width: min(1440px, calc(100% - 48px));
+    max-width: 1440px;
+    min-width: 0;
+    margin: 24px auto 48px;
+}
+
+.app-page--narrow { max-width: 960px; }
+.app-page--wide { max-width: 1600px; }
+
+.app-page-header {
+    display: flex;
+    min-width: 0;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: var(--spacing-lg, 24px);
+    margin: 0 0 var(--spacing-lg, 24px);
+}
+
+.app-page-header > :first-child { min-width: 0; }
+.app-page-header h1 { margin: 0 0 var(--spacing-xs, 6px); }
+.app-page-header p:last-child { margin-bottom: 0; }
+
+.app-page-actions {
+    display: flex;
+    flex: 0 0 auto;
+    flex-wrap: wrap;
+    gap: var(--spacing-sm, 10px);
+}
+
+.app-surface {
+    position: relative;
+    box-sizing: border-box;
+    min-width: 0;
+    padding: var(--spacing-lg, 24px);
+    border: 1px solid var(--theme-border-color, var(--border-light));
+    border-radius: var(--border-radius-lg, 18px);
+    background: var(--theme-card-background, var(--bg-dark-secondary));
+    box-shadow: var(--shadow-card, 0 18px 48px rgba(0, 0, 0, .28));
+}
+
+.app-surface::before {
+    position: absolute;
+    z-index: 1;
+    top: 0;
+    right: 14px;
+    left: 14px;
+    height: 2px;
+    border-radius: 999px;
+    background: linear-gradient(90deg, transparent, rgba(var(--theme-accent-soft-rgb, 154, 177, 255), .72), transparent);
+    content: '';
+    pointer-events: none;
+}
+
+.app-surface--flush { padding: 0; }
+.app-stack { display: grid; min-width: 0; gap: var(--spacing-lg, 24px); }
+.app-grid { display: grid; min-width: 0; gap: var(--spacing-lg, 24px); }
+
+@media (max-width: 768px) {
+    .app-page,
+    .app-page--narrow,
+    .app-page--wide {
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 0 24px !important;
+        padding-right: 0 !important;
+        padding-left: 0 !important;
+    }
+
+    .app-page-header {
+        align-items: stretch;
+        flex-direction: column;
+        gap: 12px;
+        margin-bottom: 16px;
+    }
+
+    .app-page-actions { width: 100%; }
+    .app-page-actions > :is(.btn, button, a.btn) { flex: 1 1 150px; }
+    .app-surface { padding: 16px; border-radius: 14px; }
+    .app-page.app-surface { padding: 16px !important; }
+    .app-stack, .app-grid { gap: 12px; }
+}
+
 /* === LOGIN COMPONENTS === */
 
 .content-login .input-glass {

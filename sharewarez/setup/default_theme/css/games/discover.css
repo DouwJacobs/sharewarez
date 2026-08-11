@@ -237,6 +237,7 @@
         overflow: hidden;
         border-radius: 20px;
         box-shadow: 0 18px 38px rgba(0, 0, 0, .28);
+        touch-action: pan-y;
     }
     .home-hero {
         min-height: clamp(430px, 108vw, 510px);

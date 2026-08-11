@@ -352,6 +352,24 @@
 }
 
 @media (max-width: 768px) {
+    .admin_manage_scanjobs-nav-tabs {
+        flex-wrap: nowrap !important;
+        overflow-x: auto;
+        padding-bottom: 6px;
+        scroll-snap-type: x proximity;
+        scrollbar-width: thin;
+    }
+
+    .admin_manage_scanjobs-nav-item {
+        flex: 0 0 auto;
+        scroll-snap-align: start;
+    }
+
+    .admin_manage_scanjobs-nav-link {
+        min-height: 44px;
+        white-space: nowrap;
+    }
+
 
     .config-card,
     .path-card {
@@ -1243,6 +1261,17 @@
         border-radius: 13px;
     }
 
+    .admin_manage_scanjobs-manual-panel,
+    .admin_manage_scanjobs-unmatched-panel,
+    .admin_manage_scanjobs-filters-panel,
+    .admin_manage_scanjobs-extensions-panel,
+    .admin_manage_scanjobs-imagequeue-panel {
+        padding: 0;
+        border: 0;
+        background: transparent;
+        box-shadow: none;
+    }
+
     .config-grid,
     .manual-scan-form,
     .manual-options-panel {
@@ -1482,13 +1511,19 @@
         border-radius: 14px;
     }
 
-    .admin_manage_scanjobs-nav-panel .container-settings,
+    .admin_manage_scanjobs-nav-panel .container-settings {
+        padding: 16px;
+    }
+
     .admin_manage_scanjobs-manual-panel,
     .admin_manage_scanjobs-unmatched-panel,
     .admin_manage_scanjobs-filters-panel,
     .admin_manage_scanjobs-extensions-panel,
     .admin_manage_scanjobs-imagequeue-panel {
-        padding: 16px;
+        padding: 0;
+        border: 0;
+        background: transparent;
+        box-shadow: none;
     }
 
     .admin_manage_scanjobs-nav-tabs {

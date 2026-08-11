@@ -9,6 +9,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let activeIndex = 0;
     let timer;
     let paused = false;
+    let touchStartX = null;
+    let touchStartY = null;
 
     const show = index => {
         activeIndex = (index + slides.length) % slides.length;
@@ -38,6 +40,33 @@ document.addEventListener('DOMContentLoaded', () => {
     carousel.addEventListener('focusout', event => {
         if (!carousel.contains(event.relatedTarget)) { paused = false; start(); }
     });
+    carousel.addEventListener('touchstart', event => {
+        const touch = event.changedTouches[0];
+        touchStartX = touch.clientX;
+        touchStartY = touch.clientY;
+        paused = true;
+        stop();
+    }, { passive: true });
+    carousel.addEventListener('touchend', event => {
+        if (touchStartX === null || touchStartY === null) return;
+        const touch = event.changedTouches[0];
+        const deltaX = touch.clientX - touchStartX;
+        const deltaY = touch.clientY - touchStartY;
+        touchStartX = null;
+        touchStartY = null;
+
+        if (Math.abs(deltaX) >= 48 && Math.abs(deltaX) > Math.abs(deltaY) * 1.25) {
+            show(activeIndex + (deltaX < 0 ? 1 : -1));
+        }
+        paused = false;
+        start();
+    }, { passive: true });
+    carousel.addEventListener('touchcancel', () => {
+        touchStartX = null;
+        touchStartY = null;
+        paused = false;
+        start();
+    }, { passive: true });
     document.addEventListener('visibilitychange', start);
     start();
 });

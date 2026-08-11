@@ -1,12 +1,12 @@
 {% extends "base.html" %}
 {% block content %}
 <link rel="stylesheet" href="{{ 'css/requests.css'|theme_asset }}">
-<main class="requests-page admin-requests-page">
-    <header class="requests-hero">
+<main class="app-page app-stack requests-page admin-requests-page">
+    <header class="app-page-header app-surface requests-hero">
         <div><p class="eyebrow">Administration</p><h1>Game Requests</h1><p>Browse community demand, then open a request to review and update it.</p></div>
     </header>
 
-    <section class="request-panel admin-request-filters">
+    <section class="app-surface request-panel admin-request-filters">
         <form id="adminRequestSearchForm" method="get">
             <input type="hidden" name="status" value="{{ selected_status }}">
             <input type="hidden" name="type" value="{{ selected_type }}">
