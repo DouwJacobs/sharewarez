@@ -100,3 +100,10 @@ def test_shared_page_header_only_uses_flex_for_standard_actions():
     assert '.app-page-header:has(> .app-page-actions)' in css
     header = dashboard.split('<header class="app-page-header admin-dashboard-header">', 1)[1]
     assert header.lstrip().startswith('<div>')
+
+
+def test_library_keeps_shared_desktop_page_centering():
+    css = Path('sharewarez/setup/default_theme/css/games/library_browser.css').read_text()
+    desktop_rules = css.split('@media (max-width: 768px)', 1)[0]
+
+    assert '.library-browser-page {' not in desktop_rules
