@@ -14,6 +14,22 @@
             <span class="profile-role-badge"><i class="fas fa-user-shield" aria-hidden="true"></i>{{ current_user.role|title }}</span>
         </header>
 
+        <div class="profile-settings-workspace">
+            <nav class="profile-settings-nav" aria-label="Account settings">
+                <p class="profile-settings-nav-label">Settings</p>
+                <button type="button" class="profile-settings-tab is-active" data-profile-target="account" aria-controls="profile-panel-account" aria-selected="true">
+                    <i class="fas fa-user" aria-hidden="true"></i><span><strong>Profile</strong><small>Identity and account details</small></span>
+                </button>
+                <button type="button" class="profile-settings-tab" data-profile-target="preferences" aria-controls="profile-panel-preferences" aria-selected="false">
+                    <i class="fas fa-sliders" aria-hidden="true"></i><span><strong>Preferences</strong><small>Library and appearance</small></span>
+                </button>
+                <button type="button" class="profile-settings-tab" data-profile-target="tokens" aria-controls="profile-panel-tokens" aria-selected="false">
+                    <i class="fas fa-key" aria-hidden="true"></i><span><strong>API tokens</strong><small>Developer access</small></span>
+                </button>
+            </nav>
+
+            <div class="profile-settings-panels">
+                <section class="profile-settings-panel is-active" id="profile-panel-account" data-profile-panel="account" aria-labelledby="profile-page-title">
         <div class="profile-hero">
             <img src="{{ url_for('static', filename=current_user.avatarpath) }}"
                  alt="{{ current_user.name }}'s avatar"
@@ -54,8 +70,9 @@
                 </div>
             </article>
         </div>
+                </section>
 
-        <section class="profile-preferences" id="profilePreferences" aria-labelledby="profile-preferences-title" tabindex="-1">
+        <section class="profile-preferences profile-settings-panel" id="profile-panel-preferences" data-profile-panel="preferences" aria-labelledby="profile-preferences-title" tabindex="-1" hidden>
             <div class="profile-preferences-heading">
                 <div>
                     <p class="profile-eyebrow">Library defaults</p>
@@ -87,7 +104,7 @@
             </form>
         </section>
 
-        <section class="profile-api-tokens" aria-labelledby="profile-api-tokens-title">
+        <section class="profile-api-tokens profile-settings-panel" id="profile-panel-tokens" data-profile-panel="tokens" aria-labelledby="profile-api-tokens-title" hidden>
             <div class="profile-preferences-heading profile-api-token-heading">
                 <div>
                     <p class="profile-eyebrow">Developer access</p>
@@ -127,9 +144,32 @@
                 {% else %}<p class="profile-token-empty">No API tokens created yet.</p>{% endfor %}
             </div>
         </section>
+            </div>
+        </div>
     </section>
 </main>
 <script>
+const profileTabs = Array.from(document.querySelectorAll('[data-profile-target]'));
+const profilePanels = Array.from(document.querySelectorAll('[data-profile-panel]'));
+
+function showProfilePanel(name, updateHash = true) {
+    if (!profilePanels.some(panel => panel.dataset.profilePanel === name)) name = 'account';
+    profileTabs.forEach(tab => {
+        const active = tab.dataset.profileTarget === name;
+        tab.classList.toggle('is-active', active);
+        tab.setAttribute('aria-selected', String(active));
+    });
+    profilePanels.forEach(panel => {
+        const active = panel.dataset.profilePanel === name;
+        panel.hidden = !active;
+        panel.classList.toggle('is-active', active);
+    });
+    if (updateHash) history.replaceState(null, '', name === 'account' ? location.pathname : `#${name}`);
+}
+
+profileTabs.forEach(tab => tab.addEventListener('click', () => showProfilePanel(tab.dataset.profileTarget)));
+showProfilePanel(location.hash.slice(1) || 'account', false);
+
 const apiTokenForm = document.getElementById('apiTokenForm');
 apiTokenForm?.addEventListener('submit', async event => {
     event.preventDefault();
