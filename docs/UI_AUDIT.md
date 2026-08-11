@@ -6,6 +6,10 @@ Application: local WSL development instance at `http://localhost:5006`
 Viewports: desktop 1440 × 1000; mobile 390 × 844  
 Theme observed: Evergreen/custom dark-green theme
 
+## Automated accessibility gate
+
+`scripts/accessibility_audit.py` scans every Jinja template for baseline accessibility contracts, including document language, alternative text, accessible interactive names, labelled form controls, iframe titles, dialog semantics, and duplicate static IDs. The production quality gate runs this audit before the test suite, and `tests/test_accessibility_audit.py` verifies both the full template tree and each failure mode.
+
 ## Method
 
 The Flask route map was enumerated first. Page-producing GET routes were separated from APIs, downloads, static assets, and state-changing actions. Each concrete page below was then loaded in an authenticated administrator session at desktop and mobile widths. The audit checked the visible layout, content bounds, horizontal overflow, navigation, spacing, responsive stacking, control density, and computed theme colors. Key screens were also visually compared as screenshots.

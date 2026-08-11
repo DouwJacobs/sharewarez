@@ -15,7 +15,7 @@
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
                 <label class="label-large-text">Enable SMTP</label><br>
-                <input type="checkbox" name="smtp_enabled" value="true" checked class="form-check-input"><br>
+                <input type="checkbox" name="smtp_enabled" value="true" checked class="form-check-input" aria-label="Enable SMTP"><br>
 
                 <label for="smtp_server" class="label-large-text">SMTP Server</label><br>
                 <input type="text" id="smtp_server" name="smtp_server" class="input-glass" autocomplete="url"><br>
@@ -30,7 +30,7 @@
                 <input type="password" id="smtp_password" name="smtp_password" class="input-glass" autocomplete="off"><br>
 
                 <label class="label-large-text">Use TLS</label><br>
-                <input type="checkbox" name="smtp_use_tls" value="true" checked class="form-check-input"><br>
+                <input type="checkbox" name="smtp_use_tls" value="true" checked class="form-check-input" aria-label="Use TLS"><br>
 
                 <label for="smtp_default_sender" class="label-large-text">Default Sender Email</label><br>
                 <input type="email" id="smtp_default_sender" name="smtp_default_sender" class="input-glass" autocomplete="email"><br>

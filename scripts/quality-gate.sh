@@ -28,6 +28,7 @@ cmp --silent /tmp/gamelibrary-locked-pins.txt /tmp/gamelibrary-requirements.txt 
 
 echo "==> Running correctness lint and focused type checks"
 "$PYTHON_BIN" -m ruff check sharewarez tests scripts
+"$PYTHON_BIN" scripts/accessibility_audit.py
 "$PYTHON_BIN" -m mypy \
     sharewarez/backups.py \
     sharewarez/utils/migrations.py \

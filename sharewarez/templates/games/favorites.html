@@ -36,7 +36,7 @@
                                     </a>
                                 {% endif %}
                                 <div class="favorite-count">
-                                    <button class="favorite-btn" data-game-uuid="{{ game.uuid }}" data-is-favorite="{{ game.is_favorite|lower }}" data-game-name="{{ game.name }}">
+                                    <button class="favorite-btn" data-game-uuid="{{ game.uuid }}" data-is-favorite="{{ game.is_favorite|lower }}" data-game-name="{{ game.name }}" aria-label="Remove {{ game.name }} from favorites">
                                         <i class="fas fa-heart"></i>
                                     </button>
                                     <span class="favorite-number">{{ game.favorite_count }}</span>

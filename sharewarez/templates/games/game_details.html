@@ -173,7 +173,8 @@
         {% for image in game.images if 'cover' not in image.url %}
             <div class="mySlides">
                 <img src="{{ url_for('static', filename='library/images/' + image.url) }}" 
-                        class="screenshot-browser-image">
+                        class="screenshot-browser-image"
+                        alt="{{ game.name }} screenshot">
             </div>
         {% endfor %}
     </div>
@@ -584,7 +585,7 @@
             {% if game.video_urls %}
                 <div class="game-videos-row">
                     {% for url in game.video_urls.split(',') %}
-                        <iframe src="{{ url }}" class="game-video" frameborder="0" allowfullscreen></iframe>
+                        <iframe src="{{ url }}" class="game-video" title="{{ game.name }} video" frameborder="0" allowfullscreen></iframe>
                     {% endfor %}
                 </div>
             {% endif %}

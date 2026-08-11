@@ -64,7 +64,7 @@ desktop sidebar remains the full navigation surface.
 - [ ] Push notifications and update-available prompt
 - [x] Complete keyboard navigation and dialog focus management
 - [x] Reduced-motion and theme contrast validation
-- [ ] Automated accessibility testing
+- [x] Automated accessibility testing
 - [ ] Grid, compact-grid, and table library layouts
 - [ ] Persistent density and page-layout preferences
 - [x] Mobile bottom navigation
