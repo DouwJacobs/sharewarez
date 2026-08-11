@@ -2,7 +2,9 @@
 
 GameStack imports release relationships and series membership from IGDB during
 game identification and metadata refresh. The game-details storefront displays
-the information in one flat **Related releases** section.
+the information in one flat **Related releases** section. Identical series and
+franchise names are shown once and link to `/library?family=...`, which filters
+the library to locally owned games in that family.
 
 ## Stored relationships
 
@@ -21,6 +23,11 @@ Updates and extras remain file-level children in `game_updates` and
 `game_extras`. Edition labels and installed versions remain on the local game;
 IGDB `version_parent` supplies the cross-title edition relationship. IGDB ports
 supply platform-version relationships.
+
+Bundles and DLC remain available in stored metadata and the detailed public API
+but are intentionally omitted from the storefront to keep the relationship
+section focused. Expansions, editions, remakes, remasters, standalone releases,
+and platform variants remain visible there.
 
 ## Refresh behavior
 

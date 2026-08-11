@@ -1,3 +1,4 @@
+from types import SimpleNamespace
 from uuid import uuid4
 
 from sqlalchemy import select
@@ -7,6 +8,7 @@ from sharewarez.platform import LibraryPlatform
 from sharewarez.utils.game_relationships import (
     IGDB_RELATIONSHIP_QUERY_FIELDS,
     RELATIONSHIP_LABELS,
+    serialize_game_families,
     serialize_game_relationships,
     sync_game_relationships,
 )
@@ -19,6 +21,23 @@ def test_igdb_relationship_query_uses_supported_fields():
     assert 'collections.name' in IGDB_RELATIONSHIP_QUERY_FIELDS
     assert 'packs.name' not in IGDB_RELATIONSHIP_QUERY_FIELDS
     assert RELATIONSHIP_LABELS['platform_port'] == 'Platform versions'
+
+
+def test_storefront_deduplicates_families_and_hides_noisy_relationships():
+    game = SimpleNamespace(
+        groups=[
+            SimpleNamespace(name="Assassin's Creed", group_type='series'),
+            SimpleNamespace(name="Assassin's Creed", group_type='franchise'),
+        ],
+        relationships=[
+            SimpleNamespace(relationship_type='bundle', related_name='Bundle', related_igdb_id=1, related_game_uuid=None),
+            SimpleNamespace(relationship_type='dlc', related_name='DLC', related_igdb_id=2, related_game_uuid=None),
+            SimpleNamespace(relationship_type='remake', related_name='Remake', related_igdb_id=3, related_game_uuid=None),
+        ],
+    )
+
+    assert serialize_game_families(game) == ["Assassin's Creed"]
+    assert [item['type'] for item in serialize_game_relationships(game, {'bundle', 'dlc'})] == ['remake']
 
 
 def _library(db_session):

@@ -70,7 +70,7 @@ def test_game_details_uses_storefront_product_structure():
     assert 'background: transparent !important;' in css
     assert 'overflow: visible;' in css
     assert '.game-storefront .rating-row + .rating-row' in css
-    assert '.game-relationship-row' in css
+    assert '.game-relationship-groups' in css
 
 
 def test_game_details_mobile_storefront_uses_shared_outer_gutter():

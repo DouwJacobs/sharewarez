@@ -79,6 +79,7 @@ def browse_games():
     theme = request.args.get('theme')
     tag = request.args.get('tag')
     collection = request.args.get('collection')
+    family = request.args.get('family')
     sort_by = request.args.get('sort_by', 'name')
     sort_order = request.args.get('sort_order', 'asc')
     query = select(Game).options(
@@ -111,6 +112,9 @@ def browse_games():
                 CollectionGame.collection.has(Collection.slug == collection)
             )
         )
+    if family:
+        from sharewarez.models import GameGroup
+        query = query.filter(Game.groups.any(GameGroup.name == family))
     if sort_by == 'name':
         query = query.order_by(Game.name.asc() if sort_order == 'asc' else Game.name.desc())
     elif sort_by == 'rating':

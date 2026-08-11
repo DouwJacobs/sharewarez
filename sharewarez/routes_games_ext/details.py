@@ -12,7 +12,7 @@ from sharewarez.utils.game_core import get_game_by_uuid
 from sharewarez.utils.security import sanitize_path_for_logging
 from sharewarez.utils.event_logging import log_system_event
 from sharewarez.utils.collections import collection_visibility_clause
-from sharewarez.utils.game_relationships import serialize_game_relationships
+from sharewarez.utils.game_relationships import serialize_game_families, serialize_game_relationships
 from urllib.parse import urlparse
 
 from . import games_bp
@@ -163,9 +163,10 @@ def game_details(game_uuid):
             "steam_url": game.steam_url if game.steam_url else 'Not available',
             "times_downloaded": game.times_downloaded,
             "last_updated": game.last_updated.strftime('%Y-%m-%d') if game.last_updated else 'N/A',
-            "relationship_groups": serialize_game_relationships(game),
+            "relationship_groups": serialize_game_relationships(game, excluded_types={'bundle', 'dlc'}),
             "series": sorted(group.name for group in game.groups if group.group_type == 'series'),
             "franchises": sorted(group.name for group in game.groups if group.group_type == 'franchise'),
+            "families": serialize_game_families(game),
             # HowLongToBeat data
             "hltb_id": game.hltb_id,
             "hltb_main_story": game.hltb_main_story,

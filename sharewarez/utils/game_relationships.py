@@ -123,9 +123,12 @@ def sync_game_relationships(game, metadata, provider='igdb'):
         )
 
 
-def serialize_game_relationships(game):
+def serialize_game_relationships(game, excluded_types=None):
+    excluded_types = set(excluded_types or ())
     grouped = {}
     for relationship in sorted(game.relationships, key=lambda item: (item.relationship_type, item.related_name.casefold())):
+        if relationship.relationship_type in excluded_types:
+            continue
         grouped.setdefault(relationship.relationship_type, []).append({
             'name': relationship.related_name,
             'igdb_id': relationship.related_igdb_id,
@@ -135,3 +138,10 @@ def serialize_game_relationships(game):
         {'type': relationship_type, 'label': RELATIONSHIP_LABELS.get(relationship_type, relationship_type.replace('_', ' ').title()), 'games': games}
         for relationship_type, games in grouped.items()
     ]
+
+
+def serialize_game_families(game):
+    names = {}
+    for group in game.groups:
+        names.setdefault(group.name.casefold(), group.name)
+    return sorted(names.values())

@@ -92,6 +92,7 @@ $(document).ready(function() {
         var keyMappings = {
             'library_uuid': 'library_uuid',
             'collection': 'collection',
+            'family': 'family',
             'genre': 'genre', 
             'theme': 'theme',
             'tag': 'tag',
@@ -275,6 +276,7 @@ $(document).ready(function() {
         var filters = {
             library_uuid: $('#libraryNameSelect').val() || urlParams.library_uuid || undefined,
             collection: $('#collectionSelect').val() || undefined,
+            family: urlParams.family || undefined,
             page: page,
             per_page: $('#perPageSelect').val() || 20,
             category: $('#categorySelect').val() || urlParams.category,
