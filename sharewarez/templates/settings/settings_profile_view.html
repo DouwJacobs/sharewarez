@@ -86,6 +86,88 @@
                 </div>
             </form>
         </section>
+
+        <section class="profile-api-tokens" aria-labelledby="profile-api-tokens-title">
+            <div class="profile-preferences-heading profile-api-token-heading">
+                <div>
+                    <p class="profile-eyebrow">Developer access</p>
+                    <h2 id="profile-api-tokens-title"><i class="fas fa-key" aria-hidden="true"></i> API tokens</h2>
+                    <p>Create scoped credentials for scripts and integrations. New tokens are shown once and stored only as a secure hash.</p>
+                </div>
+            </div>
+
+            <form id="apiTokenForm" class="profile-api-token-form">
+                <label>Token name<input class="form-control" id="apiTokenName" maxlength="80" required placeholder="Home automation"></label>
+                <label>Expiration<select class="form-select" id="apiTokenExpiry"><option value="30">30 days</option><option value="90" selected>90 days</option><option value="365">1 year</option><option value="never">Never</option></select></label>
+                <fieldset class="profile-token-scopes"><legend>Scopes</legend>
+                    {% for scope, description in api_token_scopes.items() %}
+                    <label><input type="checkbox" name="apiTokenScope" value="{{ scope }}"{% if scope == 'profile:read' %} checked{% endif %}><span><strong>{{ scope }}</strong><small>{{ description }}</small></span></label>
+                    {% endfor %}
+                </fieldset>
+                <button class="btn btn-primary" type="submit"><i class="fas fa-plus" aria-hidden="true"></i>Create token</button>
+            </form>
+
+            <div id="newApiToken" class="profile-token-reveal" hidden role="status">
+                <strong>Copy this token now. It will not be shown again.</strong>
+                <div><code id="newApiTokenValue"></code><button class="btn btn-secondary btn-sm" id="copyApiToken" type="button"><i class="fas fa-copy" aria-hidden="true"></i>Copy</button></div>
+            </div>
+
+            <div class="profile-token-list" aria-label="API tokens">
+                {% for token in api_tokens %}
+                <article class="profile-token-row" data-token-id="{{ token.id }}">
+                    <div><strong>{{ token.name }}</strong><span>gst_{{ token.prefix }}… · {{ token.scopes|join(', ') }}</span></div>
+                    <div class="profile-token-meta">
+                        {% if token.revoked_at %}<span class="profile-token-status is-revoked">Revoked</span>
+                        {% elif token.expires_at and token.expires_at <= token_now %}<span class="profile-token-status is-revoked">Expired</span>
+                        {% else %}<span class="profile-token-status">Active</span>{% endif %}
+                        <small>Last used {{ token.last_used_at.strftime('%Y-%m-%d %H:%M') if token.last_used_at else 'never' }}</small>
+                    </div>
+                    {% if not token.revoked_at %}<button class="btn btn-danger btn-sm revoke-api-token" type="button">Revoke</button>{% endif %}
+                </article>
+                {% else %}<p class="profile-token-empty">No API tokens created yet.</p>{% endfor %}
+            </div>
+        </section>
     </section>
 </main>
+<script>
+const apiTokenForm = document.getElementById('apiTokenForm');
+apiTokenForm?.addEventListener('submit', async event => {
+    event.preventDefault();
+    const button = apiTokenForm.querySelector('button[type="submit"]');
+    button.disabled = true;
+    try {
+        const response = await fetch('/settings/api-tokens', {
+            method: 'POST',
+            headers: CSRFUtils.getHeaders({'Content-Type': 'application/json'}),
+            body: JSON.stringify({
+                name: document.getElementById('apiTokenName').value,
+                expires_days: document.getElementById('apiTokenExpiry').value,
+                scopes: Array.from(document.querySelectorAll('[name="apiTokenScope"]:checked')).map(item => item.value)
+            })
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message || 'Could not create API token');
+        document.getElementById('newApiTokenValue').textContent = data.token;
+        document.getElementById('newApiToken').hidden = false;
+        $.notify(data.message, 'success');
+    } catch (error) { $.notify(error.message, 'error'); }
+    finally { button.disabled = false; }
+});
+
+document.getElementById('copyApiToken')?.addEventListener('click', async () => {
+    await navigator.clipboard.writeText(document.getElementById('newApiTokenValue').textContent);
+    $.notify('API token copied', 'success');
+});
+
+document.querySelectorAll('.revoke-api-token').forEach(button => button.addEventListener('click', async () => {
+    if (!window.confirm('Revoke this API token? Existing clients will immediately lose access.')) return;
+    const row = button.closest('[data-token-id]');
+    const response = await fetch(`/settings/api-tokens/${row.dataset.tokenId}/revoke`, {
+        method: 'POST', headers: CSRFUtils.getHeaders({'Content-Type': 'application/json'})
+    });
+    const data = await response.json();
+    if (!response.ok) { $.notify(data.message || 'Could not revoke token', 'error'); return; }
+    window.location.reload();
+}));
+</script>
 {% endblock %}

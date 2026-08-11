@@ -186,6 +186,65 @@
 .profile-preferences-submit { grid-column: 1 / -1; display: flex; justify-content: flex-end; }
 .profile-preferences-submit .btn { display: inline-flex; align-items: center; gap: 8px; }
 
+.profile-api-tokens {
+    margin: 0 clamp(26px, 5vw, 46px) clamp(28px, 5vw, 46px);
+    padding-top: clamp(22px, 4vw, 30px);
+    border-top: 1px solid rgba(var(--theme-accent-soft-rgb, 154, 177, 255), 0.14);
+}
+
+.profile-api-token-form {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(160px, .45fr) auto;
+    align-items: end;
+    gap: 14px;
+}
+
+.profile-api-token-form > label,
+.profile-token-scopes legend {
+    color: var(--theme-text-secondary, #c5ccdc);
+    font-size: .84rem;
+    font-weight: 600;
+}
+
+.profile-api-token-form :is(.form-control, .form-select) { margin-top: 6px; }
+
+.profile-token-scopes {
+    display: grid;
+    grid-column: 1 / -1;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+    padding: 0;
+    border: 0;
+}
+
+.profile-token-scopes legend { grid-column: 1 / -1; margin-bottom: 7px; }
+.profile-token-scopes label { display: flex; align-items: flex-start; gap: 10px; padding: 10px 0; }
+.profile-token-scopes input { margin-top: 4px; accent-color: rgb(var(--theme-accent-rgb, 98, 122, 239)); }
+.profile-token-scopes span { display: grid; gap: 2px; }
+.profile-token-scopes strong { color: var(--theme-text-primary, #f5f7ff); font-family: monospace; font-size: .82rem; }
+.profile-token-scopes small { color: var(--theme-text-secondary, #c5ccdc); }
+
+.profile-token-reveal {
+    margin-top: 18px;
+    padding: 14px;
+    border: 1px solid rgba(var(--theme-accent-soft-rgb, 154, 177, 255), .22);
+    border-radius: 12px;
+    background: rgba(var(--theme-accent-rgb, 98, 122, 239), .08);
+}
+
+.profile-token-reveal > div { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
+.profile-token-reveal code { flex: 1; overflow: auto; padding: 9px 11px; border-radius: 8px; background: var(--theme-input-bg, rgba(7, 9, 19, .8)); color: var(--theme-text-primary, #f5f7ff); }
+
+.profile-token-list { display: grid; margin-top: 20px; border-top: 1px solid rgba(var(--theme-accent-soft-rgb, 154, 177, 255), .1); }
+.profile-token-row { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 14px; padding: 15px 0; border-bottom: 1px solid rgba(var(--theme-accent-soft-rgb, 154, 177, 255), .1); }
+.profile-token-row > div:first-child { min-width: 0; }
+.profile-token-row strong { display: block; color: var(--theme-text-primary, #f5f7ff); }
+.profile-token-row > div:first-child span { display: block; overflow: hidden; margin-top: 3px; color: var(--theme-text-secondary, #c5ccdc); font-family: monospace; font-size: .76rem; text-overflow: ellipsis; white-space: nowrap; }
+.profile-token-meta { display: grid; justify-items: end; gap: 4px; color: var(--theme-text-secondary, #c5ccdc); }
+.profile-token-status { color: #8ee6ad; font-size: .76rem; font-weight: 700; text-transform: uppercase; }
+.profile-token-status.is-revoked { color: #f4a1aa; }
+.profile-token-empty { margin: 16px 0 0; color: var(--theme-text-secondary, #c5ccdc); }
+
 @media (max-width: 820px) {
     .profile-hero { grid-template-columns: auto minmax(0, 1fr); }
     .profile-actions { grid-column: 1 / -1; grid-template-columns: 1fr 1fr; }
@@ -201,7 +260,15 @@
     .profile-actions { grid-column: auto; grid-template-columns: 1fr; width: 100%; }
     .profile-details { padding-inline: 18px; }
     .profile-preferences { margin-inline: 18px; }
+    .profile-api-tokens { margin-inline: 18px; }
     .profile-preferences-form { grid-template-columns: 1fr; }
     .profile-preferences-submit { grid-column: auto; }
     .profile-preferences-submit .btn { width: 100%; justify-content: center; }
+    .profile-api-token-form { grid-template-columns: 1fr; }
+    .profile-token-scopes { grid-column: auto; grid-template-columns: 1fr; }
+    .profile-api-token-form > .btn { width: 100%; }
+    .profile-token-row { grid-template-columns: 1fr auto; }
+    .profile-token-meta { justify-items: start; }
+    .profile-token-row > .btn { grid-column: 2; grid-row: 1 / span 2; }
+    .profile-token-reveal > div { align-items: stretch; flex-direction: column; }
 }

@@ -1,11 +1,30 @@
 # /sharewarez/routes_apis/user.py
-from flask import jsonify, request
+from flask import g, jsonify, request
 from flask_login import login_required, current_user
 from sharewarez import db
 from sharewarez.models import Game, User, user_game_status, get_status_info
 from sqlalchemy import func, select, and_, delete
 from datetime import datetime, timezone
 from . import apis_bp
+from sharewarez.utils.api_tokens import require_api_scope
+
+
+@apis_bp.route('/token-introspect', methods=['GET'])
+@require_api_scope('profile:read')
+def token_introspect():
+    return jsonify({
+        'user': {
+            'id': g.api_user.user_id,
+            'name': g.api_user.name,
+            'role': g.api_user.role,
+        },
+        'token': {
+            'name': g.api_token.name,
+            'prefix': g.api_token.prefix,
+            'scopes': g.api_token.scopes,
+            'expires_at': g.api_token.expires_at.isoformat() if g.api_token.expires_at else None,
+        },
+    })
 
 @apis_bp.route('/current_user_role', methods=['GET'])
 @login_required

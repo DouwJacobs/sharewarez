@@ -4,13 +4,16 @@ from uuid import uuid4
 from flask import Blueprint, render_template, redirect, url_for, request, flash, current_app, jsonify
 from flask_login import login_required, current_user
 from sharewarez.forms import EditProfileForm, UserPasswordForm, UserPreferencesForm
-from sharewarez.models import User, InviteToken, UserPreference
+from sharewarez.models import ApiToken, User, InviteToken, UserPreference
 from sqlalchemy import select, func
 from sharewarez.utils.functions import square_image
 from sharewarez.utils.processors import get_global_settings
 from sharewarez.utils.themes import ThemeManager
 from sharewarez import cache
 from sharewarez import db
+from sharewarez.utils.api_tokens import API_TOKEN_SCOPES, create_api_token
+from sharewarez.utils.event_logging import log_system_event
+from datetime import datetime, timezone
 
 settings_bp = Blueprint('settings', __name__)
 
@@ -160,11 +163,77 @@ def settings_profile_view():
     
     preferences_form = UserPreferencesForm()
     _populate_preferences_form(preferences_form)
+    api_tokens = db.session.execute(
+        select(ApiToken)
+        .where(ApiToken.user_id == current_user.id)
+        .order_by(ApiToken.created_at.desc(), ApiToken.id.desc())
+        .limit(20)
+    ).scalars().all()
 
     return render_template('settings/settings_profile_view.html',
                          remaining_invites=remaining_invites,
                          total_invites=current_user.invite_quota,
-                         preferences_form=preferences_form)
+                         preferences_form=preferences_form,
+                         api_tokens=api_tokens,
+                         api_token_scopes=API_TOKEN_SCOPES,
+                         token_now=datetime.now(timezone.utc))
+
+
+@settings_bp.route('/settings/api-tokens', methods=['POST'])
+@login_required
+def create_personal_api_token():
+    data = request.get_json(silent=True) or {}
+    try:
+        expires_days = data.get('expires_days', 90)
+        if expires_days == 'never':
+            expires_days = None
+        elif not isinstance(expires_days, bool):
+            expires_days = int(expires_days)
+        token, raw_token = create_api_token(
+            current_user,
+            data.get('name'),
+            data.get('scopes'),
+            expires_days,
+        )
+    except (TypeError, ValueError) as error:
+        return jsonify({'message': str(error)}), 400
+
+    log_system_event(
+        f'User {current_user.id} created API token {token.id}',
+        event_type='audit',
+        event_level='information',
+    )
+    return jsonify({
+        'message': 'API token created',
+        'token': raw_token,
+        'record': {
+            'id': token.id,
+            'name': token.name,
+            'prefix': token.prefix,
+            'scopes': token.scopes,
+            'created_at': token.created_at.isoformat(),
+            'expires_at': token.expires_at.isoformat() if token.expires_at else None,
+        },
+    }), 201
+
+
+@settings_bp.route('/settings/api-tokens/<int:token_id>/revoke', methods=['POST'])
+@login_required
+def revoke_personal_api_token(token_id):
+    token = db.session.execute(
+        select(ApiToken).where(ApiToken.id == token_id, ApiToken.user_id == current_user.id)
+    ).scalar_one_or_none()
+    if token is None:
+        return jsonify({'message': 'API token not found'}), 404
+    if token.revoked_at is None:
+        token.revoked_at = datetime.now(timezone.utc)
+        db.session.commit()
+        log_system_event(
+            f'User {current_user.id} revoked API token {token.id}',
+            event_type='audit',
+            event_level='information',
+        )
+    return jsonify({'message': 'API token revoked'})
 
 
 def _populate_preferences_form(form):
