@@ -3,6 +3,7 @@ from flask import jsonify, request
 from flask_login import login_required
 from sharewarez.utils.igdb_api import make_igdb_api_request, get_cover_thumbnail_url
 from sharewarez.utils.game_core import check_existing_game_by_igdb_id
+from sharewarez.utils.game_relationships import IGDB_RELATIONSHIP_QUERY_FIELDS
 from . import apis_bp
 
 @apis_bp.route('/get_company_role', methods=['GET'])
@@ -79,7 +80,7 @@ def search_igdb_by_id():
         fields id, name, cover, summary, url, release_dates.date, platforms.name, genres.name, themes.name, game_modes.name,
                screenshots, videos.video_id, first_release_date, aggregated_rating, involved_companies, player_perspectives.name,
                aggregated_rating_count, rating, rating_count, slug, status, category, total_rating, 
-               total_rating_count, storyline;
+               total_rating_count, storyline, {IGDB_RELATIONSHIP_QUERY_FIELDS};
         where id = {igdb_id};
     """
     response = make_igdb_api_request(endpoint_url, query_params)
@@ -101,10 +102,10 @@ def search_igdb_by_name():
 
     if game_name:
         # Use the same field format as working scanning code  
-        query_fields = """fields id, name, cover, summary, url, release_dates.date, platforms.name, genres.name, themes.name, game_modes.name,
+        query_fields = f"""fields id, name, cover, summary, url, release_dates.date, platforms.name, genres.name, themes.name, game_modes.name,
                           screenshots, videos.video_id, first_release_date, aggregated_rating, involved_companies, player_perspectives.name,
                           aggregated_rating_count, rating, rating_count, slug, status, category, total_rating, 
-                          total_rating_count, storyline;"""
+                          total_rating_count, storyline, {IGDB_RELATIONSHIP_QUERY_FIELDS};"""
         
         query_filter = f'search "{game_name}";'
         

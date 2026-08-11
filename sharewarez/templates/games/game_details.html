@@ -543,6 +543,32 @@
                 </div>
             </div>
 
+            {% if game.series or game.franchises or game.relationship_groups %}
+            <section class="game-relationships" aria-labelledby="game-relationships-title">
+                <div class="game-card-labels" id="game-relationships-title"><i class="fas fa-code-branch" aria-hidden="true"></i> Related releases</div>
+                {% if game.series or game.franchises %}
+                <div class="game-relationship-memberships">
+                    {% for series in game.series %}<span class="chip-detailspage"><i class="fas fa-layer-group" aria-hidden="true"></i> {{ series }}</span>{% endfor %}
+                    {% for franchise in game.franchises %}<span class="chip-detailspage"><i class="fas fa-link" aria-hidden="true"></i> {{ franchise }}</span>{% endfor %}
+                </div>
+                {% endif %}
+                {% for group in game.relationship_groups %}
+                <div class="game-relationship-row">
+                    <span>{{ group.label }}</span>
+                    <div>
+                        {% for related in group.games %}
+                            {% if related.game_uuid %}
+                            <a class="game-relationship-link" href="{{ url_for('games.game_details', game_uuid=related.game_uuid) }}"><i class="fas fa-gamepad" aria-hidden="true"></i>{{ related.name }}</a>
+                            {% else %}
+                            <span class="game-relationship-link is-unavailable" title="Not currently in this library"><i class="fas fa-circle-minus" aria-hidden="true"></i>{{ related.name }}</span>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endfor %}
+            </section>
+            {% endif %}
+
             {# Full width content section #}
             <div class="game-card-bottom-info">
                 {# Summary #}

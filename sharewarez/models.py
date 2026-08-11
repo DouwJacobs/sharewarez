@@ -207,9 +207,64 @@ class Game(db.Model):
         cascade='all, delete-orphan',
         passive_deletes=True,
     )
+    relationships = db.relationship(
+        'GameRelationship',
+        foreign_keys='GameRelationship.game_uuid',
+        back_populates='game',
+        cascade='all, delete-orphan',
+    )
+    groups = db.relationship(
+        'GameGroup',
+        secondary='game_group_memberships',
+        back_populates='games',
+    )
 
     def __repr__(self):
         return f"<Game id={self.id}, name={self.name}>"
+
+
+class GameRelationship(db.Model):
+    __tablename__ = 'game_relationships'
+    __table_args__ = (
+        db.UniqueConstraint(
+            'game_uuid', 'related_igdb_id', 'relationship_type', 'provider',
+            name='uq_game_relationship_identity',
+        ),
+    )
+
+    id = db.Column(db.Integer, primary_key=True)
+    game_uuid = db.Column(db.String(36), db.ForeignKey('games.uuid', ondelete='CASCADE'), nullable=False, index=True)
+    related_game_uuid = db.Column(db.String(36), db.ForeignKey('games.uuid', ondelete='SET NULL'), nullable=True, index=True)
+    related_igdb_id = db.Column(db.Integer, nullable=False, index=True)
+    related_name = db.Column(db.String(255), nullable=False)
+    relationship_type = db.Column(db.String(40), nullable=False, index=True)
+    provider = db.Column(db.String(32), nullable=False, default='igdb')
+    created_at = db.Column(db.DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(db.DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+
+    game = db.relationship('Game', foreign_keys=[game_uuid], back_populates='relationships')
+    related_game = db.relationship('Game', foreign_keys=[related_game_uuid])
+
+
+class GameGroup(db.Model):
+    __tablename__ = 'game_groups'
+    __table_args__ = (
+        db.UniqueConstraint('provider', 'provider_id', 'group_type', name='uq_game_group_identity'),
+    )
+
+    id = db.Column(db.Integer, primary_key=True)
+    provider = db.Column(db.String(32), nullable=False, default='igdb')
+    provider_id = db.Column(db.Integer, nullable=False)
+    name = db.Column(db.String(255), nullable=False)
+    group_type = db.Column(db.String(24), nullable=False, index=True)
+    games = db.relationship('Game', secondary='game_group_memberships', back_populates='groups')
+
+
+game_group_memberships = db.Table(
+    'game_group_memberships',
+    db.Column('game_uuid', db.String(36), db.ForeignKey('games.uuid', ondelete='CASCADE'), primary_key=True),
+    db.Column('group_id', db.Integer, db.ForeignKey('game_groups.id', ondelete='CASCADE'), primary_key=True),
+)
 
 class GameUpdate(db.Model):
     __tablename__ = 'game_updates'

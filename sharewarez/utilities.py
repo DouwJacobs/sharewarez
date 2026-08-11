@@ -100,6 +100,9 @@ def refresh_game_metadata_and_updates(game_uuid):
     if metadata.get('status') in status_mapping:
         game.status = status_mapping[metadata['status']]
 
+    from sharewarez.utils.game_relationships import sync_game_relationships
+    sync_game_relationships(game, metadata)
+
     relationship_fields = (
         ('genres', Genre),
         ('themes', Theme),

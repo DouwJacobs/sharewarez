@@ -56,6 +56,9 @@ def test_game_details_uses_storefront_product_structure():
     assert 'game-card-topq{% if game.hltb_main_story' in template
     assert 'game-storefront-heading' in template
     assert 'game-storefront-acquisition' in template
+    assert 'game-relationships' in template
+    assert 'game.relationship_groups' in template
+    assert 'related.game_uuid' in template
     assert '<button type="submit" class="button-glass-download"' in template
     assert '.game-storefront::before' in css
     assert 'display: none !important;' in css
@@ -67,6 +70,7 @@ def test_game_details_uses_storefront_product_structure():
     assert 'background: transparent !important;' in css
     assert 'overflow: visible;' in css
     assert '.game-storefront .rating-row + .rating-row' in css
+    assert '.game-relationship-row' in css
 
 
 def test_game_details_mobile_storefront_uses_shared_outer_gutter():

@@ -51,6 +51,7 @@ def _game_payload(game, detailed=False):
         'last_updated': _iso(game.last_updated),
     }
     if detailed:
+        from sharewarez.utils.game_relationships import serialize_game_relationships
         payload.update({
             'summary': game.summary,
             'developer': game.developer.name if game.developer else None,
@@ -59,6 +60,9 @@ def _game_payload(game, detailed=False):
             'platforms': sorted(item.name for item in game.platforms),
             'themes': sorted(item.name for item in game.themes),
             'game_modes': sorted(item.name for item in game.game_modes),
+            'series': sorted(group.name for group in game.groups if group.group_type == 'series'),
+            'franchises': sorted(group.name for group in game.groups if group.group_type == 'franchise'),
+            'relationships': serialize_game_relationships(game),
         })
     return payload
 

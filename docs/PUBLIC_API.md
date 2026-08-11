@@ -19,7 +19,7 @@ generated archive locations, token digests, or another user's downloads.
 | `GET /api/v1/profile` | `profile:read` | Token owner's account identity |
 | `GET /api/v1/libraries` | `library:read` | Libraries and their game counts |
 | `GET /api/v1/games` | `library:read` | Paginated game catalogue |
-| `GET /api/v1/games/{uuid}` | `library:read` | Detailed game metadata |
+| `GET /api/v1/games/{uuid}` | `library:read` | Detailed metadata, series, franchises, and related releases |
 | `GET /api/v1/downloads` | `downloads:read` | Token owner's download history |
 
 `GET /api/token-introspect` remains available as an unversioned token diagnostic

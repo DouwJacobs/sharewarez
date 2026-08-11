@@ -2014,6 +2014,55 @@ pre {
     background: transparent !important;
 }
 
+.game-relationships {
+    display: grid;
+    gap: 12px;
+    margin: 0;
+    padding: 24px 42px;
+    border-top: 1px solid var(--theme-border-color, rgba(255,255,255,.12));
+}
+
+.game-relationship-memberships,
+.game-relationship-row > div {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.game-relationship-row {
+    display: grid;
+    grid-template-columns: minmax(110px, .28fr) minmax(0, 1fr);
+    gap: 12px;
+    align-items: start;
+}
+
+.game-relationship-row > span {
+    color: var(--theme-text-secondary, #aab0c2);
+    font-size: .78rem;
+    font-weight: 700;
+}
+
+.game-relationship-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 7px 10px;
+    border: 1px solid rgba(var(--theme-accent-soft-rgb, 154, 177, 255), .18);
+    border-radius: 999px;
+    background: rgba(var(--theme-accent-rgb, 98, 122, 239), .08);
+    color: var(--theme-text-primary, #f5f7ff);
+    font-size: .78rem;
+    text-decoration: none;
+}
+
+.game-relationship-link:not(.is-unavailable):hover {
+    border-color: rgba(var(--theme-accent-soft-rgb, 154, 177, 255), .42);
+    background: rgba(var(--theme-accent-rgb, 98, 122, 239), .16);
+    color: var(--theme-text-primary, #f5f7ff);
+}
+
+.game-relationship-link.is-unavailable { color: var(--theme-text-secondary, #aab0c2); }
+
 .game-storefront .game-card-text-summary,
 .game-storefront .install-instructions-section { margin: 0; padding: 0 !important; border: 0 !important; border-radius: 0 !important; background: transparent !important; box-shadow: none !important; }
 .game-storefront .game-card-text-summary { margin: 0; padding: 0 !important; border: 0 !important; border-radius: 0 !important; background: transparent !important; box-shadow: none !important; }
@@ -2093,4 +2142,6 @@ pre {
     .game-storefront .game-videos-row { padding-right: 16px; padding-left: 16px; }
     .game-storefront .game-videos-row { padding-top: 18px; }
     .game-storefront .screenshot-image { width: 220px; height: 124px; }
+    .game-relationships { padding: 22px 16px; }
+    .game-relationship-row { grid-template-columns: 1fr; gap: 7px; }
 }

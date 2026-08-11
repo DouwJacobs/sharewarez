@@ -23,6 +23,7 @@ from sharewarez.utils.gamenames import generate_goty_variants
 from sharewarez.utils.discord import discord_webhook
 from sharewarez.utils.scanning import log_unmatched_folder, delete_game_images
 from sharewarez.utils.event_logging import log_system_event
+from sharewarez.utils.game_relationships import IGDB_RELATIONSHIP_QUERY_FIELDS, sync_game_relationships
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -152,6 +153,7 @@ def create_game_instance(game_data, full_disk_path, folder_size_bytes, library_u
 
         db.session.add(new_game)
         db.session.flush()
+        sync_game_relationships(new_game, game_data)
         fetch_and_store_game_urls(new_game.uuid, game_data['id'])
         print(f"create_game_instance Finished processing game '{new_game.name}'. URLs (if any) have been fetched and stored.")
         
@@ -374,10 +376,10 @@ def search_igdb_for_game(search_name, platform_id):
     Helper function to search IGDB for a game with the given name and platform.
     Returns the API response or None if no match found.
     """
-    query_fields = """fields id, name, cover, summary, url, release_dates.date, platforms.name, genres.name, themes.name, game_modes.name,
+    query_fields = f"""fields id, name, cover, summary, url, release_dates.date, platforms.name, genres.name, themes.name, game_modes.name,
                       screenshots, videos.video_id, first_release_date, aggregated_rating, involved_companies, player_perspectives.name,
                       aggregated_rating_count, rating, rating_count, slug, status, category, total_rating,
-                      total_rating_count;"""
+                      total_rating_count, {IGDB_RELATIONSHIP_QUERY_FIELDS};"""
     query_filter = f'search "{search_name}"; limit 1;'
     if platform_id is not None:
         query_filter += f' where platforms = ({platform_id});'
@@ -408,7 +410,8 @@ def fetch_game_by_igdb_id(igdb_id):
                    total_rating, total_rating_count, status, category,
                    cover.url, screenshots.url, videos.video_id,
                    genres.name, themes.name, game_modes.name, platforms.name,
-                   player_perspectives.name, involved_companies;
+                   player_perspectives.name, involved_companies,
+                   {IGDB_RELATIONSHIP_QUERY_FIELDS};
             where id = {igdb_id};
             limit 1;
         """
