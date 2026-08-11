@@ -62,6 +62,7 @@ DEFAULT_SETTINGS = {
     'maxConcurrentDownloadsPerUser': 2,
     'downloadBandwidthLimitMbps': 0,
     'downloadQueueWaitSeconds': 10,
+    'downloadRequestExpirationHours': 168,
     'defaultMonthlyDownloadQuotaGb': 0,
     'scanThreadCount': 1,
     'enableHltbIntegration': True,
@@ -164,6 +165,12 @@ def validate_settings_data(settings_data):
         not isinstance(queue_wait, int) or not 0 <= queue_wait <= 60
     ):
         errors.append("Download queue wait must be between 0 and 60 seconds")
+
+    expiration_hours = settings_data.get('downloadRequestExpirationHours')
+    if expiration_hours is not None and (
+        not isinstance(expiration_hours, int) or not 0 <= expiration_hours <= 8760
+    ):
+        errors.append("Download request expiration must be between 0 and 8760 hours")
 
     quota_gb = settings_data.get('defaultMonthlyDownloadQuotaGb')
     if quota_gb is not None and (

@@ -4,7 +4,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from uuid import uuid4
 
-from sqlalchemy import delete, func, insert, select, text
+from sqlalchemy import delete, func, insert, select, text, update
 
 
 class DownloadSlot:
@@ -101,6 +101,15 @@ def normalize_download_priority(value):
     return max(-10, min(priority, 10))
 
 
+def calculate_download_expiry(settings_record=None, now=None):
+    """Return a request expiry timestamp, or None when expiration is disabled."""
+    settings = settings_record if isinstance(settings_record, dict) else getattr(settings_record, 'settings', None)
+    hours = int((settings or {}).get('downloadRequestExpirationHours', 168) or 0)
+    if hours <= 0:
+        return None
+    return (now or datetime.now(timezone.utc)) + timedelta(hours=min(hours, 8760))
+
+
 async def throttle_chunks(chunks, megabits_per_second):
     """Pace an async byte stream to an average per-transfer bandwidth ceiling."""
     if not megabits_per_second:
@@ -159,6 +168,7 @@ def reserve_transfer(user_id, filename, expected_bytes, download_request_id=None
         filename=filename[:512],
         reserved_bytes=max(0, expected_bytes),
         status='active',
+        last_activity_at=now,
     )
     db.session.add(transfer)
     db.session.commit()
@@ -175,5 +185,63 @@ def finish_transfer(transfer_id, bytes_sent, status):
     transfer.bytes_sent = max(0, bytes_sent)
     transfer.reserved_bytes = transfer.bytes_sent
     transfer.status = status
-    transfer.ended_at = datetime.now(timezone.utc)
+    transfer.last_activity_at = datetime.now(timezone.utc)
+    transfer.ended_at = transfer.last_activity_at
     db.session.commit()
+
+
+def update_transfer_progress(transfer_id, bytes_sent):
+    """Persist a lightweight heartbeat for active-transfer monitoring."""
+    from sharewarez import db
+    from sharewarez.models import DownloadTransfer
+
+    db.session.execute(
+        update(DownloadTransfer)
+        .where(DownloadTransfer.id == transfer_id, DownloadTransfer.status == 'active')
+        .values(bytes_sent=max(0, bytes_sent), last_activity_at=datetime.now(timezone.utc))
+    )
+    db.session.commit()
+
+
+def mark_stale_transfers(stale_seconds=60):
+    """Close active rows whose worker stopped heartbeating."""
+    from sharewarez import db
+    from sharewarez.models import DownloadTransfer
+
+    now = datetime.now(timezone.utc)
+    cutoff = now - timedelta(seconds=stale_seconds)
+    result = db.session.execute(
+        update(DownloadTransfer)
+        .where(
+            DownloadTransfer.status == 'active',
+            DownloadTransfer.last_activity_at < cutoff,
+        )
+        .values(
+            status='interrupted',
+            reserved_bytes=DownloadTransfer.bytes_sent,
+            ended_at=now,
+        )
+    )
+    db.session.commit()
+    return result.rowcount
+
+
+def expire_download_requests(user_id=None):
+    """Mark elapsed available links expired before presenting or serving them."""
+    from sharewarez import db
+    from sharewarez.models import DownloadRequest
+
+    statement = (
+        update(DownloadRequest)
+        .where(
+            DownloadRequest.status == 'available',
+            DownloadRequest.expires_at.is_not(None),
+            DownloadRequest.expires_at <= datetime.now(timezone.utc),
+        )
+        .values(status='expired')
+    )
+    if user_id is not None:
+        statement = statement.where(DownloadRequest.user_id == user_id)
+    result = db.session.execute(statement)
+    db.session.commit()
+    return result.rowcount

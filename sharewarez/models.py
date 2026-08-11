@@ -369,6 +369,7 @@ class DownloadRequest(db.Model):
     game_update = db.relationship('GameUpdate', foreign_keys=[game_update_id])
     game_extra = db.relationship('GameExtra', foreign_keys=[game_extra_id])
     priority = db.Column(db.SmallInteger, nullable=False, default=0)
+    expires_at = db.Column(db.DateTime(timezone=True), nullable=True, index=True)
 
 
 class DownloadTransfer(db.Model):
@@ -382,6 +383,7 @@ class DownloadTransfer(db.Model):
     bytes_sent = db.Column(db.BigInteger, nullable=False, default=0)
     status = db.Column(db.String(24), nullable=False, default='active', index=True)
     started_at = db.Column(db.DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc), index=True)
+    last_activity_at = db.Column(db.DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc), index=True)
     ended_at = db.Column(db.DateTime(timezone=True), nullable=True)
 
     user = db.relationship('User', foreign_keys=[user_id])

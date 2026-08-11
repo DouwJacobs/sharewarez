@@ -10,12 +10,21 @@
 <section class="app-page downloads-page" aria-labelledby="downloads-page-title">
     <div class="app-surface downloads-panel admin_manage_downloads-requests">
         {{ page_header('Download requests', 'Review download activity, open the related game, or remove stale requests.', 'Administration', 'fa-shield-halved', pagination.total, 'request') }}
+        <section class="active-transfer-monitor" aria-labelledby="active-transfer-title">
+            <div class="active-transfer-heading">
+                <div><p class="downloads-section-eyebrow">Live delivery</p><h2 id="active-transfer-title">Active transfers</h2></div>
+                <span id="activeTransferCount" class="downloads-count">0 active</span>
+            </div>
+            <div id="activeTransferList" class="active-transfer-list" aria-live="polite">
+                <p class="active-transfer-empty">No transfers are active.</p>
+            </div>
+        </section>
         <form class="downloads-filter-bar" method="get">
             <label>Username <input class="form-control" type="search" name="user" value="{{ user_filter }}" placeholder="Filter by user"></label>
             <label>Status
                 <select class="form-select" name="status">
                     <option value="">All statuses</option>
-                    {% for value in ['available', 'pending', 'processing', 'failed', 'cancelled'] %}<option value="{{ value }}"{% if status_filter == value %} selected{% endif %}>{{ value|title }}</option>{% endfor %}
+                    {% for value in ['available', 'pending', 'processing', 'failed', 'cancelled', 'expired'] %}<option value="{{ value }}"{% if status_filter == value %} selected{% endif %}>{{ value|title }}</option>{% endfor %}
                 </select>
             </label>
             <label>Content
@@ -169,6 +178,58 @@ document.querySelectorAll('.download-priority-select').forEach(select => {
     });
     select.dataset.savedValue = select.value;
 });
+
+const formatTransferBytes = value => {
+    const bytes = Number(value || 0);
+    if (bytes < 1024) return `${bytes} B`;
+    const units = ['KB', 'MB', 'GB', 'TB'];
+    let size = bytes / 1024;
+    let unit = 0;
+    while (size >= 1024 && unit < units.length - 1) { size /= 1024; unit += 1; }
+    return `${size.toFixed(size >= 10 ? 1 : 2)} ${units[unit]}`;
+};
+
+const renderActiveTransfers = transfers => {
+    const list = document.getElementById('activeTransferList');
+    const count = document.getElementById('activeTransferCount');
+    count.textContent = `${transfers.length} active`;
+    list.replaceChildren();
+    if (!transfers.length) {
+        const empty = document.createElement('p');
+        empty.className = 'active-transfer-empty';
+        empty.textContent = 'No transfers are active.';
+        list.appendChild(empty);
+        return;
+    }
+    transfers.forEach(transfer => {
+        const item = document.createElement('article');
+        item.className = 'active-transfer-item';
+        const details = document.createElement('div');
+        const title = document.createElement('strong');
+        title.textContent = transfer.filename;
+        const meta = document.createElement('span');
+        meta.textContent = `${transfer.username} · ${formatTransferBytes(transfer.bytes_sent)} sent · ${transfer.elapsed_seconds}s`;
+        details.append(title, meta);
+        const progress = document.createElement('div');
+        progress.className = 'active-transfer-progress';
+        const bar = document.createElement('span');
+        bar.style.width = `${transfer.progress ?? 100}%`;
+        progress.appendChild(bar);
+        item.append(details, progress);
+        list.appendChild(item);
+    });
+};
+
+const refreshActiveTransfers = async () => {
+    try {
+        const response = await fetch('/admin/active-transfers');
+        if (!response.ok) return;
+        const data = await response.json();
+        renderActiveTransfers(data.transfers || []);
+    } catch (_) { /* Keep the last known state during a transient refresh failure. */ }
+};
+refreshActiveTransfers();
+window.setInterval(refreshActiveTransfers, 3000);
 
 let currentDeleteId = null;
 

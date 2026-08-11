@@ -8,6 +8,7 @@ from sharewarez.models import Game, DownloadRequest, GameUpdate, GameExtra, Glob
 from sharewarez.utils.game_core import get_game_by_uuid
 from sharewarez.utils.security import is_safe_path, get_allowed_base_directories
 from sharewarez.utils.filename import sanitize_filename
+from sharewarez.utils.download_limits import calculate_download_expiry
 from sharewarez import db
 from sharewarez.utils.event_logging import log_system_event
 from sharewarez.routes_games_ext.details import get_path_size
@@ -43,11 +44,11 @@ def download_game(game_uuid):
     if existing_request:
         flash("You already have a download request for this game in your basket. Please check your downloads page.", "info")
         return redirect(url_for('download.downloads'))
-    
+
     try:
+        settings = db.session.execute(select(GlobalSettings)).scalars().first()
         # Determine how to handle the game for instant streaming download
         if os.path.isdir(game.full_disk_path):
-            settings = db.session.execute(select(GlobalSettings)).scalars().first()
             files_in_directory = []
             for f in os.listdir(game.full_disk_path):
                 full_path = os.path.join(game.full_disk_path, f)
@@ -85,7 +86,8 @@ def download_game(game_uuid):
             status=status,  # Always 'available' for instant download
             download_size=game.size,
             file_location=game.full_disk_path,
-            zip_file_path=zip_file_path
+            zip_file_path=zip_file_path,
+            expires_at=calculate_download_expiry(settings),
         )
         db.session.add(new_request)
         game.times_downloaded += 1
@@ -191,7 +193,10 @@ def download_other(file_type, game_uuid, file_id):
             status=status,
             download_size=calculated_size,  # Use calculated size instead of 0
             file_location=file_path,
-            zip_file_path=zip_file_path
+            zip_file_path=zip_file_path,
+            expires_at=calculate_download_expiry(
+                db.session.execute(select(GlobalSettings)).scalars().first()
+            ),
         )
         
         db.session.add(new_request)

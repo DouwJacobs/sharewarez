@@ -32,6 +32,19 @@ is configured in **Server Settings → Downloads**; after it expires the client
 receives `429` with `Retry-After: 2`. Expired or abandoned queue rows are
 removed automatically.
 
+Download links expire after the administrator-configured lifetime in **Server
+Settings → Downloads** (seven days by default). A value of `0` disables
+expiration. Expired requests return `410 Gone`; users can retry an expired row
+to validate the source and create a fresh expiry window. Existing requests are
+assigned the default seven-day window during migration.
+
+Every active transfer persists its delivered-byte count and activity heartbeat
+approximately once per second. **Administration → Downloads** polls these rows
+to show the active user, filename, elapsed time, bytes sent, and progress.
+Transfers without a heartbeat for 60 seconds are marked interrupted and their
+unused quota reservation is released. This monitoring state is shared by all
+web workers.
+
 Monthly quotas use calendar months and measure bytes actually sent, including
 resumed ranges. Administrators set an instance default in **Server Settings →
 Downloads** and may give an individual user an inherited, unlimited, or custom

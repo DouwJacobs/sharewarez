@@ -34,6 +34,8 @@
                         <td class="status-cell">
                             {{ status_badge(download.status) }}
                             {% if download.status == 'failed' %}<small class="download-failure-reason">{% if not download.file_location %}The source location is unavailable.{% else %}The previous request could not be completed. Retry to validate the source.{% endif %}</small>{% endif %}
+                            {% if download.status == 'expired' %}<small class="download-failure-reason">This download link expired. Retry to create a fresh link.</small>{% endif %}
+                            {% if download.status == 'available' and download.expires_at %}<small class="download-expiry">Available until {{ download.expires_at.strftime('%Y-%m-%d %H:%M') }}</small>{% endif %}
                         </td>
                         <td>{{ download.formatted_size }}</td>
                         <td class="actions-cell text-end">
@@ -44,7 +46,7 @@
                             <form action="{{ url_for('download.cancel_download', download_id=download.id) }}" method="post" class="inline-form">
                                 {{ form.csrf_token }}<button type="submit" class="btn btn-secondary btn-sm"><i class="fas fa-ban" aria-hidden="true"></i> Cancel</button>
                             </form>
-                            {% elif download.status in ['failed', 'cancelled'] %}
+                            {% elif download.status in ['failed', 'cancelled', 'expired'] %}
                             <form action="{{ url_for('download.retry_download', download_id=download.id) }}" method="post" class="inline-form">
                                 {{ form.csrf_token }}<button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-rotate-right" aria-hidden="true"></i> Retry</button>
                             </form>

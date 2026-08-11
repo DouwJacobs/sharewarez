@@ -1,7 +1,9 @@
 import asyncio
+from datetime import datetime, timezone
 
 from sharewarez.utils.download_limits import (
     estimate_path_bytes,
+    calculate_download_expiry,
     normalize_download_priority,
     throttle_chunks,
 )
@@ -44,16 +46,19 @@ def test_download_delivery_settings_validation():
         "maxConcurrentDownloadsPerUser": 3,
         "downloadBandwidthLimitMbps": 25.5,
         "downloadQueueWaitSeconds": 15,
+        "downloadRequestExpirationHours": 72,
         "defaultMonthlyDownloadQuotaGb": 250,
     }) == []
     errors = validate_settings_data({
         "maxConcurrentDownloadsPerUser": 0,
         "downloadBandwidthLimitMbps": -1,
         "downloadQueueWaitSeconds": 61,
+        "downloadRequestExpirationHours": 8761,
     })
     assert "Concurrent downloads per user must be between 1 and 20" in errors
     assert "Download bandwidth limit must be between 0 and 10000 Mbps" in errors
     assert "Download queue wait must be between 0 and 60 seconds" in errors
+    assert "Download request expiration must be between 0 and 8760 hours" in errors
 
 
 def test_download_priority_is_normalized():
@@ -61,6 +66,12 @@ def test_download_priority_is_normalized():
     assert normalize_download_priority('7') == 7
     assert normalize_download_priority(50) == 10
     assert normalize_download_priority(None) == 0
+
+
+def test_download_expiry_uses_configured_hours():
+    now = datetime(2026, 8, 11, tzinfo=timezone.utc)
+    assert calculate_download_expiry({'downloadRequestExpirationHours': 24}, now).day == 12
+    assert calculate_download_expiry({'downloadRequestExpirationHours': 0}, now) is None
 
 
 def test_estimate_path_bytes_counts_directory_files(tmp_path):

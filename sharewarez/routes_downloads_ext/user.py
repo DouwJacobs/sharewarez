@@ -2,18 +2,20 @@ from flask import render_template, redirect, url_for, flash, jsonify, current_ap
 import os
 from flask_login import login_required, current_user
 from sharewarez.forms import CsrfProtectForm
-from sharewarez.models import DownloadRequest
+from sharewarez.models import DownloadRequest, GlobalSettings
 from sqlalchemy import select
 from sqlalchemy.orm import joinedload
 from sharewarez.utils.functions import format_size
 from sharewarez.utils.event_logging import log_system_event
 from . import download_bp
 from sharewarez import db
+from sharewarez.utils.download_limits import calculate_download_expiry, expire_download_requests
 
 @download_bp.route('/downloads')
 @login_required
 def downloads():
     user_id = current_user.id
+    expire_download_requests(user_id)
     page = max(1, request.args.get('page', 1, type=int))
     per_page = min(max(10, request.args.get('per_page', 25, type=int)), 100)
     query = (
@@ -53,13 +55,15 @@ def retry_download(download_id):
     ).scalar_one_or_none()
     if not download_request:
         abort(404)
-    if download_request.status not in {'failed', 'cancelled'}:
+    if download_request.status not in {'failed', 'cancelled', 'expired'}:
         flash('This request cannot be retried.', 'warning')
     elif not download_request.file_location or not os.path.exists(download_request.file_location):
         flash('The source file is no longer available.', 'error')
     else:
         download_request.status = 'available'
         download_request.completion_time = None
+        settings = db.session.execute(select(GlobalSettings)).scalars().first()
+        download_request.expires_at = calculate_download_expiry(settings)
         db.session.commit()
         log_system_event(f"User {current_user.id} retried download request {download_id}", event_type='audit', event_level='information')
         flash('Download request is available again.', 'success')

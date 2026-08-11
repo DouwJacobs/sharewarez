@@ -69,6 +69,7 @@
                             </div>
                             <div class="settings-field-block"><label for="defaultMonthlyDownloadQuotaGb">Default monthly quota</label><p>Calendar-month allowance inherited by users without an override. Set to 0 for unlimited.</p><div class="settings-input-suffix"><input type="number" class="form-control" id="defaultMonthlyDownloadQuotaGb" min="0" max="100000" step="0.5"><span>GB</span></div></div>
                             <div class="settings-field-block"><label for="downloadQueueWaitSeconds">Priority queue wait</label><p>How long a transfer waits for a user slot before returning a retry response. Set to 0 to disable waiting.</p><div class="settings-input-suffix"><input type="number" class="form-control" id="downloadQueueWaitSeconds" min="0" max="60" step="1"><span>sec</span></div></div>
+                            <div class="settings-field-block"><label for="downloadRequestExpirationHours">Request expiration</label><p>How long download links remain available. Set to 0 to keep them indefinitely.</p><div class="settings-input-suffix"><input type="number" class="form-control" id="downloadRequestExpirationHours" min="0" max="8760" step="1"><span>hours</span></div></div>
                         </section>
 
                         <section class="settings-panel" data-settings-panel="metadata" aria-labelledby="settings-metadata-title" hidden>

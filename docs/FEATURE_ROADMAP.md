@@ -50,7 +50,7 @@ desktop sidebar remains the full navigation surface.
 - [x] Bandwidth limits and queue priorities
 - [x] Cross-worker per-user concurrent download limits
 - [x] Per-transfer bandwidth throttling for files and generated ZIPs
-- [ ] Download expiration and active-transfer monitoring
+- [x] Download expiration and active-transfer monitoring
 
 ## Platform and integrations
 

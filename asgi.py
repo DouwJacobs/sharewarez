@@ -8,6 +8,8 @@ import os
 import re
 import json
 import uuid
+import time
+from datetime import datetime, timezone
 from asgiref.wsgi import WsgiToAsgi
 
 from sharewarez import create_app, db
@@ -21,6 +23,7 @@ from sharewarez.utils.download_limits import (
     finish_transfer,
     reserve_transfer,
     throttle_chunks,
+    update_transfer_progress,
 )
 from sqlalchemy import select
 
@@ -190,6 +193,12 @@ class LazyASGIApp:
             
             if not download_request:
                 await self._send_error(send, 404, "Download not found")
+                return
+
+            if download_request.expires_at and download_request.expires_at <= datetime.now(timezone.utc):
+                download_request.status = 'expired'
+                db.session.commit()
+                await self._send_error(send, 410, "Download request expired")
                 return
             
             if download_request.status != 'available':
@@ -395,8 +404,12 @@ class LazyASGIApp:
             })
             
             # Stream file chunks
+            progress_updated_at = time.monotonic()
             async for chunk in throttle_chunks(async_generator, bandwidth_limit):
                 bytes_sent += len(chunk)
+                if transfer_id is not None and time.monotonic() - progress_updated_at >= 1:
+                    update_transfer_progress(transfer_id, bytes_sent)
+                    progress_updated_at = time.monotonic()
                 await send({
                     "type": "http.response.body",
                     "body": chunk,
@@ -483,8 +496,12 @@ class LazyASGIApp:
             })
             
             # Stream ZIP chunks
+            progress_updated_at = time.monotonic()
             async for chunk in throttle_chunks(async_generator, bandwidth_limit):
                 bytes_sent += len(chunk)
+                if transfer_id is not None and time.monotonic() - progress_updated_at >= 1:
+                    update_transfer_progress(transfer_id, bytes_sent)
+                    progress_updated_at = time.monotonic()
                 await send({
                     "type": "http.response.body",
                     "body": chunk,

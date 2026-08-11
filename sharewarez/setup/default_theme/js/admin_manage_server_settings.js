@@ -88,6 +88,7 @@ document.addEventListener('DOMContentLoaded', function() {
             downloadBandwidthLimitMbps: parseFloat(document.getElementById('downloadBandwidthLimitMbps').value),
             defaultMonthlyDownloadQuotaGb: parseFloat(document.getElementById('defaultMonthlyDownloadQuotaGb').value),
             downloadQueueWaitSeconds: parseInt(document.getElementById('downloadQueueWaitSeconds').value),
+            downloadRequestExpirationHours: parseInt(document.getElementById('downloadRequestExpirationHours').value),
             scanThreadCount: parseInt(document.getElementById('scanThreadCount').value),
             enableHltbIntegration: document.getElementById('enableHltbIntegration').checked,
             hltbRateLimitDelay: parseFloat(document.getElementById('hltbRateLimitDelay').value),
