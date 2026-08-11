@@ -223,3 +223,6 @@ When adding or revising a page:
 - Description, installation instructions, screenshots, and videos follow below the purchase area instead of competing with the primary actions.
 - At mobile widths, `#content` remains the sole 12 px viewport gutter. The storefront fills that available width, facts use two compact columns, the acquisition shelf stacks, and media remains internally horizontal.
 - Legacy JavaScript hooks and dialog IDs remain stable. Storefront work must not remove keyboard focus trapping, Escape behavior, or trigger-focus restoration.
+# Admin multi-section workspaces
+
+Admin pages with multiple configuration areas use a consistent focused-workspace pattern: a descriptive category rail beside one active content panel. On mobile, the rail becomes a horizontally scrollable selector. The reusable `.admin-tab-workspace`, `.admin-tab-nav`, `.admin-tab-link`, and `.admin-tab-content` primitives live in the default theme `components.css`; Server Settings uses the equivalent interactive settings workspace, while Integrations and Scan Manager retain Bootstrap tab semantics through these shared presentation classes.

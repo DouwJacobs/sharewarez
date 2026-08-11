@@ -10,6 +10,24 @@ document.addEventListener('DOMContentLoaded', function() {
     const currentSettings = JSON.parse(document.getElementById('currentSettings').textContent);
     console.log("Current settings loaded:", currentSettings);
 
+    const categoryButtons = Array.from(document.querySelectorAll('[data-settings-target]'));
+    const settingsPanels = Array.from(document.querySelectorAll('[data-settings-panel]'));
+    categoryButtons.forEach(function(button) {
+        button.addEventListener('click', function() {
+            const target = button.dataset.settingsTarget;
+            categoryButtons.forEach(item => {
+                const selected = item === button;
+                item.classList.toggle('is-active', selected);
+                item.setAttribute('aria-selected', selected ? 'true' : 'false');
+            });
+            settingsPanels.forEach(panel => {
+                const selected = panel.dataset.settingsPanel === target;
+                panel.classList.toggle('is-active', selected);
+                panel.hidden = !selected;
+            });
+        });
+    });
+
     // Apply current settings to form
     Object.keys(currentSettings).forEach(function(key) {
         const input = document.getElementById(key);
@@ -66,6 +84,8 @@ document.addEventListener('DOMContentLoaded', function() {
             useTurboImageDownloads: document.getElementById('useTurboImageDownloads').checked,
             turboDownloadThreads: parseInt(document.getElementById('turboDownloadThreads').value),
             turboDownloadBatchSize: parseInt(document.getElementById('turboDownloadBatchSize').value),
+            maxConcurrentDownloadsPerUser: parseInt(document.getElementById('maxConcurrentDownloadsPerUser').value),
+            downloadBandwidthLimitMbps: parseFloat(document.getElementById('downloadBandwidthLimitMbps').value),
             scanThreadCount: parseInt(document.getElementById('scanThreadCount').value),
             enableHltbIntegration: document.getElementById('enableHltbIntegration').checked,
             hltbRateLimitDelay: parseFloat(document.getElementById('hltbRateLimitDelay').value),

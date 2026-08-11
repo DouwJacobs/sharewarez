@@ -21,31 +21,31 @@
 </header>
 
 <div class="admin_manage_scanjobs-nav-panel mt-3">
-    <div class="container-settings">
+    <div class="container-settings admin-tab-workspace">
         <!-- Nav tabs -->
-        <ul class="admin_manage_scanjobs-nav-tabs nav nav-tabs">
+        <ul class="admin_manage_scanjobs-nav-tabs admin-tab-nav nav nav-tabs" aria-label="Scan management categories">
             <li class="admin_manage_scanjobs-nav-item nav-item">
-                <a class="admin_manage_scanjobs-nav-link nav-link {% if active_tab == 'auto' or not active_tab %}active{% endif %}" id="autoScan-tab" data-bs-toggle="tab" href="#autoScan"><i class="fas fa-rotate" aria-hidden="true"></i><span>Auto Scan</span></a>
+                <a class="admin_manage_scanjobs-nav-link admin-tab-link nav-link {% if active_tab == 'auto' or not active_tab %}active{% endif %}" id="autoScan-tab" data-bs-toggle="tab" href="#autoScan"><i class="fas fa-rotate" aria-hidden="true"></i><span><strong>Auto scan</strong><small>Scheduled library discovery</small></span></a>
             </li>
             <li class="admin_manage_scanjobs-nav-item nav-item">
-                <a class="admin_manage_scanjobs-nav-link nav-link {% if active_tab == 'manual' %}active{% endif %}" id="manualScan-tab" data-bs-toggle="tab" href="#manualScan"><i class="fas fa-magnifying-glass" aria-hidden="true"></i><span>Manual Scan</span></a>
+                <a class="admin_manage_scanjobs-nav-link admin-tab-link nav-link {% if active_tab == 'manual' %}active{% endif %}" id="manualScan-tab" data-bs-toggle="tab" href="#manualScan"><i class="fas fa-magnifying-glass" aria-hidden="true"></i><span><strong>Manual scan</strong><small>Run a scan on demand</small></span></a>
             </li>
             <li class="admin_manage_scanjobs-nav-item nav-item">
-                <a class="admin_manage_scanjobs-nav-link nav-link {% if active_tab == 'unmatched' %}active{% endif %}" id="unmatchedFolders-tab" data-bs-toggle="tab" href="#unmatchedFolders"><i class="fas fa-circle-question" aria-hidden="true"></i><span>Unmatched</span></a>
+                <a class="admin_manage_scanjobs-nav-link admin-tab-link nav-link {% if active_tab == 'unmatched' %}active{% endif %}" id="unmatchedFolders-tab" data-bs-toggle="tab" href="#unmatchedFolders"><i class="fas fa-circle-question" aria-hidden="true"></i><span><strong>Unmatched</strong><small>Resolve unknown folders</small></span></a>
             </li>
             <li class="admin_manage_scanjobs-nav-item nav-item">
-                <a class="admin_manage_scanjobs-nav-link nav-link {% if active_tab == 'scan_filters' %}active{% endif %}" id="scanFilters-tab" data-bs-toggle="tab" href="#scanFilters"><i class="fas fa-filter" aria-hidden="true"></i><span>Filters</span></a>
+                <a class="admin_manage_scanjobs-nav-link admin-tab-link nav-link {% if active_tab == 'scan_filters' %}active{% endif %}" id="scanFilters-tab" data-bs-toggle="tab" href="#scanFilters"><i class="fas fa-filter" aria-hidden="true"></i><span><strong>Filters</strong><small>Exclude files and folders</small></span></a>
             </li>
             <li class="admin_manage_scanjobs-nav-item nav-item">
-                <a class="admin_manage_scanjobs-nav-link nav-link {% if active_tab == 'file_extensions' %}active{% endif %}" id="fileExtensions-tab" data-bs-toggle="tab" href="#fileExtensions"><i class="fas fa-file-code" aria-hidden="true"></i><span>File Types</span></a>
+                <a class="admin_manage_scanjobs-nav-link admin-tab-link nav-link {% if active_tab == 'file_extensions' %}active{% endif %}" id="fileExtensions-tab" data-bs-toggle="tab" href="#fileExtensions"><i class="fas fa-file-code" aria-hidden="true"></i><span><strong>File types</strong><small>Recognized extensions</small></span></a>
             </li>
             <li class="admin_manage_scanjobs-nav-item nav-item">
-                <a class="admin_manage_scanjobs-nav-link nav-link {% if active_tab == 'image_queue' %}active{% endif %}" id="imageQueue-tab" data-bs-toggle="tab" href="#imageQueue"><i class="fas fa-images" aria-hidden="true"></i><span>Image Queue</span></a>
+                <a class="admin_manage_scanjobs-nav-link admin-tab-link nav-link {% if active_tab == 'image_queue' %}active{% endif %}" id="imageQueue-tab" data-bs-toggle="tab" href="#imageQueue"><i class="fas fa-images" aria-hidden="true"></i><span><strong>Image queue</strong><small>Artwork processing jobs</small></span></a>
             </li>
         </ul>
 
         <!-- Tab panes -->
-        <div class="admin_manage_scanjobs-tab-content tab-content">
+        <div class="admin_manage_scanjobs-tab-content admin-tab-content tab-content">
             <!-- Auto Scan Tab -->
             <div id="autoScan" class="admin_manage_scanjobs-tab-panel tab-pane {% if active_tab == 'auto' or not active_tab %}active{% else %}fade{% endif %}">
 

@@ -20,260 +20,91 @@
                     <button type="submit" class="btn btn-primary"><i class="fas fa-check" aria-hidden="true"></i> Save Settings</button>
                 </div>
 
-                <div class="settings-primary-grid">
-                    <!-- Column 1: Core Features -->
-                    <div class="settings-primary-column">
-                        <div class="settings-section">
-                            <h5 class="section-header">
-                                <i class="fa-solid fa-puzzle-piece"></i> Core Features
-                            </h5>
+                <div class="settings-workspace">
+                    <nav class="settings-category-nav" aria-label="Settings categories">
+                        <p class="settings-nav-label">Categories</p>
+                        <button type="button" class="settings-category is-active" data-settings-target="general"><i class="fas fa-sliders" aria-hidden="true"></i><span><strong>General</strong><small>Core application features</small></span></button>
+                        <button type="button" class="settings-category" data-settings-target="scanning"><i class="fas fa-magnifying-glass" aria-hidden="true"></i><span><strong>Scanning</strong><small>Library discovery and images</small></span></button>
+                        <button type="button" class="settings-category" data-settings-target="downloads"><i class="fas fa-download" aria-hidden="true"></i><span><strong>Downloads</strong><small>Delivery limits and speed</small></span></button>
+                        <button type="button" class="settings-category" data-settings-target="metadata"><i class="fas fa-file-code" aria-hidden="true"></i><span><strong>Metadata</strong><small>HLTB and local files</small></span></button>
+                        <button type="button" class="settings-category" data-settings-target="interface"><i class="fas fa-display" aria-hidden="true"></i><span><strong>Interface</strong><small>Navigation and visibility</small></span></button>
+                        <button type="button" class="settings-category" data-settings-target="requests"><i class="fas fa-paper-plane" aria-hidden="true"></i><span><strong>Requests</strong><small>Rules and notifications</small></span></button>
+                    </nav>
 
-                            <div class="form-check mb-2">
-                                <input class="form-check-input" type="checkbox" id="allowUsersToInviteOthers">
-                                <label class="form-check-label" for="allowUsersToInviteOthers" data-toggle="tooltip" title="Enables regular users to send invitations to new users.">
-                                    Enable User Invite System
-                                </label>
+                    <div class="settings-panels">
+                        <section class="settings-panel is-active" data-settings-panel="general" aria-labelledby="settings-general-title">
+                            <div class="settings-panel-heading"><span class="settings-panel-icon"><i class="fas fa-sliders" aria-hidden="true"></i></span><div><p class="admin-panel-kicker">Application</p><h3 id="settings-general-title">General settings</h3><p>Control the features available across this GameStack instance.</p></div></div>
+                            <div class="settings-option-list">
+                                <label class="settings-toggle"><input type="checkbox" id="allowUsersToInviteOthers"><span><strong>User invitations</strong><small>Allow regular users to invite other people.</small></span></label>
+                                <label class="settings-toggle"><input type="checkbox" id="enableServerStatusFeature"><span><strong>Server information</strong><small>Expose the administrator server-status screen.</small></span></label>
+                                <label class="settings-toggle"><input type="checkbox" id="enableNewsletterFeature"><span><strong>Newsletter</strong><small>Enable administrator newsletter tools.</small></span></label>
+                                <label class="settings-toggle"><input type="checkbox" id="enableDeleteGameOnDisk"><span><strong>Delete games from disk</strong><small>Allow destructive game-file deletion from the library.</small></span></label>
+                                <label class="settings-toggle"><input type="checkbox" id="showPlayStatus"><span><strong>Play-status tracking</strong><small>Let users mark games as unplayed, beaten, or completed.</small></span></label>
                             </div>
+                            <div class="settings-field-block"><label for="siteUrl">Public site URL</label><p>Used when the application creates links in emails and integrations.</p><input type="url" class="form-control" id="siteUrl" placeholder="https://games.example.com"></div>
+                        </section>
 
-                            <div class="form-check mb-2">
-                                <input class="form-check-input" type="checkbox" id="enableServerStatusFeature">
-                                <label class="form-check-label" for="enableServerStatusFeature" data-toggle="tooltip" title="Enables the server info button in the admin dashboard. This contains sensitive server information such as API keys!">
-                                    Enable Server Info Feature
-                                </label>
+                        <section class="settings-panel" data-settings-panel="scanning" aria-labelledby="settings-scanning-title" hidden>
+                            <div class="settings-panel-heading"><span class="settings-panel-icon"><i class="fas fa-magnifying-glass" aria-hidden="true"></i></span><div><p class="admin-panel-kicker">Library</p><h3 id="settings-scanning-title">Scanning &amp; images</h3><p>Choose what the scanner discovers and how much work it performs in parallel.</p></div></div>
+                            <div class="settings-option-list">
+                                <label class="settings-toggle"><input type="checkbox" id="enableGameUpdates"><span><strong>Game updates</strong><small>Scan each game for a configured updates folder.</small></span></label>
+                                <div class="settings-inline-control"><label for="updateFolderName">Updates folder</label><input type="text" class="form-control" id="updateFolderName"></div>
+                                <label class="settings-toggle"><input type="checkbox" id="enableGameExtras"><span><strong>Game extras</strong><small>Scan each game for bonus and extra files.</small></span></label>
+                                <div class="settings-inline-control"><label for="extrasFolderName">Extras folder</label><input type="text" class="form-control" id="extrasFolderName"></div>
                             </div>
-
-                            <div class="form-check mb-2">
-                                <input class="form-check-input" type="checkbox" id="enableNewsletterFeature">
-                                <label class="form-check-label" for="enableNewsletterFeature" data-toggle="tooltip" title="Enables the newsletter functionality, allowing administrators to send updates and announcements to users.">
-                                    Enable Newsletter Feature
-                                </label>
+                            <div class="settings-field-grid">
+                                <div class="settings-field-block"><label for="scanThreadCount">Game scan workers</label><p>Parallel library scan tasks. Maximum 4.</p><input type="number" class="form-control" id="scanThreadCount" min="1" max="4"></div>
+                                <div class="settings-field-block"><label for="turboDownloadThreads">Image workers</label><p>Simultaneous metadata image downloads.</p><input type="number" class="form-control" id="turboDownloadThreads" min="1" max="20"></div>
+                                <div class="settings-field-block"><label for="turboDownloadBatchSize">Image batch size</label><p>Images processed in each background batch.</p><input type="number" class="form-control" id="turboDownloadBatchSize" min="10" max="1000"></div>
                             </div>
+                            <label class="settings-toggle settings-toggle--standalone"><input type="checkbox" id="useTurboImageDownloads"><span><strong>Multithreaded image downloads</strong><small>Use the worker and batch settings above for faster artwork retrieval.</small></span></label>
+                        </section>
 
-                            <div class="form-check mb-2">
-                                <input class="form-check-input" type="checkbox" id="enableDeleteGameOnDisk">
-                                <label class="form-check-label" for="enableDeleteGameOnDisk" data-toggle="tooltip" title="Enables the option to delete games from disk. When disabled, this option will be hidden from the UI.">
-                                    Enable Delete Game on Disk
-                                </label>
+                        <section class="settings-panel" data-settings-panel="downloads" aria-labelledby="settings-downloads-title" hidden>
+                            <div class="settings-panel-heading"><span class="settings-panel-icon"><i class="fas fa-download" aria-hidden="true"></i></span><div><p class="admin-panel-kicker">Delivery</p><h3 id="settings-downloads-title">Download controls</h3><p>Protect server capacity while keeping transfers predictable for users.</p></div></div>
+                            <div class="settings-callout"><i class="fas fa-circle-info" aria-hidden="true"></i><p>Limits apply to direct files and generated ZIP downloads. Existing range and resume support is preserved.</p></div>
+                            <div class="settings-field-grid settings-field-grid--two">
+                                <div class="settings-field-block"><label for="maxConcurrentDownloadsPerUser">Concurrent downloads per user</label><p>Extra transfers receive a retry response until a slot is available.</p><input type="number" class="form-control" id="maxConcurrentDownloadsPerUser" min="1" max="20"></div>
+                                <div class="settings-field-block"><label for="downloadBandwidthLimitMbps">Bandwidth per download</label><p>Megabits per second. Set to 0 for unlimited.</p><div class="settings-input-suffix"><input type="number" class="form-control" id="downloadBandwidthLimitMbps" min="0" max="10000" step="0.5"><span>Mbps</span></div></div>
                             </div>
+                        </section>
 
-                            <div class="form-check mb-3">
-                                <input class="form-check-input" type="checkbox" id="showPlayStatus">
-                                <label class="form-check-label" for="showPlayStatus" data-toggle="tooltip" title="Allows users to track game completion status (Unplayed, Unfinished, Beaten, Completed).">
-                                    Enable Play Status Tracking
-                                </label>
+                        <section class="settings-panel" data-settings-panel="metadata" aria-labelledby="settings-metadata-title" hidden>
+                            <div class="settings-panel-heading"><span class="settings-panel-icon"><i class="fas fa-file-code" aria-hidden="true"></i></span><div><p class="admin-panel-kicker">Enrichment</p><h3 id="settings-metadata-title">Metadata sources</h3><p>Configure completion-time data and filesystem metadata behavior.</p></div></div>
+                            <div class="settings-option-list">
+                                <label class="settings-toggle"><input type="checkbox" id="enableHltbIntegration"><span><strong>HowLongToBeat integration</strong><small>Fetch completion-time estimates during scanning.</small></span></label>
+                                <div class="settings-inline-control"><label for="hltbRateLimitDelay">Request delay (seconds)</label><input type="number" class="form-control" id="hltbRateLimitDelay" min="0.5" max="10" step="0.5"></div>
+                                <label class="settings-toggle"><input type="checkbox" id="useLocalMetadata"><span><strong>Read local metadata</strong><small>Prefer metadata stored alongside each game.</small></span></label>
+                                <label class="settings-toggle"><input type="checkbox" id="writeLocalMetadata"><span><strong>Write local metadata</strong><small>Persist manual identification results beside game files.</small></span></label>
+                                <label class="settings-toggle"><input type="checkbox" id="useLocalImages"><span><strong>Prefer local images</strong><small>Use cover and screenshot files stored with the game.</small></span></label>
                             </div>
+                            <div class="settings-field-block"><label for="localMetadataFilename">Metadata filename</label><p>The JSON filename stored in each game folder.</p><input type="text" class="form-control" id="localMetadataFilename"></div>
+                        </section>
 
-                            <div class="form-group">
-                                <label for="siteUrl" class="form-label" data-toggle="tooltip" title="Specify the base URL for your site (e.g., http://yoursite.com)">
-                                    Site URL
-                                </label>
-                                <input type="url" class="form-control form-control-sm" id="siteUrl" name="siteUrl"
-                                    placeholder="http://yoursite.com">
+                        <section class="settings-panel" data-settings-panel="interface" aria-labelledby="settings-interface-title" hidden>
+                            <div class="settings-panel-heading"><span class="settings-panel-icon"><i class="fas fa-display" aria-hidden="true"></i></span><div><p class="admin-panel-kicker">Experience</p><h3 id="settings-interface-title">Navigation &amp; display</h3><p>Choose visible features and the destinations pinned on mobile.</p></div></div>
+                            <div class="settings-option-grid">
+                                <label class="settings-toggle"><input type="checkbox" id="showSystemLogo"><span><strong>System logo</strong><small>Show branding in navigation.</small></span></label>
+                                <label class="settings-toggle"><input type="checkbox" id="showHelpButton"><span><strong>Help</strong><small>Show the help destination.</small></span></label>
+                                <label class="settings-toggle"><input type="checkbox" id="enableWebLinksOnDetailsPage"><span><strong>External game links</strong><small>Show web links on game details.</small></span></label>
+                                <label class="settings-toggle"><input type="checkbox" id="showVersion"><span><strong>Version number</strong><small>Display the running release.</small></span></label>
+                                <label class="settings-toggle"><input type="checkbox" id="showDiscovery"><span><strong>Discover</strong><small>Show curated discovery.</small></span></label>
+                                <label class="settings-toggle"><input type="checkbox" id="showFavorites"><span><strong>Favorites</strong><small>Show saved games.</small></span></label>
+                                <label class="settings-toggle"><input type="checkbox" id="showTrailers"><span><strong>Trailers</strong><small>Show the video feed.</small></span></label>
                             </div>
-                        </div>
-                    </div>
+                            <div class="settings-subsection"><h4>Mobile navigation</h4><p>Choose the four destinations pinned before the More menu.</p><div class="mobile-nav-order-fields">{% for slot in range(1, 5) %}<div class="form-group"><label class="form-label" for="mobileNavSlot{{ slot }}">Position {{ slot }}</label><select class="form-select mobile-nav-slot" id="mobileNavSlot{{ slot }}"><option value="discover">Discover</option><option value="library">Library</option><option value="requests">Requests</option><option value="downloads">Downloads</option><option value="favorites">Favorites</option></select></div>{% endfor %}</div></div>
+                        </section>
 
-                    <!-- Column 2: Scanning & Performance -->
-                    <div class="settings-primary-column">
-                        <div class="settings-section">
-                            <h5 class="section-header">
-                                <i class="fas fa-search"></i> Scanning & Performance
-                            </h5>
-
-                            <div class="form-check mb-2">
-                                <input class="form-check-input" type="checkbox" id="enableGameUpdates">
-                                <label class="form-check-label" for="enableGameUpdates" data-toggle="tooltip" title="Enables scanning for update files/folder in the game's defined subdirectory.">
-                                    Enable Game Updates Scanning
-                                </label>
+                        <section class="settings-panel" data-settings-panel="requests" aria-labelledby="settings-requests-title" hidden>
+                            <div class="settings-panel-heading"><span class="settings-panel-icon"><i class="fas fa-paper-plane" aria-hidden="true"></i></span><div><p class="admin-panel-kicker">Community</p><h3 id="settings-requests-title">Requests &amp; notifications</h3><p>Set request rules and decide which status changes send notifications.</p></div></div>
+                            <div class="settings-option-list">
+                                <label class="settings-toggle"><input type="checkbox" id="enableGameRequests"><span><strong>Game requests</strong><small>Allow users to request games.</small></span></label>
+                                <label class="settings-toggle"><input type="checkbox" id="allowRequestNotes"><span><strong>Requester notes</strong><small>Allow supporting context with requests.</small></span></label>
+                                <label class="settings-toggle"><input type="checkbox" id="allowRequestAnyEdition"><span><strong>Any edition</strong><small>Allow requests without a specific edition.</small></span></label>
                             </div>
-                            <div class="form-group mb-3">
-                                <input type="text" class="form-control form-control-sm" id="updateFolderName" name="updateFolderName"
-                                    placeholder="Updates folder name" data-toggle="tooltip" title="Specify the common name for update subfolders">
-                            </div>
-
-                            <div class="form-check mb-2">
-                                <input class="form-check-input" type="checkbox" id="enableGameExtras">
-                                <label class="form-check-label" for="enableGameExtras" data-toggle="tooltip" title="Enables scanning for Extra files in the game's defined subdirectory.">
-                                    Enable Extra Files Scanning
-                                </label>
-                            </div>
-                            <div class="form-group mb-3">
-                                <input type="text" class="form-control form-control-sm" id="extrasFolderName" name="extrasFolderName"
-                                    placeholder="Extras folder name" data-toggle="tooltip" title="Specify the common name for extras subfolders">
-                            </div>
-
-                            <div class="form-group mb-3">
-                                <label for="scanThreadCount" class="form-label" data-toggle="tooltip" title="Number of threads to use for game scanning operations. Higher values = faster scanning but more CPU usage. Recommended for slow internet connections: 1 thread. Recommended for fast connections: 2-4 threads.">
-                                    Game Scan Threads
-                                </label>
-                                <input type="number" class="form-control form-control-sm" id="scanThreadCount" name="scanThreadCount"
-                                    min="1" max="4" value="1" placeholder="1">
-                                <small class="form-text text-info">Respects IGDB rate limits</small>
-                            </div>
-
-                            <div class="form-check mb-2">
-                                <input class="form-check-input" type="checkbox" id="useTurboImageDownloads" checked>
-                                <label class="form-check-label" for="useTurboImageDownloads" data-toggle="tooltip" title="🚀 TURBO MODE: Use parallel multi-threaded downloading for game images (8 threads, 200 batch size). When disabled, uses single-thread sequential downloads. TURBO mode is 8-15x faster but uses more bandwidth.">
-                                    <i class="fas fa-rocket"></i> Multithreaded Image Downloads
-                                </label>
-                            </div>
-
-                            <div class="settings-inline-fields">
-                                <div>
-                                    <input type="number" class="form-control form-control-sm" id="turboDownloadThreads" name="turboDownloadThreads"
-                                        min="1" max="16" value="8" placeholder="Threads" data-toggle="tooltip" title="Number of simultaneous download threads for TURBO mode">
-                                </div>
-                                <div>
-                                    <input type="number" class="form-control form-control-sm" id="turboDownloadBatchSize" name="turboDownloadBatchSize"
-                                        min="10" max="500" value="200" placeholder="Batch size" data-toggle="tooltip" title="Number of images to process in each TURBO download batch">
-                                </div>
-                            </div>
-
-                            <hr class="my-3">
-                            <h6 class="text-white mb-2"><i class="fas fa-clock"></i> HowLongToBeat Integration</h6>
-
-                            <div class="form-check mb-2">
-                                <input class="form-check-input" type="checkbox" id="enableHltbIntegration">
-                                <label class="form-check-label" for="enableHltbIntegration" data-toggle="tooltip" title="Automatically fetch game completion time estimates from HowLongToBeat.com during game scanning.">
-                                    Enable HLTB Integration
-                                </label>
-                            </div>
-
-                            <div class="form-group mb-3">
-                                <label for="hltbRateLimitDelay" class="form-label" data-toggle="tooltip" title="Delay in seconds between HLTB requests to avoid rate limiting (0.5-10 seconds). Default: 2.0">
-                                    HLTB Rate Limit Delay (seconds)
-                                </label>
-                                <input type="number" class="form-control form-control-sm" id="hltbRateLimitDelay" name="hltbRateLimitDelay"
-                                    min="0.5" max="10.0" step="0.5" value="2.0" placeholder="2.0">
-                            </div>
-
-                            <hr class="my-3">
-                            <h6 class="text-white mb-2"><i class="fa-solid fa-file-code"></i> Local Metadata & Images</h6>
-                            <small class="text-info d-block mb-2">Jellyfin-style filesystem persistence</small>
-
-                            <div class="form-check mb-2">
-                                <input class="form-check-input" type="checkbox" id="useLocalMetadata">
-                                <label class="form-check-label" for="useLocalMetadata" data-toggle="tooltip" title="When enabled, scanner checks for sharewarez.json file in game folders before searching IGDB. This file contains the IGDB ID from previous manual identifications.">
-                                    <i class="fa-solid fa-magnifying-glass"></i> Use Local Metadata on Scan
-                                </label>
-                            </div>
-
-                            <div class="form-check mb-2">
-                                <input class="form-check-input" type="checkbox" id="writeLocalMetadata">
-                                <label class="form-check-label" for="writeLocalMetadata" data-toggle="tooltip" title="When enabled, creates sharewarez.json file in game folder after manual identification. This survives database resets and makes future scans faster. Requires write permissions to game folders.">
-                                    <i class="fa-solid fa-floppy-disk"></i> Write Metadata File on Manual ID
-                                </label>
-                            </div>
-
-                            <div class="form-check mb-2">
-                                <input class="form-check-input" type="checkbox" id="useLocalImages">
-                                <label class="form-check-label" for="useLocalImages" data-toggle="tooltip" title="When enabled, local images (cover.jpg, screenshot-1.jpg, etc.) in game folders take priority over IGDB-downloaded images. Allows custom artwork per game.">
-                                    <i class="fa-solid fa-image"></i> Use Local Images (cover.jpg)
-                                </label>
-                            </div>
-
-                            <div class="form-group mb-3">
-                                <label for="localMetadataFilename" class="form-label" data-toggle="tooltip" title="Filename for local metadata files. Default: sharewarez.json">
-                                    <i class="fa-solid fa-file"></i> Metadata Filename
-                                </label>
-                                <input type="text" class="form-control form-control-sm" id="localMetadataFilename" name="localMetadataFilename"
-                                    value="sharewarez.json" placeholder="sharewarez.json">
-                                <small class="form-text text-info">Stored in each game folder</small>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Column 3: Interface -->
-                    <div class="settings-primary-column">
-                        <div class="settings-section">
-                            <h5 class="section-header">
-                                <i class="fa-solid fa-display"></i> Interface
-                            </h5>
-
-                            <div class="form-check mb-2">
-                                <input class="form-check-input" type="checkbox" id="showSystemLogo">
-                                <label class="form-check-label" for="showSystemLogo" data-toggle="tooltip" title="When enabled, displays the configured logo on the main interface.">
-                                    Show System Logo
-                                </label>
-                            </div>
-
-                            <div class="form-check mb-2">
-                                <input class="form-check-input" type="checkbox" id="showHelpButton">
-                                <label class="form-check-label" for="showHelpButton" data-toggle="tooltip" title="Adds a help button to the interface, providing users with quick access to support resources.">
-                                    Show Help Button
-                                </label>
-                            </div>
-
-                            <div class="form-check mb-2">
-                                <input class="form-check-input" type="checkbox" id="enableWebLinksOnDetailsPage">
-                                <label class="form-check-label" for="enableWebLinksOnDetailsPage" data-toggle="tooltip" title="Shows external web links (e.g., official website, community forums) on game detail pages as an icon.">
-                                    Show Weblinks on Details Page
-                                </label>
-                            </div>
-
-                            <div class="form-check mb-2">
-                                <input class="form-check-input" type="checkbox" id="showVersion">
-                                <label class="form-check-label" for="showVersion" data-toggle="tooltip" title="Displays the current app version below the app logo.">
-                                    Show Version
-                                </label>
-                            </div>
-
-                            <div class="form-check mb-2">
-                                <input class="form-check-input" type="checkbox" id="showDiscovery">
-                                <label class="form-check-label" for="showDiscovery" data-toggle="tooltip" title="Shows the Discover menu item in the sidebar navigation.">
-                                    Show Discovery
-                                </label>
-                            </div>
-
-                            <div class="form-check mb-2">
-                                <input class="form-check-input" type="checkbox" id="showFavorites">
-                                <label class="form-check-label" for="showFavorites" data-toggle="tooltip" title="Shows the Favorites menu item in the sidebar navigation.">
-                                    Show Favorites
-                                </label>
-                            </div>
-
-                            <div class="form-check mb-2">
-                                <input class="form-check-input" type="checkbox" id="showTrailers">
-                                <label class="form-check-label" for="showTrailers" data-toggle="tooltip" title="Shows the Trailers menu item in the sidebar navigation.">
-                                    Show Trailers
-                                </label>
-                            </div>
-
-                            <hr class="my-3">
-                            <h6><i class="fas fa-mobile-screen"></i> Mobile navigation</h6>
-                            <p class="form-text">Choose the four destinations pinned before the More menu.</p>
-                            <div class="mobile-nav-order-fields">
-                                {% for slot in range(1, 5) %}
-                                <div class="form-group">
-                                    <label class="form-label" for="mobileNavSlot{{ slot }}">Position {{ slot }}</label>
-                                    <select class="form-select form-select-sm mobile-nav-slot" id="mobileNavSlot{{ slot }}">
-                                        <option value="discover">Discover</option><option value="library">Library</option><option value="requests">Requests</option><option value="downloads">Downloads</option><option value="favorites">Favorites</option>
-                                    </select>
-                                </div>
-                                {% endfor %}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="settings-section settings-requests-section">
-                    <h5 class="section-header"><i class="fas fa-paper-plane"></i> Game Requests</h5>
-                    <div class="settings-request-grid">
-                        <div class="settings-request-column">
-                            <div class="form-check mb-2"><input class="form-check-input" type="checkbox" id="enableGameRequests"><label class="form-check-label" for="enableGameRequests">Enable game requests</label></div>
-                            <div class="form-check mb-2"><input class="form-check-input" type="checkbox" id="allowRequestNotes"><label class="form-check-label" for="allowRequestNotes">Allow requester notes</label></div>
-                            <div class="form-check mb-2"><input class="form-check-input" type="checkbox" id="allowRequestAnyEdition"><label class="form-check-label" for="allowRequestAnyEdition">Allow “any edition” requests</label></div>
-                        </div>
-                        <div class="settings-request-column">
-                            <label for="maxActiveRequestsPerUser" class="form-label">Maximum active requests per user</label>
-                            <input type="number" class="form-control form-control-sm" id="maxActiveRequestsPerUser" min="1" max="100" value="20">
-                            <div class="form-check mt-2"><input class="form-check-input" type="checkbox" id="notifyRequesterRequestEmail"><label class="form-check-label" for="notifyRequesterRequestEmail">Email users on status changes</label></div>
-                            <div class="form-check mt-2"><input class="form-check-input" type="checkbox" id="notifyAdminRequestEmail"><label class="form-check-label" for="notifyAdminRequestEmail">Email admins about new requests</label></div>
-                        </div>
-                        <div class="settings-request-column">
-                            <div class="form-check mb-2"><input class="form-check-input" type="checkbox" id="notifyDiscordNewRequests"><label class="form-check-label" for="notifyDiscordNewRequests">Discord channel: new requests</label></div>
-                            <div class="form-check mb-2"><input class="form-check-input" type="checkbox" id="notifyDiscordRequestUpdates"><label class="form-check-label" for="notifyDiscordRequestUpdates">Discord channel: status changes</label></div>
-                            <small class="form-text text-info">Discord uses the configured webhook channel; direct user messages require a bot integration.</small>
-                        </div>
+                            <div class="settings-field-block"><label for="maxActiveRequestsPerUser">Maximum active requests per user</label><p>Limits unresolved requests from each account.</p><input type="number" class="form-control" id="maxActiveRequestsPerUser" min="1" max="100"></div>
+                            <div class="settings-subsection"><h4>Notification channels</h4><div class="settings-option-grid"><label class="settings-toggle"><input type="checkbox" id="notifyRequesterRequestEmail"><span><strong>User email</strong><small>Email users when request status changes.</small></span></label><label class="settings-toggle"><input type="checkbox" id="notifyAdminRequestEmail"><span><strong>Administrator email</strong><small>Email admins about new requests.</small></span></label><label class="settings-toggle"><input type="checkbox" id="notifyDiscordNewRequests"><span><strong>Discord: new requests</strong><small>Post new requests to the webhook.</small></span></label><label class="settings-toggle"><input type="checkbox" id="notifyDiscordRequestUpdates"><span><strong>Discord: status changes</strong><small>Post request updates to the webhook.</small></span></label></div></div>
+                        </section>
                     </div>
                 </div>
             </form>

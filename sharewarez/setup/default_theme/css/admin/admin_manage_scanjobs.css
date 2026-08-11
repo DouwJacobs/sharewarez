@@ -13,6 +13,38 @@
     box-shadow: var(--shadow-card);
 }
 
+/* Shared settings-workspace treatment for Scan Manager categories. */
+.admin_manage_scanjobs-nav-panel .container-settings.admin-tab-workspace {
+    display: grid;
+    grid-template-columns: 240px minmax(0, 1fr);
+    gap: 30px;
+    align-items: start;
+}
+.admin_manage_scanjobs-nav-panel .admin_manage_scanjobs-nav-tabs.admin-tab-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin: 0;
+    padding: 0 24px 0 0;
+    border: 0;
+    border-right: 1px solid rgba(var(--theme-accent-soft-rgb, 154, 177, 255), .14);
+    background: transparent;
+}
+.admin_manage_scanjobs-nav-panel .admin_manage_scanjobs-nav-item { width: 100%; margin: 0; }
+.admin_manage_scanjobs-nav-panel .admin_manage_scanjobs-tab-content.admin-tab-content { min-width: 0; }
+
+@media (max-width: 760px) {
+    .admin_manage_scanjobs-nav-panel .container-settings.admin-tab-workspace { grid-template-columns: 1fr; gap: 20px; }
+    .admin_manage_scanjobs-nav-panel .admin_manage_scanjobs-nav-tabs.admin-tab-nav {
+        flex-direction: row;
+        overflow-x: auto;
+        padding: 0 0 10px;
+        border-right: 0;
+        border-bottom: 1px solid rgba(var(--theme-accent-soft-rgb, 154, 177, 255), .14);
+    }
+    .admin_manage_scanjobs-nav-panel .admin_manage_scanjobs-nav-item { flex: 0 0 auto; width: auto; }
+}
+
 .simple-jobs-table th,
 .simple-jobs-table td,
 .simple-unmatched-table th,

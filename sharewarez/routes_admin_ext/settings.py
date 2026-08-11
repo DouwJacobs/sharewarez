@@ -59,6 +59,8 @@ DEFAULT_SETTINGS = {
     'useTurboImageDownloads': True,
     'turboDownloadThreads': DEFAULT_DOWNLOAD_THREADS,
     'turboDownloadBatchSize': DEFAULT_BATCH_SIZE,
+    'maxConcurrentDownloadsPerUser': 2,
+    'downloadBandwidthLimitMbps': 0,
     'scanThreadCount': 1,
     'enableHltbIntegration': True,
     'hltbRateLimitDelay': 2.0,
@@ -142,6 +144,18 @@ def validate_settings_data(settings_data):
     if hltb_delay is not None:
         if not isinstance(hltb_delay, (int, float)) or not (0.5 <= hltb_delay <= 10.0):
             errors.append("HLTB rate limit delay must be between 0.5 and 10.0 seconds")
+
+    concurrent_limit = settings_data.get('maxConcurrentDownloadsPerUser')
+    if concurrent_limit is not None and (
+        not isinstance(concurrent_limit, int) or not 1 <= concurrent_limit <= 20
+    ):
+        errors.append("Concurrent downloads per user must be between 1 and 20")
+
+    bandwidth_limit = settings_data.get('downloadBandwidthLimitMbps')
+    if bandwidth_limit is not None and (
+        not isinstance(bandwidth_limit, (int, float)) or not 0 <= bandwidth_limit <= 10000
+    ):
+        errors.append("Download bandwidth limit must be between 0 and 10000 Mbps")
 
     # Validate local metadata filename
     metadata_filename = settings_data.get('localMetadataFilename')

@@ -11,10 +11,11 @@ import uuid
 from asgiref.wsgi import WsgiToAsgi
 
 from sharewarez import create_app, db
-from sharewarez.models import DownloadRequest, Game
+from sharewarez.models import DownloadRequest, Game, GlobalSettings
 from sharewarez.async_streaming import create_async_streaming_response, async_generate_zipstream_response
 from sharewarez.utils.security import is_safe_path, get_allowed_base_directories
 from sharewarez.utils.event_logging import log_system_event
+from sharewarez.utils.download_limits import acquire_download_slot, throttle_chunks
 from sqlalchemy import select
 
 
@@ -96,11 +97,31 @@ class LazyASGIApp:
                 # Database initialization is handled by InitializationManager
                 self._flask_app = create_app()
             
-            # Handle different download types
-            if path.startswith('/download_zip/'):
-                await self._handle_zip_download(scope, receive, send, path)
-            elif path.startswith('/api/downloadrom/'):
-                await self._handle_rom_download(scope, receive, send, path)
+            user_id = await self._get_user_from_session(scope)
+            if not user_id:
+                await self._send_error(send, 401, "Unauthorized")
+                return
+
+            with self._flask_app.app_context():
+                record = db.session.execute(select(GlobalSettings)).scalars().first()
+                settings = dict(record.settings or {}) if record else {}
+                concurrent_limit = max(1, min(int(settings.get('maxConcurrentDownloadsPerUser', 2)), 20))
+                bandwidth_limit = max(0.0, min(float(settings.get('downloadBandwidthLimitMbps', 0)), 10000.0))
+                slot = acquire_download_slot(db.engine, user_id, concurrent_limit)
+            if slot is None:
+                await self._send_error(
+                    send, 429, "Concurrent download limit reached",
+                    extra_headers=[(b"retry-after", b"5")],
+                )
+                return
+
+            try:
+                if path.startswith('/download_zip/'):
+                    await self._handle_zip_download(scope, receive, send, path, user_id, bandwidth_limit)
+                elif path.startswith('/api/downloadrom/'):
+                    await self._handle_rom_download(scope, receive, send, path, user_id, bandwidth_limit)
+            finally:
+                slot.release()
                 
         except Exception as e:
             # Use print instead of log_system_event to avoid context issues
@@ -122,7 +143,7 @@ class LazyASGIApp:
                     # Connection handling failed, nothing more we can do
                     pass
     
-    async def _handle_zip_download(self, scope, receive, send, path):
+    async def _handle_zip_download(self, scope, receive, send, path, user_id, bandwidth_limit):
         """Handle ZIP file downloads"""
         # Extract download_id from path
         download_id_match = re.match(r'/download_zip/(\d+)', path)
@@ -131,12 +152,6 @@ class LazyASGIApp:
             return
         
         download_id = int(download_id_match.group(1))
-        
-        # Get user from session
-        user_id = await self._get_user_from_session(scope)
-        if not user_id:
-            await self._send_error(send, 401, "Unauthorized")
-            return
         
         with self._flask_app.app_context():
             # Get download request
@@ -156,7 +171,7 @@ class LazyASGIApp:
             
             # Check if this is a streaming download (source path is a directory)
             if os.path.isdir(file_path):
-                await self._handle_streaming_download(send, download_request, file_path)
+                await self._handle_streaming_download(send, download_request, file_path, bandwidth_limit)
                 return
             
             # Security validation for direct game files
@@ -179,9 +194,9 @@ class LazyASGIApp:
             # Stream the file
             filename = os.path.basename(file_path)
             log_system_event(f"Async file download: {filename}", event_type='download', event_level='information')
-            await self._stream_file(send, file_path, filename, scope)
+            await self._stream_file(send, file_path, filename, scope, bandwidth_limit)
     
-    async def _handle_rom_download(self, scope, receive, send, path):
+    async def _handle_rom_download(self, scope, receive, send, path, user_id, bandwidth_limit):
         """Handle ROM file downloads for emulator"""
         # Extract game UUID from path
         rom_match = re.match(r'/api/downloadrom/([a-f0-9-]+)', path)
@@ -198,12 +213,6 @@ class LazyASGIApp:
             log_system_event(f"Invalid UUID format attempted for ROM download: {game_uuid}", 
                            event_type='security', event_level='warning')
             await self._send_error(send, 400, "Invalid game identifier")
-            return
-        
-        # Get user from session
-        user_id = await self._get_user_from_session(scope)
-        if not user_id:
-            await self._send_error(send, 401, "Unauthorized")
             return
         
         with self._flask_app.app_context():
@@ -242,7 +251,7 @@ class LazyASGIApp:
             filename = os.path.basename(game.full_disk_path)
             log_system_event(f"ROM file downloaded for WebRetro: {game.name}", 
                            event_type='download', event_level='information')
-            await self._stream_file(send, game.full_disk_path, filename, scope)
+            await self._stream_file(send, game.full_disk_path, filename, scope, bandwidth_limit)
     
     async def _get_user_from_session(self, scope):
         """Extract user ID from Flask session cookie"""
@@ -303,7 +312,7 @@ class LazyASGIApp:
                            event_type='security', event_level='warning')
             return None
     
-    async def _stream_file(self, send, file_path, filename, scope):
+    async def _stream_file(self, send, file_path, filename, scope, bandwidth_limit=0):
         """Stream a file asynchronously"""
         try:
             file_size = os.path.getsize(file_path)
@@ -341,7 +350,7 @@ class LazyASGIApp:
             })
             
             # Stream file chunks
-            async for chunk in async_generator:
+            async for chunk in throttle_chunks(async_generator, bandwidth_limit):
                 await send({
                     "type": "http.response.body",
                     "body": chunk,
@@ -361,7 +370,7 @@ class LazyASGIApp:
             # If we haven't started the response yet, send an error
             await self._send_error(send, 500, "Error streaming file")
     
-    async def _handle_streaming_download(self, send, download_request, source_path):
+    async def _handle_streaming_download(self, send, download_request, source_path, bandwidth_limit=0):
         """Handle zipstream downloads for multi-file games"""
         try:
             # Validate source path is within allowed directories
@@ -410,7 +419,7 @@ class LazyASGIApp:
             })
             
             # Stream ZIP chunks
-            async for chunk in async_generator:
+            async for chunk in throttle_chunks(async_generator, bandwidth_limit):
                 await send({
                     "type": "http.response.body",
                     "body": chunk,

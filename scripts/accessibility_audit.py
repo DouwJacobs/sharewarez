@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 from collections import Counter
 from pathlib import Path
+import re
 
 from bs4 import BeautifulSoup, Tag
 
@@ -24,7 +25,9 @@ def _has_accessible_name(element: Tag) -> bool:
 
 
 def audit_template(path: Path) -> list[str]:
-    soup = BeautifulSoup(path.read_text(encoding="utf-8"), "html.parser")
+    source = path.read_text(encoding="utf-8")
+    source = re.sub(r"\{#.*?#\}", "", source, flags=re.DOTALL)
+    soup = BeautifulSoup(source, "html.parser")
     issues: list[str] = []
 
     html = soup.find("html")
