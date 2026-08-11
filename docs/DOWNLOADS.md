@@ -23,6 +23,15 @@ all Uvicorn workers. A bandwidth value of `0` is unlimited; positive values
 are interpreted as decimal megabits per second and preserve HTTP range
 semantics.
 
+When a user has filled their concurrent-transfer slots, new requests enter a
+short PostgreSQL-backed admission queue instead of failing immediately. The
+queue is shared by every web worker and orders requests by administrator-set
+priority, then by arrival time. Administrators can choose low, normal, or high
+priority for each request from **Administration → Downloads**. The maximum wait
+is configured in **Server Settings → Downloads**; after it expires the client
+receives `429` with `Retry-After: 2`. Expired or abandoned queue rows are
+removed automatically.
+
 Monthly quotas use calendar months and measure bytes actually sent, including
 resumed ranges. Administrators set an instance default in **Server Settings →
 Downloads** and may give an individual user an inherited, unlimited, or custom

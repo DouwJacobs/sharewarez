@@ -61,6 +61,7 @@ DEFAULT_SETTINGS = {
     'turboDownloadBatchSize': DEFAULT_BATCH_SIZE,
     'maxConcurrentDownloadsPerUser': 2,
     'downloadBandwidthLimitMbps': 0,
+    'downloadQueueWaitSeconds': 10,
     'defaultMonthlyDownloadQuotaGb': 0,
     'scanThreadCount': 1,
     'enableHltbIntegration': True,
@@ -157,6 +158,12 @@ def validate_settings_data(settings_data):
         not isinstance(bandwidth_limit, (int, float)) or not 0 <= bandwidth_limit <= 10000
     ):
         errors.append("Download bandwidth limit must be between 0 and 10000 Mbps")
+
+    queue_wait = settings_data.get('downloadQueueWaitSeconds')
+    if queue_wait is not None and (
+        not isinstance(queue_wait, int) or not 0 <= queue_wait <= 60
+    ):
+        errors.append("Download queue wait must be between 0 and 60 seconds")
 
     quota_gb = settings_data.get('defaultMonthlyDownloadQuotaGb')
     if quota_gb is not None and (

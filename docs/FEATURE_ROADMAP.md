@@ -47,7 +47,7 @@ desktop sidebar remains the full navigation surface.
 
 - [x] HTTP range and resumable downloads
 - [x] Per-user quotas and concurrency limits
-- [ ] Bandwidth limits and queue priorities
+- [x] Bandwidth limits and queue priorities
 - [x] Cross-worker per-user concurrent download limits
 - [x] Per-transfer bandwidth throttling for files and generated ZIPs
 - [ ] Download expiration and active-transfer monitoring

@@ -226,6 +226,32 @@ class TestDeleteDownloadRequestRoute:
         assert response.status_code == 302  # Should redirect to login
 
 
+class TestDownloadPriorityRoute:
+    def test_admin_can_update_download_priority(self, client, admin_user, sample_download_request):
+        with client.session_transaction() as session:
+            session['_user_id'] = str(admin_user.id)
+
+        response = client.post(
+            f'/admin/download-priority/{sample_download_request.id}',
+            json={'priority': 10},
+        )
+
+        assert response.status_code == 200
+        db.session.refresh(sample_download_request)
+        assert sample_download_request.priority == 10
+
+    def test_download_priority_rejects_invalid_value(self, client, admin_user, sample_download_request):
+        with client.session_transaction() as session:
+            session['_user_id'] = str(admin_user.id)
+
+        response = client.post(
+            f'/admin/download-priority/{sample_download_request.id}',
+            json={'priority': 4},
+        )
+
+        assert response.status_code == 400
+
+
 class TestIntegration:
     """Integration tests for admin download management."""
 

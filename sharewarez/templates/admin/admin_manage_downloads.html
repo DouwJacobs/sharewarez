@@ -45,6 +45,7 @@
                         <th class="admin_manage_downloads-th-headings-3">Content</th>
                         <th>Base game</th>
                         <th class="admin_manage_downloads-th-headings-4">Status</th>
+                        <th>Queue priority</th>
                         <th class="admin_manage_downloads-th-headings-5">Zip File Path</th>
                         <th class="admin_manage_downloads-th-headings-6">Request Time</th>
                         <th class="admin_manage_downloads-th-headings-7">Completion Time</th>
@@ -71,6 +72,13 @@
                             <small class="downloads-game-uuid">{{ request.game_uuid[:8] }}</small>
                         </td>
                         <td class="admin_manage_downloads-td-data-4">{{ status_badge(request.status) }}{% if request.status == 'failed' %}<small class="download-failure-reason">{% if not request.file_location %}Missing source location{% else %}Retry required{% endif %}</small>{% endif %}</td>
+                        <td>
+                            <select class="form-select form-select-sm download-priority-select" data-request-id="{{ request.id }}" aria-label="Queue priority for request {{ request.id }}">
+                                <option value="-10"{% if request.priority == -10 %} selected{% endif %}>Low</option>
+                                <option value="0"{% if request.priority == 0 %} selected{% endif %}>Normal</option>
+                                <option value="10"{% if request.priority == 10 %} selected{% endif %}>High</option>
+                            </select>
+                        </td>
                         <td class="admin_manage_downloads-td-data-5 file-name-cell" title="{{ request.zip_file_path or 'Not available yet' }}">{{ request.zip_file_path or 'Preparing file…' }}</td>
                         <td class="admin_manage_downloads-td-data-6">{{ request.request_time.strftime('%Y-%m-%d %H:%M') if request.request_time else 'N/A' }}</td>
                         <td class="admin_manage_downloads-td-data-7">{{ request.completion_time.strftime('%Y-%m-%d %H:%M') if request.completion_time else 'N/A' }}</td>
@@ -105,7 +113,7 @@ $(document).ready(function() {
             "info": "Showing _START_ to _END_ of _TOTAL_ download requests"
         },
         "columnDefs": [
-            { "orderable": false, "targets": [0, 9] }
+            { "orderable": false, "targets": [0, 10] }
         ]
     });
 });
@@ -138,6 +146,30 @@ document.querySelectorAll('[data-bulk-action]').forEach(button => button.addEven
         window.location.reload();
     } catch (error) { $.notify(error.message, 'error'); button.disabled = false; }
 }));
+
+document.querySelectorAll('.download-priority-select').forEach(select => {
+    select.addEventListener('change', async () => {
+        const previous = select.dataset.savedValue ?? '0';
+        select.disabled = true;
+        try {
+            const response = await fetch(`/admin/download-priority/${select.dataset.requestId}`, {
+                method: 'POST',
+                headers: CSRFUtils.getHeaders({'Content-Type': 'application/json'}),
+                body: JSON.stringify({priority: Number(select.value)})
+            });
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.message || 'Could not update priority');
+            select.dataset.savedValue = select.value;
+            $.notify(data.message, 'success');
+        } catch (error) {
+            select.value = previous;
+            $.notify(error.message, 'error');
+        } finally {
+            select.disabled = false;
+        }
+    });
+    select.dataset.savedValue = select.value;
+});
 
 let currentDeleteId = null;
 

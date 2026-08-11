@@ -16,7 +16,7 @@ from sharewarez.async_streaming import create_async_streaming_response, async_ge
 from sharewarez.utils.security import is_safe_path, get_allowed_base_directories
 from sharewarez.utils.event_logging import log_system_event
 from sharewarez.utils.download_limits import (
-    acquire_download_slot,
+    acquire_queued_download_slot,
     estimate_path_bytes,
     finish_transfer,
     reserve_transfer,
@@ -113,11 +113,34 @@ class LazyASGIApp:
                 settings = dict(record.settings or {}) if record else {}
                 concurrent_limit = max(1, min(int(settings.get('maxConcurrentDownloadsPerUser', 2)), 20))
                 bandwidth_limit = max(0.0, min(float(settings.get('downloadBandwidthLimitMbps', 0)), 10000.0))
-                slot = acquire_download_slot(db.engine, user_id, concurrent_limit)
+                queue_wait = max(0, min(int(settings.get('downloadQueueWaitSeconds', 10)), 60))
+                queue_request_id = None
+                queue_priority = 0
+                if path.startswith('/download_zip/'):
+                    match = re.match(r'/download_zip/(\d+)', path)
+                    if match:
+                        queue_request_id = int(match.group(1))
+                        queued_request = db.session.execute(
+                            select(DownloadRequest).where(
+                                DownloadRequest.id == queue_request_id,
+                                DownloadRequest.user_id == user_id,
+                            )
+                        ).scalar_one_or_none()
+                        if queued_request is not None:
+                            queue_priority = queued_request.priority
+                engine = db.engine
+            slot = await acquire_queued_download_slot(
+                engine,
+                user_id,
+                concurrent_limit,
+                request_id=queue_request_id,
+                priority=queue_priority,
+                wait_seconds=queue_wait,
+            )
             if slot is None:
                 await self._send_error(
-                    send, 429, "Concurrent download limit reached",
-                    extra_headers=[(b"retry-after", b"5")],
+                    send, 429, "Download queue wait expired",
+                    extra_headers=[(b"retry-after", b"2")],
                 )
                 return
 

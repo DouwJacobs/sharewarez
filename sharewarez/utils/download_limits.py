@@ -1,9 +1,10 @@
 import asyncio
 import time
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from uuid import uuid4
 
-from sqlalchemy import func, select, text
+from sqlalchemy import delete, func, insert, select, text
 
 
 class DownloadSlot:
@@ -42,6 +43,62 @@ def acquire_download_slot(engine, user_id, limit):
             return DownloadSlot(connection, user_id, slot)
     connection.close()
     return None
+
+
+async def acquire_queued_download_slot(
+    engine, user_id, limit, *, request_id=None, priority=0, wait_seconds=10
+):
+    """Wait fairly for a per-user slot, admitting higher priority requests first."""
+    if engine.dialect.name != "postgresql" or wait_seconds <= 0:
+        return acquire_download_slot(engine, user_id, limit)
+
+    from sharewarez.models import DownloadQueueEntry
+
+    table = DownloadQueueEntry.__table__
+    token = str(uuid4())
+    now = datetime.now(timezone.utc)
+    expires_at = now + timedelta(seconds=max(wait_seconds + 5, 30))
+    with engine.begin() as connection:
+        connection.execute(delete(table).where(table.c.expires_at <= now))
+        entry_id = connection.execute(
+            insert(table).values(
+                token=token,
+                user_id=user_id,
+                download_request_id=request_id,
+                priority=normalize_download_priority(priority),
+                created_at=now,
+                expires_at=expires_at,
+            ).returning(table.c.id)
+        ).scalar_one()
+
+    deadline = time.monotonic() + wait_seconds
+    try:
+        while True:
+            with engine.begin() as connection:
+                first_id = connection.execute(
+                    select(table.c.id)
+                    .where(table.c.user_id == user_id, table.c.expires_at > datetime.now(timezone.utc))
+                    .order_by(table.c.priority.desc(), table.c.created_at.asc(), table.c.id.asc())
+                    .limit(1)
+                ).scalar_one_or_none()
+            if first_id == entry_id:
+                slot = acquire_download_slot(engine, user_id, limit)
+                if slot is not None:
+                    return slot
+            if time.monotonic() >= deadline:
+                return None
+            await asyncio.sleep(0.15)
+    finally:
+        with engine.begin() as connection:
+            connection.execute(delete(table).where(table.c.id == entry_id))
+
+
+def normalize_download_priority(value):
+    try:
+        priority = int(value)
+    except (TypeError, ValueError):
+        return 0
+    return max(-10, min(priority, 10))
 
 
 async def throttle_chunks(chunks, megabits_per_second):

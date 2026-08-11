@@ -1,7 +1,7 @@
-from flask import render_template, redirect, url_for, flash, request
+from flask import render_template, redirect, url_for, flash, request, jsonify
 from flask_login import login_required
-from sharewarez.models import DownloadRequest, User
-from sqlalchemy import select, and_
+from sharewarez.models import DownloadQueueEntry, DownloadRequest, User
+from sqlalchemy import select, and_, update
 from sqlalchemy.orm import joinedload
 from sharewarez.utils.auth import admin_required
 from sharewarez.utils.event_logging import log_system_event
@@ -62,3 +62,31 @@ def delete_download_request(request_id):
 
     flash('Download request deleted.', 'success')
     return redirect(url_for('download.manage_downloads'))
+
+
+@download_bp.route('/admin/download-priority/<int:request_id>', methods=['POST'])
+@login_required
+@admin_required
+def update_download_priority(request_id):
+    download_request = db.session.get(DownloadRequest, request_id)
+    if download_request is None:
+        return jsonify({'message': 'Download request not found'}), 404
+
+    data = request.get_json(silent=True) or {}
+    priority = data.get('priority')
+    if isinstance(priority, bool) or not isinstance(priority, int) or priority not in {-10, 0, 10}:
+        return jsonify({'message': 'Priority must be low, normal, or high'}), 400
+
+    download_request.priority = priority
+    db.session.execute(
+        update(DownloadQueueEntry)
+        .where(DownloadQueueEntry.download_request_id == request_id)
+        .values(priority=priority)
+    )
+    db.session.commit()
+    log_system_event(
+        f'Admin changed download request {request_id} priority to {priority}',
+        event_type='download_api',
+        event_level='information',
+    )
+    return jsonify({'message': 'Download priority updated', 'priority': priority})

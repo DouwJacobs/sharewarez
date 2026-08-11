@@ -368,6 +368,7 @@ class DownloadRequest(db.Model):
     game_extra_id = db.Column(db.Integer, db.ForeignKey('game_extras.id', ondelete='SET NULL'), nullable=True)
     game_update = db.relationship('GameUpdate', foreign_keys=[game_update_id])
     game_extra = db.relationship('GameExtra', foreign_keys=[game_extra_id])
+    priority = db.Column(db.SmallInteger, nullable=False, default=0)
 
 
 class DownloadTransfer(db.Model):
@@ -382,6 +383,21 @@ class DownloadTransfer(db.Model):
     status = db.Column(db.String(24), nullable=False, default='active', index=True)
     started_at = db.Column(db.DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc), index=True)
     ended_at = db.Column(db.DateTime(timezone=True), nullable=True)
+
+    user = db.relationship('User', foreign_keys=[user_id])
+    download_request = db.relationship('DownloadRequest', foreign_keys=[download_request_id])
+
+
+class DownloadQueueEntry(db.Model):
+    __tablename__ = 'download_queue_entries'
+
+    id = db.Column(db.Integer, primary_key=True)
+    token = db.Column(db.String(36), nullable=False, unique=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False, index=True)
+    download_request_id = db.Column(db.Integer, db.ForeignKey('download_requests.id', ondelete='CASCADE'), nullable=True, index=True)
+    priority = db.Column(db.SmallInteger, nullable=False, default=0)
+    created_at = db.Column(db.DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
+    expires_at = db.Column(db.DateTime(timezone=True), nullable=False, index=True)
 
     user = db.relationship('User', foreign_keys=[user_id])
     download_request = db.relationship('DownloadRequest', foreign_keys=[download_request_id])
