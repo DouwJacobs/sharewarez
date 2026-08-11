@@ -206,3 +206,14 @@ When adding or revising a page:
 3. Put each major content region in `.app-surface`; use `.app-stack` when there is more than one.
 4. Do not add `width: calc(100% - ...)`, `margin-inline`, or Bootstrap `.container` padding at the mobile breakpoint.
 5. Keep tables and rails internally scrollable rather than widening the page.
+
+## Game details storefront contract (2026-08-11)
+
+`/game_details/<uuid>` now uses the same storefront language as Discover while preserving the established download, play, extras, update-request, favorite, status, NFO, screenshot, and administrative actions.
+
+- `.game-details-page` uses the shared wide application rail.
+- `.game-storefront` is a deliberate full-bleed media surface: available screenshot artwork is preferred for its backdrop, with cover artwork as the fallback.
+- The hero establishes ownership, title, release/developer/genre context, cover art, ratings, searchable facts, and one distinct acquisition shelf.
+- Description, installation instructions, screenshots, and videos follow below the purchase area instead of competing with the primary actions.
+- At mobile widths, `#content` remains the sole 12 px viewport gutter. The storefront fills that available width, facts use two compact columns, the acquisition shelf stacks, and media remains internally horizontal.
+- Legacy JavaScript hooks and dialog IDs remain stable. Storefront work must not remove keyboard focus trapping, Escape behavior, or trigger-focus restoration.

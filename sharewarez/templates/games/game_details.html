@@ -80,6 +80,7 @@
 
 
 {% macro list_items(items, label, filter_type) %}
+    <div class="game-storefront-fact">
     <div class="game-card-labels">{{ label }}:</div>
     <div class="game-card-chips-list">
         {% if items %}
@@ -89,6 +90,7 @@
         {% else %}
             <p class="chip-detailspage">N/A</p>
         {% endif %}
+    </div>
     </div>
 {% endmacro %}
 
@@ -235,7 +237,8 @@
 {% if game %}
     {% set cover_images = game.images | selectattr('type', 'equalto', 'cover') | list %}
     {% set screenshot_images = game.images | rejectattr('type', 'equalto', 'cover') | list %}
-    <div class="glass-panel-gamecard">
+    <main class="app-page app-page--wide game-details-page">
+    <article class="glass-panel-gamecard game-storefront">
             {# NFO Modal #}
             {% if game.nfo_content and game.nfo_content.lower() != 'none' %}
                 <div id="nfoModal" class="modal-nfo" role="dialog" aria-modal="true" aria-labelledby="nfoModalTitle" aria-hidden="true" data-focus-managed-dialog>
@@ -254,12 +257,20 @@
             <div class="game-card-gamename">
                 <a href="{{ back_url }}" class="game-details-back" aria-label="Back to library">
                     <i class="fas fa-arrow-left" aria-hidden="true"></i>
-                    <span>Back</span>
+                    <span>Library</span>
                 </a>
-                <h1>{{ game.name or 'Game Name Not Available' }}</h1>
+                <div class="game-storefront-heading">
+                    <p class="game-storefront-eyebrow"><i class="fas fa-circle-check" aria-hidden="true"></i> In your library</p>
+                    <h1>{{ game.name or 'Game Name Not Available' }}</h1>
+                    <div class="game-storefront-subtitle">
+                        {% if game.first_release_date %}<span>{{ game.first_release_date }}</span>{% endif %}
+                        {% if game.developer %}<span>{{ game.developer }}</span>{% endif %}
+                        {% if game.genres %}<span>{{ game.genres[:2]|join(' · ') }}</span>{% endif %}
+                    </div>
+                </div>
             </div>
 
-            <div class="game-card-topq">
+            <div class="game-card-topq{% if game.hltb_main_story or game.hltb_main_extra or game.hltb_completionist %} has-time-to-beat{% endif %}">
                 <div class="game-card-q1">
                     {# Cover Image #}
                     <div class="game-card-coverimage">
@@ -389,12 +400,12 @@
 
                         {# HowLongToBeat Section #}
                         {% if game.hltb_main_story or game.hltb_main_extra or game.hltb_completionist %}
-                            <div class="flex-row-horiz" style="margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.1);">
+                            <div class="flex-row-horiz game-storefront-time-to-beat">
                                 <div class="flex-col-vertic" style="width: 100%;">
                                     <div class="game-card-labels" style="margin-bottom: 5px;">
                                         <i class="fas fa-clock"></i> Time to Beat:
                                     </div>
-                                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                                    <div class="game-storefront-time-values">
                                         {% if game.hltb_main_story %}
                                             <div class="chip" title="Main Story">
                                                 <i class="fas fa-flag-checkered"></i> {{ "%.1f"|format(game.hltb_main_story) }}h
@@ -411,7 +422,7 @@
                                             </div>
                                         {% endif %}
                                         {% if current_user.role == 'admin' %}
-                                            <button class="chip" onclick="refreshHLTB('{{ game.uuid }}')" title="Refresh HLTB data" style="cursor: pointer; background: rgba(100, 100, 255, 0.3);">
+                                            <button class="chip game-storefront-time-refresh" onclick="refreshHLTB('{{ game.uuid }}')" title="Refresh HLTB data" aria-label="Refresh Time to Beat data">
                                                 <i class="fas fa-sync-alt"></i>
                                             </button>
                                         {% endif %}
@@ -423,10 +434,13 @@
 
                     {# Download Section #}
                     <div class="game-card-downloads">
-                        <div class="chip-size">{{ game.size or 'Unknown' }}</div>
+                        <div class="game-storefront-acquisition">
+                            <span class="game-storefront-owned"><i class="fas fa-box-open" aria-hidden="true"></i> Ready to download</span>
+                            <div><strong>{{ game.size or 'Unknown' }}</strong><small>Download size</small></div>
+                        </div>
                         <div class="download-buttons">
                             <form action="{{ url_for('download.download_game', game_uuid=game.uuid) }}" method="get" class="download-form">
-                                <input type="submit" value="Download" class="button-glass-download" data-game-uuid="{{ game.uuid }}">
+                                <button type="submit" class="button-glass-download" data-game-uuid="{{ game.uuid }}"><i class="fas fa-download" aria-hidden="true"></i> Download</button>
                                 {{ form.csrf_token }}
                             </form>
 
@@ -506,7 +520,7 @@
                                 });
                                 </script>
                                 
-                                <a id="play-now-button" href="#" class="button-glass-play">Play Now!</a>                                    
+                                <a id="play-now-button" href="#" class="button-glass-play"><i class="fas fa-circle-play" aria-hidden="true"></i> Play now</a>
                             </div>
                             
                             {% if (enable_game_updates and game.updates) or (enable_game_extras and game.extras) %}
@@ -574,7 +588,8 @@
                     {% endfor %}
                 </div>
             {% endif %}
-    </div>
+    </article>
+    </main>
 {% else %}
     <div class="alert alert-warning" role="alert">
         Game information is not available at the moment.
