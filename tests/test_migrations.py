@@ -1,30 +1,48 @@
 from unittest.mock import patch
 
+import pytest
 from alembic import command
 from sqlalchemy import text
 
+from sharewarez import db
 from sharewarez.init_manager import InitializationManager
 from sharewarez.models import GlobalSettings
-from sharewarez.utils.migrations import alembic_config, current_revision, upgrade_database
+from sharewarez.utils.migrations import (
+    alembic_config,
+    current_revision,
+    head_revision,
+    upgrade_database,
+)
 
 
-HEAD_REVISION = '20260811_07'
 BASELINE_REVISION = '20260809_01'
+
+
+@pytest.fixture(autouse=True)
+def current_versioned_schema(app):
+    """Give each migration test an isolated current schema and revision marker."""
+    database_uri = app.config['SQLALCHEMY_DATABASE_URI']
+    with app.app_context():
+        db.session.execute(text('DROP TABLE IF EXISTS alembic_version'))
+        db.session.commit()
+        db.drop_all()
+        db.create_all()
+    command.stamp(alembic_config(database_uri), 'head', purge=True)
 
 
 def test_alembic_baseline_upgrade_is_idempotent(app):
     database_uri = app.config['SQLALCHEMY_DATABASE_URI']
 
     upgrade_database(database_uri)
-    assert current_revision(database_uri) == HEAD_REVISION
+    assert current_revision(database_uri) == head_revision()
 
     upgrade_database(database_uri)
-    assert current_revision(database_uri) == HEAD_REVISION
+    assert current_revision(database_uri) == head_revision()
 
 
 def test_credential_migration_encrypts_legacy_plaintext(app, db_session):
     database_uri = app.config['SQLALCHEMY_DATABASE_URI']
-    command.downgrade(alembic_config(database_uri), BASELINE_REVISION)
+    command.stamp(alembic_config(database_uri), BASELINE_REVISION, purge=True)
     db_session.execute(text(
         "INSERT INTO global_settings (settings, last_updated, discord_webhook_url, "
         "smtp_password, igdb_client_secret) VALUES "
@@ -32,7 +50,7 @@ def test_credential_migration_encrypts_legacy_plaintext(app, db_session):
     ))
     db_session.commit()
 
-    upgrade_database(database_uri)
+    upgrade_database(database_uri, '20260809_02')
 
     stored = db_session.execute(text(
         'SELECT discord_webhook_url, smtp_password, igdb_client_secret '
