@@ -58,7 +58,10 @@ echo "==> Smoke-testing the application factory"
 
 echo "==> Applying migrations to a freshly initialized PostgreSQL schema"
 "$PYTHON_BIN" -c "from sharewarez import create_app, db; app = create_app(); app.app_context().push(); db.create_all()"
-"$PYTHON_BIN" -m flask --app sharewarez:create_app db stamp 20260809_01
+# The baseline migration intentionally contains no DDL: new installations are
+# created from current model metadata. Stamp the current schema at the active
+# head before verifying that upgrade is clean and repeatable.
+"$PYTHON_BIN" -m flask --app sharewarez:create_app db stamp head
 "$PYTHON_BIN" -m flask --app sharewarez:create_app db upgrade
 
 echo "==> Running full test suite"

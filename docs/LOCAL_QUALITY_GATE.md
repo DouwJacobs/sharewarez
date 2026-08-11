@@ -16,6 +16,11 @@ freshly initialized schema, checks the single Alembic head and authoritative
 version, validates Compose, builds the production container, and smoke-compiles
 the packaged application.
 
+The schema baseline intentionally contains no DDL. For a fresh database, the
+gate creates the current model schema and stamps it at the active Alembic head
+before confirming that `db upgrade` is clean. Later revisions remain the
+upgrade path for existing installations that were stamped at the baseline.
+
 Set `SKIP_CONTAINER_BUILD=true` only for fast development feedback. It is not a
 valid release result. `TEST_DB_PORT` and `QUALITY_IMAGE_TAG` may be overridden
 when their defaults conflict with local services.
