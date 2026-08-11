@@ -23,6 +23,11 @@ def upgrade_database(database_uri, revision='head'):
     command.upgrade(alembic_config(database_uri), revision)
 
 
+def stamp_database(database_uri, revision='head'):
+    """Record the revision represented by an already-current schema."""
+    command.stamp(alembic_config(database_uri), revision)
+
+
 def current_revision(database_uri):
     """Return the database revision, or None before the baseline is applied."""
     from sqlalchemy import create_engine, inspect, text

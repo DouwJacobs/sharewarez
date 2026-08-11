@@ -120,7 +120,18 @@ class InitializationManager:
                         Config.SQLALCHEMY_DATABASE_URI, reason='pre-upgrade'
                     )
                     print(f"✅ Pre-upgrade backup verified: {backup_path}")
-                if not is_versioned or not has_application_schema:
+                if not has_existing_data_schema:
+                    models.db.metadata.create_all(engine)
+                    print("✅ Database tables bootstrapped")
+
+                    # ``create_all`` builds the schema represented by the current
+                    # models. Running the historical migrations afterwards would
+                    # try to add those columns a second time on a fresh install.
+                    from sharewarez.utils.migrations import stamp_database
+                    stamp_database(Config.SQLALCHEMY_DATABASE_URI)
+                    print("✅ Fresh database stamped at the current revision")
+
+                elif not is_versioned or not has_application_schema:
                     models.db.metadata.create_all(engine)
                     print("✅ Database tables bootstrapped")
 
