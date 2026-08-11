@@ -121,13 +121,12 @@
 <script src="{{ 'js/game_status_manager.js'|theme_asset }}"></script>
 
 
-{% block modals %}
 {% if enable_game_requests and not has_pending_update_request %}
-<div id="requestUpdateModal" class="modal-request-update">
+<div id="requestUpdateModal" class="modal-request-update" role="dialog" aria-modal="true" aria-labelledby="requestUpdateModalTitle" aria-hidden="true" data-focus-managed-dialog>
     <div class="modal-request-update-content">
         <div class="modal-request-update-header">
-            <h3>Request Update for {{ game.name }}</h3>
-            <span class="close" onclick="toggleRequestUpdateModal()">&times;</span>
+            <h3 id="requestUpdateModalTitle">Request Update for {{ game.name }}</h3>
+            <button type="button" class="close" onclick="toggleRequestUpdateModal()" aria-label="Close" data-dialog-close>&times;</button>
         </div>
         <p class="request-update-intro">Request a game update, patch, or new content release from administrators.</p>
         {% if steamdb_patchnotes_url %}
@@ -156,18 +155,18 @@
     </div>
 </div>
 {% endif %}
-{% endblock %}
-<div id="summaryModal" class="summary-modal">
+<div id="summaryModal" class="summary-modal" role="dialog" aria-modal="true" aria-labelledby="summaryModalTitle" aria-hidden="true" data-focus-managed-dialog>
     <div class="summary-modal-content">
-        <span class="summary-close">&times;</span>
+        <button type="button" class="summary-close" aria-label="Close" data-dialog-close>&times;</button>
+        <h2 id="summaryModalTitle" class="visually-hidden">Full game summary</h2>
         <p class="summary-modal-text"></p>
     </div>
 </div>
 
-<div id="myModal" class="modal-details">
-    <a class="prev" onclick="plusSlides(-1)">&#10094;</a>
-    <a class="next" onclick="plusSlides(1)">&#10095;</a>
-    <span class="close cursor" onclick="closeModal()">&times;</span>
+<div id="myModal" class="modal-details" role="dialog" aria-modal="true" aria-label="Screenshot gallery" aria-hidden="true" data-focus-managed-dialog>
+    <button type="button" class="prev" onclick="plusSlides(-1)" aria-label="Previous screenshot">&#10094;</button>
+    <button type="button" class="next" onclick="plusSlides(1)" aria-label="Next screenshot">&#10095;</button>
+    <button type="button" class="close cursor" onclick="closeModal()" aria-label="Close" data-dialog-close>&times;</button>
     <div class="modal-content">
         {% for image in game.images if 'cover' not in image.url %}
             <div class="mySlides">
@@ -181,11 +180,11 @@
 
 {# Updates & Extras Modal - Custom Implementation #}
 {% if game.updates or game.extras %}
-<div id="extrasModal" class="modal-extras">
-    <span class="close cursor" onclick="closeExtrasModal()">&times;</span>
+<div id="extrasModal" class="modal-extras" role="dialog" aria-modal="true" aria-labelledby="extrasModalTitle" aria-hidden="true" data-focus-managed-dialog>
+    <button type="button" class="close cursor" onclick="closeExtrasModal()" aria-label="Close" data-dialog-close>&times;</button>
     <div class="modal-extras-content">
         <div class="modal-extras-header">
-            <h3>Updates & Extras for {{ game.name }}</h3>
+            <h3 id="extrasModalTitle">Updates & Extras for {{ game.name }}</h3>
             {% if game.edition_name %}<p>Edition: <strong>{{ game.edition_name }}</strong></p>{% endif %}
             {% if game.version %}<p>Version: <strong>{{ game.version }}</strong></p>{% endif %}
         </div>
@@ -239,11 +238,11 @@
     <div class="glass-panel-gamecard">
             {# NFO Modal #}
             {% if game.nfo_content and game.nfo_content.lower() != 'none' %}
-                <div id="nfoModal" class="modal-nfo">
-                    <span class="close cursor" onclick="closeNfoModal()">&times;</span>
+                <div id="nfoModal" class="modal-nfo" role="dialog" aria-modal="true" aria-labelledby="nfoModalTitle" aria-hidden="true" data-focus-managed-dialog>
+                    <button type="button" class="close cursor" onclick="closeNfoModal()" aria-label="Close" data-dialog-close>&times;</button>
                     <div class="modal-nfo-content">
                         <div class="modal-nfo-header">
-                            <h3>{{ game.name }} - NFO</h3>
+                            <h3 id="nfoModalTitle">{{ game.name }} - NFO</h3>
                         </div>
                         <div class="modal-nfo-body">
                             <pre>{{ game.nfo_content }}</pre>
@@ -520,10 +519,10 @@
                             {% endif %}
                         </div>
                         {% if game.nfo_content and game.nfo_content.lower() != 'none' %}
-                            <div class="nfo-button" onclick="openNfoModal()" title="View NFO">
+                            <button type="button" class="nfo-button" onclick="openNfoModal()" title="View NFO">
                                 <i class="fa fa-file-alt nfo-icon"></i>
                                 <span class="nfo-text">NFO</span>
-                            </div>
+                            </button>
                         {% endif %}
                     </div>
                 </div>
@@ -558,10 +557,11 @@
             {% if screenshot_images %}
                 <div class="screenshot-gallery">
                     {% for image in screenshot_images %}
+                        <button type="button" class="screenshot-button" onclick="openModal({{ loop.index }})" aria-label="Open screenshot {{ loop.index }}">
                         <img src="{{ url_for('static', filename='library/images/' + image.url) }}" 
                              alt="{{ game.name }} Screenshot" 
-                             class="screenshot-image" 
-                             onclick="openModal({{ loop.index }})">
+                             class="screenshot-image">
+                        </button>
                     {% endfor %}
                 </div>
             {% endif %}

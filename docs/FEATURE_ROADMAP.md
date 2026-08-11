@@ -62,7 +62,7 @@ desktop sidebar remains the full navigation surface.
 
 - [ ] Offline-capable PWA library browsing
 - [ ] Push notifications and update-available prompt
-- [ ] Complete keyboard navigation and dialog focus management
+- [x] Complete keyboard navigation and dialog focus management
 - [x] Reduced-motion and theme contrast validation
 - [ ] Automated accessibility testing
 - [ ] Grid, compact-grid, and table library layouts

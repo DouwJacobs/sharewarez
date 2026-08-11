@@ -769,6 +769,8 @@ body.modal-open {
     border-radius: 4px;
     transition: color 0.15s ease;
     margin-top: 1px;
+    background: transparent;
+    border: 0;
 }
 
 .modal-request-update-header .close:hover {
@@ -877,6 +879,8 @@ body.modal-open {
     border: 1px solid rgba(255, 255, 255, 0.08);
     user-select: none;
     gap: 2px;
+    color: inherit;
+    font: inherit;
 }
 
 .nfo-button:hover {
@@ -933,6 +937,19 @@ body.modal-open {
 .screenshot-gallery::-webkit-scrollbar-thumb {
     background: var(--theme-scrollbar-thumb, rgba(100, 130, 255, 0.3));
     border-radius: 4px;
+}
+
+.screenshot-button {
+    flex: 0 0 auto;
+    padding: 0;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+}
+
+.screenshot-button:focus-visible {
+    outline: 3px solid var(--theme-primary, #6f7cff);
+    outline-offset: 3px;
 }
 
 .screenshot-image {
@@ -1006,6 +1023,9 @@ body.modal-open {
     line-height: 1;
     cursor: pointer;
     transition: color 0.2s;
+    padding: 0;
+    border: 0;
+    background: transparent;
 }
 
 .summary-close:hover,
