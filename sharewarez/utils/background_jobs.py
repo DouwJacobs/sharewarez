@@ -303,7 +303,7 @@ def library_bulk_metadata_refresh_task(context, payload):
         }
 
     succeeded = 0
-    failures = []
+    failures: list[dict[str, str]] = []
     for index, (game_uuid, game_name) in enumerate(games, start=1):
         context.check_cancelled()
         context.heartbeat(
@@ -360,7 +360,7 @@ def library_bulk_image_refresh_task(context, payload):
     ).all()
     total = len(games)
     succeeded = 0
-    failures = []
+    failures: list[dict[str, str]] = []
 
     for index, (game_uuid, game_name) in enumerate(games, start=1):
         context.check_cancelled()
