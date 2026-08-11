@@ -108,7 +108,8 @@ class TestGetGlobalSettings:
             'enable_game_requests': True,
             'discord_configured': False,
             'discord_manual_trigger_enabled': False,
-            'app_version': app_version
+            'app_version': app_version,
+            'mobile_nav_order': ['discover', 'library', 'requests', 'downloads', 'favorites'],
         }
 
         assert result == expected_defaults
@@ -148,7 +149,8 @@ class TestGetGlobalSettings:
             'enable_game_requests': True,
             'discord_configured': False,
             'discord_manual_trigger_enabled': False,
-            'app_version': app_version
+            'app_version': app_version,
+            'mobile_nav_order': ['discover', 'library', 'requests', 'downloads', 'favorites'],
         }
 
         assert result == expected_defaults
@@ -266,7 +268,8 @@ class TestGetGlobalSettings:
             'enable_game_requests',
             'discord_configured',
             'discord_manual_trigger_enabled',
-            'app_version'
+            'app_version',
+            'mobile_nav_order',
         }
 
         assert set(result.keys()) == expected_keys
@@ -284,7 +287,7 @@ class TestGetGlobalSettings:
 
         # Should not cause errors and return valid result
         assert isinstance(result, dict)
-        assert len(result) == 19
+        assert len(result) == 20
         assert all(key in result for key in [
             'show_logo', 'show_help_button', 'enable_web_links',
             'enable_server_status', 'enable_newsletter', 'show_version',
@@ -303,7 +306,7 @@ class TestGetGlobalSettings:
             result = get_global_settings()
         
         for key, value in result.items():
-            if key not in {'app_version', 'site_title', 'brand_logo_path'}:
+            if key not in {'app_version', 'site_title', 'brand_logo_path', 'mobile_nav_order'}:
                 assert isinstance(value, bool), f"Key '{key}' should be boolean, got {type(value)}"
         
         assert isinstance(result['app_version'], str)

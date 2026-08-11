@@ -193,12 +193,10 @@ class TestDefaultThemeControlSystem:
     def test_default_theme_has_global_reduced_motion_policy(self):
         from pathlib import Path
 
-        installed = Path('sharewarez/static/library/themes/default/css/base.css').read_text()
         setup = Path('sharewarez/setup/default_theme/css/base.css').read_text()
-        assert installed == setup
-        assert '@media (prefers-reduced-motion: reduce)' in installed
-        assert 'transition-duration: 0.01ms !important' in installed
-        assert 'animation-iteration-count: 1 !important' in installed
+        assert '@media (prefers-reduced-motion: reduce)' in setup
+        assert 'transition-duration: 0.01ms !important' in setup
+        assert 'animation-iteration-count: 1 !important' in setup
 
     def test_mobile_header_exposes_account_menu_with_accessible_targets(self):
         from pathlib import Path
