@@ -8,6 +8,7 @@ from sharewarez import db
 from sharewarez.models import User, Game, Library
 from sharewarez.platform import LibraryPlatform
 from sharewarez.utils.game_core import check_existing_game_by_igdb_id
+from sharewarez.utils.game_relationships import IGDB_RELATIONSHIP_QUERY_FIELDS
 
 
 def safe_cleanup_database(db_session):
@@ -452,11 +453,11 @@ class TestSearchIgdbById:
         assert data['summary'] == 'A test game'
         
         # Verify API call with correct query
-        expected_query = """
+        expected_query = f"""
         fields id, name, cover, summary, url, release_dates.date, platforms.name, genres.name, themes.name, game_modes.name,
                screenshots, videos.video_id, first_release_date, aggregated_rating, involved_companies, player_perspectives.name,
                aggregated_rating_count, rating, rating_count, slug, status, category, total_rating, 
-               total_rating_count, storyline;
+               total_rating_count, storyline, {IGDB_RELATIONSHIP_QUERY_FIELDS};
         where id = 12345;
     """
         mock_api_request.assert_called_once_with("https://api.igdb.com/v4/games", expected_query)
@@ -531,10 +532,10 @@ class TestSearchIgdbByName:
         assert data['results'][0]['name'] == 'Test Game'
         
         # Verify API call
-        expected_query = '''fields id, name, cover, summary, url, release_dates.date, platforms.name, genres.name, themes.name, game_modes.name,
+        expected_query = f'''fields id, name, cover, summary, url, release_dates.date, platforms.name, genres.name, themes.name, game_modes.name,
                           screenshots, videos.video_id, first_release_date, aggregated_rating, involved_companies, player_perspectives.name,
                           aggregated_rating_count, rating, rating_count, slug, status, category, total_rating, 
-                          total_rating_count, storyline;search "Test Game"; limit 10;'''
+                          total_rating_count, storyline, {IGDB_RELATIONSHIP_QUERY_FIELDS};search "Test Game"; limit 10;'''
         mock_api_request.assert_called_once_with('https://api.igdb.com/v4/games', expected_query)
     
     @patch('sharewarez.routes_apis.igdb.make_igdb_api_request')
@@ -553,10 +554,10 @@ class TestSearchIgdbByName:
         assert 'results' in data
         
         # Verify API call includes platform filter
-        expected_query = '''fields id, name, cover, summary, url, release_dates.date, platforms.name, genres.name, themes.name, game_modes.name,
+        expected_query = f'''fields id, name, cover, summary, url, release_dates.date, platforms.name, genres.name, themes.name, game_modes.name,
                           screenshots, videos.video_id, first_release_date, aggregated_rating, involved_companies, player_perspectives.name,
                           aggregated_rating_count, rating, rating_count, slug, status, category, total_rating, 
-                          total_rating_count, storyline;search "Test Game"; where platforms = (6); limit 10;'''
+                          total_rating_count, storyline, {IGDB_RELATIONSHIP_QUERY_FIELDS};search "Test Game"; where platforms = (6); limit 10;'''
         mock_api_request.assert_called_once_with('https://api.igdb.com/v4/games', expected_query)
     
     @patch('sharewarez.routes_apis.igdb.make_igdb_api_request')
@@ -572,10 +573,10 @@ class TestSearchIgdbByName:
         assert response.status_code == 200
         
         # Should ignore invalid platform_id and not include it in query
-        expected_query = '''fields id, name, cover, summary, url, release_dates.date, platforms.name, genres.name, themes.name, game_modes.name,
+        expected_query = f'''fields id, name, cover, summary, url, release_dates.date, platforms.name, genres.name, themes.name, game_modes.name,
                           screenshots, videos.video_id, first_release_date, aggregated_rating, involved_companies, player_perspectives.name,
                           aggregated_rating_count, rating, rating_count, slug, status, category, total_rating, 
-                          total_rating_count, storyline;search "Test Game"; limit 10;'''
+                          total_rating_count, storyline, {IGDB_RELATIONSHIP_QUERY_FIELDS};search "Test Game"; limit 10;'''
         mock_api_request.assert_called_once_with('https://api.igdb.com/v4/games', expected_query)
     
     @patch('sharewarez.routes_apis.igdb.make_igdb_api_request')
