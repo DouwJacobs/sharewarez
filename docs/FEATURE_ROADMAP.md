@@ -55,7 +55,7 @@ desktop sidebar remains the full navigation surface.
 ## Platform and integrations
 
 - [x] Scoped API tokens
-- [ ] Documented public API
+- [x] Documented public API
 - [ ] Outbound event webhooks
 - [ ] Metadata-provider abstraction and fallback ordering
 - [ ] Library, collection, request, theme, and user-data import/export

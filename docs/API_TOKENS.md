@@ -16,9 +16,9 @@ Available scopes are:
 
 Protected endpoints use `require_api_scope()` from
 `sharewarez/utils/api_tokens.py`. Clients send the credential as
-`Authorization: Bearer <token>`. `/api/token-introspect` is the initial
-authentication check and requires `profile:read`; the versioned public API will
-be documented separately as its roadmap feature is implemented.
+`Authorization: Bearer <token>`. `/api/token-introspect` is an authentication
+diagnostic and requires `profile:read`. The versioned endpoints, pagination,
+filters, and compatibility contract are documented in `docs/PUBLIC_API.md`.
 
 Preserve `SECRET_KEY` across upgrades because it is part of token verification.
 Changing it invalidates every existing API token, in addition to its existing
