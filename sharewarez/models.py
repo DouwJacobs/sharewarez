@@ -758,6 +758,22 @@ class GlobalSettings(db.Model):
     def __repr__(self):
         return f'<GlobalSettings id={self.id}, last_updated={self.last_updated}>'
 
+
+class SystemEmailTemplate(db.Model):
+    __tablename__ = 'system_email_templates'
+
+    template_key = db.Column(db.String(64), primary_key=True)
+    subject_template = db.Column(db.String(255), nullable=False)
+    html_template = db.Column(db.Text, nullable=False)
+    updated_at = db.Column(
+        db.DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
+    updated_by_user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'), nullable=True)
+    updated_by = db.relationship('User', foreign_keys=[updated_by_user_id])
+
 class DiscoverySection(db.Model):
     __tablename__ = 'discovery_sections'
     

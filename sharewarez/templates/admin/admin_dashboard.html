@@ -166,6 +166,12 @@
                     <span class="button-label">Newsletter</span>
                 </div>
                 {% endif %}
+                <div class="admin-button-item" data-toggle="tooltip" title="Customize transactional email templates">
+                    <a href="{{ url_for('admin2.email_templates') }}" class="btn btn-circle" aria-label="Manage system email templates">
+                        <i class="fas fa-envelope-open-text"></i>
+                    </a>
+                    <span class="button-label">Email Templates</span>
+                </div>
                 <div class="admin-button-item" data-toggle="tooltip" title="View administrator help">
                     <a href="{{ url_for('admin2.admin_help') }}" class="btn btn-circle" aria-label="Open administrator guide">
                         <i class="fas fa-question-circle"></i>

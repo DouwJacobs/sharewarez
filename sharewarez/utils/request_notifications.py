@@ -1,5 +1,3 @@
-from html import escape
-
 from discord_webhook import DiscordEmbed, DiscordWebhook
 from sqlalchemy import select
 
@@ -8,6 +6,7 @@ from sharewarez.models import GlobalSettings, User
 from sharewarez.utils.event_logging import log_system_event
 from sharewarez.utils.game_requests import get_request_settings
 from sharewarez.utils.smtp import send_email
+from sharewarez.utils.email_templates import render_system_email
 
 
 def _settings_record():
@@ -47,12 +46,19 @@ def notify_new_request(record, joined_existing=False):
             desc = 'A user requested an update for this game.' if is_update else 'A user submitted interest in this edition.'
             _send_discord(record, f'{req_label} {action}: {record.game_name}', desc)
         if preferences['notifyAdminRequestEmail']:
-            action_text = f'requested an update for' if is_update else 'requested'
+            requesters = record.active_requesters
+            requester_name = requesters[-1].user.name if requesters else 'A user'
+            subject, body = render_system_email('admin_new_request', {
+                'request_type': req_label,
+                'game_name': record.game_name,
+                'requester_name': requester_name,
+                'admin_url': _request_url(record, admin=True),
+            })
             for admin in db.session.execute(select(User).where(User.role == 'admin', User.state.is_(True))).scalars():
                 send_email(
                     admin.email,
-                    f'{req_label}: {record.game_name}',
-                    f'<p>A user {action_text} <strong>{escape(record.game_name)}</strong>.</p><p><a href="{_request_url(record, admin=True)}">Review request</a></p>',
+                    subject,
+                    body,
                     show_feedback=False,
                 )
     except Exception as error:
@@ -66,22 +72,28 @@ def notify_request_updated(record, satisfied_links=None):
             _send_discord(record, f'Request updated: {record.game_name}', record.public_response or 'The request status changed.')
         if preferences['notifyRequesterRequestEmail']:
             status = record.status.replace('_', ' ').title()
-            game_link = ''
+            game_url = ''
             if record.fulfilled_game_uuid:
                 settings = _settings_record()
                 base = ((settings.site_url if settings else None) or 'http://127.0.0.1:5006').rstrip('/')
-                game_link = f'<p><a href="{base}/game_details/{record.fulfilled_game_uuid}">View available game</a></p>'
+                game_url = f'{base}/game_details/{record.fulfilled_game_uuid}'
             recipients = list(satisfied_links if satisfied_links is not None else record.active_requesters)
             notified_user_ids = set()
             for link in recipients:
                 if link.withdrawn_at is not None or link.user_id in notified_user_ids:
                     continue
                 notified_user_ids.add(link.user_id)
+                subject, body = render_system_email('request_status_update', {
+                    'user_name': link.user.name,
+                    'game_name': record.game_name,
+                    'status': status,
+                    'response': record.public_response or '',
+                    'game_url': game_url,
+                })
                 send_email(
                     link.user.email,
-                    f'Your game request is {status}: {record.game_name}',
-                    f'<p>Your request for <strong>{escape(record.game_name)}</strong> is now <strong>{status}</strong>.</p>'
-                    f'<p>{escape(record.public_response or "")}</p>{game_link}',
+                    subject,
+                    body,
                     show_feedback=False,
                 )
                 link.last_notified_status = record.status

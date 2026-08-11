@@ -37,7 +37,7 @@ desktop sidebar remains the full navigation surface.
 
 - [ ] In-app notification center
 - [ ] Per-event email, Discord, webhook, and in-app preferences
-- [ ] Admin-managed templates for welcome, invite, password, request, download, and other user-facing emails
+- [x] Admin-managed templates for account confirmation, invitations, password resets, and request notifications
 - [ ] Play history and time played
 - [ ] Personal ratings, reviews, notes, tags, completion dates, and backlog priority
 - [ ] Granular roles and permissions

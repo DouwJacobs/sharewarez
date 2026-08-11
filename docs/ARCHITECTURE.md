@@ -1,5 +1,7 @@
 # Architecture decisions
 
+Transactional email content is rendered through `sharewarez.utils.email_templates`. Five built-in definitions provide safe defaults, while optional administrator overrides are stored in `system_email_templates`. Rendering uses a sandboxed Jinja environment with strict variable validation and a shared branded HTML shell. See `docs/EMAIL_TEMPLATES.md`.
+
 ## Frontend strategy
 
 GameLibrary remains a Flask/Jinja server-rendered application for production.

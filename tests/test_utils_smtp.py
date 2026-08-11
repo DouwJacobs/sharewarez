@@ -674,13 +674,13 @@ class TestSendPasswordResetEmail:
     
     @patch('sharewarez.utils.smtp.send_email')
     @patch('sharewarez.utils.smtp.url_for')
-    @patch('sharewarez.utils.processors.get_global_settings')
-    def test_send_password_reset_email(self, mock_get_settings, mock_url_for, mock_send_email):
+    @patch('sharewarez.utils.email_templates.render_system_email')
+    def test_send_password_reset_email(self, mock_render_email, mock_url_for, mock_send_email):
         """Test sending password reset email."""
         # Setup mocks
         mock_url_for.return_value = 'https://example.com/reset/abc123'
         mock_send_email.return_value = True
-        mock_get_settings.return_value = {'site_title': 'Game Library'}
+        mock_render_email.return_value = ('Reset your Game Library password', '<p>Reset your password</p>')
         
         # Test
         send_password_reset_email('user@example.com', 'abc123')
@@ -698,20 +698,23 @@ class TestSendPasswordResetEmail:
         
         # Check that HTML content contains the reset URL
         html_content = args[2]
-        assert 'https://example.com/reset/abc123' in html_content
         assert 'Reset your password' in html_content
-        assert 'The Game Library team' in html_content
+        mock_render_email.assert_called_once_with('password_reset', {
+            'user_name': 'there',
+            'reset_url': 'https://example.com/reset/abc123',
+            'expires_in': '15 minutes',
+        })
 
 
 class TestSendInviteEmail:
     """Test send_invite_email function."""
     
     @patch('sharewarez.utils.smtp.send_email')
-    @patch('sharewarez.utils.smtp.render_template')
-    def test_send_invite_email(self, mock_render_template, mock_send_email):
+    @patch('sharewarez.utils.email_templates.render_system_email')
+    def test_send_invite_email(self, mock_render_email, mock_send_email):
         """Test sending invite email."""
         # Setup mocks
-        mock_render_template.return_value = '<h1>You are invited!</h1>'
+        mock_render_email.return_value = ("You're invited to Game Library", '<h1>You are invited!</h1>')
         mock_send_email.return_value = True
         
         invite_url = 'https://example.com/invite/xyz789'
@@ -719,12 +722,16 @@ class TestSendInviteEmail:
         # Test
         send_invite_email('newuser@example.com', invite_url)
         
-        # Verify template rendering
-        mock_render_template.assert_called_once_with('login/invite_email.html', invite_url=invite_url)
+        mock_render_email.assert_called_once_with('user_invitation', {
+            'inviter_name': 'A user',
+            'recipient_email': 'newuser@example.com',
+            'invite_url': invite_url,
+            'expires_in': '48 hours',
+        })
         
         # Verify send_email was called
         mock_send_email.assert_called_once_with(
             'newuser@example.com',
-            "You're Invited!",
+            "You're invited to Game Library",
             '<h1>You are invited!</h1>'
         )

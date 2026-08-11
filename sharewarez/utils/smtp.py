@@ -1,6 +1,6 @@
 import smtplib, socket, traceback
 from email.message import EmailMessage
-from flask import flash, url_for, render_template
+from flask import flash, url_for
 from sharewarez import db
 from sharewarez.models import GlobalSettings
 from sqlalchemy import select
@@ -200,30 +200,25 @@ def send_email(to, subject, template, show_feedback=True):
     return False
 
 
-def send_password_reset_email(user_email, token):
-    from markupsafe import escape
-    from sharewarez.utils.processors import get_global_settings
+def send_password_reset_email(user_email, token, user_name='there'):
+    from sharewarez.utils.email_templates import render_system_email
 
-    site_title = get_global_settings()['site_title']
-    escaped_site_title = escape(site_title)
     reset_url = url_for('login.reset_password', token=token, _external=True)
-    html = f'''<p>Hello,</p>
-
-<p>We received a request to reset your {escaped_site_title} password. Use the link below to choose a new password:</p>
-
-<p><a href="{reset_url}">Reset your password</a></p>
-
-<p>If you did not request a password reset, you can safely ignore this email.</p>
-
-<p>Regards,</p>
-
-<p>The {escaped_site_title} team</p>'''
-
-    subject = f"Reset your {site_title} password"
+    subject, html = render_system_email('password_reset', {
+        'user_name': user_name,
+        'reset_url': reset_url,
+        'expires_in': '15 minutes',
+    })
     send_email(user_email, subject, html)
     
     
-def send_invite_email(email, invite_url):
-    subject = "You're Invited!"
-    html_content = render_template('login/invite_email.html', invite_url=invite_url)
+def send_invite_email(email, invite_url, inviter_name='A user'):
+    from sharewarez.utils.email_templates import render_system_email
+
+    subject, html_content = render_system_email('user_invitation', {
+        'inviter_name': inviter_name,
+        'recipient_email': email,
+        'invite_url': invite_url,
+        'expires_in': '48 hours',
+    })
     send_email(email, subject, html_content)

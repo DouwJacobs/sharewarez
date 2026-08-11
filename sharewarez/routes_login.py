@@ -169,8 +169,12 @@ def register():
             # Verification email
             verification_token = user.email_verification_token
             confirm_url = url_for('login.confirm_email', token=verification_token, _external=True)
-            html = render_template('login/registration_activate.html', confirm_url=confirm_url)
-            subject = "Please confirm your email"
+            from sharewarez.utils.email_templates import render_system_email
+            subject, html = render_system_email('account_confirmation', {
+                'user_name': user.name,
+                'confirm_url': confirm_url,
+                'expires_in': '15 minutes',
+            })
             send_email(user.email, subject, html)
 
 
@@ -228,7 +232,7 @@ def reset_password_request():
             # Send reset email
             print('Calling send password reset email function...')
             try:
-                send_password_reset_email(user.email, token)
+                send_password_reset_email(user.email, token, user.name)
             except Exception:
                 # Keep the public response indistinguishable from an unknown
                 # address while recording an actionable server-side event.
@@ -299,7 +303,7 @@ def invites():
             # Build the invite URL using the configured site URL
             invite_url = f"{site_url}/register?token={token}"
 
-            send_invite_email(email, invite_url)
+            send_invite_email(email, invite_url, current_user.name)
 
             flash('Invite sent successfully. The invite expires after 48 hours.', 'success')
         else:
