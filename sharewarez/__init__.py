@@ -1,5 +1,6 @@
 #/sharewarez/__init__.py
 import sys, os
+import filecmp
 import shutil
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -29,6 +30,25 @@ app_start_time = datetime.now()
 app_version = __version__
 
 
+def _sync_changed_theme_files(source, target):
+    """Copy only changed theme files so the reload watcher settles after one pass."""
+    copied = 0
+    for source_root, _directories, filenames in os.walk(source):
+        relative_root = os.path.relpath(source_root, source)
+        target_root = target if relative_root == '.' else os.path.join(target, relative_root)
+        os.makedirs(target_root, exist_ok=True)
+        for filename in filenames:
+            source_path = os.path.join(source_root, filename)
+            target_path = os.path.join(target_root, filename)
+            if os.path.isfile(target_path) and filecmp.cmp(
+                source_path, target_path, shallow=False
+            ):
+                continue
+            shutil.copy2(source_path, target_path)
+            copied += 1
+    return copied
+
+
 def create_app():
     # The default theme is authored under setup/default_theme but served from
     # static/library/themes/default. Refresh it whenever Uvicorn recreates the
@@ -42,7 +62,7 @@ def create_app():
         )
         if os.path.isdir(default_theme_source):
             os.makedirs(os.path.dirname(default_theme_target), exist_ok=True)
-            shutil.copytree(default_theme_source, default_theme_target, dirs_exist_ok=True)
+            _sync_changed_theme_files(default_theme_source, default_theme_target)
 
     app = Flask(__name__)
     app.config.from_object(Config)

@@ -6,6 +6,7 @@ import pytest
 
 from sharewarez.models import Game, Library, User
 from sharewarez.platform import LibraryPlatform
+from sharewarez.utils.background_jobs import job_display_name
 
 
 @pytest.fixture
@@ -50,6 +51,22 @@ def test_library_actions_offer_bulk_metadata_refresh():
     assert "enqueue(\n        'library.bulk_metadata_refresh'" in route_source
     assert "@register_task('library.bulk_metadata_refresh')" in jobs_source
     assert 'context.heartbeat(' in jobs_source
+
+
+def test_bulk_image_refresh_uses_the_tracked_job_queue():
+    route_source = Path('sharewarez/routes_admin_ext/libraries.py').read_text(encoding='utf-8')
+    jobs_source = Path('sharewarez/utils/background_jobs.py').read_text(encoding='utf-8')
+
+    assert "enqueue(\n        'library.bulk_image_refresh'" in route_source
+    assert "@register_task('library.bulk_image_refresh')" in jobs_source
+    assert 'Thread(target=run_bulk_refresh' not in route_source
+    assert "'job_url': url_for('admin2.background_jobs')" in route_source
+
+
+def test_background_job_names_are_human_readable():
+    assert job_display_name('library.bulk_metadata_refresh') == 'Bulk metadata refresh'
+    assert job_display_name('library.bulk_image_refresh') == 'Bulk image refresh'
+    assert job_display_name('custom.example_task') == 'Custom Example Task'
 
 
 @patch('sharewarez.utils.background_jobs.enqueue')

@@ -1,5 +1,13 @@
 # Production operations
 
+## Development theme reloads
+
+When `SHAREWAREZ_HOT_RELOAD=true`, application startup synchronizes the authored
+`sharewarez/setup/default_theme` tree into the served default-theme directory.
+The synchronizer compares file contents and writes only new or changed assets.
+This prevents Uvicorn's watcher from repeatedly reloading on unchanged copied
+files and interrupting application startup during development.
+
 ## Health endpoints
 
 - `GET /health/live` confirms the web process can serve requests. It does not

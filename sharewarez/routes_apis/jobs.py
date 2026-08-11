@@ -5,13 +5,14 @@ from sqlalchemy import select
 from sharewarez import db
 from sharewarez.models import BackgroundJob
 from sharewarez.utils.auth import admin_required
-from sharewarez.utils.background_jobs import cancel_job, retry_job
+from sharewarez.utils.background_jobs import cancel_job, job_display_name, retry_job
 from . import apis_bp
 
 
 def _serialize(job):
     return {
-        'id': job.id, 'task_name': job.task_name, 'queue': job.queue,
+        'id': job.id, 'task_name': job.task_name,
+        'display_name': job_display_name(job.task_name), 'queue': job.queue,
         'status': job.status, 'progress': job.progress,
         'progress_message': job.progress_message, 'attempts': job.attempts,
         'max_attempts': job.max_attempts,

@@ -6,7 +6,7 @@ from sharewarez import db
 from sharewarez.forms import CsrfProtectForm
 from sharewarez.models import BackgroundJob
 from sharewarez.utils.auth import admin_required
-from sharewarez.utils.background_jobs import cancel_job, retry_job
+from sharewarez.utils.background_jobs import cancel_job, job_display_name, retry_job
 from sharewarez.utils.event_logging import log_system_event
 
 from . import admin2_bp
@@ -47,6 +47,7 @@ def background_jobs():
         'admin/admin_background_jobs.html', pagination=pagination,
         counts=counts, statuses=JOB_STATUSES, status_filter=status,
         search=search, per_page=per_page, csrf_form=CsrfProtectForm(),
+        job_display_name=job_display_name,
     )
 
 

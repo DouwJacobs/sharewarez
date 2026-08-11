@@ -328,13 +328,13 @@ def refresh_images_in_background(game_uuid):
             if not game:
                 print(f"[IMAGE REFRESH] Game with UUID {game_uuid} not found.")
                 cache.set(f'image_refresh_progress_{game_uuid}', {'status': 'error', 'progress': 0}, timeout=300)
-                return
+                return False
 
             print(f"[IMAGE REFRESH] Found game: {game.name} (IGDB ID: {game.igdb_id})")
             if game.igdb_id is None:
                 print(f"[IMAGE REFRESH] Game '{game.name}' has no IGDB ID, cannot refresh images.")
                 cache.set(f'image_refresh_progress_{game_uuid}', {'status': 'error', 'progress': 0}, timeout=300)
-                return
+                return False
 
             cache.set(f'image_refresh_progress_{game_uuid}', {'status': 'in_progress', 'progress': 20}, timeout=300)
 
@@ -348,7 +348,7 @@ def refresh_images_in_background(game_uuid):
             if not response_json or 'error' in response_json:
                 print(f"[IMAGE REFRESH] IGDB API returned error or empty response.")
                 cache.set(f'image_refresh_progress_{game_uuid}', {'status': 'error', 'progress': 0}, timeout=300)
-                return
+                return False
 
             cache.set(f'image_refresh_progress_{game_uuid}', {'status': 'in_progress', 'progress': 40}, timeout=300)
 
@@ -398,6 +398,7 @@ def refresh_images_in_background(game_uuid):
             db.session.commit()
             cache.set(f'image_refresh_progress_{game_uuid}', {'status': 'complete', 'progress': 100}, timeout=300)
             print(f"[IMAGE REFRESH] Successfully finished for '{game.name}'")
+            return True
 
         except Exception as e:
             db.session.rollback()
@@ -405,6 +406,7 @@ def refresh_images_in_background(game_uuid):
             import traceback
             traceback.print_exc()
             cache.set(f'image_refresh_progress_{game_uuid}', {'status': 'error', 'progress': 0}, timeout=300)
+            return False
             
 def delete_game_images(game_uuid):
     with current_app.app_context():

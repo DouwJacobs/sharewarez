@@ -3,7 +3,7 @@ from flask_login import current_user, login_required
 from sharewarez.utils.auth import admin_required
 from sharewarez.models import Library, LibraryPlatform
 from sharewarez import db
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sharewarez.forms import LibraryForm
 from sharewarez.utils.event_logging import log_system_event
 from uuid import uuid4
@@ -210,34 +210,37 @@ def preview_cropped_image():
 @login_required
 @admin_required
 def bulk_refresh_library_images(library_uuid):
-    """Trigger background image refresh for all games belonging to a library."""
+    """Queue a tracked image refresh for all games belonging to a library."""
     from sharewarez.models import Game
-    from sharewarez.utils.scanning import refresh_images_in_background
-    from threading import Thread
-    from flask import copy_current_request_context
+    from sharewarez.utils.background_jobs import enqueue
 
     library = db.session.execute(select(Library).filter_by(uuid=library_uuid)).scalar_one_or_none()
     if not library:
         return jsonify({'success': False, 'message': 'Library not found'}), 404
 
-    games = db.session.execute(select(Game).filter_by(library_uuid=library_uuid)).scalars().all()
-    if not games:
+    game_count = db.session.execute(
+        select(func.count(Game.uuid)).filter_by(library_uuid=library_uuid)
+    ).scalar_one()
+    if not game_count:
         return jsonify({'success': False, 'message': 'No games found in this library.'}), 400
 
-    def run_bulk_refresh():
-        for game in games:
-            try:
-                refresh_images_in_background(game.uuid)
-            except Exception as err:
-                print(f"[BULK IMAGE REFRESH] Error refreshing game {game.uuid}: {err}")
-
-    thread = Thread(target=run_bulk_refresh, daemon=True)
-    thread.start()
+    job = enqueue(
+        'library.bulk_image_refresh',
+        {'library_uuid': library_uuid},
+        max_attempts=2,
+        created_by_id=current_user.id,
+    )
 
     return jsonify({
         'success': True,
-        'message': f'Bulk image refresh started for {len(games)} games in {library.name}.'
-    })
+        'message': (
+            f'Bulk image refresh queued for {game_count} games in {library.name}. '
+            'Track progress under Background Jobs.'
+        ),
+        'games_queued': game_count,
+        'job_id': job.id,
+        'job_url': url_for('admin2.background_jobs'),
+    }), 202
 
 
 @admin2_bp.route('/admin/api/library/<library_uuid>/refresh_metadata', methods=['POST'])
