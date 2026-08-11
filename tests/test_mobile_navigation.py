@@ -20,7 +20,8 @@ def test_mobile_navigation_order_has_admin_controls():
     template = Path('sharewarez/templates/admin/new_server_settings.html').read_text()
     javascript = Path('sharewarez/setup/default_theme/js/admin_manage_server_settings.js').read_text()
 
-    assert template.count('class="form-select form-select-sm mobile-nav-slot"') == 1
+    assert template.count('class="form-select mobile-nav-slot"') == 1
+    assert '{% for slot in range(1, 5) %}' in template
     assert "mobileNavOrder:" in javascript
     assert "new Set(settings.mobileNavOrder)" in javascript
 
