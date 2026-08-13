@@ -69,6 +69,10 @@ class CollectionForm(FlaskForm):
         ('shared', 'Shared with everyone'), ('private', 'Private to me'),
     ], default='shared')
     show_on_discover = BooleanField('Show as a row on Discover')
+    featured_artwork_preference = SelectField('Hero key art', choices=[
+        ('with_logo', 'Prefer key art with logo'),
+        ('without_logo', 'Prefer key art without logo'),
+    ], default='with_logo')
     display_order = IntegerField('Discover row order', validators=[Optional(), NumberRange(min=0, max=9999)], default=0)
     game_order = HiddenField('Selected games')
     is_smart = BooleanField('Smart collection')

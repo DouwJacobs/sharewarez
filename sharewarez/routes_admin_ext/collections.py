@@ -126,10 +126,16 @@ def edit_collection(collection_id):
         form.parent_id.data = item.parent_id or 0
         form.game_order.data = ','.join(link.game_uuid for link in item.game_links)
         form.smart_rules.data = json.dumps(item.smart_rules, indent=2) if item.smart_rules else ''
+    elif item.is_featured:
+        # Featured Spotlight does not render its immutable select fields.
+        # Normalize their missing POST values before WTForms performs choice
+        # validation; otherwise it reports "Not a valid choice."
+        form.parent_id.data = 0
+        form.visibility.data = item.visibility or 'shared'
 
     if form.validate_on_submit():
         smart_rules = None
-        wants_smart = bool(form.is_smart.data and not item.is_featured)
+        wants_smart = bool(form.is_smart.data)
         if wants_smart:
             try:
                 smart_rules = parse_smart_rules(form.smart_rules.data)
@@ -148,11 +154,13 @@ def edit_collection(collection_id):
                 item.visibility = form.visibility.data
                 if item.owner_id is None:
                     item.owner_id = current_user.id
-                item.is_smart = wants_smart
-                item.smart_rules = smart_rules
-                item.smart_sort = form.smart_sort.data
-                item.smart_sort_order = form.smart_sort_order.data
-                item.smart_limit = form.smart_limit.data or 24
+            item.is_smart = wants_smart
+            item.smart_rules = smart_rules
+            item.smart_sort = form.smart_sort.data
+            item.smart_sort_order = form.smart_sort_order.data
+            item.smart_limit = form.smart_limit.data or 24
+            if item.is_featured:
+                item.featured_artwork_preference = form.featured_artwork_preference.data
             item.description = (form.description.data or '').strip() or None
             if item.is_smart:
                 item.game_links.clear()

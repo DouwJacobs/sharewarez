@@ -1,4 +1,5 @@
 import os
+import tempfile
 import requests
 import re
 import html
@@ -225,38 +226,62 @@ def read_first_nfo_content(full_disk_path):
     print("No NFO file found")
     return None
 
+MAX_IMAGE_DOWNLOAD_BYTES = 30 * 1024 * 1024
+ALLOWED_IMAGE_CONTENT_TYPES = {'image/jpeg', 'image/png', 'image/webp', 'image/gif'}
+
+
 def download_image(url, save_path):
-    """Download an image from a URL and save it to the specified path."""
+    """Download and validate an image, replacing the destination atomically."""
     if not url.startswith(('http://', 'https://')):
         url = 'https:' + url
 
     url = url.replace('/t_thumb/', '/t_original/')
 
+    temporary_path = None
+    response = None
     try:
-        response = requests.get(url)
-        if response.status_code == 200:
-            directory = os.path.dirname(save_path)
-
-            if not os.path.exists(directory):
-                print(f"'{directory}' does not exist. Attempting to create it.")
-                try:
-                    os.makedirs(directory, exist_ok=True)
-                    print(f"Successfully created the directory '{directory}'.")
-                except Exception as e:
-                    print(f"Failed to create the directory '{directory}': {e}")
-                    return
-
-            if os.access(directory, os.W_OK):
-                with open(save_path, 'wb') as f:
-                    f.write(response.content)
-            else:
-                print(f"Error: The directory '{directory}' is not writable.")
-        else:
+        response = requests.get(url, stream=True, timeout=(5, 30))
+        if response.status_code != 200:
             print(f"Failed to download the image. Status Code: {response.status_code}")
-    except requests.exceptions.RequestException as e:
-        print(f"Error downloading image from {url}: {e}")
-    except Exception as e:
-        print(f"An error occurred while saving the image to {save_path}: {e}")
+            return False
+
+        content_type = response.headers.get('Content-Type', '').split(';', 1)[0].lower()
+        if content_type not in ALLOWED_IMAGE_CONTENT_TYPES:
+            print(f"Rejected image download with content type: {content_type or 'missing'}")
+            return False
+        content_length = response.headers.get('Content-Length')
+        if content_length and int(content_length) > MAX_IMAGE_DOWNLOAD_BYTES:
+            print("Rejected image download larger than the configured limit.")
+            return False
+
+        directory = os.path.dirname(save_path) or '.'
+        os.makedirs(directory, exist_ok=True)
+        downloaded = 0
+        with tempfile.NamedTemporaryFile(
+            mode='wb', prefix='.image-', suffix='.tmp', dir=directory, delete=False
+        ) as temporary_file:
+            temporary_path = temporary_file.name
+            for chunk in response.iter_content(chunk_size=64 * 1024):
+                if not chunk:
+                    continue
+                downloaded += len(chunk)
+                if downloaded > MAX_IMAGE_DOWNLOAD_BYTES:
+                    raise ValueError('Image download exceeded the configured size limit.')
+                temporary_file.write(chunk)
+
+        with PILImage.open(temporary_path) as downloaded_image:
+            downloaded_image.verify()
+        os.replace(temporary_path, save_path)
+        temporary_path = None
+        return True
+    except (requests.exceptions.RequestException, OSError, SyntaxError, ValueError) as error:
+        print(f"Error downloading image from {url}: {error}")
+        return False
+    finally:
+        if response is not None:
+            response.close()
+        if temporary_path and os.path.exists(temporary_path):
+            os.remove(temporary_path)
 
 def comma_separated_urls(form, field):
     """Validate comma-separated YouTube embed URLs."""

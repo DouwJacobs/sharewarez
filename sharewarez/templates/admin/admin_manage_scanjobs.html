@@ -551,7 +551,7 @@
                 <div class="admin_manage_scanjobs-imagequeue-panel glass-panel">
                     <div class="admin_manage_scanjobs-tab-header">
                         <h3><i class="fas fa-images"></i> Image Queue</h3>
-                        <p>Manage game cover and screenshot downloads.</p>
+                        <p>Manage game cover, screenshot, and artwork downloads.</p>
                     </div>
 
                     <!-- Controls -->
@@ -586,6 +586,12 @@
                                 <option value="all">All Types</option>
                                 <option value="cover">Covers</option>
                                 <option value="screenshot">Screenshots</option>
+                                <option value="key_art">Key art</option>
+                                <option value="key_art_logo">Key art with logo</option>
+                                <option value="game_logo_color">Game logo (color)</option>
+                                <option value="game_logo_white">Game logo (white)</option>
+                                <option value="game_logo_black">Game logo (black)</option>
+                                <option value="artwork">Other artwork</option>
                             </select>
                         </div>
                     </div>
@@ -938,7 +944,7 @@
         if (!tbody) return;
 
         if (images.length === 0) {
-            tbody.innerHTML = '<tr class="scan-empty-state-row"><td colspan="6"><div class="scan-empty-state"><i class="fas fa-images" aria-hidden="true"></i><strong>No queued images</strong><span>Queued cover and screenshot downloads will appear here.</span></div></td></tr>';
+            tbody.innerHTML = '<tr class="scan-empty-state-row"><td colspan="6"><div class="scan-empty-state"><i class="fas fa-images" aria-hidden="true"></i><strong>No queued images</strong><span>Queued covers, screenshots, and artwork will appear here.</span></div></td></tr>';
             return;
         }
 
@@ -947,9 +953,16 @@
                 '<span class="badge bg-success">Downloaded</span>' :
                 '<span class="badge bg-warning">Pending</span>';
 
-            const typeBadge = image.image_type === 'cover' ?
-                '<span class="badge bg-primary">Cover</span>' :
-                '<span class="badge bg-info">Screenshot</span>';
+            const typeBadge = {
+                cover: '<span class="badge bg-primary">Cover</span>',
+                screenshot: '<span class="badge bg-info">Screenshot</span>',
+                key_art: '<span class="badge bg-success">Key art</span>',
+                key_art_logo: '<span class="badge bg-success">Key art with logo</span>',
+                game_logo_color: '<span class="badge bg-primary">Game logo (color)</span>',
+                game_logo_white: '<span class="badge bg-light text-dark">Game logo (white)</span>',
+                game_logo_black: '<span class="badge bg-dark">Game logo (black)</span>',
+                artwork: '<span class="badge bg-secondary">Artwork</span>'
+            }[image.image_type] || '<span class="badge bg-secondary">Image</span>';
 
             const downloadUrl = image.download_url ?
                 image.download_url.substring(0, 50) + '...' : 'No URL';

@@ -174,9 +174,10 @@ def create_game_instance(game_data, full_disk_path, folder_size_bytes, library_u
 def store_image_url_for_download(game_uuid, image_data, image_type='cover'):
     """Store image URL in database for later async download."""
     try:
+        image_id = image_data.get('id') if isinstance(image_data, dict) else image_data
         # Get the image URL from IGDB API
         if image_type == 'cover':
-            cover_query = f'fields url; where id={image_data};'
+            cover_query = f'fields url; where id={image_id};'
             cover_response = make_igdb_api_request('https://api.igdb.com/v4/covers', cover_query)
             if cover_response and 'error' not in cover_response:
                 download_url = cover_response[0].get('url')
@@ -188,7 +189,7 @@ def store_image_url_for_download(game_uuid, image_data, image_type='cover'):
                 return
         
         elif image_type == 'screenshot':
-            screenshot_query = f'fields url; where id={image_data};'
+            screenshot_query = f'fields url; where id={image_id};'
             response = make_igdb_api_request('https://api.igdb.com/v4/screenshots', screenshot_query)
             if response and 'error' not in response:
                 download_url = response[0].get('url')
@@ -198,16 +199,49 @@ def store_image_url_for_download(game_uuid, image_data, image_type='cover'):
             else:
                 print(f"Failed to retrieve URL for screenshot ID {image_data}.")
                 return
+
+        elif image_type == 'artwork':
+            if isinstance(image_data, dict) and image_data.get('url'):
+                response = [image_data]
+            else:
+                artwork_query = f'fields url, image_type.name, artwork_type.name; where id={image_id};'
+                response = make_igdb_api_request('https://api.igdb.com/v4/artworks', artwork_query)
+            if response and 'error' not in response:
+                download_url = response[0].get('url')
+                artwork_kind = (
+                    response[0].get('image_type')
+                    or response[0].get('artwork_type')
+                    or {}
+                )
+                type_name = artwork_kind.get('name', '').lower()
+                if type_name == 'key art without logo':
+                    image_type = 'key_art'
+                elif type_name == 'key art with logo':
+                    image_type = 'key_art_logo'
+                elif type_name == 'game logo (color)':
+                    image_type = 'game_logo_color'
+                elif type_name == 'game logo (white)':
+                    image_type = 'game_logo_white'
+                elif type_name == 'game logo (black)':
+                    image_type = 'game_logo_black'
+                else:
+                    return
+                if download_url and not download_url.startswith(('http://', 'https://')):
+                    download_url = 'https:' + download_url
+                download_url = download_url.replace('/t_thumb/', '/t_original/')
+            else:
+                print(f"Failed to retrieve URL for artwork ID {image_data}.")
+                return
         
         # Generate filename for when it gets downloaded
-        file_name = secure_filename(f"{game_uuid}_{image_type}_{image_data}.jpg")
+        file_name = secure_filename(f"{game_uuid}_{image_type}_{image_id}.jpg")
         
         # Store image metadata with URL for later download
         image = Image(
             game_uuid=game_uuid,
             image_type=image_type,
             url=file_name,  # Local filename when downloaded
-            igdb_image_id=str(image_data),
+            igdb_image_id=str(image_id),
             download_url=download_url,
             is_downloaded=False
         )
@@ -217,7 +251,8 @@ def store_image_url_for_download(game_uuid, image_data, image_type='cover'):
         print(f"Error storing image URL for {image_type} {image_data}: {e}")
 
 
-def smart_process_images_for_game(game_uuid, cover_data=None, screenshots_data=None, app=None):
+def smart_process_images_for_game(game_uuid, cover_data=None, screenshots_data=None,
+                                  artworks_data=None, app=None):
     """Smart image processing that uses settings to determine single-thread vs turbo mode."""
     if app is None:
         app = current_app._get_current_object()
@@ -234,6 +269,9 @@ def smart_process_images_for_game(game_uuid, cover_data=None, screenshots_data=N
             if screenshots_data:
                 for screenshot_id in screenshots_data:
                     store_image_url_for_download(game_uuid, screenshot_id, 'screenshot')
+            if artworks_data:
+                for artwork_id in artworks_data:
+                    store_image_url_for_download(game_uuid, artwork_id, 'artwork')
             db.session.commit()
             
             # Decide processing mode based on settings
@@ -324,7 +362,8 @@ def process_and_save_image(game_uuid, image_data, image_type='cover'):
 
         file_name = secure_filename(f"{game_uuid}_cover_{image_data}.jpg") 
         save_path = os.path.join(current_app.config['IMAGE_SAVE_PATH'], file_name)
-        download_image(url, save_path)
+        if not download_image(url, save_path):
+            return
 
     elif image_type == 'screenshot':
         screenshot_query = f'fields url; where id={image_data};'
@@ -343,7 +382,8 @@ def process_and_save_image(game_uuid, image_data, image_type='cover'):
         print("File name could not be set. Exiting.")
         return
     save_path = os.path.join(current_app.config['IMAGE_SAVE_PATH'], file_name)
-    download_image(url, save_path)
+    if not download_image(url, save_path):
+        return
 
     if file_name and save_path:
         image = Image(
@@ -383,7 +423,7 @@ def search_igdb_for_game(search_name, platform_id):
     Returns the API response or None if no match found.
     """
     query_fields = f"""fields id, name, cover, summary, url, release_dates.date, platforms.name, genres.name, themes.name, game_modes.name,
-                      screenshots, videos.video_id, first_release_date, aggregated_rating, involved_companies, player_perspectives.name,
+                      screenshots, artworks, videos.video_id, first_release_date, aggregated_rating, involved_companies, player_perspectives.name,
                       aggregated_rating_count, rating, rating_count, slug, status, category, total_rating,
                       total_rating_count, {IGDB_RELATIONSHIP_QUERY_FIELDS};"""
     query_filter = f'search "{search_name}"; limit 1;'
@@ -414,7 +454,7 @@ def fetch_game_by_igdb_id(igdb_id):
             fields name, summary, storyline, url, slug, first_release_date,
                    aggregated_rating, aggregated_rating_count, rating, rating_count,
                    total_rating, total_rating_count, status, category,
-                   cover.url, screenshots.url, videos.video_id,
+                   cover.url, screenshots.url, artworks.url, videos.video_id,
                    genres.name, themes.name, game_modes.name, platforms.name,
                    player_perspectives.name, involved_companies,
                    {IGDB_RELATIONSHIP_QUERY_FIELDS};
@@ -565,7 +605,8 @@ def retrieve_and_save_game(game_name, full_disk_path, scan_job_id=None, library_
                 # Use smart image processing
                 cover_data = response_json[0].get('cover', {}).get('id') if response_json[0].get('cover') else None
                 screenshots_data = [s['id'] for s in response_json[0].get('screenshots', [])]
-                smart_process_images_for_game(new_game.uuid, cover_data, screenshots_data)
+                artworks_data = [a['id'] for a in response_json[0].get('artworks', [])]
+                smart_process_images_for_game(new_game.uuid, cover_data, screenshots_data, artworks_data)
 
                 if fetch_hltb:
                     # Fetch HLTB data if requested
@@ -691,7 +732,8 @@ def retrieve_and_save_game(game_name, full_disk_path, scan_job_id=None, library_
             # Use smart image processing that respects turbo/single-thread settings
             cover_data = response_json[0].get('cover') 
             screenshots_data = response_json[0].get('screenshots', [])
-            smart_process_images_for_game(new_game.uuid, cover_data, screenshots_data)
+            artworks_data = response_json[0].get('artworks', [])
+            smart_process_images_for_game(new_game.uuid, cover_data, screenshots_data, artworks_data)
             try:
                 new_game.nfo_content = nfo_content
                 for column in new_game.__table__.columns:
@@ -965,7 +1007,18 @@ def heal_image_download_url(image):
         return False
         
     try:
-        endpoint = 'https://api.igdb.com/v4/covers' if image.image_type == 'cover' else 'https://api.igdb.com/v4/screenshots'
+        endpoint = {
+            'cover': 'https://api.igdb.com/v4/covers',
+            'screenshot': 'https://api.igdb.com/v4/screenshots',
+            'artwork': 'https://api.igdb.com/v4/artworks',
+            'key_art': 'https://api.igdb.com/v4/artworks',
+            'key_art_logo': 'https://api.igdb.com/v4/artworks',
+            'game_logo_color': 'https://api.igdb.com/v4/artworks',
+            'game_logo_white': 'https://api.igdb.com/v4/artworks',
+            'game_logo_black': 'https://api.igdb.com/v4/artworks',
+        }.get(image.image_type)
+        if endpoint is None:
+            return False
         query = f'fields url; where id={image.igdb_image_id};'
         response = make_igdb_api_request(endpoint, query)
         
@@ -1009,9 +1062,8 @@ def download_pending_images(batch_size=10, delay_between_downloads=1, app=None):
                     save_path = os.path.join(app.config['IMAGE_SAVE_PATH'], image.url)
                     
                     from sharewarez.utils.functions import download_image
-                    download_image(image.download_url, save_path)
-                    
-                    # Mark as downloaded
+                    if not download_image(image.download_url, save_path):
+                        continue
                     image.is_downloaded = True
                     downloaded_count += 1
                     
@@ -1087,8 +1139,8 @@ def download_images_for_game(game_uuid, app=None):
                     save_path = os.path.join(app.config['IMAGE_SAVE_PATH'], image.url)
                     
                     from sharewarez.utils.functions import download_image
-                    download_image(image.download_url, save_path)
-                    
+                    if not download_image(image.download_url, save_path):
+                        continue
                     image.is_downloaded = True
                     downloaded_count += 1
                     
@@ -1119,7 +1171,8 @@ def download_single_image_worker(image, app):
         save_path = os.path.join(app.config['IMAGE_SAVE_PATH'], image.url)
         
         from sharewarez.utils.functions import download_image
-        download_image(image.download_url, save_path)
+        if not download_image(image.download_url, save_path):
+            return {'success': False, 'image_id': image.id, 'error': 'Download validation failed'}
         
         return {
             'success': True, 

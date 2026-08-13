@@ -334,6 +334,7 @@ class Image(db.Model):
     igdb_image_id = db.Column(db.String, nullable=True)  # IGDB image ID for reference
     download_url = db.Column(db.String, nullable=True)  # Full IGDB URL to download from
     is_downloaded = db.Column(db.Boolean, default=False, nullable=False)  # Download status
+    is_default = db.Column(db.Boolean, default=False, nullable=False, index=True)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
     def __repr__(self):
@@ -933,6 +934,9 @@ class Collection(db.Model):
     owner_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'), nullable=True, index=True)
     show_on_discover = db.Column(db.Boolean, nullable=False, default=False, index=True)
     is_featured = db.Column(db.Boolean, nullable=False, default=False, index=True)
+    featured_artwork_preference = db.Column(
+        db.String(20), nullable=False, default='with_logo'
+    )
     display_order = db.Column(db.Integer, nullable=False, default=0)
     is_smart = db.Column(db.Boolean, nullable=False, default=False, index=True)
     smart_rules = db.Column(JSONEncodedDict, nullable=True)

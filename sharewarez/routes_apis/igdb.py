@@ -78,7 +78,7 @@ def search_igdb_by_id():
     # Use the same field format as working scanning code
     query_params = f"""
         fields id, name, cover, summary, url, release_dates.date, platforms.name, genres.name, themes.name, game_modes.name,
-               screenshots, videos.video_id, first_release_date, aggregated_rating, involved_companies, player_perspectives.name,
+               screenshots, artworks, videos.video_id, first_release_date, aggregated_rating, involved_companies, player_perspectives.name,
                aggregated_rating_count, rating, rating_count, slug, status, category, total_rating, 
                total_rating_count, storyline, {IGDB_RELATIONSHIP_QUERY_FIELDS};
         where id = {igdb_id};
@@ -103,7 +103,7 @@ def search_igdb_by_name():
     if game_name:
         # Use the same field format as working scanning code  
         query_fields = f"""fields id, name, cover, summary, url, release_dates.date, platforms.name, genres.name, themes.name, game_modes.name,
-                          screenshots, videos.video_id, first_release_date, aggregated_rating, involved_companies, player_perspectives.name,
+                          screenshots, artworks, videos.video_id, first_release_date, aggregated_rating, involved_companies, player_perspectives.name,
                           aggregated_rating_count, rating, rating_count, slug, status, category, total_rating, 
                           total_rating_count, storyline, {IGDB_RELATIONSHIP_QUERY_FIELDS};"""
         

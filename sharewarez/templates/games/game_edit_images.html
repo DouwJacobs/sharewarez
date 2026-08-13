@@ -67,6 +67,42 @@
             {% endfor %}
         </div>
     </section>
+
+    <section class="glass-panel image-editor-gallery-card">
+        <div class="image-editor-card-header"><div><h2>Key art</h2><p>Select the preferred image within its style. The Featured collection still decides whether the hero uses art with or without a logo.</p></div></div>
+        <div class="image-editor-list image-editor-key-art-list" data-default-group="key-art">
+            {% for image in key_art %}
+                <figure class="image-editor-image{% if image.is_default %} is-default{% endif %}" id="image-{{ image.id }}" data-default-item>
+                    <img src="{{ url_for('static', filename='library/images/' + image.url) }}?v={{ image.id }}" alt="{{ 'Key art with logo' if image.image_type == 'key_art_logo' else 'Key art without logo' }}">
+                    <figcaption><span>{{ 'With logo' if image.image_type == 'key_art_logo' else 'Without logo' }}</span><span class="image-default-badge">Default</span></figcaption>
+                    <div class="image-editor-actions">
+                        <button class="btn btn-sm image-default-button" type="button" onclick="setDefaultImage({{ image.id }}, 'key-art')"{% if image.is_default %} disabled{% endif %}><i class="fas fa-star"></i> <span>{{ 'Default' if image.is_default else 'Set default' }}</span></button>
+                        <button class="image-delete-button image-delete-inline" type="button" onclick="deleteImage({{ image.id }})" aria-label="Delete key art" title="Delete key art"><i class="fas fa-trash"></i></button>
+                    </div>
+                </figure>
+            {% else %}
+                <p class="image-editor-empty">No key art is available. Refresh the game images to check IGDB again.</p>
+            {% endfor %}
+        </div>
+    </section>
+
+    <section class="glass-panel image-editor-gallery-card">
+        <div class="image-editor-card-header"><div><h2>Logos</h2><p>Select the standalone logo displayed over the hero when available.</p></div></div>
+        <div class="image-editor-list image-editor-logo-list" data-default-group="logo">
+            {% for image in logos %}
+                <figure class="image-editor-image image-editor-logo{% if image.is_default %} is-default{% endif %}" id="image-{{ image.id }}" data-default-item>
+                    <img src="{{ url_for('static', filename='library/images/' + image.url) }}?v={{ image.id }}" alt="Game logo {{ image.image_type.rsplit('_', 1)[-1] }}">
+                    <figcaption><span>{{ image.image_type.rsplit('_', 1)[-1]|capitalize }}</span><span class="image-default-badge">Default</span></figcaption>
+                    <div class="image-editor-actions">
+                        <button class="btn btn-sm image-default-button" type="button" onclick="setDefaultImage({{ image.id }}, 'logo')"{% if image.is_default %} disabled{% endif %}><i class="fas fa-star"></i> <span>{{ 'Default' if image.is_default else 'Set default' }}</span></button>
+                        <button class="image-delete-button image-delete-inline" type="button" onclick="deleteImage({{ image.id }})" aria-label="Delete game logo" title="Delete game logo"><i class="fas fa-trash"></i></button>
+                    </div>
+                </figure>
+            {% else %}
+                <p class="image-editor-empty">No standalone logos are available. Refresh the game images to check IGDB again.</p>
+            {% endfor %}
+        </div>
+    </section>
 </main>
 
 <script>var gameUuid = "{{ game.uuid }}";</script>

@@ -8,6 +8,13 @@ The synchronizer compares file contents and writes only new or changed assets.
 This prevents Uvicorn's watcher from repeatedly reloading on unchanged copied
 files and interrupting application startup during development.
 
+## Packaged theme refreshes
+
+Every container startup merges the default theme and other themes bundled with
+the current image into the persistent `static/library/themes` directory. A
+newly pulled image therefore updates its packaged theme assets without enabling
+`DEV_MODE`. Separately installed user theme directories are left untouched.
+
 ## Health endpoints
 
 - `GET /health/live` confirms the web process can serve requests. It does not

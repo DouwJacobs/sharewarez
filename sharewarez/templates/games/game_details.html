@@ -237,7 +237,7 @@
 
 {% if game %}
     {% set cover_images = game.images | selectattr('type', 'equalto', 'cover') | list %}
-    {% set screenshot_images = game.images | rejectattr('type', 'equalto', 'cover') | list %}
+    {% set screenshot_images = game.images | selectattr('type', 'equalto', 'screenshot') | list %}
     <main class="app-page app-page--wide game-details-page">
     <article class="glass-panel-gamecard game-storefront">
             {# NFO Modal #}

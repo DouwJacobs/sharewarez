@@ -33,6 +33,13 @@
                     {{ form.description.label(class="form-label") }}
                     {{ form.description(class="form-control", rows="4", placeholder="Tell users what ties these games together") }}
                 </div>
+                {% if collection and collection.is_featured %}
+                <div class="collection-field">
+                    {{ form.featured_artwork_preference.label(class="form-label") }}
+                    {{ form.featured_artwork_preference(class="form-control") }}
+                    <small>Choose which IGDB key-art background the Discover hero tries first. This does not control whether the game title is displayed.</small>
+                </div>
+                {% endif %}
                 {% if not (collection and collection.is_featured) %}
                 <div class="collection-field">
                     {{ form.parent_id.label(class="form-label") }}
@@ -60,9 +67,10 @@
                     {{ form.display_order(class="form-control", min="0", max="9999") }}
                     <small>Lower numbers appear first.</small>
                 </div>
+                {% endif %}
                 <label class="collection-switch">
                     {{ form.is_smart() }}
-                    <span><strong>Smart collection</strong><small>Populate this collection automatically from validated library rules.</small></span>
+                    <span><strong>Smart collection</strong><small>{% if collection and collection.is_featured %}Choose the Featured Games automatically from validated library rules.{% else %}Populate this collection automatically from validated library rules.{% endif %}</small></span>
                 </label>
                 <div class="collection-field">
                     {{ form.smart_rules.label(class="form-label") }}
@@ -139,8 +147,8 @@
                 <div class="collection-field">
                     {{ form.smart_limit.label(class="form-label") }}
                     {{ form.smart_limit(class="form-control", min="1", max="200") }}
+                    {% if collection and collection.is_featured %}<small>The Discover carousel displays at most eight matching games.</small>{% endif %}
                 </div>
-                {% endif %}
             </section>
 
             <section class="collection-game-picker" aria-labelledby="collectionGamesHeading">

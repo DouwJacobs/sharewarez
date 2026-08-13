@@ -352,7 +352,7 @@ def refresh_images_in_background(game_uuid):
             print(f"[IMAGE REFRESH] Fetching image IDs from IGDB API for IGDB ID: {game.igdb_id}")
             response_json = make_igdb_api_request(
                 current_app.config['IGDB_API_ENDPOINT'],
-                f"fields id, cover, screenshots; where id = {game.igdb_id}; limit 1;"
+                f"fields id, cover, screenshots, artworks; where id = {game.igdb_id}; limit 1;"
             )
             print(f"[IMAGE REFRESH] IGDB API response: {response_json}")
 
@@ -363,9 +363,36 @@ def refresh_images_in_background(game_uuid):
 
             cache.set(f'image_refresh_progress_{game_uuid}', {'status': 'in_progress', 'progress': 40}, timeout=300)
 
-            # Delete existing image records and files for this game
-            print(f"[IMAGE REFRESH] Deleting existing images for game UUID: {game_uuid}")
-            delete_game_images(game_uuid)
+            # Merge refreshed media into the existing set. Do not delete valid
+            # local images before every replacement has been classified and
+            # downloaded: a partial IGDB response must not erase logos/key art.
+            existing_images = db.session.execute(
+                select(Image).filter_by(game_uuid=game_uuid)
+            ).scalars().all()
+            existing_by_igdb_id = {}
+            for existing_image in existing_images:
+                existing_by_igdb_id.setdefault(
+                    str(existing_image.igdb_image_id), []
+                ).append(existing_image)
+
+            def queue_if_missing(image_data, image_type):
+                image_id = image_data.get('id') if isinstance(image_data, dict) else image_data
+                if image_id is None:
+                    return
+                existing = existing_by_igdb_id.get(str(image_id), [])
+                # Legacy generic artwork should be queried once more so it can
+                # be reclassified as key art or a standalone game logo.
+                if existing and not (
+                    image_type == 'artwork'
+                    and all(image.image_type == 'artwork' for image in existing)
+                ):
+                    for image in existing:
+                        image.is_downloaded = False
+                        image.created_at = datetime.now(timezone.utc)
+                    return
+                store_image_url_for_download(game.uuid, image_data, image_type=image_type)
+                existing_by_igdb_id.setdefault(str(image_id), []).append(None)
+
             cache.set(f'image_refresh_progress_{game_uuid}', {'status': 'in_progress', 'progress': 60}, timeout=300)
 
             # Queue images into DB as pending so they appear in admin image queue
@@ -374,13 +401,28 @@ def refresh_images_in_background(game_uuid):
                 if isinstance(cover_id, dict):
                     cover_id = cover_id.get('id')
                 print(f"[IMAGE REFRESH] Queuing cover ID: {cover_id}")
-                store_image_url_for_download(game.uuid, cover_id, image_type='cover')
+                queue_if_missing(cover_id, 'cover')
 
             screenshots_data = response_json[0].get('screenshots', [])
             print(f"[IMAGE REFRESH] Queuing {len(screenshots_data)} screenshots.")
             for screenshot in screenshots_data:
                 screenshot_id = screenshot.get('id') if isinstance(screenshot, dict) else screenshot
-                store_image_url_for_download(game.uuid, screenshot_id, image_type='screenshot')
+                queue_if_missing(screenshot_id, 'screenshot')
+
+            artworks_data = response_json[0].get('artworks', [])
+            # Fetch the media collection directly as well. This is the source
+            # behind IGDB's separate Logos section and is more reliable than
+            # depending solely on the nested games.artworks relationship.
+            direct_artworks = make_igdb_api_request(
+                'https://api.igdb.com/v4/artworks',
+                f'fields id, url, image_type.name, artwork_type.name; '
+                f'where game = {game.igdb_id}; limit 500;',
+            )
+            if direct_artworks and 'error' not in direct_artworks:
+                artworks_data = direct_artworks
+            print(f"[IMAGE REFRESH] Queuing {len(artworks_data)} artworks.")
+            for artwork in artworks_data:
+                queue_if_missing(artwork, 'artwork')
 
             # Commit so records appear in queue as pending
             db.session.commit()
@@ -397,9 +439,11 @@ def refresh_images_in_background(game_uuid):
                 if img.download_url:
                     try:
                         save_path = os.path.join(current_app.config['IMAGE_SAVE_PATH'], img.url)
-                        _download_image(img.download_url, save_path)
-                        img.is_downloaded = True
-                        print(f"[IMAGE REFRESH] Downloaded {img.image_type}: {img.url}")
+                        if _download_image(img.download_url, save_path):
+                            img.is_downloaded = True
+                            print(f"[IMAGE REFRESH] Downloaded {img.image_type}: {img.url}")
+                        else:
+                            print(f"[IMAGE REFRESH] Validation failed for {img.url}")
                     except Exception as dl_err:
                         print(f"[IMAGE REFRESH] Failed to download {img.url}: {dl_err}")
                 if total_pending > 0:

@@ -285,6 +285,76 @@ class TestImageProcessingFunctions:
         assert images[0].image_type == 'screenshot'
         assert images[0].igdb_image_id == '11111'
         assert images[0].download_url == 'https://images.igdb.com/igdb/image/upload/t_original/screenshot.jpg'
+
+    @patch('sharewarez.utils.game_core.make_igdb_api_request')
+    def test_store_key_art_url_for_download(self, mock_api, db_session, sample_game, sample_global_settings):
+        mock_api.return_value = [{
+            'url': '//images.igdb.com/igdb/image/upload/t_thumb/key-art.jpg',
+            'image_type': {'name': 'Key art without logo'},
+        }]
+
+        store_image_url_for_download(sample_game.uuid, 22222, 'artwork')
+
+        image = db_session.query(Image).filter_by(game_uuid=sample_game.uuid).one()
+        assert image.image_type == 'key_art'
+        assert image.igdb_image_id == '22222'
+        assert image.download_url.endswith('/t_original/key-art.jpg')
+
+    @patch('sharewarez.utils.game_core.db.session.add')
+    @patch('sharewarez.utils.game_core.make_igdb_api_request')
+    def test_store_image_skips_generic_artwork(self, mock_api, mock_add):
+        mock_api.return_value = [{
+            'url': '//images.igdb.com/igdb/image/upload/t_thumb/artwork.jpg',
+            'image_type': {'name': 'Artwork'},
+        }]
+
+        store_image_url_for_download('game-uuid', 33333, 'artwork')
+
+        mock_add.assert_not_called()
+
+    @patch('sharewarez.utils.game_core.db.session.add')
+    @patch('sharewarez.utils.game_core.make_igdb_api_request')
+    def test_store_color_game_logo(self, mock_api, mock_add):
+        mock_api.return_value = [{
+            'url': '//images.igdb.com/igdb/image/upload/t_thumb/logo.png',
+            'image_type': {'name': 'Game logo (color)'},
+        }]
+
+        store_image_url_for_download('game-uuid', 44444, 'artwork')
+
+        image = mock_add.call_args.args[0]
+        assert image.image_type == 'game_logo_color'
+        assert image.igdb_image_id == '44444'
+        assert image.download_url.endswith('/t_original/logo.png')
+
+    @patch('sharewarez.utils.game_core.db.session.add')
+    @patch('sharewarez.utils.game_core.make_igdb_api_request')
+    def test_store_color_game_logo_from_bulk_artwork(self, mock_api, mock_add):
+        store_image_url_for_download('game-uuid', {
+            'id': 55555,
+            'url': '//images.igdb.com/igdb/image/upload/t_thumb/bulk-logo.png',
+            'image_type': {'name': 'Game logo (color)'},
+        }, 'artwork')
+
+        mock_api.assert_not_called()
+        image = mock_add.call_args.args[0]
+        assert image.image_type == 'game_logo_color'
+        assert image.igdb_image_id == '55555'
+        assert image.download_url.endswith('/t_original/bulk-logo.png')
+
+    @patch('sharewarez.utils.game_core.db.session.add')
+    @patch('sharewarez.utils.game_core.make_igdb_api_request')
+    def test_store_logo_uses_legacy_artwork_type_fallback(self, mock_api, mock_add):
+        store_image_url_for_download('game-uuid', {
+            'id': 286736,
+            'url': '//images.igdb.com/igdb/image/upload/t_thumb/ar658w.jpg',
+            'artwork_type': {'name': 'Game logo (white)'},
+        }, 'artwork')
+
+        mock_api.assert_not_called()
+        image = mock_add.call_args.args[0]
+        assert image.image_type == 'game_logo_white'
+        assert image.igdb_image_id == '286736'
     
     @patch('sharewarez.utils.game_core.make_igdb_api_request')
     def test_store_image_url_for_download_api_failure(self, mock_api, db_session, sample_game, sample_global_settings):
@@ -309,10 +379,17 @@ class TestImageProcessingFunctions:
         mock_download_turbo.return_value = 3
         
         with app.app_context():
-            result = smart_process_images_for_game(sample_game.uuid, cover_data=98765, screenshots_data=[11111, 22222], app=app)
+            result = smart_process_images_for_game(
+                sample_game.uuid,
+                cover_data=98765,
+                screenshots_data=[11111, 22222],
+                artworks_data=[33333],
+                app=app,
+            )
         
         # Should store images and download them
-        assert mock_store_image.call_count == 3
+        assert mock_store_image.call_count == 4
+        mock_store_image.assert_any_call(sample_game.uuid, 33333, 'artwork')
         # Check which download method was called based on mode
         if mock_download.called:
             mock_download.assert_called_once_with(sample_game.uuid, app)

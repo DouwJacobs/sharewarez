@@ -391,39 +391,24 @@ class InitializationManager:
         print("✅ Added Featured Games collection")
 
     def _setup_default_theme(self, themes_path, dev_mode):
-        """Setup default theme files with DEV_MODE support."""
+        """Refresh the default theme shipped with the current application image."""
         default_theme_target = os.path.join(themes_path, 'default')
-        theme_json_path = os.path.join(default_theme_target, 'theme.json')
-        theme_exists = os.path.exists(theme_json_path)
+        default_theme_source = os.path.join('sharewarez', 'setup', 'default_theme')
 
-        should_copy_theme = not theme_exists or dev_mode
+        if not os.path.exists(default_theme_source):
+            print("⚠️  Theme source not found")
+            return
 
-        if should_copy_theme:
-            default_theme_source = os.path.join('sharewarez', 'setup', 'default_theme')
-
-            if os.path.exists(default_theme_source):
-                try:
-                    # Create themes directory
-                    os.makedirs(themes_path, exist_ok=True)
-
-                    # Remove existing theme in dev mode
-                    if dev_mode and os.path.exists(default_theme_target):
-                        shutil.rmtree(default_theme_target)
-
-                    # Copy theme files
-                    shutil.copytree(default_theme_source, default_theme_target, dirs_exist_ok=True)
-
-                    if dev_mode:
-                        print("🔄 DEV_MODE: Theme files refreshed")
-                    else:
-                        print("✅ Default theme installed")
-
-                except Exception as e:
-                    print(f"❌ Theme setup failed: {e}")
-            else:
-                print("⚠️  Theme source not found")
-        else:
-            print("ℹ️  Theme already exists")
+        try:
+            os.makedirs(themes_path, exist_ok=True)
+            if dev_mode and os.path.exists(default_theme_target):
+                shutil.rmtree(default_theme_target)
+            # The target normally lives on a persistent Docker volume. Always
+            # merge the image's packaged files so an image upgrade takes effect.
+            shutil.copytree(default_theme_source, default_theme_target, dirs_exist_ok=True)
+            print("🔄 Default theme files refreshed")
+        except Exception as e:
+            print(f"❌ Theme setup failed: {e}")
 
     def _setup_bundled_themes(self, themes_path, dev_mode):
         """Install the additional themes shipped with the application."""
@@ -438,9 +423,10 @@ class InitializationManager:
                 continue
             if dev_mode and os.path.exists(target):
                 shutil.rmtree(target)
-            if dev_mode or not os.path.exists(os.path.join(target, 'theme.json')):
-                shutil.copytree(source, target, dirs_exist_ok=True)
-                print(f"✅ Bundled theme installed: {theme_name}")
+            # Bundled themes are application assets, so refresh them from every
+            # image while preserving unrelated user-installed theme folders.
+            shutil.copytree(source, target, dirs_exist_ok=True)
+            print(f"✅ Bundled theme refreshed: {theme_name}")
 
     def _cleanup_orphaned_scan_jobs(self, session):
         """Clean up scan jobs left in 'Running' or 'Stopping' state after server restart."""

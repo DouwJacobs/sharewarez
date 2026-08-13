@@ -1,7 +1,9 @@
 from uuid import uuid4
 
+from flask import Flask
 from sqlalchemy import select
 
+from sharewarez.forms import CollectionForm
 from sharewarez.models import Collection, CollectionGame, Game, Library
 from sharewarez.platform import LibraryPlatform
 
@@ -21,6 +23,31 @@ def test_featured_collection_is_seeded_once(app, db_session):
     assert len(featured) == 1
     assert featured[0].slug == 'featured-games'
     assert featured[0].show_on_discover is False
+
+
+def test_featured_collection_hidden_parent_is_a_valid_choice():
+    app = Flask(__name__)
+    app.config['SECRET_KEY'] = 'test-only'
+    featured = Collection(
+        name='Featured Games',
+        slug='featured-games',
+        is_featured=True,
+        parent_id=None,
+    )
+    with app.test_request_context(method='POST', data={
+        'name': 'Featured Games',
+        'description': 'Discover spotlight',
+        'game_order': '',
+        'featured_artwork_preference': 'without_logo',
+        'smart_sort': 'rating',
+        'smart_sort_order': 'desc',
+    }):
+        form = CollectionForm(obj=featured, meta={'csrf': False})
+        form.parent_id.choices = [(0, 'No group')]
+        form.parent_id.data = 0
+        form.visibility.data = featured.visibility or 'shared'
+
+        assert form.validate(), form.errors
 
 
 def test_collection_preserves_curated_game_order(db_session):

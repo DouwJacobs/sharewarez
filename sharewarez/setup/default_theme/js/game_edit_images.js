@@ -208,6 +208,32 @@ function deleteImage(imageId) {
     });
 }
 
+function setDefaultImage(imageId, group) {
+    fetch(`/set_default_game_image/${gameUuid}`, {
+        method: 'POST',
+        headers: CSRFUtils.getHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ image_id: imageId }),
+    })
+    .then(response => response.json().then(data => {
+        if (!response.ok) throw new Error(data.error || 'Could not update the default image');
+        return data;
+    }))
+    .then(() => {
+        const gallery = document.querySelector(`[data-default-group="${group}"]`);
+        gallery.querySelectorAll('[data-default-item]').forEach(item => {
+            const selected = item.id === `image-${imageId}`;
+            item.classList.toggle('is-default', selected);
+            const button = item.querySelector('.image-default-button');
+            button.disabled = selected;
+            button.querySelector('span').textContent = selected ? 'Default' : 'Set default';
+        });
+    })
+    .catch(error => {
+        document.getElementById('errorModalMessage').textContent = error.message;
+        new bootstrap.Modal(document.getElementById('errorModal')).show();
+    });
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     
     var gameUuid = document.getElementById('upload-area').getAttribute('data-game-uuid');

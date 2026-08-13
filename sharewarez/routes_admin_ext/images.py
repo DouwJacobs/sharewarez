@@ -24,7 +24,7 @@ def image_queue_list():
     page = request.args.get('page', 1, type=int)
     per_page = request.args.get('per_page', 20, type=int)
     status_filter = request.args.get('status', 'all')  # all, pending, downloaded
-    type_filter = request.args.get('type', 'all')  # all, cover, screenshot
+    type_filter = request.args.get('type', 'all')
     
     query = select(Image).join(Game)
     
@@ -89,9 +89,9 @@ def download_images():
                         import os
                         from sharewarez.utils.functions import download_image
                         save_path = os.path.join(current_app.config['IMAGE_SAVE_PATH'], image.url)
-                        download_image(image.download_url, save_path)
-                        image.is_downloaded = True
-                        downloaded += 1
+                        if download_image(image.download_url, save_path):
+                            image.is_downloaded = True
+                            downloaded += 1
                     except Exception as e:
                         print(f"Failed to download image {image_id}: {e}")
 

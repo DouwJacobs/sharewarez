@@ -39,12 +39,14 @@ def discover():
     # Get visible sections in correct order
     visible_sections = db.session.execute(select(DiscoverySection).filter_by(is_visible=True).order_by(DiscoverySection.display_order)).scalars().all()
     
-    def image_url(path):
+    def image_url(path, version=None):
         if not path:
             return url_for('static', filename='newstyle/default_cover.jpg')
         if path.startswith(('http://', 'https://', '//', '/')):
-            return path
-        return url_for('static', filename=f'library/images/{path}')
+            resolved = path
+        else:
+            resolved = url_for('static', filename=f'library/images/{path}')
+        return f'{resolved}?v={version}' if version is not None else resolved
 
     def fetch_game_details(games_statement, limit=10):
         """Fetch a bounded section without per-game relationship queries."""
@@ -209,17 +211,39 @@ def discover():
 
     curated_covers = {}
     curated_screenshots = {}
+    curated_key_art = {}
+    curated_key_art_logo = {}
+    curated_default_key_art = {}
+    curated_default_logo = {}
+    curated_logos = {
+        'game_logo_color': {},
+        'game_logo_white': {},
+        'game_logo_black': {},
+    }
     if seen_curated_uuids:
-        for game_uuid, image_type, url in db.session.execute(
-            select(Image.game_uuid, Image.image_type, Image.url)
+        for game_uuid, image_type, url, image_id, is_default in db.session.execute(
+            select(Image.game_uuid, Image.image_type, Image.url, Image.id, Image.is_default)
             .where(
                 Image.game_uuid.in_(seen_curated_uuids),
-                Image.image_type.in_(('cover', 'screenshot')),
+                Image.image_type.in_((
+                    'cover', 'screenshot', 'key_art', 'key_art_logo',
+                    'game_logo_color', 'game_logo_white', 'game_logo_black',
+                )),
             )
             .order_by(Image.id)
         ).all():
-            target = curated_covers if image_type == 'cover' else curated_screenshots
-            target.setdefault(game_uuid, url)
+            target = {
+                'cover': curated_covers,
+                'screenshot': curated_screenshots,
+                'key_art': curated_key_art,
+                'key_art_logo': curated_key_art_logo,
+                **curated_logos,
+            }[image_type]
+            target.setdefault(game_uuid, (url, image_id))
+            if is_default and image_type in ('key_art', 'key_art_logo'):
+                curated_default_key_art[game_uuid] = (image_type, url, image_id)
+            elif is_default and image_type in curated_logos:
+                curated_default_logo[game_uuid] = (url, image_id)
 
     curated_details = {}
     for game in curated_games:
@@ -227,7 +251,7 @@ def discover():
             'id': game.id,
             'uuid': game.uuid,
             'name': game.name,
-            'cover_url': image_url(curated_covers.get(game.uuid)),
+            'cover_url': image_url(*(curated_covers.get(game.uuid) or (None, None))),
             'summary': game.summary,
             'url': game.url,
             'size': format_size(game.size),
@@ -239,17 +263,54 @@ def discover():
 
     collection_rows = []
     featured_games = []
+    featured_artwork_preference = 'with_logo'
     for collection in curated_collections:
         games = [curated_details[game.uuid] for game in collection_games[collection.id] if game.uuid in curated_details]
         if collection.is_featured:
             featured_games = games[:8]
+            featured_artwork_preference = collection.featured_artwork_preference
         elif collection.show_on_discover and games:
             collection_rows.append({'name': collection.name, 'slug': collection.slug, 'description': collection.description, 'artwork_url': collection.artwork_url, 'group_name': collection.parent.name if collection.parent else None, 'games': games})
 
     if not featured_games and featured_candidates:
         featured_games = [featured_candidates[0]]
     for game in featured_games:
-        game['backdrop_url'] = image_url(curated_screenshots.get(game['uuid']) or game['cover_url'])
+        preferred_key_art_type = (
+            'key_art' if featured_artwork_preference == 'without_logo'
+            else 'key_art_logo'
+        )
+        default_key_art = curated_default_key_art.get(game['uuid'])
+        matching_default_key_art = (
+            default_key_art[1:]
+            if default_key_art and default_key_art[0] == preferred_key_art_type
+            else None
+        )
+        preferred_key_art = (
+            curated_key_art.get(game['uuid'])
+            if featured_artwork_preference == 'without_logo'
+            else curated_key_art_logo.get(game['uuid'])
+        )
+        fallback_key_art = (
+            curated_key_art_logo.get(game['uuid'])
+            if featured_artwork_preference == 'without_logo'
+            else curated_key_art.get(game['uuid'])
+        )
+        backdrop = (
+            matching_default_key_art
+            or preferred_key_art
+            or fallback_key_art
+            or curated_screenshots.get(game['uuid'])
+        )
+        game['backdrop_url'] = (
+            image_url(*backdrop) if backdrop else game['cover_url']
+        )
+        logo = (
+            curated_default_logo.get(game['uuid'])
+            or curated_logos['game_logo_color'].get(game['uuid'])
+            or curated_logos['game_logo_white'].get(game['uuid'])
+            or curated_logos['game_logo_black'].get(game['uuid'])
+        )
+        game['logo_url'] = image_url(*logo) if logo else None
 
     return render_template('games/discover.html',
                            visible_sections=visible_sections,

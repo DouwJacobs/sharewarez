@@ -2,6 +2,7 @@ import pytest
 import os
 import tempfile
 import shutil
+from io import BytesIO
 from unittest.mock import patch, MagicMock, mock_open, call
 from PIL import Image as PILImage
 import requests
@@ -375,87 +376,60 @@ class TestReadFirstNfoContent:
 
 
 class TestDownloadImage:
-    """Test cases for download_image function."""
-    
-    @patch('sharewarez.utils.functions.requests')
-    @patch('os.makedirs')
-    @patch('os.path.exists')
-    @patch('os.access')
-    def test_download_image_success(self, mock_access, mock_exists, mock_makedirs, mock_requests):
-        """Test successful image download."""
-        # Mock successful HTTP response
-        mock_response = MagicMock()
-        mock_response.status_code = 200
-        mock_response.content = b'fake_image_data'
-        mock_requests.get.return_value = mock_response
-        
-        # Mock directory operations
-        mock_exists.return_value = True
-        mock_access.return_value = True
-        
-        with patch('builtins.open', mock_open()) as mock_file:
-            download_image('//example.com/image.jpg', '/path/to/save/image.jpg')
-            
-            # Verify URL was corrected to HTTPS
-            mock_requests.get.assert_called_once_with('https://example.com/image.jpg')
-            
-            # Verify file was written
-            mock_file.assert_called_once_with('/path/to/save/image.jpg', 'wb')
-            mock_file().write.assert_called_once_with(b'fake_image_data')
-    
-    @patch('sharewarez.utils.functions.requests')
-    def test_download_image_url_transformation(self, mock_requests):
-        """Test URL transformation from thumb to original."""
-        mock_response = MagicMock()
-        mock_response.status_code = 200
-        mock_response.content = b'fake_image_data'
-        mock_requests.get.return_value = mock_response
-        
-        with patch('os.path.exists', return_value=True):
-            with patch('os.access', return_value=True):
-                with patch('builtins.open', mock_open()):
-                    # Test thumb URL transformation
-                    download_image('https://example.com/t_thumb/image.jpg', '/path/image.jpg')
-                    mock_requests.get.assert_called_with('https://example.com/t_original/image.jpg')
-    
-    @patch('sharewarez.utils.functions.requests')
-    def test_download_image_http_error(self, mock_requests):
-        """Test download_image with HTTP error."""
-        mock_response = MagicMock()
-        mock_response.status_code = 404
-        mock_requests.get.return_value = mock_response
-        
-        with patch('builtins.print') as mock_print:
-            download_image('https://example.com/image.jpg', '/path/image.jpg')
-            mock_print.assert_called_with("Failed to download the image. Status Code: 404")
-    
-    @patch('sharewarez.utils.functions.requests')
-    @patch('os.makedirs')
-    @patch('os.path.exists')
-    def test_download_image_create_directory(self, mock_exists, mock_makedirs, mock_requests):
-        """Test download_image creates directory when it doesn't exist."""
-        mock_response = MagicMock()
-        mock_response.status_code = 200
-        mock_response.content = b'fake_image_data'
-        mock_requests.get.return_value = mock_response
-        
-        # Directory doesn't exist initially
-        mock_exists.return_value = False
-        
-        with patch('os.access', return_value=True):
-            with patch('builtins.open', mock_open()):
-                with patch('builtins.print'):
-                    download_image('https://example.com/image.jpg', '/new/path/image.jpg')
-                    mock_makedirs.assert_called_once_with('/new/path', exist_ok=True)
-    
-    @patch('requests.get')
-    def test_download_image_request_exception(self, mock_get):
-        """Test download_image handles request exceptions."""
-        mock_get.side_effect = requests.exceptions.ConnectionError("Network error")
-        
-        with patch('builtins.print') as mock_print:
-            download_image('https://example.com/image.jpg', '/path/image.jpg')
-            mock_print.assert_called()
+    """Test cases for verified, atomic image downloads."""
+
+    @staticmethod
+    def png_bytes():
+        buffer = BytesIO()
+        PILImage.new('RGB', (1, 1), 'white').save(buffer, format='PNG')
+        return buffer.getvalue()
+
+    @staticmethod
+    def response(content_type='image/png'):
+        response = MagicMock(status_code=200)
+        response.headers = {'Content-Type': content_type}
+        response.iter_content.return_value = [TestDownloadImage.png_bytes()]
+        return response
+
+    @patch('sharewarez.utils.functions.requests.get')
+    def test_download_image_success_is_atomic(self, mock_get, tmp_path):
+        mock_get.return_value = self.response()
+        destination = tmp_path / 'images' / 'image.jpg'
+
+        assert download_image('//example.com/image.jpg', str(destination)) is True
+
+        mock_get.assert_called_once_with(
+            'https://example.com/image.jpg', stream=True, timeout=(5, 30)
+        )
+        assert destination.read_bytes() == self.png_bytes()
+        assert not list(destination.parent.glob('.image-*.tmp'))
+
+    @patch('sharewarez.utils.functions.requests.get')
+    def test_download_image_url_transformation(self, mock_get, tmp_path):
+        mock_get.return_value = self.response()
+
+        assert download_image(
+            'https://example.com/t_thumb/image.jpg', str(tmp_path / 'image.jpg')
+        ) is True
+        assert mock_get.call_args.args[0] == 'https://example.com/t_original/image.jpg'
+
+    @patch('sharewarez.utils.functions.requests.get')
+    def test_download_image_rejects_http_error(self, mock_get, tmp_path):
+        mock_get.return_value = MagicMock(status_code=404)
+        assert download_image('https://example.com/image.jpg', str(tmp_path / 'image.jpg')) is False
+
+    @patch('sharewarez.utils.functions.requests.get')
+    def test_download_image_rejects_non_image_content(self, mock_get, tmp_path):
+        mock_get.return_value = self.response('text/html')
+        destination = tmp_path / 'image.jpg'
+
+        assert download_image('https://example.com/image.jpg', str(destination)) is False
+        assert not destination.exists()
+
+    @patch('sharewarez.utils.functions.requests.get')
+    def test_download_image_request_exception(self, mock_get, tmp_path):
+        mock_get.side_effect = requests.exceptions.ConnectionError('Network error')
+        assert download_image('https://example.com/image.jpg', str(tmp_path / 'image.jpg')) is False
 
 
 class TestCommaSeparatedUrls:

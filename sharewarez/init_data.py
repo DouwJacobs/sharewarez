@@ -64,29 +64,20 @@ def initialize_library_folders():
     images_path = os.path.join(library_path, 'images')
     zips_path = os.path.join(library_path, 'zips')
     
-    # Check if default theme exists
+    # Packaged themes can be masked by the persistent static volume. Merge the
+    # files from the current image every time setup runs so upgrades take effect.
     default_theme_target = os.path.join(themes_path, 'default')
-    if not os.path.exists(os.path.join(default_theme_target, 'theme.json')):
-        print(f"Default theme not found at {os.path.join(default_theme_target, 'theme.json')}")
-        log_system_event(f"Default theme not found at {os.path.join(default_theme_target, 'theme.json')}", event_type='startup', event_level='warning', audit_user='system')
-        # Copy default theme from source directory
-        default_theme_source = os.path.join('sharewarez', 'setup', 'default_theme')
-        if os.path.exists(default_theme_source):
-            try:
-                # Create themes directory if it doesn't exist
-                os.makedirs(themes_path, exist_ok=True)
-                # Copy the entire default theme directory
-                shutil.copytree(default_theme_source, default_theme_target)
-                print("Default theme copied successfully")
-                log_system_event("Default theme copied successfully from source directory", event_type='startup', event_level='info', audit_user='system')
-            except Exception as e:
-                print(f"Error copying default theme: {str(e)}")
-                log_system_event(f"Error copying default theme: {str(e)}", event_type='startup', event_level='error', audit_user='system')
-        else:
-            print("Warning: default theme source not found in sharewarez/setup/default_theme")
-            log_system_event("Warning: default theme source not found in sharewarez/setup/default_theme", event_type='startup', event_level='warning', audit_user='system')
+    default_theme_source = os.path.join('sharewarez', 'setup', 'default_theme')
+    if os.path.exists(default_theme_source):
+        try:
+            os.makedirs(themes_path, exist_ok=True)
+            shutil.copytree(default_theme_source, default_theme_target, dirs_exist_ok=True)
+            print("Default theme refreshed successfully")
+        except Exception as e:
+            print(f"Error copying default theme: {str(e)}")
+            log_system_event(f"Error copying default theme: {str(e)}", event_type='startup', event_level='error', audit_user='system')
     else:
-        print("Default theme found, skipping copy")
+        print("Warning: default theme source not found in sharewarez/setup/default_theme")
 
     bundled_theme_source = os.path.join('sharewarez', 'setup', 'bundled_themes')
     if os.path.isdir(bundled_theme_source):
@@ -94,9 +85,9 @@ def initialize_library_folders():
         for theme_name in sorted(os.listdir(bundled_theme_source)):
             source = os.path.join(bundled_theme_source, theme_name)
             target = os.path.join(themes_path, theme_name)
-            if os.path.isdir(source) and not os.path.exists(os.path.join(target, 'theme.json')):
-                shutil.copytree(source, target)
-                print(f"Bundled theme copied successfully: {theme_name}")
+            if os.path.isdir(source):
+                shutil.copytree(source, target, dirs_exist_ok=True)
+                print(f"Bundled theme refreshed successfully: {theme_name}")
     # Create images folder if it doesn't exist
     if not os.path.exists(images_path):
         os.makedirs(images_path)

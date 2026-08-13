@@ -495,14 +495,22 @@ class TestProcessGameExtras:
 class TestRefreshImagesInBackground:
     """Test the refresh_images_in_background function."""
     
-    @patch('sharewarez.utils.scanning.delete_game_images')
     @patch('sharewarez.utils.game_core.store_image_url_for_download')
     @patch('sharewarez.utils.scanning.make_igdb_api_request')
-    def test_refresh_images_in_background_success(self, mock_api, mock_store_image, mock_delete_images,
-                                                app, db_session, sample_game, mock_igdb_response):
+    def test_refresh_images_in_background_success(self, mock_api, mock_store_image,
+                                                  app, db_session, sample_game, mock_igdb_response):
         """Test successful image refresh."""
-        mock_api.return_value = mock_igdb_response
-        
+        mock_api.side_effect = [mock_igdb_response, []]
+
+        existing_logo = Image(
+            game_uuid=sample_game.uuid,
+            url='existing-logo.jpg',
+            image_type='game_logo_color',
+            igdb_image_id='99999',
+            is_downloaded=True,
+        )
+        db_session.add(existing_logo)
+
         # Commit the game to database so it's visible in other sessions
         db_session.commit()
         
@@ -511,8 +519,8 @@ class TestRefreshImagesInBackground:
         
         refresh_images_in_background(sample_game.uuid)
         
-        mock_delete_images.assert_called_once_with(sample_game.uuid)
-        mock_api.assert_called_once()
+        assert mock_api.call_count == 2
+        assert db_session.get(Image, existing_logo.id) is not None
         
         # Should process cover and screenshots
         expected_calls = 3  # 1 cover + 2 screenshots

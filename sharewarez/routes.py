@@ -11,7 +11,7 @@ from flask import (
 from flask_login import current_user, login_required
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import selectinload
-from sqlalchemy import func, select, delete, and_
+from sqlalchemy import func, select, delete, update, and_
 from werkzeug.utils import secure_filename
 from werkzeug.exceptions import NotFound
 from sharewarez import db, cache
@@ -441,7 +441,53 @@ def edit_game_images(game_uuid):
     game = db.session.execute(select(Game).filter_by(uuid=game_uuid)).scalar_one_or_none() or abort(404)
     cover_image = db.session.execute(select(Image).filter_by(game_uuid=game_uuid, image_type='cover')).scalars().first()
     screenshots = db.session.execute(select(Image).filter_by(game_uuid=game_uuid, image_type='screenshot')).scalars().all()
-    return render_template('games/game_edit_images.html', game=game, cover_image=cover_image, images=screenshots)
+    key_art = db.session.execute(
+        select(Image).where(
+            Image.game_uuid == game_uuid,
+            Image.image_type.in_(('key_art', 'key_art_logo')),
+        ).order_by(Image.is_default.desc(), Image.id)
+    ).scalars().all()
+    logos = db.session.execute(
+        select(Image).where(
+            Image.game_uuid == game_uuid,
+            Image.image_type.in_(('game_logo_color', 'game_logo_white', 'game_logo_black')),
+        ).order_by(Image.is_default.desc(), Image.id)
+    ).scalars().all()
+    return render_template(
+        'games/game_edit_images.html', game=game, cover_image=cover_image,
+        images=screenshots, key_art=key_art, logos=logos,
+    )
+
+
+@bp.route('/set_default_game_image/<game_uuid>', methods=['POST'])
+@login_required
+@admin_required
+def set_default_game_image(game_uuid):
+    game = db.session.execute(select(Game).filter_by(uuid=game_uuid)).scalar_one_or_none() or abort(404)
+    data = request.get_json(silent=True) or {}
+    image = db.session.get(Image, data.get('image_id'))
+    if not image or image.game_uuid != game.uuid:
+        return jsonify({'error': 'Image not found for this game'}), 404
+
+    key_art_types = ('key_art', 'key_art_logo')
+    logo_types = ('game_logo_color', 'game_logo_white', 'game_logo_black')
+    if image.image_type in key_art_types:
+        category_types = key_art_types
+        category = 'key-art'
+    elif image.image_type in logo_types:
+        category_types = logo_types
+        category = 'logo'
+    else:
+        return jsonify({'error': 'Only key art and game logos can be selected here'}), 400
+
+    db.session.execute(
+        update(Image)
+        .where(Image.game_uuid == game.uuid, Image.image_type.in_(category_types))
+        .values(is_default=False)
+    )
+    image.is_default = True
+    db.session.commit()
+    return jsonify({'message': 'Default image updated', 'image_id': image.id, 'category': category})
 
 
 @bp.route('/upload_image/<game_uuid>', methods=['POST'])
