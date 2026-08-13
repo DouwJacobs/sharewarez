@@ -5,3 +5,38 @@
  * tokens or component rules here to create a lightweight custom theme while
  * retaining all default assets through the theme fallback system.
  */
+
+/* Compatibility bridge for legacy administration components. These selectors
+   keep older route styles on the active theme while their markup is migrated
+   to the shared app-page primitives. */
+:is(
+    .admin-content,
+    .container-settings,
+    .container-serverstatus-version,
+    .chart-container,
+    .resource-card,
+    .info-block,
+    .extensions-management-panel,
+    .user-invites-panel,
+    .invite-card,
+    .status-dropdown
+) {
+    border-color: var(--theme-border-color, var(--border-light-strong)) !important;
+    background: var(--theme-card-background, var(--bg-dark-secondary)) !important;
+    color: var(--theme-text-primary, var(--text-white)) !important;
+}
+
+:is(.admin-input, .container-settings input, .container-settings select, .container-settings textarea) {
+    border-color: var(--theme-border-color, var(--form-border)) !important;
+    background: var(--theme-input-bg, var(--form-bg-dark)) !important;
+    color: var(--theme-text-primary, var(--text-white)) !important;
+}
+
+:is(.admin-form-label, .stat-label, .extensions-info, .invite-card-details, .invite-history-header, .invite-empty) {
+    color: var(--theme-text-secondary, var(--text-muted)) !important;
+}
+
+:is(.status-running, .status-pending) { color: var(--semantic-info, var(--btn-info)) !important; }
+:is(.status-completed, .status-good, .text-success) { color: var(--semantic-success, var(--btn-success)) !important; }
+:is(.status-warning, .invite-status-pending) { color: var(--semantic-warning, var(--btn-warning)) !important; }
+:is(.status-error, .status-stopped, .text-danger) { color: var(--semantic-danger, var(--btn-danger)) !important; }

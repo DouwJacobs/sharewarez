@@ -8,6 +8,15 @@
 }
 
 /* Header Section */
+.help-eyebrow {
+    margin: 0 0 .5rem;
+    color: rgb(var(--theme-accent-soft-rgb, 154, 177, 255));
+    font-size: .75rem;
+    font-weight: 750;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+}
+
 .help-header {
     text-align: center;
     margin-bottom: 3rem;
@@ -46,7 +55,7 @@
 
 .help-subtitle {
     font-size: var(--font-size-lg);
-    color: var(--text-secondary);
+    color: var(--theme-text-secondary, var(--text-muted));
     margin: 0;
     font-weight: 300;
 }

@@ -1,9 +1,9 @@
 /* Final shared table presentation.
    This intentionally loads after view-specific styles to keep every table aligned. */
 :is(.table-responsive, .dataTables_wrapper) {
-    border: 1px solid rgba(154, 177, 255, 0.14) !important;
+    border: 1px solid var(--theme-border-color, rgba(154, 177, 255, 0.14)) !important;
     border-radius: 18px !important;
-    background: rgba(14, 16, 29, 0.78) !important;
+    background: var(--theme-card-background, rgba(14, 16, 29, 0.78)) !important;
     box-shadow: 0 18px 48px rgba(0, 0, 0, 0.17) !important;
 }
 
@@ -13,11 +13,11 @@
 
 :is(.table, .table-dark, .simple-jobs-table, .simple-unmatched-table) {
     --bs-table-bg: transparent !important;
-    --bs-table-color: #dce1ef !important;
+    --bs-table-color: var(--theme-text-primary, #dce1ef) !important;
     --bs-table-striped-bg: transparent !important;
-    --bs-table-striped-color: #dce1ef !important;
-    --bs-table-hover-bg: rgba(118, 137, 255, 0.045) !important;
-    --bs-table-hover-color: #eef1ff !important;
+    --bs-table-striped-color: var(--theme-text-primary, #dce1ef) !important;
+    --bs-table-hover-bg: var(--theme-hover-surface, rgba(118, 137, 255, 0.045)) !important;
+    --bs-table-hover-color: var(--theme-text-primary, #eef1ff) !important;
     width: 100%;
     margin: 0 !important;
     border: 0 !important;
@@ -25,14 +25,14 @@
     border-radius: 0 !important;
     background: transparent !important;
     box-shadow: none !important;
-    color: #dce1ef !important;
+    color: var(--theme-text-primary, #dce1ef) !important;
 }
 
 /* Standalone tables get the same panel edge as responsive tables. */
 :is(.table, .table-dark, .simple-jobs-table, .simple-unmatched-table):not(.table-responsive *):not(.dataTables_wrapper *) {
-    border: 1px solid rgba(154, 177, 255, 0.14) !important;
+    border: 1px solid var(--theme-border-color, rgba(154, 177, 255, 0.14)) !important;
     border-radius: 14px !important;
-    background: rgba(14, 16, 29, 0.62) !important;
+    background: var(--theme-card-background, rgba(14, 16, 29, 0.62)) !important;
     box-shadow: 0 14px 38px rgba(0, 0, 0, 0.14) !important;
     overflow: hidden;
 }
@@ -44,8 +44,8 @@
     padding: 13px 15px !important;
     border: 0 !important;
     border-bottom: 1px solid rgba(154, 177, 255, 0.11) !important;
-    background: rgba(7, 9, 18, 0.54) !important;
-    color: #8f99b1 !important;
+    background: var(--theme-table-header, rgba(7, 9, 18, 0.54)) !important;
+    color: var(--theme-text-muted, #8f99b1) !important;
     font-size: 0.72rem !important;
     font-weight: 700 !important;
     letter-spacing: 0.07em !important;
@@ -72,7 +72,7 @@
 
 :is(.table, .table-dark, .simple-jobs-table, .simple-unmatched-table) > tbody > tr:hover,
 :is(.table, .table-dark, .simple-jobs-table, .simple-unmatched-table) tbody tr:hover {
-    background: rgba(118, 137, 255, 0.055) !important;
+    background: var(--theme-hover-surface, rgba(118, 137, 255, 0.055)) !important;
     box-shadow: none !important;
     transform: none !important;
 }
@@ -83,7 +83,7 @@
     border: 0 !important;
     border-top: 1px solid rgba(154, 177, 255, 0.08) !important;
     background: transparent !important;
-    color: #dce1ef !important;
+    color: var(--theme-text-primary, #dce1ef) !important;
     font-size: 0.86rem;
     line-height: 1.45;
     text-align: left;
@@ -96,19 +96,19 @@
 
 :is(.table, .table-dark) td :is(small, .text-muted),
 :is(.simple-jobs-table, .simple-unmatched-table) td :is(small, .text-muted) {
-    color: #7f8aa4 !important;
+    color: var(--theme-text-muted, #7f8aa4) !important;
 }
 
 :is(.table, .table-dark) td a:not(.btn),
 :is(.simple-jobs-table, .simple-unmatched-table) td a:not(.btn) {
-    color: #aebcff;
+    color: rgb(var(--theme-accent-soft-rgb, 174, 188, 255));
     font-weight: 600;
     text-decoration: none;
 }
 
 :is(.table, .table-dark) td a:not(.btn):hover,
 :is(.simple-jobs-table, .simple-unmatched-table) td a:not(.btn):hover {
-    color: #d8deff;
+    color: var(--theme-text-primary, #d8deff);
     text-decoration: underline;
     text-underline-offset: 3px;
 }
@@ -127,11 +127,11 @@
 .dataTables_wrapper {
     margin-top: 0 !important;
     padding: 18px !important;
-    color: #aab3ca !important;
+    color: var(--theme-text-secondary, #aab3ca) !important;
 }
 
 .dataTables_wrapper :is(.dataTables_length, .dataTables_filter) label {
-    color: #aab3ca !important;
+    color: var(--theme-text-secondary, #aab3ca) !important;
     font-size: 0.78rem;
     font-weight: 700;
 }
@@ -140,8 +140,8 @@
     min-height: 40px;
     border: 1px solid rgba(154, 177, 255, 0.16) !important;
     border-radius: 10px !important;
-    background: rgba(7, 9, 19, 0.75) !important;
-    color: #eef1ff !important;
+    background: var(--theme-input-bg, rgba(7, 9, 19, 0.75)) !important;
+    color: var(--theme-text-primary, #eef1ff) !important;
     box-shadow: none !important;
 }
 
@@ -152,7 +152,7 @@
 
 .dataTables_wrapper :is(.dataTables_info, .dataTables_paginate) {
     padding-top: 16px !important;
-    color: #8f99b1 !important;
+    color: var(--theme-text-muted, #8f99b1) !important;
     font-size: 0.8rem;
 }
 

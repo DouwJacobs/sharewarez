@@ -102,7 +102,11 @@
         <div class="error-message">
             <i class="fas fa-exclamation-circle"></i>
             <p id="error-text">No games with trailers found</p>
-            <button onclick="location.href='/library'" class="btn-primary">Go to Library</button>
+            <p class="error-guidance">Try again for another game, adjust the filters, or browse the library.</p>
+            <div class="error-actions">
+                <button id="retry-trailer-btn" type="button" class="btn btn-primary"><i class="fas fa-rotate-right" aria-hidden="true"></i> Try again</button>
+                <a href="/library" class="btn btn-secondary">Browse library</a>
+            </div>
         </div>
     </div>
 

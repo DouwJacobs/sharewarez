@@ -32,6 +32,7 @@
 }
 .admin_manage_scanjobs-nav-panel .admin_manage_scanjobs-nav-item { width: 100%; margin: 0; }
 .admin_manage_scanjobs-nav-panel .admin_manage_scanjobs-tab-content.admin-tab-content { min-width: 0; }
+.admin_manage_scanjobs-tab-content > .tab-pane.active { display: block; opacity: 1; }
 
 @media (max-width: 760px) {
     .admin_manage_scanjobs-nav-panel .container-settings.admin-tab-workspace { grid-template-columns: 1fr; gap: 20px; }

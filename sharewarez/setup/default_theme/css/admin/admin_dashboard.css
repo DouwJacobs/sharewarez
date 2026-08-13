@@ -124,13 +124,13 @@ body {
 
     .admin-panel {
         padding: 15px;
-        margin: 10px;
+        margin: 6px 0;
     }
 
     .admin-buttons {
         display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 16px 8px;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px 8px;
     }
 
     .admin-button-item {

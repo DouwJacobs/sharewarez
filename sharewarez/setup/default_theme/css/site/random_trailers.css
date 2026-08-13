@@ -326,6 +326,9 @@
     margin-bottom: var(--spacing-xl);
 }
 
+.error-guidance { color: var(--trailer-muted); }
+.error-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--spacing-sm); margin-top: var(--spacing-md); }
+
 /* ===== Video Player Container ===== */
 .video-player-container {
     width: 100%;

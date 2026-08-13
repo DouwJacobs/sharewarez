@@ -45,6 +45,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const nextBtn = document.getElementById('next-btn');
     const settingsBtn = document.getElementById('settings-btn');
     const errorText = document.getElementById('error-text');
+    const retryTrailerBtn = document.getElementById('retry-trailer-btn');
     const exitAttractModeBtn = document.getElementById('exit-attract-mode-btn');
 
     // Modal Elements
@@ -144,6 +145,10 @@ document.addEventListener('DOMContentLoaded', function() {
     // Next button click handler
     nextBtn.addEventListener('click', function() {
         pauseCurrentVideo();
+        fetchRandomTrailer();
+    });
+
+    retryTrailerBtn?.addEventListener('click', function() {
         fetchRandomTrailer();
     });
 
