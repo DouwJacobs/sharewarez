@@ -351,9 +351,9 @@
     }
 
     .profile-settings-nav {
-        display: flex;
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
         gap: 8px;
-        overflow-x: auto;
         padding: 0 0 10px;
         border-right: 0;
         border-bottom: 1px solid rgba(var(--theme-accent-soft-rgb, 154, 177, 255), .14);
@@ -361,7 +361,9 @@
     }
 
     .profile-settings-nav-label { display: none; }
-    .profile-settings-tab { flex: 0 0 auto; width: auto; height: auto; margin: 0; padding: 10px 12px; }
+    .profile-settings-tab { justify-content: center; width: 100%; height: auto; margin: 0; padding: 10px 8px; }
+    .profile-settings-tab > i { display: none; }
+    .profile-settings-tab strong { font-size: clamp(.72rem, 3vw, .88rem); white-space: nowrap; }
     .profile-settings-tab small { display: none; }
 }
 

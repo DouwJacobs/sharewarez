@@ -43,7 +43,7 @@
 <div class="app-stack admin_manage_libraries-library-container">
     <div class="container-settings">
         <div class="card">
-            <header class="libraries-management-header">
+            <header class="app-page-header libraries-management-header">
                 <div>
                     <p class="libraries-management-eyebrow">Collection management</p>
                     <h1>Game Libraries</h1>
@@ -69,12 +69,12 @@
                         <td class="library-drag-cell">
                             <i class="fas fa-grip-vertical drag-handle" aria-hidden="true"></i>
                         </td>
-                        <td>
+                        <td class="library-identity-cell" data-label="Library">
                             <img src="{{ library.image_url or url_for('static', filename='default-image.jpg') }}" alt="{{ library.name }}" class="library-cover-thumbnail me-2">
-                            {{ library.name }} - {{ library.platform.value }}
+                            <span><strong>{{ library.name }}</strong><small>{{ library.platform.value }}</small></span>
                         </td>
-                        <td>{{ library.games|length }}</td>
-                        <td class="position-relative">
+                        <td class="library-count-cell" data-label="Games"><strong>{{ library.games|length }}</strong></td>
+                        <td class="position-relative library-actions-cell" data-label="Actions">
                             <div class="dropdown d-inline-block" data-library-actions>
                             <button class="library-actions-toggle" type="button" id="libMenu-{{ library.uuid }}" data-bs-toggle="dropdown" data-bs-boundary="viewport" aria-expanded="false" aria-label="Actions for {{ library.name }}">
                                     <i class="fas fa-ellipsis-v"></i>

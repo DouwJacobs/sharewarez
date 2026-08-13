@@ -36,13 +36,15 @@
 @media (max-width: 760px) {
     .admin_manage_scanjobs-nav-panel .container-settings.admin-tab-workspace { grid-template-columns: 1fr; gap: 20px; }
     .admin_manage_scanjobs-nav-panel .admin_manage_scanjobs-nav-tabs.admin-tab-nav {
-        flex-direction: row;
-        overflow-x: auto;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
         padding: 0 0 10px;
         border-right: 0;
         border-bottom: 1px solid rgba(var(--theme-accent-soft-rgb, 154, 177, 255), .14);
     }
-    .admin_manage_scanjobs-nav-panel .admin_manage_scanjobs-nav-item { flex: 0 0 auto; width: auto; }
+    .admin_manage_scanjobs-nav-panel .admin_manage_scanjobs-nav-item { width: 100%; }
+    .admin_manage_scanjobs-nav-panel .admin_manage_scanjobs-nav-link { width: 100%; min-height: 48px; padding: 9px; }
+    .admin_manage_scanjobs-nav-panel .admin_manage_scanjobs-nav-link small { display: none; }
 }
 
 .simple-jobs-table th,
@@ -1538,8 +1540,8 @@
 
 @media (max-width: 768px) {
     .admin_manage_scanjobs-nav-panel {
-        width: calc(100% - 24px);
-        margin-top: 12px;
+        width: 100%;
+        margin: 0 0 24px;
         border-radius: 14px;
     }
 
@@ -1559,14 +1561,18 @@
     }
 
     .admin_manage_scanjobs-nav-tabs {
-        flex-wrap: nowrap;
-        overflow-x: auto;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        overflow: visible;
     }
 
     .admin_manage_scanjobs-nav-link {
-        flex: 0 0 auto;
-        white-space: nowrap;
+        width: 100%;
+        min-height: 48px;
+        white-space: normal;
     }
+
+    .admin_manage_scanjobs-nav-link small { display: none; }
 
     .admin_manage_scanjobs-tab-header .btn {
         width: 100%;

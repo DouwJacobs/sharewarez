@@ -105,6 +105,10 @@
     object-fit: cover;
 }
 
+.library-identity-cell > span { display: inline-grid; vertical-align: middle; }
+.library-identity-cell strong { color: var(--theme-text-primary, #fff); }
+.library-identity-cell small { color: var(--theme-text-muted, var(--theme-text-secondary, #c4c9d8)); }
+
 .libraries-table-wrapper .drag-handle {
     display: inline-grid;
     width: 32px;
@@ -209,8 +213,8 @@
 
 @media (max-width: 768px) {
     .admin_manage_libraries-library-container {
-        width: calc(100% - 24px);
-        margin-top: 12px;
+        width: 100%;
+        margin: 0;
     }
 
     .admin_manage_libraries-library-container .card {
@@ -226,7 +230,28 @@
         width: 100%;
     }
 
-    .libraries-table-wrapper {
-        overflow-x: auto;
+    .libraries-table-wrapper { overflow: visible; border: 0 !important; background: transparent !important; }
+    .libraries-table-wrapper table,
+    .libraries-table-wrapper tbody { display: block; width: 100%; min-width: 0 !important; }
+    .libraries-table-wrapper thead { display: none; }
+    .libraries-table-wrapper tbody { display: grid; gap: 10px; }
+    .libraries-table-wrapper tbody tr {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 12px;
+        padding: 12px;
+        border: 1px solid var(--theme-border-color, rgba(var(--theme-accent-soft-rgb, 154, 177, 255), .18));
+        border-radius: 13px;
+        background: var(--theme-panel-bg, rgba(18, 18, 28, .84));
     }
+    .libraries-table-wrapper tbody tr + tr td { border: 0 !important; }
+    .libraries-table-wrapper tbody td { display: block; width: auto !important; padding: 0 !important; }
+    .libraries-table-wrapper .library-drag-cell { grid-column: 1; grid-row: 1 / span 2; }
+    .library-identity-cell { display: flex !important; grid-column: 2; grid-row: 1; align-items: center; min-width: 0; }
+    .library-identity-cell strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .library-count-cell { grid-column: 2; grid-row: 2; color: var(--theme-text-secondary, #c4c9d8); font-size: .78rem; }
+    .library-count-cell::after { content: ' games'; font-weight: 400; }
+    .library-actions-cell { display: grid !important; grid-column: 3; grid-row: 1 / span 2; place-items: center; }
+    .library-cover-thumbnail { width: 42px; height: 42px; }
 }
