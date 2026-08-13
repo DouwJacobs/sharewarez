@@ -151,6 +151,12 @@ def create_game_instance(game_data, full_disk_path, folder_size_bytes, library_u
             times_downloaded=0
         )
 
+        from sharewarez.utils.metadata_provenance import PROVIDER_FIELDS, merge_provider_metadata
+        merge_provider_metadata(
+            new_game,
+            {field: getattr(new_game, field) for field in PROVIDER_FIELDS if getattr(new_game, field) is not None},
+        )
+
         db.session.add(new_game)
         db.session.flush()
         sync_game_relationships(new_game, game_data)

@@ -10,6 +10,10 @@ from sharewarez.utils.event_logging import log_system_event
 from sharewarez.utils.tags import assign_game_tags
 from sharewarez import db
 from sharewarez.utilities import refresh_game_metadata_and_updates
+from sharewarez.utils.metadata_provenance import (
+    EDITABLE_PROVIDER_FIELDS, apply_provider_candidate, mark_manual_changes,
+    metadata_conflicts,
+)
 from threading import Thread
 from datetime import datetime, timezone
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
@@ -25,6 +29,7 @@ from . import games_bp
 @admin_required
 def game_edit(game_uuid):
     game = db.session.execute(select(Game).filter_by(uuid=game_uuid)).scalars().first() or abort(404)
+    metadata_before = {field: getattr(game, field) for field in EDITABLE_PROVIDER_FIELDS}
     form = AddGameForm(obj=game)
     # WTForms copies a relationship object verbatim when populating a
     # StringField from ``obj``. Supply the display values explicitly so the
@@ -284,6 +289,7 @@ def game_edit(game_uuid):
             db.session.rollback()
             return render_template('admin/admin_game_identify.html', form=form, game_uuid=game_uuid, action="edit")
         game.date_identified = datetime.now(timezone.utc)
+        mark_manual_changes(game, metadata_before)
                
         try:
             db.session.commit()
@@ -379,4 +385,35 @@ def game_edit(game_uuid):
 
     # For GET or if form fails
     current_app.logger.debug(f"game_edit2 Platform ID: {platform_id}, Platform Name: {platform_name}, Library Name: {library_name}")
-    return render_template('admin/admin_game_identify.html', form=form, game_uuid=game_uuid, platform_id=platform_id, platform_name=platform_name, library_name=library_name, action="edit")
+    return render_template(
+        'admin/admin_game_identify.html', form=form, game_uuid=game_uuid,
+        platform_id=platform_id, platform_name=platform_name,
+        library_name=library_name, action="edit",
+        metadata_conflicts=metadata_conflicts(game),
+    )
+
+
+@games_bp.route('/game_edit/<game_uuid>/metadata_conflict/<field>', methods=['POST'])
+@login_required
+@admin_required
+def resolve_metadata_conflict(game_uuid, field):
+    game = db.session.execute(select(Game).filter_by(uuid=game_uuid)).scalars().first() or abort(404)
+    action = request.form.get('resolution')
+    try:
+        if action == 'provider':
+            apply_provider_candidate(game, field)
+        elif action == 'manual':
+            candidates = dict(game.metadata_provider_values or {})
+            if field not in candidates:
+                raise ValueError('No metadata conflict exists for this field')
+            candidates.pop(field)
+            game.metadata_provider_values = candidates
+        else:
+            raise ValueError('Invalid conflict resolution')
+        db.session.commit()
+    except (ValueError, KeyError) as exc:
+        db.session.rollback()
+        flash(str(exc), 'error')
+    else:
+        flash('Metadata conflict resolved.', 'success')
+    return redirect(url_for('games.game_edit', game_uuid=game_uuid))

@@ -50,6 +50,30 @@
                 </div>
             </div>
             {{ form.hidden_tag() }}
+            {% if metadata_conflicts %}
+            <section class="metadata-conflicts app-surface" aria-labelledby="metadata-conflicts-title">
+                <div>
+                    <p class="game-edit-eyebrow">Metadata review</p>
+                    <h3 id="metadata-conflicts-title">Provider conflicts</h3>
+                    <p>Your manual values were preserved during the last refresh. Choose which value to keep.</p>
+                </div>
+                <div class="metadata-conflict-list">
+                {% for conflict in metadata_conflicts %}
+                    <article class="metadata-conflict-item">
+                        <h4>{{ conflict.label }}</h4>
+                        <dl>
+                            <div><dt>Manual</dt><dd>{{ conflict.manual_value if conflict.manual_value is not none else 'Empty' }}</dd></div>
+                            <div><dt>{{ conflict.provider }}</dt><dd>{{ conflict.provider_value if conflict.provider_value is not none else 'Empty' }}</dd></div>
+                        </dl>
+                        <div class="metadata-conflict-actions">
+                            <button class="btn btn-secondary" type="submit" formaction="{{ url_for('games.resolve_metadata_conflict', game_uuid=game_uuid, field=conflict.field) }}" name="resolution" value="manual">Keep manual</button>
+                            <button class="btn btn-primary" type="submit" formaction="{{ url_for('games.resolve_metadata_conflict', game_uuid=game_uuid, field=conflict.field) }}" name="resolution" value="provider">Use {{ conflict.provider }}</button>
+                        </div>
+                    </article>
+                {% endfor %}
+                </div>
+            </section>
+            {% endif %}
             <!-- Essential Information Section -->
             <div class="essential-info">
             <div class="essential-info-grid">

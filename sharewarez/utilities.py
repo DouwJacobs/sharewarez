@@ -26,6 +26,7 @@ from sharewarez.utils.scanning import process_game_with_fallback, process_game_u
 from sharewarez.utils.igdb_api import IGDBRateLimiter
 from sharewarez.utils.security import is_safe_path, get_allowed_base_directories
 from sharewarez.utils.background_jobs import enqueue
+from sharewarez.utils.metadata_provenance import merge_provider_metadata
 
 
 @dataclass(frozen=True)
@@ -87,18 +88,27 @@ def refresh_game_metadata_and_updates(game_uuid):
         'aggregated_rating', 'aggregated_rating_count',
         'rating', 'rating_count', 'total_rating', 'total_rating_count',
     )
-    for field in scalar_fields:
-        if field in metadata:
-            setattr(game, field, metadata.get(field))
+    provider_values = {
+        field: metadata.get(field) for field in scalar_fields if field in metadata
+    }
 
     if metadata.get('first_release_date'):
-        game.first_release_date = datetime.fromtimestamp(
+        provider_values['first_release_date'] = datetime.fromtimestamp(
             metadata['first_release_date'], timezone.utc
         )
     if metadata.get('category') in category_mapping:
-        game.category = category_mapping[metadata['category']]
+        provider_values['category'] = category_mapping[metadata['category']]
     if metadata.get('status') in status_mapping:
-        game.status = status_mapping[metadata['status']]
+        provider_values['status'] = status_mapping[metadata['status']]
+
+    if 'videos' in metadata:
+        provider_values['video_urls'] = ','.join(
+            f"https://www.youtube.com/embed/{video['video_id']}"
+            for video in metadata.get('videos', [])
+            if video.get('video_id')
+        )
+
+    merge_provider_metadata(game, provider_values)
 
     from sharewarez.utils.game_relationships import sync_game_relationships
     sync_game_relationships(game, metadata)
@@ -118,13 +128,6 @@ def refresh_game_metadata_and_updates(game_uuid):
                 if isinstance(item, dict) and item.get('name')
             ]
             setattr(game, field, values)
-
-    if 'videos' in metadata:
-        game.video_urls = ','.join(
-            f"https://www.youtube.com/embed/{video['video_id']}"
-            for video in metadata.get('videos', [])
-            if video.get('video_id')
-        )
 
     involved_companies = metadata.get('involved_companies') or []
     if involved_companies:

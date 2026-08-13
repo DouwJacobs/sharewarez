@@ -31,7 +31,7 @@ desktop sidebar remains the full navigation surface.
 - [x] Unified full-text and fuzzy search
 - [x] Search suggestions, saved searches, and keyboard navigation
 - [x] Game series, editions, DLC, update, extra, remake, and platform relationships
-- [ ] Metadata provenance and conflict resolution
+- [x] Metadata provenance and conflict resolution
 
 ## Users and community
 

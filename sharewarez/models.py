@@ -175,6 +175,8 @@ class Game(db.Model):
     install_instructions = db.Column(db.Text, nullable=True)
     version = db.Column(db.String(100), nullable=True)
     edition_name = db.Column(db.String(255), nullable=True)
+    metadata_provenance = db.Column(db.JSON, nullable=False, default=dict)
+    metadata_provider_values = db.Column(db.JSON, nullable=False, default=dict)
 
     # HowLongToBeat integration fields
     hltb_id = db.Column(db.Integer, nullable=True)
