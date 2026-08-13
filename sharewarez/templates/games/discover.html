@@ -2,7 +2,7 @@
 
 {% macro game_card(game) %}
 <a class="home-game-card" href="{{ url_for('games.game_details', game_uuid=game.uuid) }}" aria-label="View {{ game.name }}">
-    <span class="home-game-cover"><img src="{{ game.cover_url }}" alt="Cover for {{ game.name }}" loading="lazy"><span class="home-card-availability">In library</span></span>
+    <span class="home-game-cover"><img src="{{ game.cover_url }}" alt="Cover for {{ game.name }}" loading="lazy"></span>
     <span class="home-game-info">
         <strong title="{{ game.name }}">{{ game.name }}</strong>
         <span class="home-game-genres">{% if game.genres %}{{ game.genres[:2]|join(', ') }}{% else %}Game{% endif %}</span>

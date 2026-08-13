@@ -50,7 +50,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const card = document.createElement('article');
             card.className = 'request-result';
             const availability = item.available_game_uuid
-                ? `<a class="btn btn-primary" href="/game_details/${encodeURIComponent(item.available_game_uuid)}"><i class="fas fa-circle-check"></i> View in library</a>`
+                ? `<a class="btn btn-primary" href="/game_details/${encodeURIComponent(item.available_game_uuid)}"><i class="fas fa-circle-check"></i> View game</a>`
                 : item.requested_by_user
                     ? '<button class="btn btn-secondary" disabled><i class="fas fa-check"></i> Already requested</button>'
                     : item.request_status === 'fulfilled' || item.request_status === 'not_planned'
