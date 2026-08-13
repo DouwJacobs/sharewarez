@@ -32,7 +32,6 @@
         {% for featured_game in featured_games %}
         <article class="home-hero featured-carousel-slide{% if loop.first %} is-active{% endif %}" style="--home-hero-image: url('{{ featured_game.backdrop_url }}')" data-featured-slide aria-hidden="{{ 'false' if loop.first else 'true' }}">
           <div class="home-hero-content">
-            <p class="home-featured-label"><i class="fas fa-bolt" aria-hidden="true"></i> Featured game</p>
             {% if featured_game.logo_url %}
             <h2 class="home-hero-logo"{% if loop.first %} id="home-featured-title"{% endif %}><img src="{{ featured_game.logo_url }}" alt="{{ featured_game.name }}"></h2>
             {% else %}
