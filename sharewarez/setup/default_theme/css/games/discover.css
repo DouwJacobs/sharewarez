@@ -104,7 +104,7 @@
 }
 
 .home-hero-content { width: min(660px, 70%); padding: clamp(26px, 4vw, 54px); }
-.home-hero h1, .home-welcome h1 { margin: 0; font-size: clamp(2rem, 4.2vw, 4rem); line-height: 1.02; }
+.home-hero h2, .home-welcome h2 { margin: 0; font-size: clamp(2rem, 4.2vw, 4rem); line-height: 1.02; }
 .home-hero-summary { display: -webkit-box; overflow: hidden; margin: 16px 0; color: var(--theme-text-secondary, #c3c9d8); font-size: clamp(.92rem, 1.2vw, 1.05rem); line-height: 1.65; -webkit-box-orient: vertical; -webkit-line-clamp: 3; }
 .home-hero-meta { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 22px; }
 .home-hero-meta span { padding: 6px 9px; border: 1px solid rgba(var(--theme-accent-soft-rgb,154,177,255),.18); border-radius: 999px; background: rgba(8,9,16,.48); color: var(--theme-text-secondary,#c3c9d8); font-size: .76rem; backdrop-filter: blur(8px); }
@@ -251,7 +251,7 @@
     }
     .home-hero-content { width: 100%; padding: 28px 18px 22px; }
     .home-featured-label { margin-bottom: 8px; padding: 5px 8px; font-size: .64rem; }
-    .home-hero h1 { max-width: 95%; font-size: clamp(1.65rem, 7.2vw, 2.2rem); line-height: 1.08; }
+    .home-hero h2 { max-width: 95%; font-size: clamp(1.65rem, 7.2vw, 2.2rem); line-height: 1.08; }
     .home-hero-summary { margin: 11px 0; font-size: .88rem; line-height: 1.5; -webkit-line-clamp: 2; }
     .home-hero-meta { gap: 6px; margin-bottom: 15px; }
     .home-hero-meta span { max-width: 100%; padding: 5px 8px; overflow: hidden; font-size: .68rem; text-overflow: ellipsis; white-space: nowrap; }

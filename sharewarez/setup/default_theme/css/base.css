@@ -157,6 +157,25 @@
     --status-pending: #ffc107;
     --status-completed: #6c757d;
 
+    /* Shared semantic UI tokens. Theme packages may override these aliases
+       without requiring route-specific status, table, or state palettes. */
+    --semantic-success: var(--btn-success);
+    --semantic-warning: var(--btn-warning);
+    --semantic-danger: var(--btn-danger);
+    --semantic-info: var(--btn-info);
+    --semantic-success-surface: var(--alert-success-bg);
+    --semantic-warning-surface: var(--alert-warning-bg);
+    --semantic-danger-surface: var(--alert-danger-bg);
+    --semantic-info-surface: var(--alert-info-bg);
+    --theme-text-muted: var(--text-muted);
+    --theme-text-subtle: var(--text-muted-light);
+    --theme-selected-surface: rgba(var(--theme-accent-rgb, 98, 122, 239), .16);
+    --theme-hover-surface: rgba(var(--theme-accent-rgb, 98, 122, 239), .09);
+    --theme-table-header: color-mix(in srgb, var(--theme-card-bottom, #0a0a0f) 72%, transparent);
+    --theme-table-row: color-mix(in srgb, var(--theme-panel-bg, #12121c) 78%, transparent);
+    --theme-empty-surface: color-mix(in srgb, var(--theme-panel-bg, #12121c) 64%, transparent);
+    --theme-error-surface: var(--semantic-danger-surface);
+
     /* Alert System Colors */
     --alert-success-bg: rgba(40, 167, 69, 0.1);
     --alert-warning-bg: rgba(255, 193, 7, 0.1);

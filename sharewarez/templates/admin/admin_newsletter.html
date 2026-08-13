@@ -7,8 +7,8 @@
 {% endblock %}
 {% block content %}
 <script src="https://cdn.ckeditor.com/ckeditor5/39.0.1/classic/ckeditor.js"></script>
-<main class="newsletter-page">
-        <h1>Newsletter</h1>
+<main class="app-page newsletter-page">
+        <header class="app-page-header"><p class="admin-panel-kicker">Communication</p><h1>Newsletter</h1><p>Compose a message and review previous deliveries.</p></header>
         <form id="newsletterForm" action="" method="post" novalidate>
             {{ form.hidden_tag() }}
             <div class="mb-3">

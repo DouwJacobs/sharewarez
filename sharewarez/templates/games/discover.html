@@ -33,7 +33,7 @@
         <article class="home-hero featured-carousel-slide{% if loop.first %} is-active{% endif %}" style="--home-hero-image: url('{{ featured_game.backdrop_url }}')" data-featured-slide aria-hidden="{{ 'false' if loop.first else 'true' }}">
           <div class="home-hero-content">
             <p class="home-featured-label"><i class="fas fa-bolt" aria-hidden="true"></i> Featured game</p>
-            <h1{% if loop.first %} id="home-featured-title"{% endif %}>{{ featured_game.name }}</h1>
+            <h2{% if loop.first %} id="home-featured-title"{% endif %}>{{ featured_game.name }}</h2>
             {% if featured_game.summary %}<p class="home-hero-summary">{{ featured_game.summary }}</p>{% endif %}
             <div class="home-hero-meta">
                 {% if featured_game.rating %}<span><i class="fas fa-star" aria-hidden="true"></i> {{ featured_game.rating }}</span>{% endif %}
@@ -71,7 +71,7 @@
     {% else %}
     <section class="home-welcome">
         <p class="home-eyebrow">Your game library</p>
-        <h1>Ready when your collection is</h1>
+        <h2>Ready when your collection is</h2>
         <p>Games and personalized recommendations will appear here after a library has been added and scanned.</p>
         {% if current_user.role == 'admin' %}<a class="btn btn-primary" href="{{ url_for('library.admin_libraries') }}">Add a library</a>{% endif %}
     </section>

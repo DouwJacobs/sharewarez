@@ -503,3 +503,24 @@
     color: var(--theme-text-secondary, #b9c0d0);
     font-size: .76rem;
 }
+
+@media (min-width: 901px) {
+    .requests-hero { padding-block: 1.25rem; }
+    .request-search-wrap { max-width: 920px; }
+}
+
+@media (max-width: 700px) {
+    .request-history-card,
+    .admin-request-card {
+        display: grid;
+        grid-template-columns: 74px minmax(0, 1fr);
+        align-items: start;
+    }
+    .request-history-card > img,
+    .admin-request-card > img { grid-column: 1; grid-row: 1; }
+    .request-history-content,
+    .admin-request-main { grid-column: 2; }
+    .request-history-title { gap: .4rem; }
+    .request-history-content > form,
+    .admin-request-form { grid-column: 1 / -1; }
+}

@@ -3,7 +3,7 @@
 
 <link rel="stylesheet" href="{{ 'css/login/user_invites.css'|theme_asset }}">
 
-<main class="user-invites-page">
+<main class="app-page app-page--narrow user-invites-page">
     {% if not smtp_enabled %}
     <div class="alert alert-warning" role="alert">
         <i class="fas fa-exclamation-triangle"></i>
@@ -13,7 +13,7 @@
     {% endif %}
 
     <section class="glass-panel user-invites-panel">
-        <header class="user-invites-header">
+        <header class="app-page-header user-invites-header">
             <div>
                 <p class="user-invites-eyebrow">Grow your community</p>
                 <h1>Invite friends</h1>

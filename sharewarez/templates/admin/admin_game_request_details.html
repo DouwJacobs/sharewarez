@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block content %}
 <link rel="stylesheet" href="{{ 'css/requests.css'|theme_asset }}">
-<main class="requests-page admin-request-details-page">
+<main class="app-page app-page--wide requests-page admin-request-details-page">
     <nav class="request-detail-toolbar" aria-label="Request navigation">
         <a class="btn btn-secondary request-back-link" href="{{ url_for('game_requests.admin_requests', status=return_status, type=return_type, q=return_search, sort=return_sort, page=return_page) }}"><i class="fas fa-arrow-left"></i><span>All requests</span></a>
         <span class="request-detail-toolbar-label">

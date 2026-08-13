@@ -2133,7 +2133,7 @@ pre {
     .game-storefront-heading h1 { max-width: 100%; font-size: clamp(2rem, 11vw, 3.3rem); line-height: 1.02; }
     .game-storefront-subtitle { gap: 6px; font-size: .78rem; }
     .game-storefront .game-card-topq { grid-template-columns: 1fr; gap: 24px; padding: 0 16px 26px; }
-    .game-storefront .game-card-q1 { width: min(76vw, 270px); margin: 0 auto; }
+    .game-storefront .game-card-q1 { width: min(66vw, 230px); margin: 0 auto; }
     .game-storefront .game-card-coverimage :is(
         .button-glass-hamburger-cover,
         .favorite-btn-cover,

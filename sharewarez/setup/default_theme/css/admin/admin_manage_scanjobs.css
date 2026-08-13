@@ -139,37 +139,37 @@
 
 /* Status badges */
 .status-running {
-    color: #007bff;
+    color: var(--semantic-info, #007bff);
     font-weight: bold;
 }
 
 .status-completed {
-    color: #28a745;
+    color: var(--semantic-success, #28a745);
     font-weight: bold;
 }
 
 .status-failed {
-    color: #dc3545;
+    color: var(--semantic-danger, #dc3545);
     font-weight: bold;
 }
 
 .status-ignore {
-    color: #6c757d;
+    color: var(--theme-text-muted, #6c757d);
     font-style: italic;
 }
 
 .status-unmatched {
-    color: #fd7e14;
+    color: var(--semantic-warning, #fd7e14);
     font-weight: bold;
 }
 
 .status-pending {
-    color: #007bff;
+    color: var(--semantic-info, #007bff);
     font-weight: bold;
 }
 
 .status-duplicate {
-    color: #dc3545;
+    color: var(--semantic-danger, #dc3545);
     font-weight: bold;
 }
 

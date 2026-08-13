@@ -1,20 +1,12 @@
 .favorites-page {
-    box-sizing: border-box;
-    width: min(1440px, calc(100% - 48px));
-    margin: 24px auto 48px;
-    padding: 28px 32px 42px;
-    border: 1px solid var(--theme-border-color, rgba(255, 255, 255, 0.08));
-    border-radius: 20px;
-    background: var(--theme-panel-bg, rgba(16, 18, 31, 0.94));
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.36);
     color: var(--theme-text-primary, var(--text-white));
 }
 
 .favorites-page-header {
     margin-bottom: 24px;
-    padding-bottom: 24px;
-    border-bottom: 1px solid var(--theme-border-color, rgba(255, 255, 255, 0.08));
 }
+
+.discovery-favorites-container { padding: 28px 32px 42px; }
 
 .favorites-page .discovery-eyebrow {
     margin: 0 0 7px;
@@ -174,28 +166,27 @@
 
 @media (max-width: 768px) {
     .favorites-page {
-        width: calc(100% - 24px) !important;
-        margin: 12px !important;
-        padding: 22px 0 30px !important;
-        border: 0;
-        border-radius: 0;
-        background: transparent;
-        box-shadow: none;
+        width: 100% !important;
+        margin: 0 0 24px !important;
+        padding: 0 !important;
     }
 
     .favorites-page-header {
-        padding: 0 8px 20px;
+        padding: 0;
     }
 
     .discovery-favorites-container {
-        padding: 0 8px;
+        padding: 16px;
     }
 
     .discovery-favorites-games {
-        grid-template-columns: minmax(0, 280px);
-        justify-content: center;
-        gap: 18px;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        justify-items: stretch;
+        gap: 10px;
     }
+
+    .discovery-favorites-games .game-card-container { max-width: none; }
+    .discovery-favorites-games .game-card { min-height: 0; }
 
     .favorites-empty-state {
         min-height: 280px;

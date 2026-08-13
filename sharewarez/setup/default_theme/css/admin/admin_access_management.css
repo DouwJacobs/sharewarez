@@ -2,6 +2,14 @@
 /* Extends existing glassmorphism patterns from base admin styles */
 
 .access-management-container {
+    --access-surface: var(--theme-card-background, var(--bg-dark-secondary));
+    --access-panel: var(--theme-panel-bg, var(--bg-dark-primary));
+    --access-border: var(--theme-border-color, var(--border-light-strong));
+    --access-text: var(--theme-text-primary, var(--text-white));
+    --access-muted: var(--theme-text-secondary, var(--text-muted));
+}
+
+.access-management-container {
     margin: 2rem auto;
     max-width: 1400px;
 }
@@ -15,9 +23,9 @@
 }
 
 .stat-card {
-    background: rgba(0, 0, 0, 0.4);
+    background: var(--access-surface);
     backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    border: 1px solid var(--access-border);
     border-radius: 10px;
     padding: 1.5rem;
     display: flex;
@@ -27,13 +35,13 @@
 }
 
 .stat-card:hover {
-    background: rgba(0, 0, 0, 0.6);
+    background: var(--theme-hover-surface, var(--access-panel));
     transform: translateY(-2px);
 }
 
 .stat-icon {
     font-size: 2rem;
-    color: #0096ff;
+    color: rgb(var(--theme-accent-soft-rgb, 0, 150, 255));
     width: 60px;
     text-align: center;
 }
@@ -45,13 +53,13 @@
 .stat-value {
     font-size: 1.8rem;
     font-weight: bold;
-    color: #fff;
+    color: var(--access-text);
     line-height: 1;
 }
 
 .stat-label {
     font-size: 0.9rem;
-    color: rgba(255, 255, 255, 0.7);
+    color: var(--access-muted);
     margin-top: 0.25rem;
 }
 
@@ -60,19 +68,19 @@
     display: flex;
     height: calc(100vh - 300px);
     min-height: 600px;
-    background: rgba(0, 0, 0, 0.4);
+    background: var(--access-surface);
     backdrop-filter: blur(10px);
     border-radius: 15px;
     overflow: hidden;
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    border: 1px solid var(--access-border);
 }
 
 /* Master Panel (30%) */
 .master-panel {
     width: 30%;
     min-width: 320px;
-    background: rgba(0, 0, 0, 0.3);
-    border-right: 1px solid rgba(255, 255, 255, 0.1);
+    background: var(--access-panel);
+    border-right: 1px solid var(--access-border);
     display: flex;
     flex-direction: column;
 }

@@ -75,7 +75,7 @@ def test_user_surfaces_follow_the_unified_card_structure():
     assert 'Community wishlist' not in requests
     assert 'request-main-card' in requests
     assert requests.index('requestSearchForm') < requests.index('My requests')
-    assert downloads.index('downloads-panel') < downloads.index("page_header('My downloads'")
+    assert downloads.index("page_header('My downloads'") < downloads.index('downloads-panel')
     assert '.favorites-empty-state' in favorites_css
     assert 'background: transparent' in favorites_css
 

@@ -64,6 +64,37 @@
 .app-stack { display: grid; min-width: 0; gap: var(--spacing-lg, 24px); }
 .app-grid { display: grid; min-width: 0; gap: var(--spacing-lg, 24px); }
 
+/* Shared feedback treatment for route-specific loading, empty, and error
+   states retained during the layout migration. */
+:is(
+    .downloads-empty-state,
+    .favorites-empty-state,
+    .notification-empty,
+    .logs-empty,
+    .game-grid-empty,
+    .scan-empty-state-panel,
+    .loading-container,
+    .error-container
+) {
+    box-sizing: border-box;
+    min-height: 240px;
+    padding: clamp(24px, 5vw, 48px);
+    border: 1px dashed var(--theme-border-color, var(--border-light-strong));
+    border-radius: var(--border-radius-lg, 18px);
+    background: var(--theme-empty-surface, var(--theme-panel-bg, var(--bg-dark-secondary)));
+    color: var(--theme-text-secondary, var(--text-light));
+    text-align: center;
+}
+
+:is(.downloads-empty-state, .favorites-empty-state, .notification-empty, .logs-empty, .game-grid-empty, .scan-empty-state-panel, .loading-container, .error-container) > i {
+    color: rgb(var(--theme-accent-soft-rgb, 154, 177, 255));
+}
+
+.error-container {
+    border-color: color-mix(in srgb, var(--semantic-danger, var(--btn-danger)) 42%, transparent);
+    background: var(--theme-error-surface, var(--alert-danger-bg));
+}
+
 @media (max-width: 768px) {
     .app-page,
     .app-page--narrow,

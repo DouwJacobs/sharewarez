@@ -211,6 +211,29 @@
     background: color-mix(in srgb, var(--danger-color, #ef476f) 13%, transparent);
 }
 
+@media (min-width: 769px) {
+    .libraries-table-wrapper { overflow: visible; border: 0 !important; background: transparent !important; }
+    .libraries-table-wrapper table,
+    .libraries-table-wrapper tbody { display: block; width: 100%; min-width: 0; }
+    .libraries-table-wrapper thead { display: none; }
+    .libraries-table-wrapper tbody { display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 12px; }
+    .libraries-table-wrapper tbody tr {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr) auto auto;
+        align-items: center;
+        gap: 14px;
+        padding: 16px;
+        border: 1px solid var(--theme-border-color, rgba(var(--theme-accent-soft-rgb, 154, 177, 255), .18));
+        border-radius: 14px;
+        background: var(--theme-table-row, var(--theme-panel-bg, rgba(18, 18, 28, .84)));
+    }
+    .libraries-table-wrapper tbody tr + tr td { border: 0 !important; }
+    .libraries-table-wrapper tbody td { width: auto !important; padding: 0 !important; border: 0 !important; }
+    .library-identity-cell { display: flex; align-items: center; min-width: 0; }
+    .library-count-cell { color: var(--theme-text-secondary, #c4c9d8); }
+    .library-count-cell::after { content: ' games'; font-size: .78rem; font-weight: 400; }
+}
+
 @media (max-width: 768px) {
     .admin_manage_libraries-library-container {
         width: 100%;

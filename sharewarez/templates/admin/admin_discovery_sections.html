@@ -9,13 +9,14 @@
 
 <script src="{{ 'js/admin/discovery_sections.js'|theme_asset }}"></script>
 
-<div class="container">
+<main class="app-page app-page--narrow discovery-sections-page">
     <div class="row">
         <div class="col-12">
             <div class="card">
-                <div class="card-header">
-                    <h2><i class="fas fa-compass"></i> Discovery Sections Management</h2>
-                </div>
+                <header class="app-page-header card-header">
+                    <h1><i class="fas fa-compass"></i> Discovery Sections</h1>
+                    <p>Choose which collections appear on the Discover page and in what order.</p>
+                </header>
                 <div class="card-body">
                     <div id="discovery-sections-list" class="sections-list">
                         {% for section in sections %}
@@ -52,5 +53,5 @@
             </div>
         </div>
     </div>
-</div>
+</main>
 {% endblock %}
