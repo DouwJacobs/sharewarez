@@ -40,27 +40,31 @@ body {
 
 .admin-dashboard-grid {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: var(--spacing-lg);
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.9rem;
     align-items: start;
 }
 
 .admin-section {
+    display: grid;
+    grid-template-columns: minmax(190px, 0.72fr) minmax(0, 2.6fr);
+    gap: clamp(1rem, 2.4vw, 1.75rem);
+    align-items: start;
     min-width: 0;
     padding: clamp(1rem, 2vw, 1.4rem);
 }
 
 .admin-section--server {
-    grid-column: 1 / -1;
+    grid-column: auto;
 }
 
 .admin-section-heading {
     display: flex;
     gap: 0.85rem;
     align-items: flex-start;
-    padding-bottom: 1rem;
-    margin-bottom: 0.9rem;
-    border-bottom: 1px solid var(--border-light, rgba(255, 255, 255, 0.1));
+    min-width: 0;
+    padding-right: clamp(1rem, 2vw, 1.5rem);
+    border-right: 1px solid var(--border-light, rgba(255, 255, 255, 0.1));
 }
 
 .admin-section-icon,
@@ -98,7 +102,7 @@ body {
 
 .admin-tool-grid {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 0.7rem;
 }
 
@@ -190,7 +194,7 @@ body {
 @media (max-width: 1050px) {
     .admin-tool-grid,
     .admin-tool-grid--wide {
-        grid-template-columns: minmax(0, 1fr);
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }
 
@@ -211,21 +215,25 @@ body {
     }
 
     .admin-dashboard-grid {
-        grid-template-columns: minmax(0, 1fr);
         gap: 0.8rem;
     }
 
-    .admin-section--server {
-        grid-column: auto;
-    }
-
     .admin-section {
+        display: block;
         padding: 0.9rem;
     }
 
     .admin-section-heading {
         padding-bottom: 0.8rem;
         margin-bottom: 0.7rem;
+        padding-right: 0;
+        border-right: 0;
+        border-bottom: 1px solid var(--border-light, rgba(255, 255, 255, 0.1));
+    }
+
+    .admin-tool-grid,
+    .admin-tool-grid--wide {
+        grid-template-columns: minmax(0, 1fr);
     }
 
     .admin-tool-card {
