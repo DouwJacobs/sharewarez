@@ -8,7 +8,9 @@ from sharewarez.models import (
     Game, Library, DiscoverySection, Image, User
 )
 from sharewarez.platform import LibraryPlatform
-from sqlalchemy import select
+from sqlalchemy import func, select
+
+from sharewarez.models import user_favorites
 
 
 
@@ -228,6 +230,29 @@ class TestDiscoverSectionQueries:
         # Check that games are ordered by rating desc
         if len(highest_rated) > 1:
             assert highest_rated[0].rating >= highest_rated[1].rating
+
+    def test_most_favorited_query_supports_json_game_metadata(
+        self, db_session, test_games, test_user
+    ):
+        test_games[0].metadata_provenance = {'summary': 'manual'}
+        test_user.favorites.append(test_games[0])
+        db_session.commit()
+
+        favorite_counts = (
+            select(
+                user_favorites.c.game_uuid,
+                func.count(user_favorites.c.user_id).label('favorite_count'),
+            )
+            .group_by(user_favorites.c.game_uuid)
+            .subquery()
+        )
+        games = db_session.execute(
+            select(Game)
+            .join(favorite_counts, favorite_counts.c.game_uuid == Game.uuid)
+            .order_by(favorite_counts.c.favorite_count.desc(), Game.name)
+        ).scalars().all()
+
+        assert test_games[0] in games
 
 
 class TestGameDetails:

@@ -1,5 +1,8 @@
 # UI audit
 
+> Follow-up: the active open-items checklist from the 2026-08-13 desktop,
+> mobile, and theme-consistency sweep is in `docs/UI_AUDIT_2026-08-13.md`.
+
 Audit date: 2026-08-09  
 Branch: `audit/ui-consistency-fixes`  
 Application: local WSL development instance at `http://localhost:5006`  

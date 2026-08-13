@@ -150,11 +150,18 @@ def discover():
                 select(Game).where(Game.last_updated.isnot(None)).order_by(Game.last_updated.desc())
             )
         elif section.identifier == 'most_favorited':
+            favorite_counts = (
+                select(
+                    user_favorites.c.game_uuid,
+                    func.count(user_favorites.c.user_id).label('favorite_count'),
+                )
+                .group_by(user_favorites.c.game_uuid)
+                .subquery()
+            )
             section_data['most_favorited'] = fetch_game_details(
-                select(Game, func.count(user_favorites.c.user_id).label('favorite_count'))
-                .join(user_favorites)
-                .group_by(Game)
-                .order_by(func.count(user_favorites.c.user_id).desc())
+                select(Game)
+                .join(favorite_counts, favorite_counts.c.game_uuid == Game.uuid)
+                .order_by(favorite_counts.c.favorite_count.desc(), Game.name)
             )
 
     featured_candidates = section_data.get('highest_rated') or section_data.get('latest_games') or []
