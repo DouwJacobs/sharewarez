@@ -54,7 +54,7 @@
                 </a>
             </header>
             <div class="table-responsive libraries-table-wrapper">
-            <table class="table table-dark table-hover" id="librariesTable">
+            <table class="libraries-table" id="librariesTable">
             <thead>
                 <tr>
                     <th class="library-drag-column"><span class="visually-hidden">Order</span></th>
@@ -67,13 +67,15 @@
                 {% for library in libraries %}
                     <tr data-library-uuid="{{ library.uuid }}">
                         <td class="library-drag-cell">
-                            <i class="fas fa-grip-vertical drag-handle" aria-hidden="true"></i>
+                            <button class="drag-handle" type="button" aria-label="Drag to reorder {{ library.name }}" title="Drag to reorder">
+                                <i class="fas fa-grip-vertical" aria-hidden="true"></i>
+                            </button>
                         </td>
                         <td class="library-identity-cell" data-label="Library">
                             <img src="{{ library.image_url or url_for('static', filename='default-image.jpg') }}" alt="{{ library.name }}" class="library-cover-thumbnail me-2">
                             <span><strong>{{ library.name }}</strong><small>{{ library.platform.value }}</small></span>
                         </td>
-                        <td class="library-count-cell" data-label="Games"><strong>{{ library.games|length }}</strong></td>
+                        <td class="library-count-cell" data-label="Games"><strong>{{ library.games|length }}</strong><span>games</span></td>
                         <td class="position-relative library-actions-cell" data-label="Actions">
                             <div class="dropdown d-inline-block" data-library-actions>
                             <button class="library-actions-toggle" type="button" id="libMenu-{{ library.uuid }}" data-bs-toggle="dropdown" data-bs-boundary="viewport" aria-expanded="false" aria-label="Actions for {{ library.name }}">

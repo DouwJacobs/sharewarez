@@ -235,6 +235,25 @@ def store_image_url_for_download(game_uuid, image_data, image_type='cover'):
         
         # Generate filename for when it gets downloaded
         file_name = secure_filename(f"{game_uuid}_{image_type}_{image_id}.jpg")
+
+        # A game can only have one cover. IGDB may replace the cover record
+        # with a new image ID, so refresh the existing row in place instead of
+        # inserting a second row and violating unique_game_cover_image. Keep
+        # its local filename so the new download atomically replaces the old
+        # file rather than leaving an orphan behind.
+        if image_type == 'cover':
+            with db.session.no_autoflush:
+                existing_cover = db.session.execute(
+                    select(Image).filter_by(
+                        game_uuid=game_uuid, image_type='cover',
+                    )
+                ).scalar_one_or_none()
+            if existing_cover is not None:
+                existing_cover.igdb_image_id = str(image_id)
+                existing_cover.download_url = download_url
+                existing_cover.is_downloaded = False
+                existing_cover.created_at = datetime.now(UTC)
+                return existing_cover
         
         # Store image metadata with URL for later download
         image = Image(
@@ -246,6 +265,7 @@ def store_image_url_for_download(game_uuid, image_data, image_type='cover'):
             is_downloaded=False
         )
         db.session.add(image)
+        return image
         
     except Exception as e:
         print(f"Error storing image URL for {image_type} {image_data}: {e}")

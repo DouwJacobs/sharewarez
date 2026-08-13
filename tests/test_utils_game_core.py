@@ -272,6 +272,39 @@ class TestImageProcessingFunctions:
         assert images[0].igdb_image_id == '98765'
         assert images[0].download_url == 'https://images.igdb.com/igdb/image/upload/t_original/test.jpg'
         assert images[0].is_downloaded is False
+
+    @patch('sharewarez.utils.game_core.make_igdb_api_request')
+    def test_store_cover_updates_existing_cover_when_igdb_id_changes(
+        self, mock_api, db_session, sample_game, sample_global_settings,
+    ):
+        existing = Image(
+            game_uuid=sample_game.uuid,
+            image_type='cover',
+            url=f'{sample_game.uuid}_cover_old.jpg',
+            igdb_image_id='11111',
+            download_url='https://images.example/old.jpg',
+            is_downloaded=True,
+            is_default=True,
+        )
+        db_session.add(existing)
+        db_session.commit()
+        mock_api.return_value = [{
+            'url': '//images.igdb.com/igdb/image/upload/t_thumb/new.jpg',
+        }]
+
+        result = store_image_url_for_download(sample_game.uuid, 22222, 'cover')
+        db_session.flush()
+
+        covers = db_session.query(Image).filter_by(
+            game_uuid=sample_game.uuid, image_type='cover',
+        ).all()
+        assert covers == [existing]
+        assert result is existing
+        assert existing.igdb_image_id == '22222'
+        assert existing.url.endswith('_cover_old.jpg')
+        assert existing.download_url.endswith('/t_original/new.jpg')
+        assert existing.is_downloaded is False
+        assert existing.is_default is True
     
     @patch('sharewarez.utils.game_core.make_igdb_api_request')
     def test_store_image_url_for_download_screenshot(self, mock_api, db_session, sample_game, sample_global_settings):

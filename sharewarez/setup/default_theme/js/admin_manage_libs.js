@@ -22,10 +22,22 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Initialize Sortable on the libraries table
     const tbody = document.querySelector('#librariesTable tbody');
-    new Sortable(tbody, {
-        handle: '.drag-handle',
-        animation: 150,
-        onEnd: function(evt) {
+    const libraryRows = [...tbody.querySelectorAll('tr')];
+    if (libraryRows.length < 2) {
+        const handle = tbody.querySelector('.drag-handle');
+        if (handle) {
+            handle.disabled = true;
+            handle.title = 'Add another library to enable reordering';
+            handle.setAttribute('aria-label', 'Reordering unavailable with one library');
+        }
+    } else {
+        new Sortable(tbody, {
+            handle: '.drag-handle',
+            dataIdAttr: 'data-library-uuid',
+            animation: 150,
+            ghostClass: 'library-sortable-ghost',
+            dragClass: 'library-sortable-drag',
+            onEnd: function(evt) {
             const newOrder = Array.from(tbody.querySelectorAll('tr')).map(row => row.dataset.libraryUuid);
             
             // Send the new order to the server
@@ -41,15 +53,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (data.status === 'success') {
                     $.notify('Library order updated successfully', 'success');
                 } else {
+                    this.sort(libraryRows.map(row => row.dataset.libraryUuid));
                     $.notify('Error updating library order', 'error');
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
+                this.sort(libraryRows.map(row => row.dataset.libraryUuid));
                 $.notify('Error updating library order', 'error');
             });
-        }
-    });
+            }
+        });
+    }
 
     // Existing delete functionality
     const spinner = document.getElementById('deleteSpinner');
