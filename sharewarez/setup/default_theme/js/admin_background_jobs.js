@@ -20,6 +20,12 @@ document.addEventListener('DOMContentLoaded', () => {
             const openJobIds = new Set(
                 [...shell.querySelectorAll('.job-card[open]')].map((card) => card.dataset.jobId),
             );
+            const openSections = new Set(
+                [...shell.querySelectorAll('.job-card .job-data details[open]')].map((section) => {
+                    const card = section.closest('.job-card');
+                    return `${card?.dataset.jobId}:${section.dataset.jobSection}`;
+                }),
+            );
 
             for (const selector of ['.job-summary', '.job-list']) {
                 const current = shell.querySelector(selector);
@@ -30,6 +36,16 @@ document.addEventListener('DOMContentLoaded', () => {
             for (const jobId of openJobIds) {
                 const card = shell.querySelector(`.job-card[data-job-id="${CSS.escape(jobId)}"]`);
                 if (card) card.open = true;
+            }
+            for (const sectionKey of openSections) {
+                const separator = sectionKey.indexOf(':');
+                const jobId = sectionKey.slice(0, separator);
+                const sectionName = sectionKey.slice(separator + 1);
+                const section = shell.querySelector(
+                    `.job-card[data-job-id="${CSS.escape(jobId)}"] `
+                    + `.job-data details[data-job-section="${CSS.escape(sectionName)}"]`,
+                );
+                if (section) section.open = true;
             }
 
             const status = shell.querySelector('.jobs-live-status');

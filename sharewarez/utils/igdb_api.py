@@ -6,12 +6,27 @@ import hashlib
 import time
 import threading
 import re
+from flask import current_app, has_app_context
 from sharewarez import db
 from sharewarez.models import GlobalSettings
 from sqlalchemy import select
 
 
 _steam_app_id_cache: dict = {}
+_igdb_request_lock = threading.Lock()
+_igdb_last_request_at = 0.0
+_IGDB_MIN_REQUEST_INTERVAL = 0.26
+_IGDB_MAX_ATTEMPTS = 3
+
+
+def _wait_for_igdb_request_slot():
+    """Keep each process below IGDB's four-requests-per-second limit."""
+    global _igdb_last_request_at
+    with _igdb_request_lock:
+        delay = _IGDB_MIN_REQUEST_INTERVAL - (time.monotonic() - _igdb_last_request_at)
+        if delay > 0:
+            time.sleep(delay)
+        _igdb_last_request_at = time.monotonic()
 
 def get_steam_app_id_from_igdb(igdb_id):
     if not igdb_id:
@@ -59,11 +74,27 @@ def make_igdb_api_request(endpoint_url, query_params):
     }
 
     try:
-        # print(f"make_igdb_api_request Attempting to make a request to {endpoint_url} with headers: {headers} and query: {query_params}")
-        response = requests.post(endpoint_url, headers=headers, data=query_params)
-        response.raise_for_status()
-        # print(f"make_igdb_api_request Response from IGDB API: {data}")
-        return response.json()
+        for attempt in range(_IGDB_MAX_ATTEMPTS):
+            _wait_for_igdb_request_slot()
+            response = requests.post(
+                endpoint_url, headers=headers, data=query_params, timeout=30,
+            )
+            if response.status_code == 429 or response.status_code >= 500:
+                if attempt < _IGDB_MAX_ATTEMPTS - 1:
+                    retry_after = response.headers.get('Retry-After')
+                    try:
+                        delay = max(float(retry_after), 1.0) if retry_after else 2 ** attempt
+                    except (TypeError, ValueError):
+                        delay = 2 ** attempt
+                    if has_app_context():
+                        current_app.logger.warning(
+                            'IGDB request returned HTTP %s; retrying in %.1fs',
+                            response.status_code, delay,
+                        )
+                    time.sleep(delay)
+                    continue
+            response.raise_for_status()
+            return response.json()
 
     except requests.RequestException as e:
         return {"error": f"make_igdb_api_request API Request failed: {e}"}

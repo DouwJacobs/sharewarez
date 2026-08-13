@@ -124,6 +124,7 @@ def test_admin_job_page_filters_and_displays_details(client, app, db_session, jo
     assert b'Live updates' in response.data
     assert b'admin_background_jobs.js' in response.data
     assert f'data-job-id="{queued_id}"'.encode() in response.data
+    assert b'data-job-section="payload"' in response.data
     assert b'System check' in response.data
 
 

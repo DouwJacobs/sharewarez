@@ -369,13 +369,18 @@ def library_bulk_image_refresh_task(context, payload):
             f'Refreshing images {index} of {total}: {game_name}',
         )
         try:
-            if refresh_images_in_background(game_uuid):
+            refresh_result = refresh_images_in_background(game_uuid)
+            if isinstance(refresh_result, tuple):
+                refresh_succeeded, refresh_error = refresh_result
+            else:
+                refresh_succeeded, refresh_error = bool(refresh_result), None
+            if refresh_succeeded:
                 succeeded += 1
             elif len(failures) < 50:
                 failures.append({
                     'game_uuid': game_uuid,
                     'game_name': game_name,
-                    'error': 'Image refresh did not complete',
+                    'error': refresh_error or 'Image refresh did not complete',
                 })
         except Exception as exc:
             db.session.rollback()

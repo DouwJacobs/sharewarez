@@ -357,9 +357,14 @@ def refresh_images_in_background(game_uuid):
             print(f"[IMAGE REFRESH] IGDB API response: {response_json}")
 
             if not response_json or 'error' in response_json:
-                print(f"[IMAGE REFRESH] IGDB API returned error or empty response.")
+                error = (
+                    response_json.get('error')
+                    if isinstance(response_json, dict)
+                    else 'IGDB returned no matching game'
+                )
+                print(f"[IMAGE REFRESH] IGDB API returned an error: {error}")
                 cache.set(f'image_refresh_progress_{game_uuid}', {'status': 'error', 'progress': 0}, timeout=300)
-                return False
+                return False, error
 
             cache.set(f'image_refresh_progress_{game_uuid}', {'status': 'in_progress', 'progress': 40}, timeout=300)
 
@@ -453,7 +458,7 @@ def refresh_images_in_background(game_uuid):
             db.session.commit()
             cache.set(f'image_refresh_progress_{game_uuid}', {'status': 'complete', 'progress': 100}, timeout=300)
             print(f"[IMAGE REFRESH] Successfully finished for '{game.name}'")
-            return True
+            return True, None
 
         except Exception as e:
             db.session.rollback()
@@ -461,7 +466,7 @@ def refresh_images_in_background(game_uuid):
             import traceback
             traceback.print_exc()
             cache.set(f'image_refresh_progress_{game_uuid}', {'status': 'error', 'progress': 0}, timeout=300)
-            return False
+            return False, str(e)
             
 def delete_game_images(game_uuid):
     with current_app.app_context():

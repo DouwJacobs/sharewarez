@@ -72,6 +72,7 @@ class TestMakeIgdbApiRequest:
         """Test successful IGDB API request."""
         mock_get_token.return_value = 'test_token'
         mock_response = MagicMock()
+        mock_response.status_code = 200
         mock_response.json.return_value = {'data': 'test_response'}
         mock_requests_post.return_value = mock_response
         
@@ -85,8 +86,32 @@ class TestMakeIgdbApiRequest:
                 'Client-ID': 'test_client_id',
                 'Authorization': 'Bearer test_token'
             },
-            data='fields name;'
+            data='fields name;',
+            timeout=30,
         )
+
+    @patch('sharewarez.utils.igdb_api.time.sleep')
+    @patch('sharewarez.utils.igdb_api._wait_for_igdb_request_slot')
+    @patch('sharewarez.utils.igdb_api.get_access_token')
+    @patch('requests.post')
+    def test_rate_limit_response_is_retried(
+        self, mock_requests_post, mock_get_token, mock_wait_for_slot,
+        mock_sleep, db_session, sample_global_settings,
+    ):
+        mock_get_token.return_value = 'test_token'
+        limited = MagicMock(status_code=429, headers={'Retry-After': '1'})
+        successful = MagicMock(status_code=200, headers={})
+        successful.json.return_value = [{'id': 1}]
+        mock_requests_post.side_effect = [limited, successful]
+
+        result = make_igdb_api_request(
+            'https://api.igdb.com/v4/games', 'fields name;',
+        )
+
+        assert result == [{'id': 1}]
+        assert mock_requests_post.call_count == 2
+        assert mock_wait_for_slot.call_count == 2
+        mock_sleep.assert_called_once_with(1.0)
 
     def test_missing_igdb_settings(self, db_session):
         """Test API request with missing IGDB settings."""
@@ -135,6 +160,7 @@ class TestMakeIgdbApiRequest:
         """Test API request with invalid JSON response."""
         mock_get_token.return_value = 'test_token'
         mock_response = MagicMock()
+        mock_response.status_code = 200
         mock_response.json.side_effect = ValueError("Invalid JSON")
         mock_requests_post.return_value = mock_response
         
