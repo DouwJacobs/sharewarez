@@ -134,3 +134,17 @@ def test_ui_consistency_feature_uses_shared_theme_and_navigation_patterns():
 
     assert '#content :is(' in theme_components
     assert '.filter-select' in theme_components
+
+
+def test_admin_dashboard_uses_responsive_tool_cards():
+    template = Path('sharewarez/templates/admin/admin_dashboard.html').read_text()
+    css = Path('sharewarez/setup/default_theme/css/admin/admin_dashboard.css').read_text()
+
+    assert 'admin_tool(' in template
+    assert template.count('app-surface admin-section') == 4
+    assert 'data-toggle="tooltip"' not in template
+    assert 'btn-circle' not in template
+    assert '.admin-dashboard-grid' in css
+    assert '.admin-tool-card' in css
+    assert 'grid-template-columns: repeat(2, minmax(0, 1fr))' in css
+    assert '@media (max-width: 768px)' in css

@@ -2,17 +2,20 @@ body {
     background-color: color-mix(in srgb, var(--theme-panel-bg, #12121c) 55%, black);
 }
 
-/* Use the unified .admin-section from base.css */
-
-.admin-dashboard-header {
-    width: min(100%, 1200px);
-    margin: 0 0 var(--spacing-xl);
+.admin-dashboard-page {
+    width: min(100%, 1280px);
+    margin-inline: auto;
 }
 
-.admin-dashboard-eyebrow {
-    margin: 0 0 0.35rem;
+.admin-dashboard-header {
+    margin-bottom: var(--spacing-xl);
+}
+
+.admin-dashboard-eyebrow,
+.admin-section-heading p {
+    margin: 0 0 0.3rem;
     color: var(--theme-accent, var(--btn-primary));
-    font-size: 0.76rem;
+    font-size: 0.72rem;
     font-weight: 800;
     letter-spacing: 0.14em;
     text-transform: uppercase;
@@ -21,140 +24,225 @@ body {
 .admin-dashboard-header h1 {
     margin: 0;
     color: var(--text-white);
-    font-size: clamp(1.8rem, 3vw, 2.5rem);
-    font-weight: 750;
+    font-size: clamp(1.9rem, 3vw, 2.65rem);
+    font-weight: 760;
 }
 
-.admin-dashboard-header > p:last-child {
+.admin-dashboard-header > div > p:last-child {
     max-width: 720px;
-    margin: 0.45rem 0 0;
+    margin: 0.5rem 0 0;
     color: var(--text-muted, rgba(255, 255, 255, 0.68));
 }
 
-.hackplanet_titles {
-    text-align: center;
-    margin-bottom: 40px;
+.admin-dashboard-help {
+    flex: 0 0 auto;
 }
 
-.hackplanet_titles h1 {
-    color: var(--text-white);
-    font-size: 2.5em;
-    font-weight: bold;
-    text-shadow: 0 0 10px var(--primary-brand-50);
+.admin-dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--spacing-lg);
+    align-items: start;
 }
 
-.admin-section h3 {
-    color: var(--text-white);
-    font-size: 1.3em;
-    margin-bottom: var(--spacing-lg);
-    border-bottom: 1px solid var(--border-light);
-    padding-bottom: var(--spacing-sm);
+.admin-section {
+    min-width: 0;
+    padding: clamp(1rem, 2vw, 1.4rem);
 }
 
-.admin-section h3 i {
-    margin-right: var(--spacing-sm);
-    color: var(--btn-primary);
+.admin-section--server {
+    grid-column: 1 / -1;
 }
 
-.admin-buttons {
+.admin-section-heading {
     display: flex;
-    flex-wrap: wrap;
-    gap: 20px;
+    gap: 0.85rem;
+    align-items: flex-start;
+    padding-bottom: 1rem;
+    margin-bottom: 0.9rem;
+    border-bottom: 1px solid var(--border-light, rgba(255, 255, 255, 0.1));
 }
 
-.admin-button-item {
-    display: flex;
-    flex-direction: column;
+.admin-section-icon,
+.admin-tool-icon {
+    display: inline-flex;
     align-items: center;
-    width: 116px;
+    justify-content: center;
+    flex: 0 0 auto;
+    color: var(--theme-accent, var(--btn-primary));
+    background: color-mix(in srgb, var(--theme-accent, var(--btn-primary)) 14%, transparent);
+    border: 1px solid color-mix(in srgb, var(--theme-accent, var(--btn-primary)) 24%, transparent);
+}
+
+.admin-section-icon {
+    width: 2.6rem;
+    height: 2.6rem;
+    border-radius: 0.8rem;
+    font-size: 1rem;
+}
+
+.admin-section-heading h2 {
+    margin: 0;
+    color: var(--text-white);
+    font-size: 1.12rem;
+    font-weight: 750;
+}
+
+.admin-section-heading span:last-child {
+    display: block;
+    margin-top: 0.25rem;
+    color: var(--text-muted, rgba(255, 255, 255, 0.64));
+    font-size: 0.84rem;
+    line-height: 1.45;
+}
+
+.admin-tool-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.7rem;
+}
+
+.admin-tool-grid--wide {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.admin-tool-card {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 0.75rem;
+    align-items: center;
+    min-height: 5rem;
+    padding: 0.8rem;
+    color: inherit;
+    text-decoration: none;
+    border: 1px solid var(--border-light, rgba(255, 255, 255, 0.1));
+    border-radius: 0.85rem;
+    background: color-mix(in srgb, var(--theme-panel-bg, #171722) 82%, transparent);
+    transition: transform 160ms ease, border-color 160ms ease, background-color 160ms ease, box-shadow 160ms ease;
+}
+
+.admin-tool-card:hover,
+.admin-tool-card:focus-visible {
+    color: inherit;
+    text-decoration: none;
+    transform: translateY(-2px);
+    border-color: color-mix(in srgb, var(--theme-accent, var(--btn-primary)) 50%, transparent);
+    background: color-mix(in srgb, var(--theme-accent, var(--btn-primary)) 9%, var(--theme-panel-bg, #171722));
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.18);
+    outline: none;
+}
+
+.admin-tool-icon {
+    width: 2.35rem;
+    height: 2.35rem;
+    border-radius: 0.7rem;
+    font-size: 0.9rem;
+}
+
+.admin-tool-copy {
+    min-width: 0;
+}
+
+.admin-tool-title {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    color: var(--text-white);
+    font-size: 0.91rem;
+    font-weight: 720;
+    line-height: 1.25;
+}
+
+.admin-tool-description {
+    display: block;
+    margin-top: 0.25rem;
+    color: var(--text-muted, rgba(255, 255, 255, 0.62));
+    font-size: 0.76rem;
+    line-height: 1.35;
+}
+
+.admin-tool-arrow {
+    color: var(--text-muted, rgba(255, 255, 255, 0.42));
+    font-size: 0.7rem;
+    transition: transform 160ms ease, color 160ms ease;
+}
+
+.admin-tool-card:hover .admin-tool-arrow,
+.admin-tool-card:focus-visible .admin-tool-arrow {
+    color: var(--theme-accent, var(--btn-primary));
+    transform: translateX(2px);
 }
 
 .admin-count-badge {
-    position: absolute;
-    top: -0.35rem;
-    right: -0.35rem;
-    min-width: 1.45rem;
-    height: 1.45rem;
-    padding: 0 0.35rem;
+    min-width: 1.35rem;
+    height: 1.35rem;
+    padding: 0 0.36rem;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     border-radius: 999px;
     background: var(--theme-danger, #ef5a67);
     color: #fff;
-    font-size: 0.72rem;
+    font-size: 0.68rem;
     font-weight: 800;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.28);
 }
 
-.btn-circle {
-    position: relative;
-    width: 60px;
-    height: 60px;
-    padding: 0;
-    border-radius: 50%;
-    text-align: center;
-    font-size: 24px;
-    line-height: 60px;
-    background: var(--primary-brand-20);
-    color: var(--text-white);
-    border: 1px solid var(--primary-brand-30);
-    transition: all 0.3s ease;
-}
-
-.btn-circle:hover {
-    transform: translateY(-3px);
-    background: var(--primary-brand-40);
-    box-shadow: 0 0 20px var(--primary-brand-30);
-    color: var(--text-white);
-}
-
-.button-label {
-    margin-top: 8px;
-    font-size: 0.9em;
-    color: var(--text-white);
-    text-align: center;
-    white-space: nowrap;
+@media (max-width: 1050px) {
+    .admin-tool-grid,
+    .admin-tool-grid--wide {
+        grid-template-columns: minmax(0, 1fr);
+    }
 }
 
 @media (max-width: 768px) {
+    .admin-dashboard-page {
+        width: 100%;
+    }
+
     .admin-dashboard-header {
-        padding: 0 4px;
+        align-items: flex-start;
+        gap: 1rem;
+        margin-bottom: 1rem;
     }
 
-    .admin-panel {
-        padding: 15px;
-        margin: 6px 0;
+    .admin-dashboard-help {
+        width: 100%;
+        justify-content: center;
     }
 
-    .admin-buttons {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 12px 8px;
+    .admin-dashboard-grid {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 0.8rem;
     }
 
-    .admin-button-item {
-        width: auto;
-        min-width: 0;
+    .admin-section--server {
+        grid-column: auto;
     }
 
-    .btn-circle {
-        width: 50px;
-        height: 50px;
-        font-size: 20px;
-        line-height: 50px;
+    .admin-section {
+        padding: 0.9rem;
     }
 
-    .button-label {
-        font-size: 0.8em;
-        min-height: 2.4em;
-        overflow-wrap: anywhere;
-        white-space: normal;
+    .admin-section-heading {
+        padding-bottom: 0.8rem;
+        margin-bottom: 0.7rem;
+    }
+
+    .admin-tool-card {
+        min-height: 4.65rem;
+        padding: 0.72rem;
     }
 }
 
-@media (max-width: 360px) {
-    .admin-buttons {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+@media (max-width: 380px) {
+    .admin-tool-description {
+        font-size: 0.73rem;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .admin-tool-card,
+    .admin-tool-arrow {
+        transition: none;
     }
 }
