@@ -832,3 +832,53 @@ input[type="radio"] {
         color: rgb(var(--theme-accent-soft-rgb, 154, 177, 255));
     }
 }
+
+/* Theme-aware native form bridge. Route styles may control layout and sizing,
+   while the active theme always owns control color, borders, and focus state. */
+#content :is(
+    input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]):not([type="hidden"]),
+    select,
+    textarea,
+    .form-control,
+    .form-select,
+    .admin-input,
+    .config-input,
+    .filter-input,
+    .filter-select
+) {
+    border-color: var(--theme-border-color, var(--form-border)) !important;
+    background-color: var(--theme-input-bg, var(--form-bg-dark)) !important;
+    color: var(--theme-text-primary, var(--text-white)) !important;
+    caret-color: rgb(var(--theme-accent-soft-rgb, 154, 177, 255));
+    color-scheme: dark;
+}
+
+#content :is(select, .form-select, .filter-select) option {
+    background: var(--theme-panel-bg, var(--bg-dark-30));
+    color: var(--theme-text-primary, var(--text-white));
+}
+
+#content :is(
+    input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]):not([type="hidden"]),
+    select,
+    textarea,
+    .form-control,
+    .form-select,
+    .admin-input,
+    .config-input,
+    .filter-input,
+    .filter-select
+):focus {
+    border-color: rgb(var(--theme-accent-soft-rgb, 154, 177, 255)) !important;
+    outline: 0;
+    box-shadow: 0 0 0 3px rgba(var(--theme-accent-rgb, 98, 122, 239), .2) !important;
+}
+
+#content :is(input, textarea)::placeholder {
+    color: var(--theme-text-muted, var(--form-placeholder)) !important;
+    opacity: 1;
+}
+
+#content :is(input[type="checkbox"], input[type="radio"]) {
+    accent-color: rgb(var(--theme-accent-rgb, 98, 122, 239));
+}

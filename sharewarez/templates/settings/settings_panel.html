@@ -5,20 +5,33 @@
 {% endblock %}
 
 {% block content %}
-<main class="app-page app-page--narrow app-surface settings-panel-page">
-        <p class="preferences-modal-eyebrow">Your experience</p>
-        <h1>User Preferences</h1>
-        <p>Set the defaults used when you browse your library.</p>
-        <form id="preferencesForm" method="POST" action="{{ url_for('settings.settings_panel') }}" class="preferences-form">
+<main class="app-page settings-panel-page" aria-labelledby="settings-page-title">
+    <header class="app-page-header settings-page-header">
+        <div>
+            <p class="settings-eyebrow">Personalization</p>
+            <h1 id="settings-page-title">Settings</h1>
+            <p>Choose how your library behaves and how GameStack looks for your account.</p>
+        </div>
+        <a class="btn btn-secondary" href="{{ url_for('settings.settings_profile_view') }}"><i class="fas fa-user" aria-hidden="true"></i> Account</a>
+    </header>
+
+    <form id="preferencesForm" method="POST" action="{{ url_for('settings.settings_panel') }}" class="settings-form app-stack">
             {{ form.hidden_tag() }}
-            <div class="mb-3">
+        <section class="app-surface settings-section" aria-labelledby="library-defaults-title">
+            <div class="settings-section-heading">
+                <span class="settings-section-icon"><i class="fas fa-table-cells-large" aria-hidden="true"></i></span>
+                <div><p class="settings-section-kicker">Library defaults</p><h2 id="library-defaults-title">Browsing</h2><p>Set the initial density and ordering used whenever you open the library.</p></div>
+            </div>
+            <div class="settings-fields-grid">
+            <div class="settings-field">
                 {{ form.items_per_page.label(class="form-label") }}
-                {{ form.items_per_page(class="form-control") }}
+                {{ form.items_per_page(class="form-select") }}
+                <small>More items reduce pagination but increase page length.</small>
                 {% for error in form.items_per_page.errors %}
                 <div class="invalid-feedback">{{ error }}</div>
                 {% endfor %}
             </div>
-            <div class="mb-3">
+            <div class="settings-field">
                 {{ form.default_sort.label(class="form-label") }}
                 {{ form.default_sort(class="form-select") }}
                 {% for error in form.default_sort.errors %}
@@ -26,25 +39,36 @@
                 {% endfor %}
             </div>
             
-            <div class="mb-3">
+            <div class="settings-field">
                 {{ form.default_sort_order.label(class="form-label") }}
                 {{ form.default_sort_order(class="form-select") }}
                 {% for error in form.default_sort_order.errors %}
                 <div class="invalid-feedback">{{ error }}</div>
                 {% endfor %}
             </div>
-            
-            <div class="mb-3">
+            </div>
+        </section>
+
+        <section class="app-surface settings-section" aria-labelledby="appearance-title">
+            <div class="settings-section-heading">
+                <span class="settings-section-icon"><i class="fas fa-palette" aria-hidden="true"></i></span>
+                <div><p class="settings-section-kicker">Appearance</p><h2 id="appearance-title">Theme</h2><p>Use the site default or choose a personal color theme.</p></div>
+            </div>
+            <div class="settings-field settings-theme-field">
                 {{ form.theme.label(class="form-label") }}
                 {{ form.theme(class="form-select") }}
                 {% for error in form.theme.errors %}
                 <div class="invalid-feedback">{{ error }}</div>
                 {% endfor %}
             </div>
-            
-            <div class="d-grid">
-                {{ form.submit(class="btn btn-primary") }}
+            <div class="settings-actions">
+                <p><i class="fas fa-circle-info" aria-hidden="true"></i> These preferences apply only to your account.</p>
+                <div>
+                    <a class="btn btn-secondary" href="{{ url_for('settings.settings_profile_view') }}">Cancel</a>
+                    {{ form.submit(class="btn btn-primary") }}
+                </div>
             </div>
-        </form>
+        </section>
+    </form>
 </main>
 {% endblock %}

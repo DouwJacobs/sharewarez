@@ -22,10 +22,22 @@
         '/admin/users': 'Users', '/admin/whitelist': 'Whitelist', '/admin/manage_invites': 'Invitations',
         '/admin/branding': 'Branding', '/admin/manage-downloads': 'Download requests',
         '/admin/themes': 'Themes', '/admin/newsletter': 'Newsletter', '/admin/email-templates': 'Email templates',
-        '/admin/help': 'Administrator guide',
+        '/admin/help': 'Administrator guide', '/admin/smtp_settings': 'SMTP settings',
         '/admin/image_queue': 'Image queue', '/admin/extensions': 'File extensions'
     } %}
-    {% set document_page_title = title|default(route_titles.get(request.path), true) %}
+    {% set endpoint_titles = {
+        'admin2.background_jobs': 'Background jobs', 'admin2.collections': 'Collections',
+        'admin2.add_collection': 'Add collection', 'admin2.edit_collection': 'Edit collection',
+        'admin2.add_library': 'Add library', 'admin2.edit_library': 'Edit library',
+        'admin2.discord_help': 'Discord help', 'admin2.discord_settings': 'Discord settings',
+        'admin2.edit_filters': 'Scanning filters', 'admin2.igdb_settings': 'IGDB settings',
+        'admin2.smtp_settings': 'SMTP settings', 'admin2.settings': 'Server settings',
+        'admin2.theme_builder': 'Theme builder', 'admin2.theme_readme': 'Theme guide',
+        'admin2.view_newsletter': 'Newsletter details',
+        'game_requests.admin_request_details': 'Request details',
+        'info.admin_server_status': 'Server status'
+    } %}
+    {% set document_page_title = title|default(route_titles.get(request.path) or endpoint_titles.get(request.endpoint), true) %}
     <title>{% block title %}{% if document_page_title %}{{ document_page_title }} · {% endif %}{{ site_title }}{% endblock %}</title>
     <meta name="theme-color" content="{{ pwa_theme_color }}">
     <meta name="mobile-web-app-capable" content="yes">
@@ -373,9 +385,9 @@
             {% for item in mobile_nav.links[4:] %}<a href="{{ item.href }}"{% if item.active %} class="active" aria-current="page"{% endif %}><i class="fas {{ item.icon }}" aria-hidden="true"></i><span>{{ item.label }}</span></a>{% endfor %}
             {% if show_trailers %}<a href="{{ url_for('site.random_trailers') }}"{% if request.path.startswith('/trailers') %} class="active" aria-current="page"{% endif %}><i class="fas fa-film" aria-hidden="true"></i><span>Trailers</span></a>{% endif %}
             {% if current_user.role == 'admin' %}<a href="{{ url_for('site.admin_dashboard') }}"{% if request.path.startswith('/admin') %} class="active" aria-current="page"{% endif %}><i class="fas fa-shield-halved" aria-hidden="true"></i><span>Administration</span></a>{% endif %}
+            <a href="{{ url_for('notifications.notification_center') }}"{% if request.path.startswith('/notifications') %} class="active" aria-current="page"{% endif %}><i class="fas fa-bell" aria-hidden="true"></i><span>Notifications{% if unread_notification_count %} ({{ unread_notification_count }}){% endif %}</span></a>
             {% if show_help_button %}<a href="{{ url_for('site.helpfaq') }}"{% if request.path.startswith('/help') %} class="active" aria-current="page"{% endif %}><i class="fas fa-circle-question" aria-hidden="true"></i><span>Help</span></a>{% endif %}
             <a href="{{ url_for('settings.settings_profile_view') }}"><i class="fas fa-user" aria-hidden="true"></i><span>Profile</span></a>
-            <a href="{{ url_for('notifications.notification_center') }}"{% if request.path.startswith('/notifications') %} class="active" aria-current="page"{% endif %}><i class="fas fa-bell" aria-hidden="true"></i><span>Notifications{% if unread_notification_count %} ({{ unread_notification_count }}){% endif %}</span></a>
         </div>
     </details>
 </nav>

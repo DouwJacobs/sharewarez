@@ -108,3 +108,29 @@ def test_library_keeps_shared_desktop_page_centering():
     desktop_rules = css.split('@media (max-width: 768px)', 1)[0]
 
     assert '.library-browser-page {' not in desktop_rules
+
+
+def test_ui_consistency_feature_uses_shared_theme_and_navigation_patterns():
+    base = Path('sharewarez/templates/base.html').read_text()
+    favorites = Path('sharewarez/templates/games/favorites.html').read_text()
+    favorites_css = Path('sharewarez/setup/default_theme/css/games/favorites.css').read_text()
+    settings = Path('sharewarez/templates/settings/settings_panel.html').read_text()
+    settings_css = Path('sharewarez/setup/default_theme/css/settings/settings_panel.css').read_text()
+    theme_components = Path('sharewarez/setup/default_theme/css/theme-components.css').read_text()
+
+    mobile_more = base.split('class="mobile-more-menu"', 1)[1]
+    assert mobile_more.index('Notifications') < mobile_more.index('Help')
+    assert "'/admin/smtp_settings': 'SMTP settings'" in base
+    assert "'admin2.background_jobs': 'Background jobs'" in base
+    assert 'admin-breadcrumb-current' in base
+
+    assert 'discovery-favorites-container{% if not favorites %} is-empty{% endif %}' in favorites
+    assert '.discovery-favorites-container.is-empty .favorites-empty-state' in favorites_css
+
+    assert settings.count('app-surface settings-section') == 2
+    assert 'settings-panel-page' in settings
+    assert '@media (max-width: 768px)' in settings_css
+    assert 'grid-template-columns: repeat(2, minmax(0, 1fr))' in settings_css
+
+    assert '#content :is(' in theme_components
+    assert '.filter-select' in theme_components

@@ -17,7 +17,7 @@
             <h1 class="discovery-header">My Favorites</h1>
             <p class="favorites-page-description">The games you have saved for quick access.</p>
         </header>
-        <div class="app-surface discovery-panel discovery-favorites-container">
+        <div class="app-surface discovery-panel discovery-favorites-container{% if not favorites %} is-empty{% endif %}">
             {% if favorites %}
                 <div class="discovery-favorites-games game-library-container">
                     {% for game in favorites %}
