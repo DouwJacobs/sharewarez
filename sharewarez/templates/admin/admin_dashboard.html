@@ -1,11 +1,10 @@
 {% extends "base.html" %}
 
 {% macro admin_tool(href, icon, title, description, badge=none) %}
-<a href="{{ href }}" class="admin-tool-card">
+<a href="{{ href }}" class="admin-tool-card" aria-label="{{ title }}: {{ description }}">
     <span class="admin-tool-icon"><i class="fas {{ icon }}" aria-hidden="true"></i></span>
     <span class="admin-tool-copy">
         <span class="admin-tool-title">{{ title }}{% if badge %}<span class="admin-count-badge" aria-label="{{ badge }} pending">{{ badge }}</span>{% endif %}</span>
-        <span class="admin-tool-description">{{ description }}</span>
     </span>
     <i class="fas fa-chevron-right admin-tool-arrow" aria-hidden="true"></i>
 </a>
@@ -19,7 +18,7 @@
         <div>
             <p class="admin-dashboard-eyebrow">Administration</p>
             <h1 id="admin-dashboard-title">Admin dashboard</h1>
-            <p>Manage your library, server, members, integrations, and publishing tools from one place.</p>
+            <p>Manage your library, server, users, and site.</p>
         </div>
         <a class="btn btn-secondary admin-dashboard-help" href="{{ url_for('admin2.admin_help') }}">
             <i class="fas fa-circle-question" aria-hidden="true"></i> Admin guide
@@ -31,9 +30,7 @@
             <header class="admin-section-heading">
                 <span class="admin-section-icon"><i class="fas fa-book-open" aria-hidden="true"></i></span>
                 <div>
-                    <p>Catalog</p>
                     <h2 id="admin-library-title">Library &amp; discovery</h2>
-                    <span>Organize games and control how content is found.</span>
                 </div>
             </header>
             <div class="admin-tool-grid">
@@ -51,9 +48,7 @@
             <header class="admin-section-heading">
                 <span class="admin-section-icon"><i class="fas fa-user-shield" aria-hidden="true"></i></span>
                 <div>
-                    <p>Membership</p>
                     <h2 id="admin-access-title">Access &amp; users</h2>
-                    <span>Control accounts, invitations, and registration.</span>
                 </div>
             </header>
             <div class="admin-tool-grid">
@@ -67,9 +62,7 @@
             <header class="admin-section-heading">
                 <span class="admin-section-icon"><i class="fas fa-server" aria-hidden="true"></i></span>
                 <div>
-                    <p>Operations</p>
                     <h2 id="admin-server-title">Server &amp; integrations</h2>
-                    <span>Configure services and monitor system activity.</span>
                 </div>
             </header>
             <div class="admin-tool-grid admin-tool-grid--wide">
@@ -89,9 +82,7 @@
             <header class="admin-section-heading">
                 <span class="admin-section-icon"><i class="fas fa-wand-magic-sparkles" aria-hidden="true"></i></span>
                 <div>
-                    <p>Experience</p>
                     <h2 id="admin-tools-title">Site &amp; communication</h2>
-                    <span>Shape the interface and member communications.</span>
                 </div>
             </header>
             <div class="admin-tool-grid">
