@@ -836,7 +836,7 @@ input[type="radio"] {
 /* Theme-aware native form bridge. Route styles may control layout and sizing,
    while the active theme always owns control color, borders, and focus state. */
 #content :is(
-    input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]):not([type="hidden"]),
+    input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]):not([type="hidden"]):not([data-global-search-inline]):not([data-request-search-input]),
     select,
     textarea,
     .form-control,
@@ -859,7 +859,7 @@ input[type="radio"] {
 }
 
 #content :is(
-    input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]):not([type="hidden"]),
+    input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]):not([type="hidden"]):not([data-global-search-inline]):not([data-request-search-input]),
     select,
     textarea,
     .form-control,
