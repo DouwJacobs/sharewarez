@@ -41,8 +41,16 @@ def notify_new_request(record, joined_existing=False):
     is_update = (getattr(record, 'request_type', 'new_game') == 'update')
     req_label = 'Game update request' if is_update else 'Game request'
     try:
+        from sharewarez.utils.notifications import active_user_ids, create_notifications
+        action = 'joined' if joined_existing else 'created'
+        create_notifications(
+            active_user_ids(role='admin'), 'request_created',
+            f'{req_label} {action}: {record.game_name}',
+            'A user joined this request.' if joined_existing else 'A new request needs review.',
+            link_url=f'/admin/game-requests/{record.id}',
+            dedupe_key=f'request:{record.id}:{action}:{len(record.interested_requesters)}',
+        )
         if preferences['notifyDiscordNewRequests']:
-            action = 'joined' if joined_existing else 'created'
             desc = 'A user requested an update for this game.' if is_update else 'A user submitted interest in this edition.'
             _send_discord(record, f'{req_label} {action}: {record.game_name}', desc)
         if preferences['notifyAdminRequestEmail']:
@@ -68,6 +76,17 @@ def notify_new_request(record, joined_existing=False):
 def notify_request_updated(record, satisfied_links=None):
     preferences = get_request_settings()
     try:
+        from sharewarez.utils.notifications import create_notifications
+        recipients = list(satisfied_links if satisfied_links is not None else record.active_requesters)
+        recipient_ids = {
+            link.user_id for link in recipients if link.withdrawn_at is None
+        }
+        create_notifications(
+            recipient_ids, 'request_updated', f'Request updated: {record.game_name}',
+            record.public_response or f'Status changed to {record.status.replace("_", " ").title()}.',
+            link_url=(f'/game_details/{record.fulfilled_game_uuid}' if record.fulfilled_game_uuid else '/requests'),
+            dedupe_key=f'request-update:{record.id}:{record.status}',
+        )
         if preferences['notifyDiscordRequestUpdates']:
             _send_discord(record, f'Request updated: {record.game_name}', record.public_response or 'The request status changed.')
         if preferences['notifyRequesterRequestEmail']:
@@ -77,7 +96,6 @@ def notify_request_updated(record, satisfied_links=None):
                 settings = _settings_record()
                 base = ((settings.site_url if settings else None) or 'http://127.0.0.1:5006').rstrip('/')
                 game_url = f'{base}/game_details/{record.fulfilled_game_uuid}'
-            recipients = list(satisfied_links if satisfied_links is not None else record.active_requesters)
             notified_user_ids = set()
             for link in recipients:
                 if link.withdrawn_at is not None or link.user_id in notified_user_ids:

@@ -35,7 +35,7 @@ desktop sidebar remains the full navigation surface.
 
 ## Users and community
 
-- [ ] In-app notification center
+- [x] In-app notification center
 - [ ] Per-event email, Discord, webhook, and in-app preferences
 - [x] Admin-managed templates for account confirmation, invitations, password resets, and request notifications
 - [ ] Play history and time played

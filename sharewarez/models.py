@@ -369,6 +369,9 @@ class User(db.Model):
     invite_quota = db.Column(db.Integer, default=0) 
     monthly_download_quota_bytes = db.Column(db.BigInteger, nullable=True)
     api_tokens = db.relationship('ApiToken', back_populates='user', cascade='all, delete-orphan')
+    notifications = db.relationship(
+        'Notification', back_populates='user', cascade='all, delete-orphan'
+    )
     
     def set_password(self, password):
         # Now using Argon2 to hash new passwords
@@ -422,6 +425,25 @@ class ApiToken(db.Model):
     revoked_at = db.Column(db.DateTime(timezone=True), nullable=True, index=True)
 
     user = db.relationship('User', back_populates='api_tokens')
+
+
+class Notification(db.Model):
+    __tablename__ = 'notifications'
+    __table_args__ = (
+        db.UniqueConstraint('user_id', 'dedupe_key', name='uq_notification_user_event'),
+    )
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False, index=True)
+    event_type = db.Column(db.String(64), nullable=False, index=True)
+    title = db.Column(db.String(255), nullable=False)
+    message = db.Column(db.Text, nullable=False)
+    link_url = db.Column(db.String(1024), nullable=True)
+    dedupe_key = db.Column(db.String(255), nullable=True)
+    created_at = db.Column(db.DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc), index=True)
+    read_at = db.Column(db.DateTime(timezone=True), nullable=True, index=True)
+
+    user = db.relationship('User', back_populates='notifications')
 
 class DownloadRequest(db.Model):
     __tablename__ = 'download_requests'

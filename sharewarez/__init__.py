@@ -127,10 +127,21 @@ def create_app():
         from sharewarez.utils.themes import resolve_theme_id
         current_theme = resolve_theme_id(current_user, app)
         pwa_branding = get_pwa_branding()
+        unread_notification_count = 0
+        if current_user.is_authenticated:
+            from sqlalchemy import func, select
+            from sharewarez.models import Notification
+            unread_notification_count = db.session.execute(
+                select(func.count(Notification.id)).where(
+                    Notification.user_id == current_user.id,
+                    Notification.read_at.is_(None),
+                )
+            ).scalar_one()
         return dict(
             current_theme=current_theme,
             pwa_theme_color=pwa_branding['theme_color'],
             pwa_revision=pwa_branding['revision'],
+            unread_notification_count=unread_notification_count,
             **get_global_settings(),
         )
 
@@ -182,6 +193,7 @@ def create_app():
     from sharewarez.routes_apis import apis_bp
     from sharewarez.routes_game_requests import game_requests_bp
     from sharewarez.routes_health import health_bp
+    from sharewarez.routes_notifications import notifications_bp
 
     # Register all blueprints
     app.register_blueprint(routes.bp)
@@ -199,6 +211,7 @@ def create_app():
     app.register_blueprint(apis_bp)
     app.register_blueprint(game_requests_bp)
     app.register_blueprint(health_bp)
+    app.register_blueprint(notifications_bp)
 
     with app.app_context():
         # Database initialization is handled by the InitializationManager before workers start

@@ -723,6 +723,14 @@ def retrieve_and_save_game(game_name, full_disk_path, scan_job_id=None, library_
                     print(f"Sending Discord notification for new game '{new_game.name}'.")
                     discord_webhook(new_game.uuid)
 
+                from sharewarez.utils.notifications import active_user_ids, create_notifications
+                create_notifications(
+                    active_user_ids(), 'new_game', f'New game: {new_game.name}',
+                    f'{new_game.name} is now available in {new_game.library.name}.',
+                    link_url=f'/game_details/{new_game.uuid}',
+                    dedupe_key=f'new-game:{new_game.uuid}',
+                )
+
                 # Fetch HowLongToBeat data if enabled
                 # Load settings for HLTB (separate from local metadata settings)
                 hltb_settings = db.session.execute(select(GlobalSettings)).scalar_one_or_none()

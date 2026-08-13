@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block styles %}
+{{ super() }}
+<link rel="stylesheet" href="{{ 'css/site/notifications.css'|theme_asset }}">
+{% endblock %}
+{% block content %}
+<main class="app-page notification-page">
+    <header class="app-page-header">
+        <div>
+            <p class="notification-eyebrow">Activity inbox</p>
+            <h1>Notifications</h1>
+            <p>New games, available updates, and request activity appear here.</p>
+        </div>
+        <div class="app-page-actions">
+            <a class="btn {{ 'btn-primary' if not unread_only else 'btn-secondary' }}" href="{{ url_for('notifications.notification_center') }}">All</a>
+            <a class="btn {{ 'btn-primary' if unread_only else 'btn-secondary' }}" href="{{ url_for('notifications.notification_center', filter='unread') }}">Unread</a>
+            {% if unread_notification_count %}
+            <form method="post" action="{{ url_for('notifications.mark_all_notifications_read') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button class="btn btn-secondary" type="submit">Mark all read</button>
+            </form>
+            {% endif %}
+        </div>
+    </header>
+
+    <section class="app-surface notification-surface" aria-label="Notification list">
+    {% if notifications %}
+        <div class="notification-list">
+        {% for notification in notifications %}
+            <article class="notification-item{% if not notification.read_at %} is-unread{% endif %}">
+                <span class="notification-icon" aria-hidden="true">
+                    <i class="fas {% if notification.event_type == 'new_game' %}fa-gamepad{% elif notification.event_type == 'game_update' %}fa-cloud-arrow-down{% elif 'request' in notification.event_type %}fa-paper-plane{% else %}fa-bell{% endif %}"></i>
+                </span>
+                <div class="notification-copy">
+                    <div class="notification-title-row">
+                        <h2>{{ notification.title }}</h2>
+                        {% if not notification.read_at %}<span class="notification-unread-label">New</span>{% endif %}
+                    </div>
+                    <p>{{ notification.message }}</p>
+                    <time datetime="{{ notification.created_at.isoformat() }}">{{ notification.created_at.strftime('%Y-%m-%d %H:%M') }}</time>
+                </div>
+                <div class="notification-actions">
+                    {% if notification.link_url %}
+                    <form method="post" action="{{ url_for('notifications.open_notification', notification_id=notification.id) }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button class="btn btn-primary" type="submit">View</button>
+                    </form>
+                    {% endif %}
+                    {% if not notification.read_at %}
+                    <form method="post" action="{{ url_for('notifications.mark_notification_read', notification_id=notification.id) }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button class="btn btn-secondary" type="submit" aria-label="Mark {{ notification.title }} as read">Mark read</button>
+                    </form>
+                    {% endif %}
+                </div>
+            </article>
+        {% endfor %}
+        </div>
+    {% else %}
+        <div class="notification-empty">
+            <i class="fas fa-bell-slash" aria-hidden="true"></i>
+            <h2>{{ 'No unread notifications' if unread_only else 'No notifications yet' }}</h2>
+            <p>{{ 'You are all caught up.' if unread_only else 'New library and request activity will appear here.' }}</p>
+        </div>
+    {% endif %}
+    </section>
+
+    {% if pagination.pages > 1 %}
+    <nav class="notification-pagination" aria-label="Notification pages">
+        {% if pagination.has_prev %}<a class="btn btn-secondary" href="{{ url_for('notifications.notification_center', page=pagination.prev_num, filter='unread' if unread_only else None) }}">Previous</a>{% endif %}
+        <span>Page {{ pagination.page }} of {{ pagination.pages }}</span>
+        {% if pagination.has_next %}<a class="btn btn-secondary" href="{{ url_for('notifications.notification_center', page=pagination.next_num, filter='unread' if unread_only else None) }}">Next</a>{% endif %}
+    </nav>
+    {% endif %}
+</main>
+{% endblock %}

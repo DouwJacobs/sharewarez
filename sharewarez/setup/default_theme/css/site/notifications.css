@@ -1,0 +1,28 @@
+.notification-page { max-width: 1120px; }
+.notification-eyebrow { margin: 0 0 4px; color: var(--theme-accent-color); font-size: .72rem; font-weight: 750; letter-spacing: .09em; text-transform: uppercase; }
+.notification-surface { overflow: hidden; padding: 0; }
+.notification-list { display: grid; }
+.notification-item { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 16px; align-items: center; padding: 18px 20px; border-bottom: 1px solid var(--theme-border-color); }
+.notification-item:last-child { border-bottom: 0; }
+.notification-item.is-unread { background: color-mix(in srgb, var(--theme-accent-color) 8%, transparent); }
+.notification-icon { display: grid; width: 42px; height: 42px; place-items: center; border: 1px solid var(--theme-border-color); border-radius: 12px; background: var(--theme-input-bg); color: var(--theme-accent-color); }
+.notification-copy { min-width: 0; }
+.notification-title-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.notification-title-row h2 { margin: 0; font-size: 1rem; }
+.notification-copy p { margin: 6px 0; color: var(--theme-text-secondary); overflow-wrap: anywhere; }
+.notification-copy time { color: var(--theme-text-secondary); font-size: .74rem; }
+.notification-unread-label { padding: 2px 7px; border-radius: 999px; background: var(--theme-accent-color); color: var(--theme-button-text, #fff); font-size: .66rem; font-weight: 750; text-transform: uppercase; }
+.notification-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
+.notification-actions form, .app-page-actions form { margin: 0; }
+.notification-empty { padding: 64px 24px; text-align: center; }
+.notification-empty > i { margin-bottom: 14px; color: var(--theme-text-secondary); font-size: 2rem; }
+.notification-empty h2 { font-size: 1.1rem; }
+.notification-empty p { color: var(--theme-text-secondary); }
+.notification-pagination { display: flex; gap: 12px; align-items: center; justify-content: center; margin-top: 16px; }
+
+@media (max-width: 768px) {
+    .notification-item { grid-template-columns: auto minmax(0, 1fr); padding: 16px 14px; }
+    .notification-actions { grid-column: 1 / -1; justify-content: stretch; }
+    .notification-actions form { flex: 1 1 auto; }
+    .notification-actions .btn { width: 100%; }
+}

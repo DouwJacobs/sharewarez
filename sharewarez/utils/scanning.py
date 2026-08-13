@@ -155,6 +155,7 @@ def process_game_updates(game_name, full_disk_path, updates_folder, library_uuid
     print(f"Update items found: {update_items}")
 
     seen_paths = set()
+    new_updates = []
     for update_item in update_items:
         update_path = os.path.join(updates_folder, update_item)
         seen_paths.add(update_path)
@@ -174,6 +175,7 @@ def process_game_updates(game_name, full_disk_path, updates_folder, library_uuid
                 nfo_content=read_first_nfo_content(update_path) if os.path.isdir(update_path) else None
             )
             db.session.add(game_update)
+            new_updates.append((update_item, file_path))
         else:
             print(f"Updating existing GameUpdate record for {file_path}")
             game_update.file_path = file_path
@@ -199,6 +201,15 @@ def process_game_updates(game_name, full_disk_path, updates_folder, library_uuid
     try:
         db.session.commit()
         print("Successfully committed GameUpdate records to database")
+        if new_updates:
+            from sharewarez.utils.notifications import active_user_ids, create_notifications
+            for update_title, update_path in new_updates:
+                create_notifications(
+                    active_user_ids(), 'game_update', f'Update available: {game.name}',
+                    f'{update_title} was added for {game.name}.',
+                    link_url=f'/game_details/{game.uuid}',
+                    dedupe_key=f'game-update:{game.uuid}:{update_path}',
+                )
     except SQLAlchemyError as e:
         print(f"Error committing GameUpdate records to database: {str(e)}")
         db.session.rollback()

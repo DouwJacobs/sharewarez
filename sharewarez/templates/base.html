@@ -10,7 +10,7 @@
     {% set route_titles = {
         '/login': 'Login', '/register': 'Register', '/reset_password_request': 'Reset password',
         '/discover': 'Discover', '/library': 'Library', '/requests': 'Game requests',
-        '/downloads': 'Downloads', '/favorites': 'Favorites', '/trailers': 'Trailers', '/help': 'Help',
+        '/downloads': 'Downloads', '/favorites': 'Favorites', '/notifications': 'Notifications', '/trailers': 'Trailers', '/help': 'Help',
         '/settings_profile_view': 'Profile', '/settings_profile_edit': 'Edit profile',
         '/settings_password': 'Change password', '/settings_panel': 'Preferences', '/user/invites': 'Invitations',
         '/admin/dashboard': 'Administration', '/admin/libraries': 'Libraries',
@@ -275,6 +275,7 @@
                 <a href="{{ url_for('game_requests.requests_page') }}" class="sidebar-link{% if request.path.startswith('/requests') %} active{% endif %}" title="Requests"{% if request.path.startswith('/requests') %} aria-current="page"{% endif %}><i class="fas fa-paper-plane"></i><span class="link-text">Requests</span></a>
             {% endif %}
             <a href="{{ url_for('download.downloads') }}" class="sidebar-link{% if request.path.startswith('/downloads') %} active{% endif %}" title="Downloads"{% if request.path.startswith('/downloads') %} aria-current="page"{% endif %}><i class="fas fa-download"></i><span class="link-text">Downloads</span></a>
+            <a href="{{ url_for('notifications.notification_center') }}" class="sidebar-link sidebar-notification-link{% if request.path.startswith('/notifications') %} active{% endif %}" title="Notifications"{% if request.path.startswith('/notifications') %} aria-current="page"{% endif %}><i class="fas fa-bell"></i><span class="link-text">Notifications</span>{% if unread_notification_count %}<span class="notification-nav-badge" aria-label="{{ unread_notification_count }} unread notifications">{{ '99+' if unread_notification_count > 99 else unread_notification_count }}</span>{% endif %}</a>
             {% if show_favorites %}
                 <a href="{{ url_for('site.favorites') }}" class="sidebar-link{% if request.path.startswith('/favorites') %} active{% endif %}" title="Favorites"{% if request.path.startswith('/favorites') %} aria-current="page"{% endif %}><i class="fas fa-heart"></i><span class="link-text">Favorites</span></a>
             {% endif %}
@@ -374,6 +375,7 @@
             {% if current_user.role == 'admin' %}<a href="{{ url_for('site.admin_dashboard') }}"{% if request.path.startswith('/admin') %} class="active" aria-current="page"{% endif %}><i class="fas fa-shield-halved" aria-hidden="true"></i><span>Administration</span></a>{% endif %}
             {% if show_help_button %}<a href="{{ url_for('site.helpfaq') }}"{% if request.path.startswith('/help') %} class="active" aria-current="page"{% endif %}><i class="fas fa-circle-question" aria-hidden="true"></i><span>Help</span></a>{% endif %}
             <a href="{{ url_for('settings.settings_profile_view') }}"><i class="fas fa-user" aria-hidden="true"></i><span>Profile</span></a>
+            <a href="{{ url_for('notifications.notification_center') }}"{% if request.path.startswith('/notifications') %} class="active" aria-current="page"{% endif %}><i class="fas fa-bell" aria-hidden="true"></i><span>Notifications{% if unread_notification_count %} ({{ unread_notification_count }}){% endif %}</span></a>
         </div>
     </details>
 </nav>
