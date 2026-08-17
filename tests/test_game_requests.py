@@ -268,7 +268,7 @@ def test_request_update_email_deduplicates_users(mock_send, mock_settings, app, 
     }
     user = make_user(db_session)
     record = SimpleNamespace(
-        status='fulfilled', game_name='Example', public_response=None,
+        id=str(uuid4()), status='fulfilled', game_name='Example', public_response=None,
         fulfilled_game_uuid=None, active_requesters=[],
     )
     first = SimpleNamespace(user_id=user.id, user=user, withdrawn_at=None, last_notified_status=None)
