@@ -175,7 +175,11 @@ def run_scan_schedule(schedule_id):
     if not form.validate_on_submit():
         abort(400)
     schedule = _get_schedule_or_404(schedule_id)
+    if schedule.last_job and schedule.last_job.status in {'queued', 'running'}:
+        flash('This scheduled scan is already queued or running.', 'info')
+        return redirect(url_for('main.scan_management', active_tab='auto'))
     job = enqueue_scheduled_scan(schedule, created_by_id=current_user.id)
+    schedule.last_run = datetime.now(timezone.utc)
     schedule.last_job_id = job.id
     db.session.commit()
     log_system_event(f'Scheduled scan run manually: {schedule.id} (job {job.id})', event_type='job')

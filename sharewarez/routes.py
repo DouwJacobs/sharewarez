@@ -286,7 +286,9 @@ def scan_management():
 
     jobs = db.session.execute(select(ScanJob).order_by(ScanJob.last_run.desc())).scalars().all()
     scan_schedules = db.session.execute(
-        select(LibraryScanSchedule).order_by(
+        select(LibraryScanSchedule).options(
+            selectinload(LibraryScanSchedule.last_job)
+        ).order_by(
             LibraryScanSchedule.is_enabled.desc(), LibraryScanSchedule.next_run.asc()
         )
     ).scalars().all()

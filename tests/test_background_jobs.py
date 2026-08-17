@@ -193,11 +193,29 @@ def test_admin_job_page_creates_and_manages_scan_schedule(
     with app.app_context():
         schedule = db.session.get(LibraryScanSchedule, schedule_id)
         assert schedule.last_job_id is not None
+        assert schedule.last_run is not None
         queued = db.session.get(BackgroundJob, schedule.last_job_id)
         assert queued.status == 'queued'
         assert queued.payload['schedule_id'] == schedule_id
         assert queued.created_by_id == jobs_admin.id
         assert schedule.next_run == next_run_before
+
+    queued_page = client.get('/admin/scan_management?active_tab=auto')
+    assert b'Last run' in queued_page.data
+    assert b'Current job' in queued_page.data
+    assert b'Queued' in queued_page.data
+    assert b'aria-disabled="true"' in queued_page.data
+
+    assert client.post(f'/admin/scan-schedules/{schedule_id}/run').status_code == 302
+    with app.app_context():
+        assert db.session.scalar(select(func.count(BackgroundJob.id))) == 1
+        queued = db.session.get(BackgroundJob, queued.id)
+        queued.status = 'running'
+        db.session.commit()
+
+    running_page = client.get('/admin/scan_management?active_tab=auto')
+    assert b'Running' in running_page.data
+    assert b'is-running' in running_page.data
 
     assert client.post(
         f'/admin/scan-schedules/{schedule_id}/toggle'
