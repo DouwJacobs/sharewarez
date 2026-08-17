@@ -10,6 +10,12 @@ from sharewarez import db
 from sharewarez.models import LibraryScanSchedule, LibraryScanState
 
 
+SCHEDULE_INTERVALS = {
+    60: 'Every hour', 360: 'Every 6 hours', 720: 'Every 12 hours',
+    1440: 'Daily', 4320: 'Every 3 days', 10080: 'Weekly',
+}
+
+
 def filesystem_fingerprint(folder_path, context=None):
     """Hash relative paths and stable stat metadata without reading file contents."""
     digest = hashlib.sha256()
@@ -73,8 +79,6 @@ def save_scan_state(library_uuid, folder_path, scan_mode, fingerprint, entry_cou
 
 def dispatch_due_schedules(now=None):
     """Atomically enqueue all schedules that are currently due."""
-    from sharewarez.utils.background_jobs import enqueue
-
     now = now or datetime.now(timezone.utc)
     schedules = db.session.execute(
         select(LibraryScanSchedule)
@@ -84,17 +88,26 @@ def dispatch_due_schedules(now=None):
     ).scalars().all()
     dispatched = []
     for schedule in schedules:
-        options = dict(schedule.options or {})
-        payload = {
-            'library_uuid': schedule.library_uuid,
-            'folder_path': schedule.folder_path,
-            'scan_mode': schedule.scan_mode,
-            **options,
-        }
-        job = enqueue('library.scan', payload, max_attempts=3)
+        job = enqueue_scheduled_scan(schedule)
         schedule.last_run = now
         schedule.last_job_id = job.id
         schedule.next_run = now + timedelta(minutes=schedule.interval_minutes)
         db.session.commit()
         dispatched.append(job)
     return dispatched
+
+
+def enqueue_scheduled_scan(schedule, *, created_by_id=None):
+    """Queue one execution without changing the schedule's recurring cadence."""
+    from sharewarez.utils.background_jobs import enqueue
+
+    payload = {
+        'library_uuid': schedule.library_uuid,
+        'folder_path': schedule.folder_path,
+        'scan_mode': schedule.scan_mode,
+        'schedule_id': schedule.id,
+        **dict(schedule.options or {}),
+    }
+    return enqueue(
+        'library.scan', payload, max_attempts=3, created_by_id=created_by_id,
+    )

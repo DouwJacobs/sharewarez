@@ -2,3 +2,5 @@
 
 .jobs-header-actions{display:flex;align-items:center;gap:.75rem}.jobs-live-status{display:inline-flex;align-items:center;gap:.45rem;color:var(--text-muted,#aab0bd);font-size:.8rem;white-space:nowrap}.jobs-live-status>span{width:.5rem;height:.5rem;border-radius:50%;background:var(--status-running,#39c275)}.job-card.status-running{background:var(--card-background,rgba(20,24,32,.9));animation:none}.job-progress>span:after{transition:width .2s ease}@media(max-width:480px){.jobs-admin-shell{width:100%}.jobs-header-actions{justify-content:space-between;margin-top:.75rem}.jobs-header .jobs-header-actions .btn{margin-top:0}}
 @media(max-width:480px){.jobs-header .btn{width:100%;white-space:nowrap}}
+
+.schedule-summary{display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:1rem;margin-bottom:1rem}.schedule-summary>div{display:grid;gap:.15rem}.schedule-summary span{color:var(--text-muted);font-size:.8rem}.schedule-summary .btn{white-space:nowrap}@media(max-width:600px){.schedule-summary{align-items:stretch;flex-direction:column}.schedule-summary .btn{width:100%}}

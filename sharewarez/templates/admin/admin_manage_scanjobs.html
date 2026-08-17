@@ -2,6 +2,8 @@
 
 {% extends "base.html" %}
 {% block content %}
+{% set scan_schedules = scan_schedules|default([]) %}
+{% set schedule_intervals = schedule_intervals|default({}) %}
 {% block head %}
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
@@ -191,6 +193,25 @@
                     </div>
                 </div>
                 {% endif %}
+                <section class="scan-schedule-card" aria-labelledby="scan-schedules-heading">
+                    <div class="scan-schedule-heading"><div><h4 id="scan-schedules-heading"><i class="fas fa-calendar-alt" aria-hidden="true"></i> Scheduled Auto Scans</h4><p>Reuse the same scan settings automatically. Unchanged folders are skipped.</p></div><span>{{ scan_schedules|length }} configured</span></div>
+                    <details class="scan-schedule-create"{% if not scan_schedules %} open{% endif %}>
+                        <summary><i class="fas fa-plus" aria-hidden="true"></i> Add schedule</summary>
+                        <form method="post" action="{{ url_for('admin2.create_scan_schedule') }}" class="scan-schedule-form">
+                            {{ csrf_form.hidden_tag() }}
+                            <label>Library<select name="library_uuid" required><option value="">Select a library</option>{% for library in libraries %}<option value="{{ library.uuid }}">{{ library.name }}</option>{% endfor %}</select></label>
+                            <label class="schedule-folder">Scan folder<input type="text" name="folder_path" required placeholder="windows-games" autocomplete="off"><small>Use the same path shown in the auto-scan folder field.</small></label>
+                            <label>Games are<select name="scan_mode"><option value="folders">Folders</option><option value="files">Files</option></select></label>
+                            <label>Repeat<select name="interval_minutes">{% for minutes, label in schedule_intervals.items() %}<option value="{{ minutes }}"{% if minutes == 1440 %} selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+                            <label>First run (UTC)<input type="datetime-local" name="first_run"><small>Blank starts after one interval.</small></label>
+                            <fieldset><legend>Options</legend><label><input type="checkbox" name="fetch_hltb" checked> Fetch HLTB</label><label><input type="checkbox" name="download_missing_images"> Missing images</label><label><input type="checkbox" name="remove_missing"> Remove missing</label><label><input type="checkbox" name="force_updates_extras_scan"> Force updates/extras</label><label><input type="checkbox" name="force_hltb_refetch"> Force HLTB refresh</label></fieldset>
+                            <div class="scan-schedule-submit"><button class="btn btn-primary" type="submit"><i class="fas fa-calendar-plus" aria-hidden="true"></i> Create schedule</button></div>
+                        </form>
+                    </details>
+                    <div class="scan-schedule-list">
+                        {% for schedule in scan_schedules %}<article class="scan-schedule-row{% if not schedule.is_enabled %} is-paused{% endif %}"><span class="scan-schedule-state">{{ 'Active' if schedule.is_enabled else 'Paused' }}</span><div class="scan-schedule-main"><strong>{{ schedule.library.name if schedule.library else 'Deleted library' }}</strong><small title="{{ schedule.folder_path }}">{{ schedule.folder_path }}</small></div><dl><div><dt>Repeat</dt><dd>{{ schedule_intervals.get(schedule.interval_minutes, schedule.interval_minutes ~ ' minutes') }}</dd></div><div><dt>Next</dt><dd>{{ schedule.next_run.strftime('%Y-%m-%d %H:%M UTC') }}</dd></div><div><dt>Last</dt><dd>{{ schedule.last_run.strftime('%Y-%m-%d %H:%M UTC') if schedule.last_run else 'Not run yet' }}</dd></div></dl><div class="scan-schedule-actions"><form method="post" action="{{ url_for('admin2.run_scan_schedule', schedule_id=schedule.id) }}">{{ csrf_form.hidden_tag() }}<button class="btn btn-primary" type="submit"><i class="fas fa-play" aria-hidden="true"></i> Run now</button></form>{% if schedule.last_job_id %}<a class="btn btn-secondary" href="{{ url_for('admin2.background_jobs', q=schedule.last_job_id) }}">Last job</a>{% endif %}<form method="post" action="{{ url_for('admin2.toggle_scan_schedule', schedule_id=schedule.id) }}">{{ csrf_form.hidden_tag() }}<button class="btn btn-secondary" type="submit">{{ 'Pause' if schedule.is_enabled else 'Resume' }}</button></form><form method="post" action="{{ url_for('admin2.delete_scan_schedule', schedule_id=schedule.id) }}" onsubmit="return confirm('Delete this scan schedule?');">{{ csrf_form.hidden_tag() }}<button class="btn btn-danger" type="submit">Delete</button></form></div></article>{% else %}<p class="scan-schedule-empty">No automatic scans are scheduled yet.</p>{% endfor %}
+                    </div>
+                </section>
                 <!-- Scan Jobs Management Card -->
                 <div class="scan-jobs-card">
                     <div class="card-header">

@@ -28,7 +28,7 @@ from sharewarez.forms import (
 from sharewarez.models import (
     Game, Image, ScanJob, UnmatchedFolder,
     Genre, Theme, GameMode, PlayerPerspective, GameTag,
-    Category, Library, GlobalSettings,
+    Category, Library, GlobalSettings, LibraryScanSchedule,
     ReleaseGroup, AllowedFileType
 )
 from sharewarez.utils.functions import load_scanning_filter_patterns, format_size, PLATFORM_IDS
@@ -44,6 +44,7 @@ from sharewarez.utils.security import is_safe_path, get_allowed_base_directories
 from sharewarez.utils.unmatched import handle_delete_unmatched
 from sharewarez.utils.processors import get_global_settings
 from sharewarez.utils.pagination import normalize_library_pagination
+from sharewarez.utils.incremental_scanning import SCHEDULE_INTERVALS
 bp = Blueprint('main', __name__)
 
 def get_serializer():
@@ -284,6 +285,11 @@ def scan_management():
             manual_form.library_uuid.data = selected_library_uuid
 
     jobs = db.session.execute(select(ScanJob).order_by(ScanJob.last_run.desc())).scalars().all()
+    scan_schedules = db.session.execute(
+        select(LibraryScanSchedule).order_by(
+            LibraryScanSchedule.is_enabled.desc(), LibraryScanSchedule.next_run.asc()
+        )
+    ).scalars().all()
     csrf_form = CsrfProtectForm()
     unmatched_folders = UnmatchedFolder.query\
                         .join(Library)\
@@ -363,7 +369,9 @@ def scan_management():
                            release_group_form=release_group_form,
                            scanning_filters=scanning_filters,
                            allowed_file_types=allowed_file_types,
-                           selected_library_uuid=selected_library_uuid)
+                           selected_library_uuid=selected_library_uuid,
+                           scan_schedules=scan_schedules,
+                           schedule_intervals=SCHEDULE_INTERVALS)
 
 
 @bp.route('/cancel_scan_job/<job_id>', methods=['POST'])

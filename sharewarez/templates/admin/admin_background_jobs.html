@@ -7,9 +7,10 @@
 {% block content %}
 <main class="app-page jobs-admin-shell" data-live-refresh-url="{{ request.full_path }}">
     <header class="app-page-header jobs-header">
-        <div><p class="jobs-eyebrow">Operations</p><h1>Background jobs</h1><p>Monitor queued work, inspect failures, and safely cancel or retry jobs.</p></div>
+        <div><p class="jobs-eyebrow">Operations</p><h1>Background jobs</h1><p>Schedule automatic library scans, monitor queued work, and inspect failures.</p></div>
         <div class="jobs-header-actions"><span class="jobs-live-status" role="status"><span aria-hidden="true"></span> Live updates</span><a class="btn btn-secondary" href="{{ url_for('admin2.background_jobs', status=status_filter, q=search, per_page=per_page) }}"><i class="fas fa-sync-alt" aria-hidden="true"></i> Refresh</a></div>
     </header>
+    <aside class="app-surface schedule-summary" aria-label="Scheduled auto scans"><div><strong>{{ schedules|selectattr('is_enabled')|list|length }} active scan schedule{{ '' if schedules|selectattr('is_enabled')|list|length == 1 else 's' }}</strong><span>{{ schedules|length }} configured · managed in Scan Manager</span></div><a class="btn btn-secondary" href="{{ url_for('main.scan_management', active_tab='auto') }}"><i class="fas fa-calendar-alt" aria-hidden="true"></i> Manage schedules</a></aside>
     <section class="job-summary" aria-label="Job status summary">
         {% for status in statuses %}<a class="job-summary-card status-{{ status }}{% if status_filter == status %} is-active{% endif %}" href="{{ url_for('admin2.background_jobs', status=status, q=search, per_page=per_page) }}"><span>{{ status|title }}</span><strong>{{ counts.get(status, 0) }}</strong></a>{% endfor %}
     </section>

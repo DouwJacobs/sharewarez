@@ -3,7 +3,7 @@ from uuid import uuid4
 from unittest.mock import patch
 
 import pytest
-from sqlalchemy import delete
+from sqlalchemy import delete, func, select
 
 from sharewarez import db
 from sharewarez.models import BackgroundJob, LibraryScanSchedule, LibraryScanState, User
@@ -144,6 +144,105 @@ def test_admin_job_page_can_cancel_and_retry(client, app, db_session, jobs_admin
         job = db.session.get(BackgroundJob, job_id)
         assert job.status == 'queued'
         assert job.progress_message == 'Retry queued'
+
+
+def test_admin_job_page_creates_and_manages_scan_schedule(
+    client, app, db_session, jobs_admin, tmp_path,
+):
+    from sharewarez.platform import LibraryPlatform
+    from sharewarez.models import Library
+
+    with app.app_context():
+        library = Library(name=f'ui-schedule-{uuid4().hex[:8]}', platform=LibraryPlatform.PCWIN)
+        db.session.add(library)
+        db.session.commit()
+        library_uuid = library.uuid
+        library_name = library.name
+    app.config['DATA_FOLDER_WAREZ'] = str(tmp_path)
+    login(client, jobs_admin)
+
+    response = client.post('/admin/scan-schedules', data={
+        'library_uuid': library_uuid,
+        'folder_path': str(tmp_path),
+        'scan_mode': 'folders',
+        'interval_minutes': '1440',
+        'fetch_hltb': 'on',
+    })
+    assert response.status_code == 302
+
+    with app.app_context():
+        schedule = db.session.execute(
+            select(LibraryScanSchedule).where(LibraryScanSchedule.library_uuid == library_uuid)
+        ).scalar_one()
+        schedule_id = schedule.id
+        next_run_before = schedule.next_run
+        assert schedule.interval_minutes == 1440
+        assert schedule.options['fetch_hltb'] is True
+        assert schedule.options['remove_missing'] is False
+
+    page = client.get('/admin/scan_management?active_tab=auto')
+    assert page.status_code == 200
+    assert b'Scheduled Auto Scans' in page.data
+    assert library_name.encode() in page.data
+    assert b'Daily' in page.data
+    assert b'Run now' in page.data
+
+    assert client.post(
+        f'/admin/scan-schedules/{schedule_id}/run'
+    ).status_code == 302
+    with app.app_context():
+        schedule = db.session.get(LibraryScanSchedule, schedule_id)
+        assert schedule.last_job_id is not None
+        queued = db.session.get(BackgroundJob, schedule.last_job_id)
+        assert queued.status == 'queued'
+        assert queued.payload['schedule_id'] == schedule_id
+        assert queued.created_by_id == jobs_admin.id
+        assert schedule.next_run == next_run_before
+
+    assert client.post(
+        f'/admin/scan-schedules/{schedule_id}/toggle'
+    ).status_code == 302
+    with app.app_context():
+        assert db.session.get(LibraryScanSchedule, schedule_id).is_enabled is False
+
+    assert client.post(
+        f'/admin/scan-schedules/{schedule_id}/delete'
+    ).status_code == 302
+    with app.app_context():
+        assert db.session.get(LibraryScanSchedule, schedule_id) is None
+
+
+def test_admin_job_page_rejects_scan_schedule_outside_allowed_folder(
+    client, app, db_session, jobs_admin, tmp_path,
+):
+    from sharewarez.platform import LibraryPlatform
+    from sharewarez.models import Library
+
+    allowed = tmp_path / 'allowed'
+    allowed.mkdir()
+    outside = tmp_path / 'outside'
+    outside.mkdir()
+    with app.app_context():
+        library = Library(name=f'unsafe-schedule-{uuid4().hex[:8]}', platform=LibraryPlatform.PCWIN)
+        db.session.add(library)
+        db.session.commit()
+        library_uuid = library.uuid
+    app.config.update(
+        DATA_FOLDER_WAREZ=str(allowed), BASE_FOLDER_POSIX=None, BASE_FOLDER_WINDOWS=None,
+    )
+    login(client, jobs_admin)
+
+    response = client.post('/admin/scan-schedules', data={
+        'library_uuid': library_uuid,
+        'folder_path': str(outside),
+        'scan_mode': 'folders',
+        'interval_minutes': '1440',
+    }, follow_redirects=True)
+
+    assert response.status_code == 200
+    assert b'Cannot schedule this folder' in response.data
+    with app.app_context():
+        assert db.session.scalar(select(func.count(LibraryScanSchedule.id))) == 0
 
 
 def test_anonymous_user_cannot_open_job_admin_page(client):

@@ -47,6 +47,25 @@ processor after one successful initialization/migration pass. A normal Docker
 stop is forwarded to both processes. If either process exits unexpectedly, its
 sibling is stopped and the container exits so `restart: unless-stopped` recovers
 the full application unit. Use `docker compose logs -f app` for both streams.
+
+## Scheduled library scans
+
+Administrators manage recurring auto scans from the Auto Scan tab in
+`/admin/scan_management`. Background Jobs shows a compact schedule summary and
+remains the execution-history view. Each
+schedule stores its target library, absolute container-visible folder path,
+scan mode, recurrence, next run, and scan options. The first-run field and all
+displayed schedule timestamps use UTC. Folder targets are accepted only when
+they are readable and inside a configured allowed base directory.
+
+The background-job processor checks for due schedules every 30 seconds and
+enqueues the existing incremental `library.scan` task. If the filesystem
+fingerprint has not changed, the scan completes as skipped. Pausing a schedule
+does not cancel a scan that has already been queued; use the job controls for
+that. Resuming an overdue schedule moves its next run forward by one interval.
+Run now queues an immediate execution without changing the recurring next-run
+time.
+
 # Admin instance diagnostics
 
 `/admin/new_server_info` is the single operator-facing instance health dashboard. It combines local database readiness, stale background-job detection, and safe configuration/test-state summaries for SMTP, Discord, and IGDB. It deliberately does not perform outbound network calls during page rendering and never displays integration secrets. Each integration card links to its existing configuration tab under `/admin/integrations`.

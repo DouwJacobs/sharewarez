@@ -72,9 +72,13 @@ body {
     align-items: center;
     justify-content: center;
     flex: 0 0 auto;
-    color: var(--theme-accent, var(--btn-primary));
-    background: color-mix(in srgb, var(--theme-accent, var(--btn-primary)) 14%, transparent);
-    border: 1px solid color-mix(in srgb, var(--theme-accent, var(--btn-primary)) 24%, transparent);
+    border: 1px solid rgba(var(--theme-accent-soft-rgb, 154, 177, 255), 0.22);
+    background: rgba(var(--theme-accent-soft-rgb, 154, 177, 255), 0.1);
+    color: rgb(var(--theme-accent-soft-rgb, 154, 177, 255));
+}
+
+.admin-tool-icon {
+    transition: color 160ms ease, border-color 160ms ease, background-color 160ms ease;
 }
 
 .admin-section-icon {
@@ -121,10 +125,17 @@ body {
     color: inherit;
     text-decoration: none;
     transform: translateY(-2px);
-    border-color: color-mix(in srgb, var(--theme-accent, var(--btn-primary)) 50%, transparent);
-    background: color-mix(in srgb, var(--theme-accent, var(--btn-primary)) 9%, var(--theme-panel-bg, #171722));
+    border-color: rgba(var(--theme-accent-soft-rgb, 154, 177, 255), 0.34);
+    background: color-mix(in srgb, rgb(var(--theme-accent-soft-rgb, 154, 177, 255)) 7%, var(--theme-panel-bg, #171722));
     box-shadow: 0 10px 28px rgba(0, 0, 0, 0.18);
     outline: none;
+}
+
+.admin-tool-card:hover .admin-tool-icon,
+.admin-tool-card:focus-visible .admin-tool-icon {
+    color: rgb(var(--theme-accent-soft-rgb, 154, 177, 255));
+    border-color: rgba(var(--theme-accent-soft-rgb, 154, 177, 255), 0.32);
+    background: rgba(var(--theme-accent-soft-rgb, 154, 177, 255), 0.16);
 }
 
 .admin-tool-icon {
@@ -227,7 +238,8 @@ body {
 
 @media (prefers-reduced-motion: reduce) {
     .admin-tool-card,
-    .admin-tool-arrow {
+    .admin-tool-arrow,
+    .admin-tool-icon {
         transition: none;
     }
 }
