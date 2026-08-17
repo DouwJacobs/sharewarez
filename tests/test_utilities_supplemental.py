@@ -42,7 +42,7 @@ def test_metadata_refresh_updates_igdb_fields_and_repairs_developer_placeholder(
         uuid='game-uuid', igdb_id=123, name='Old name', full_disk_path='/games/Game',
         library_uuid='library-uuid', developer=SimpleNamespace(name='<Developer 6>'),
         publisher=None, genres=[], themes=[], game_modes=[], platforms=[],
-        player_perspectives=[],
+        player_perspectives=[], metadata_provenance={}, metadata_provider_values={},
     )
     settings = SimpleNamespace(
         update_folder_name='updates', extras_folder_name='extras',
@@ -95,7 +95,9 @@ def test_metadata_refresh_succeeds_when_game_path_is_unavailable():
     game = SimpleNamespace(
         uuid='game-uuid', igdb_id=123, name='Old name', full_disk_path='/storage/offline/Game',
         library_uuid='library-uuid', developer=None, publisher=None, genres=[], themes=[],
-        game_modes=[], platforms=[], player_perspectives=[], nfo_content='Existing NFO', size=2048,
+        game_modes=[], platforms=[], player_perspectives=[], metadata_provenance={},
+        metadata_provider_values={},
+        nfo_content='Existing NFO', size=2048,
     )
     settings = SimpleNamespace(
         update_folder_name='updates', extras_folder_name='extras',
