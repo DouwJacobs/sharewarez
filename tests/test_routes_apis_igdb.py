@@ -455,7 +455,7 @@ class TestSearchIgdbById:
         # Verify API call with correct query
         expected_query = f"""
         fields id, name, cover, summary, url, release_dates.date, platforms.name, genres.name, themes.name, game_modes.name,
-               screenshots, videos.video_id, first_release_date, aggregated_rating, involved_companies, player_perspectives.name,
+               screenshots, artworks, videos.video_id, first_release_date, aggregated_rating, involved_companies, player_perspectives.name,
                aggregated_rating_count, rating, rating_count, slug, status, category, total_rating, 
                total_rating_count, storyline, {IGDB_RELATIONSHIP_QUERY_FIELDS};
         where id = 12345;
@@ -533,7 +533,7 @@ class TestSearchIgdbByName:
         
         # Verify API call
         expected_query = f'''fields id, name, cover, summary, url, release_dates.date, platforms.name, genres.name, themes.name, game_modes.name,
-                          screenshots, videos.video_id, first_release_date, aggregated_rating, involved_companies, player_perspectives.name,
+                          screenshots, artworks, videos.video_id, first_release_date, aggregated_rating, involved_companies, player_perspectives.name,
                           aggregated_rating_count, rating, rating_count, slug, status, category, total_rating, 
                           total_rating_count, storyline, {IGDB_RELATIONSHIP_QUERY_FIELDS};search "Test Game"; limit 10;'''
         mock_api_request.assert_called_once_with('https://api.igdb.com/v4/games', expected_query)
@@ -555,7 +555,7 @@ class TestSearchIgdbByName:
         
         # Verify API call includes platform filter
         expected_query = f'''fields id, name, cover, summary, url, release_dates.date, platforms.name, genres.name, themes.name, game_modes.name,
-                          screenshots, videos.video_id, first_release_date, aggregated_rating, involved_companies, player_perspectives.name,
+                          screenshots, artworks, videos.video_id, first_release_date, aggregated_rating, involved_companies, player_perspectives.name,
                           aggregated_rating_count, rating, rating_count, slug, status, category, total_rating, 
                           total_rating_count, storyline, {IGDB_RELATIONSHIP_QUERY_FIELDS};search "Test Game"; where platforms = (6); limit 10;'''
         mock_api_request.assert_called_once_with('https://api.igdb.com/v4/games', expected_query)
@@ -574,7 +574,7 @@ class TestSearchIgdbByName:
         
         # Should ignore invalid platform_id and not include it in query
         expected_query = f'''fields id, name, cover, summary, url, release_dates.date, platforms.name, genres.name, themes.name, game_modes.name,
-                          screenshots, videos.video_id, first_release_date, aggregated_rating, involved_companies, player_perspectives.name,
+                          screenshots, artworks, videos.video_id, first_release_date, aggregated_rating, involved_companies, player_perspectives.name,
                           aggregated_rating_count, rating, rating_count, slug, status, category, total_rating, 
                           total_rating_count, storyline, {IGDB_RELATIONSHIP_QUERY_FIELDS};search "Test Game"; limit 10;'''
         mock_api_request.assert_called_once_with('https://api.igdb.com/v4/games', expected_query)
