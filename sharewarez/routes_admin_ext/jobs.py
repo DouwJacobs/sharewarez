@@ -71,7 +71,7 @@ def create_scan_schedule():
     library = db.session.get(Library, request.form.get('library_uuid'))
     if library is None:
         flash('Select a valid library.', 'error')
-        return redirect(url_for('main.scan_management', active_tab='auto'))
+        return redirect(url_for('main.admin_scan_management', active_tab='auto'))
 
     folder_input = (request.form.get('folder_path') or '').strip()
     if os.path.isabs(folder_input):
@@ -84,10 +84,10 @@ def create_scan_schedule():
     safe, message = is_safe_path(folder_path, get_allowed_base_directories(current_app))
     if not safe:
         flash(f'Cannot schedule this folder: {message}', 'error')
-        return redirect(url_for('main.scan_management', active_tab='auto'))
+        return redirect(url_for('main.admin_scan_management', active_tab='auto'))
     if not os.path.isdir(folder_path) or not os.access(folder_path, os.R_OK):
         flash('The scan folder does not exist or is not readable.', 'error')
-        return redirect(url_for('main.scan_management', active_tab='auto'))
+        return redirect(url_for('main.admin_scan_management', active_tab='auto'))
 
     scan_mode = request.form.get('scan_mode', 'folders')
     if scan_mode not in {'folders', 'files'}:
@@ -107,10 +107,10 @@ def create_scan_schedule():
         )
     except ValueError:
         flash('Enter a valid first-run date and time.', 'error')
-        return redirect(url_for('main.scan_management', active_tab='auto'))
+        return redirect(url_for('main.admin_scan_management', active_tab='auto'))
     if next_run <= datetime.now(timezone.utc):
         flash('The first run must be in the future.', 'error')
-        return redirect(url_for('main.scan_management', active_tab='auto'))
+        return redirect(url_for('main.admin_scan_management', active_tab='auto'))
 
     options = {
         name: request.form.get(name) == 'on'
@@ -127,7 +127,7 @@ def create_scan_schedule():
     db.session.commit()
     log_system_event(f'Scheduled recurring scan for {library.name}: {schedule.id}', event_type='job')
     flash(f'Scheduled scan created for {library.name}.', 'success')
-    return redirect(url_for('main.scan_management', active_tab='auto'))
+    return redirect(url_for('main.admin_scan_management', active_tab='auto'))
 
 
 def _get_schedule_or_404(schedule_id):
@@ -150,7 +150,7 @@ def toggle_scan_schedule(schedule_id):
         schedule.next_run = datetime.now(timezone.utc) + timedelta(minutes=schedule.interval_minutes)
     db.session.commit()
     flash('Scan schedule resumed.' if schedule.is_enabled else 'Scan schedule paused.', 'success')
-    return redirect(url_for('main.scan_management', active_tab='auto'))
+    return redirect(url_for('main.admin_scan_management', active_tab='auto'))
 
 
 @admin2_bp.route('/admin/scan-schedules/<schedule_id>/delete', methods=['POST'])
@@ -164,7 +164,7 @@ def delete_scan_schedule(schedule_id):
     db.session.delete(schedule)
     db.session.commit()
     flash('Scan schedule deleted.', 'success')
-    return redirect(url_for('main.scan_management', active_tab='auto'))
+    return redirect(url_for('main.admin_scan_management', active_tab='auto'))
 
 
 @admin2_bp.route('/admin/scan-schedules/<schedule_id>/run', methods=['POST'])
@@ -177,14 +177,14 @@ def run_scan_schedule(schedule_id):
     schedule = _get_schedule_or_404(schedule_id)
     if schedule.last_job and schedule.last_job.status in {'queued', 'running'}:
         flash('This scheduled scan is already queued or running.', 'info')
-        return redirect(url_for('main.scan_management', active_tab='auto'))
+        return redirect(url_for('main.admin_scan_management', active_tab='auto'))
     job = enqueue_scheduled_scan(schedule, created_by_id=current_user.id)
     schedule.last_run = datetime.now(timezone.utc)
     schedule.last_job_id = job.id
     db.session.commit()
     log_system_event(f'Scheduled scan run manually: {schedule.id} (job {job.id})', event_type='job')
     flash(f'Scan queued for {schedule.library.name}.', 'success')
-    return redirect(url_for('main.scan_management', active_tab='auto'))
+    return redirect(url_for('main.admin_scan_management', active_tab='auto'))
 
 
 def _get_job_or_404(job_id):

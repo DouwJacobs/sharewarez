@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, jsonify
+from flask import Blueprint, render_template, request, jsonify, redirect, url_for
 from flask_login import login_required
 from sharewarez.utils.auth import admin_required
 from sharewarez.utils.processors import get_global_settings
@@ -21,6 +21,8 @@ def inject_settings():
 @login_required
 @admin_required
 def smtp_settings():
+    if request.method == 'GET':
+        return redirect(url_for('admin2.integrations') + '#smtp', code=308)
     settings = db.session.execute(select(GlobalSettings)).scalars().first()
     if request.method == 'POST':
         data = request.json

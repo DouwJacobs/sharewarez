@@ -1,44 +1,42 @@
-<!-- admin/admin_manage_invites.html -->
 {% extends "base.html" %}
+{% from "partials/ui_components.html" import admin_page_header %}
 {% block styles %}
 {{ super() }}
 <link rel="stylesheet" href="{{ 'css/admin/admin_manage_invites.css'|theme_asset }}">
 {% endblock %}
 {% block content %}
+<main class="app-page app-page--narrow admin-invites-page" aria-labelledby="admin-invites-title">
+  {{ admin_page_header('Invitations', 'Allocate invitation capacity to the people who can invite new members.', 'People', 'fa-envelope-open-text', title_id='admin-invites-title') }}
 
-<div class="app-page app-page--narrow app-surface admin_manage_invites-panel container-settings mt-5">
-  <h2 class="admin_manage_invites-heading mb-4">Manage User Invites</h2>
-  <div class="admin_manage_invites-table-div table-responsive">
-    <table class="admin_manage_invites-table table table-dark table-striped">
-      <thead class="admin_manage_invites-table-head table-dark">
-        <tr>
-          <th class="admin_manage_invites-th-1" scope="col">User</th>
-          <th class="admin_manage_invites-th-2" scope="col">Available Invites</th>
-          <th class="admin_manage_invites-th-3" scope="col">Add Invites</th>
-        </tr>
-      </thead>
-      <tbody class="admin_manage_invites-table-body">
-        {% for user in users %}
-        {% set unused_invites = user_unused_invites.get(user.user_id, 0) %}
-        <tr>
-          <td class="admin_manage_invites-td-1">{{ user.name }}</td>
-          <td class="admin_manage_invites-td-2">{{ user.invite_quota - unused_invites }} out of {{ user.invite_quota }}</td>
-          <td>
-            <form action="{{ url_for('admin2.manage_invites') }}" method="POST" class="d-flex gap-2">
-          
-                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-
-              <input type="hidden" name="user_id" value="{{ user.user_id }}">
-              <div class="admin_manage_invites-invitesleft flex-grow-1">
-                <input type="number" name="invites_number" min="1" value="1" class="admin_manage_invites-form-control form-control" aria-label="Number of invitations">
-              </div>
-              <button type="submit" class="admin_manage_invites-add-btn btn btn-primary">Add</button>
-            </form>
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-</div>
+  <section class="app-surface admin-invites-surface" aria-label="Invitation allocations">
+    <div class="admin-invites-summary">
+      <div><strong>{{ users|length }}</strong><span>accounts</span></div>
+      <p>Increasing a quota adds new invitations without changing invitations already issued.</p>
+    </div>
+    <div class="admin_manage_invites-table-div table-responsive">
+      <table class="admin_manage_invites-table table">
+        <thead><tr><th scope="col">User</th><th scope="col">Available</th><th scope="col">Add invitations</th></tr></thead>
+        <tbody>
+          {% for user in users %}
+          {% set unused_invites = user_unused_invites.get(user.user_id, 0) %}
+          <tr>
+            <td><strong>{{ user.name }}</strong><small>{{ user.email }}</small></td>
+            <td><strong>{{ user.invite_quota - unused_invites }}</strong><small>of {{ user.invite_quota }} remaining</small></td>
+            <td>
+              <form action="{{ url_for('admin2.manage_invites') }}" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="user_id" value="{{ user.user_id }}">
+                <input type="number" name="invites_number" min="1" value="1" class="form-control" aria-label="Invitations to add for {{ user.name }}">
+                <button type="submit" class="btn btn-primary">Add</button>
+              </form>
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="3" class="admin-invites-empty">No eligible accounts found.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+</main>
 {% endblock %}

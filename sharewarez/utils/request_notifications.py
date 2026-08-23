@@ -38,8 +38,12 @@ def _send_discord(record, title, description, admin_link=True):
 
 def notify_new_request(record, joined_existing=False):
     preferences = get_request_settings()
-    is_update = (getattr(record, 'request_type', 'new_game') == 'update')
-    req_label = 'Game update request' if is_update else 'Game request'
+    request_type = getattr(record, 'request_type', 'new_game')
+    is_update = request_type == 'update'
+    req_label = {
+        'update': 'Game update request',
+        'issue': 'Game issue report',
+    }.get(request_type, 'Game request')
     try:
         from sharewarez.utils.notifications import active_user_ids, create_notifications
         action = 'joined' if joined_existing else 'created'

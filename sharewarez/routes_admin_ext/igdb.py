@@ -1,5 +1,5 @@
 # /sharewarez/routes_admin_ext/igdb.py
-from flask import render_template, request, jsonify
+from flask import render_template, request, jsonify, redirect, url_for
 from flask_login import login_required
 from sharewarez.models import GlobalSettings
 from sharewarez import db
@@ -13,6 +13,8 @@ from sharewarez.utils.auth import admin_required
 @login_required
 @admin_required
 def igdb_settings():
+    if request.method == 'GET':
+        return redirect(url_for('admin2.integrations') + '#igdb', code=308)
     settings = db.session.execute(select(GlobalSettings)).scalars().first()
     if request.method == 'POST':
         data = request.json

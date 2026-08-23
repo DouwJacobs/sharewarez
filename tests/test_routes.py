@@ -760,12 +760,14 @@ class TestMainBlueprint:
         data = json.loads(response.data)
         assert data['status'] == 'success'
 
+    @patch('sharewarez.routes.log_system_event')
     @patch('flask_login.current_user')
     @patch('sharewarez.routes.Thread')
     @patch('sharewarez.routes.copy_current_request_context')
     @patch('sharewarez.routes.get_game_name_by_uuid')
-    def test_refresh_game_images(self, mock_get_name, mock_copy_context, mock_thread, 
-                                mock_current_user, client, app, db_session, admin_user, test_game):
+    def test_refresh_game_images(self, mock_get_name, mock_copy_context, mock_thread,
+                                mock_current_user, mock_system_event,
+                                client, app, db_session, admin_user, test_game):
         """Test refreshing game images."""
         mock_current_user.is_authenticated = True
         mock_current_user.role = 'admin'
@@ -777,6 +779,14 @@ class TestMainBlueprint:
         
         response = client.post(f'/refresh_game_images/{test_game.uuid}')
         assert response.status_code == 302  # Redirect
+        mock_system_event.assert_called_once_with(
+            f'Image refresh requested: game={test_game.uuid} '
+            f'IGDB={test_game.igdb_id or "none"} by={admin_user.name}; '
+            f'{test_game.name}',
+            event_type='image_refresh',
+            event_level='information',
+            audit_user=admin_user.id,
+        )
 
     @patch('flask_login.current_user')
     @patch('sharewarez.routes.get_game_name_by_uuid')

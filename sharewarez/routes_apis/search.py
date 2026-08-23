@@ -4,7 +4,8 @@ from sqlalchemy import func, literal, or_, select
 from sqlalchemy.orm import selectinload
 
 from sharewarez import db
-from sharewarez.models import Game, GameRequest, Library, User, UserPreference
+from sharewarez.models import Game, GameIssue, GameRequest, Library, User, UserPreference
+from sharewarez.utils.admin_navigation import flatten_admin_navigation
 from sharewarez.utils.processors import get_global_settings
 from . import apis_bp
 
@@ -67,6 +68,24 @@ def global_search():
             'score': round(float(score), 4),
         } for game_request, score in requests)
 
+        issues = db.session.execute(
+            _ranked_search(
+                GameIssue, GameIssue.title,
+                (GameIssue.title, GameIssue.description), query, 6,
+            )
+        ).all()
+        results.extend({
+            'type': 'Issue',
+            'title': issue.title,
+            'subtitle': '{} · {}'.format(
+                issue.category.replace('_', ' ').title(),
+                issue.status.replace('_', ' ').title(),
+            ),
+            'url': f'/admin/issues/{issue.id}',
+            'icon': 'fa-bug',
+            'score': round(float(score), 4),
+        } for issue, score in issues)
+
     libraries = db.session.execute(
         _ranked_search(Library, Library.name, (Library.name, Library.name), query, 5)
     ).all()
@@ -77,7 +96,7 @@ def global_search():
     } for library, score in libraries)
 
     if current_user.role == 'admin':
-        site_title = get_global_settings()['site_title']
+        global_settings = get_global_settings()
         users = db.session.execute(
             _ranked_search(User, User.name, (User.name, User.email), query, 5)
         ).all()
@@ -85,19 +104,13 @@ def global_search():
             'type': 'User', 'title': user.name, 'subtitle': user.email,
             'url': '/admin/users', 'icon': 'fa-user', 'score': round(float(score), 4)
         } for user, score in users)
-        settings_pages = [
-            ('Downloads', 'Manage download requests', '/admin/manage-downloads', 'fa-download'),
-            ('Libraries', 'Manage game libraries', '/admin/libraries', 'fa-layer-group'),
-            ('Branding', f'Configure {site_title} title and logo', '/admin/branding', 'fa-signature'),
-            ('Server settings', f'Configure {site_title}', '/admin/settings', 'fa-sliders'),
-            ('System logs', 'Review audit and system events', '/admin/system_logs', 'fa-clipboard-list'),
-            ('Users', 'Manage user accounts', '/admin/users', 'fa-users'),
-        ]
         lowered = query.lower()
         results.extend({
-            'type': 'Setting', 'title': title, 'subtitle': subtitle,
-            'url': url, 'icon': icon, 'score': 1.0 if lowered == title.lower() else 0.5,
-        } for title, subtitle, url, icon in settings_pages if lowered in f'{title} {subtitle}'.lower())
+            'type': 'Admin', 'title': item['label'], 'subtitle': item['description'],
+            'url': item['url'], 'icon': item['icon'],
+            'score': 1.0 if lowered == item['label'].lower() else 0.5,
+        } for item in flatten_admin_navigation(global_settings)
+          if lowered in f"{item['label']} {item['description']} {item.get('keywords', '')}".lower())
 
     results.sort(key=lambda item: (-item.get('score', 0), item['title'].lower()))
     return jsonify({'query': query, 'results': results[:20], 'suggestions': saved_searches})

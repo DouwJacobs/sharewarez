@@ -9,11 +9,11 @@
 </header>
 {% endmacro %}
 
-{% macro admin_page_header(title, description='', eyebrow='Administration', icon='fa-sliders', actions=None) %}
+{% macro admin_page_header(title, description='', eyebrow='Administration', icon='fa-sliders', actions=None, title_id=None) %}
 <header class="app-page-header admin-page-header">
     <div>
         <p class="admin-page-eyebrow"><i class="fas {{ icon }}" aria-hidden="true"></i> {{ eyebrow }}</p>
-        <h1>{{ title }}</h1>
+        <h1{% if title_id %} id="{{ title_id }}"{% endif %}>{{ title }}</h1>
         {% if description %}<p class="admin-page-description">{{ description }}</p>{% endif %}
     </div>
     {% if caller is defined %}<div class="app-page-actions admin-page-actions">{{ caller() }}</div>{% endif %}

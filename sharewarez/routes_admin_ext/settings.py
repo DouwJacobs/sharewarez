@@ -32,6 +32,7 @@ DEFAULT_SETTINGS = {
     'enableServerStatusFeature': True,
     'enableNewsletterFeature': True,
     'enableGameRequests': True,
+    'enableGameIssues': True,
     'allowRequestNotes': True,
     'allowRequestAnyEdition': True,
     'maxActiveRequestsPerUser': 20,
@@ -39,6 +40,10 @@ DEFAULT_SETTINGS = {
     'notifyAdminRequestEmail': False,
     'notifyDiscordNewRequests': False,
     'notifyDiscordRequestUpdates': False,
+    'notifyAdminIssueEmail': True,
+    'notifyReporterIssueEmail': True,
+    'notifyAdminDownloadCancellations': False,
+    'notifyAdminRepeatDownloads': False,
     'showVersion': True,
     'showDiscovery': True,
     'showFavorites': True,
@@ -309,31 +314,43 @@ def update_settings():
 def settings():
     """
     Main settings endpoint.
-    GET: Redirect to new server settings page.
+    GET: Render the canonical application settings page.
     POST: Handle settings update (used by admin_manage_server_settings.js).
     """
-    from flask import redirect, url_for
     if request.method == 'GET':
-        return redirect(url_for('admin2.new_server_settings'))
-    else:
-        return update_settings()
+        try:
+            settings_record = db.session.execute(select(GlobalSettings)).scalars().first()
+            current_settings = build_current_settings(settings_record)
+            initial_section = request.args.get('section', 'general')
+            allowed_sections = {
+                'general', 'scanning', 'downloads', 'metadata',
+                'interface', 'requests', 'notifications',
+            }
+            if initial_section not in allowed_sections:
+                initial_section = 'general'
+            return render_template(
+                'admin/new_server_settings.html',
+                current_settings=current_settings,
+                initial_section=initial_section,
+            )
+        except Exception as e:
+            logging.error(f"Error retrieving settings: {str(e)}")
+            abort(500)
+    return update_settings()
 
 
 @admin2_bp.route('/admin/new_server_settings', methods=['GET', 'POST'])
 @login_required
 @admin_required
 def new_server_settings():
-    """Handle server settings page."""
+    """Compatibility route for the former settings URL."""
     if request.method == 'POST':
         return update_settings()
-    else:
-        try:
-            settings_record = db.session.execute(select(GlobalSettings)).scalars().first()
-            current_settings = build_current_settings(settings_record)
-            return render_template('admin/new_server_settings.html', current_settings=current_settings)
-        except Exception as e:
-            logging.error(f"Error retrieving settings: {str(e)}")
-            abort(500)
+    from flask import redirect, url_for
+    query_args = {}
+    if request.args.get('section'):
+        query_args['section'] = request.args['section']
+    return redirect(url_for('admin2.settings', **query_args), code=308)
 
 
 @admin2_bp.route('/admin/integrations', methods=['GET'])

@@ -9,7 +9,9 @@ aiofiles==25.1.0
 aiohappyeyeballs==2.7.1
     # via aiohttp
 aiohttp==3.14.3
-    # via howlongtobeatpy
+    # via
+    #   howlongtobeatpy
+    #   pywebpush
 aiosignal==1.4.0
     # via aiohttp
 aiounittest==1.5.0
@@ -62,7 +64,11 @@ click==8.4.2
 coverage==7.15.4
     # via pytest-cov
 cryptography==50.0.0
-    # via -r requirements.in
+    # via
+    #   -r requirements.in
+    #   http-ece
+    #   py-vapid
+    #   pywebpush
 cyclonedx-python-lib==11.11.0
     # via pip-audit
 defusedxml==0.7.1
@@ -114,6 +120,8 @@ h11==0.16.0
     # via uvicorn
 howlongtobeatpy==1.0.22
     # via -r requirements.in
+http-ece==1.2.1
+    # via pywebpush
 httptools==0.8.0
     # via uvicorn
 idna==3.18
@@ -199,6 +207,8 @@ psycopg2-binary==2.9.12
     # via -r requirements.in
 py-serializable==2.1.0
     # via cyclonedx-python-lib
+py-vapid==1.9.4
+    # via pywebpush
 pycparser==3.0
     # via cffi
 pygments==2.20.0
@@ -221,6 +231,8 @@ python-dotenv==1.2.2
     # via
     #   -r requirements.in
     #   uvicorn
+pywebpush==2.4.0
+    # via -r requirements.in
 pyyaml==6.0.3
     # via uvicorn
 requests==2.34.2
@@ -230,6 +242,7 @@ requests==2.34.2
     #   discord-webhook
     #   howlongtobeatpy
     #   pip-audit
+    #   pywebpush
 rich==15.0.0
     # via pip-audit
 ruff==0.16.2

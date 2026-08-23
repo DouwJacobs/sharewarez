@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block content %}
+<link rel="stylesheet" href="{{ 'css/issues.css'|theme_asset }}">
+<main class="app-page app-stack issues-page">
+    <header class="app-page-header app-surface issues-hero">
+        <div><p class="eyebrow">Support</p><h1>My issues</h1><p>Track problems you have reported and continue the conversation with administrators.</p></div>
+    </header>
+
+    <nav class="app-surface issue-filter-bar" aria-label="Issue filters">
+        {% set open_count = namespace(value=0) %}{% for key in open_statuses %}{% set open_count.value = open_count.value + status_counts.get(key, 0) %}{% endfor %}
+        {% set closed_count = namespace(value=0) %}{% for key in closed_statuses %}{% set closed_count.value = closed_count.value + status_counts.get(key, 0) %}{% endfor %}
+        <a href="{{ url_for('issues.my_issues', status='open') }}"{% if selected_scope == 'open' %} class="active" aria-current="page"{% endif %}>Open <span>{{ open_count.value }}</span></a>
+        <a href="{{ url_for('issues.my_issues', status='closed') }}"{% if selected_scope == 'closed' %} class="active" aria-current="page"{% endif %}>Closed <span>{{ closed_count.value }}</span></a>
+        <a href="{{ url_for('issues.my_issues', status='all') }}"{% if selected_scope == 'all' %} class="active" aria-current="page"{% endif %}>All <span>{{ open_count.value + closed_count.value }}</span></a>
+    </nav>
+
+    {% if groups %}
+    <div class="issue-groups">
+        {% for group in groups %}
+        <section class="app-surface issue-game-group">
+            <header class="issue-game-header">
+                <span class="issue-game-icon"><i class="fas fa-gamepad" aria-hidden="true"></i></span>
+                <div><h2>{{ group.game.name }}</h2><p>{{ group.issues|length }} issue{{ '' if group.issues|length == 1 else 's' }} in this view</p></div>
+                <a class="btn btn-secondary" href="{{ url_for('games.game_details', game_uuid=group.game.uuid) }}">View game</a>
+            </header>
+            <div class="issue-list">
+                {% for issue in group.issues %}
+                <a class="issue-list-row" href="{{ url_for('issues.issue_detail', issue_id=issue.id) }}">
+                    <span class="issue-category-icon"><i class="fas fa-bug" aria-hidden="true"></i></span>
+                    <span class="issue-list-copy"><strong>{{ issue.title }}</strong><small>{{ category_labels[issue.category] }} · Updated {{ issue.updated_at.strftime('%d %b %Y %H:%M') }}</small></span>
+                    <span class="issue-comment-count"><i class="fas fa-comment" aria-hidden="true"></i> {{ issue.comments|rejectattr('is_internal')|list|length }}</span>
+                    <span class="issue-status status-{{ issue.status }}">{{ status_labels[issue.status] }}</span>
+                    <i class="fas fa-chevron-right issue-row-arrow" aria-hidden="true"></i>
+                </a>
+                {% endfor %}
+            </div>
+        </section>
+        {% endfor %}
+    </div>
+    {% else %}
+    <section class="app-surface issue-empty"><i class="fas fa-circle-check" aria-hidden="true"></i><h2>No {{ selected_scope }} issues</h2><p>Issues reported from a game page will appear here.</p><a class="btn btn-primary" href="{{ url_for('library.library') }}">Browse library</a></section>
+    {% endif %}
+</main>
+{% endblock %}

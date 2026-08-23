@@ -5,7 +5,9 @@
     <nav class="request-detail-toolbar" aria-label="Request navigation">
         <a class="btn btn-secondary request-back-link" href="{{ url_for('game_requests.admin_requests', status=return_status, type=return_type, q=return_search, sort=return_sort, page=return_page) }}"><i class="fas fa-arrow-left"></i><span>All requests</span></a>
         <span class="request-detail-toolbar-label">
-            {% if game_request.request_type == 'update' %}
+            {% if game_request.request_type == 'issue' %}
+                <i class="fas fa-flag"></i> Issue report
+            {% elif game_request.request_type == 'update' %}
                 <i class="fas fa-rotate"></i> Update request
             {% else %}
                 <i class="fas fa-paper-plane"></i> New game request
@@ -19,7 +21,7 @@
             <div class="request-history-title">
                 <div>
                     <p class="eyebrow">
-                        {% if game_request.request_type == 'update' %}<i class="fas fa-rotate"></i> Game Update Request{% else %}{{ game_request.edition_name or 'Base game' }}{% endif %}
+                        {% if game_request.request_type == 'issue' %}<i class="fas fa-flag"></i> {{ game_request.issue_category|replace('_', ' ')|title }}{% elif game_request.request_type == 'update' %}<i class="fas fa-rotate"></i> Game Update Request{% else %}{{ game_request.edition_name or 'Base game' }}{% endif %}
                     </p>
                     <h1>{{ game_request.game_name }}</h1>
                 </div>
@@ -44,11 +46,11 @@
             <form method="post" action="{{ url_for('game_requests.admin_update_request', request_id=game_request.id, status=return_status, type=return_type, q=return_search, sort=return_sort, page=return_page) }}" class="admin-request-form">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <label>Status<select class="form-select" name="status">{% for status in statuses %}<option value="{{ status }}"{% if game_request.status == status %} selected{% endif %}>{{ status|replace('_', ' ')|title }}</option>{% endfor %}</select></label>
-                <label class="library-game-picker" data-fulfilled-picker>Fulfilled by <small>Required when fulfilled</small>
+                {% if game_request.request_type != 'issue' %}<label class="library-game-picker" data-fulfilled-picker>Fulfilled by <small>Required when fulfilled</small>
                     <input type="search" class="form-control library-game-search" value="{{ game_request.fulfilled_game.name if game_request.fulfilled_game else '' }}" placeholder="Search your library…" autocomplete="off" aria-label="Search library games" aria-expanded="false">
                     <input type="hidden" name="fulfilled_game_uuid" value="{{ game_request.fulfilled_game_uuid or '' }}">
                     <span class="library-game-results" role="listbox"></span>
-                </label>
+                </label>{% endif %}
                 <label class="wide">Public response<textarea class="form-control" name="public_response" maxlength="4000" rows="4" placeholder="Shown to everyone following this request">{{ game_request.public_response or '' }}</textarea></label>
                 <label class="wide">Internal note<textarea class="form-control" name="internal_note" maxlength="4000" rows="4" placeholder="Visible to administrators only">{{ game_request.internal_note or '' }}</textarea></label>
                 <button class="btn btn-primary" type="submit"><i class="fas fa-check"></i> Save update</button>

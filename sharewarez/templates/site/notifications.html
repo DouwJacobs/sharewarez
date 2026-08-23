@@ -9,9 +9,10 @@
         <div>
             <p class="notification-eyebrow">Activity inbox</p>
             <h1>Notifications</h1>
-            <p>New games, available updates, and request activity appear here.</p>
+            <p>New games, available updates, requests, and issue activity appear here.</p>
         </div>
         <div class="app-page-actions">
+            <button class="btn btn-secondary" type="button" data-push-toggle hidden>Enable browser alerts</button>
             <a class="btn {{ 'btn-primary' if not unread_only else 'btn-secondary' }}" href="{{ url_for('notifications.notification_center') }}">All</a>
             <a class="btn {{ 'btn-primary' if unread_only else 'btn-secondary' }}" href="{{ url_for('notifications.notification_center', filter='unread') }}">Unread</a>
             {% if unread_notification_count %}
@@ -29,7 +30,7 @@
         {% for notification in notifications %}
             <article class="notification-item{% if not notification.read_at %} is-unread{% endif %}">
                 <span class="notification-icon" aria-hidden="true">
-                    <i class="fas {% if notification.event_type == 'new_game' %}fa-gamepad{% elif notification.event_type == 'game_update' %}fa-cloud-arrow-down{% elif 'request' in notification.event_type %}fa-paper-plane{% else %}fa-bell{% endif %}"></i>
+                    <i class="fas {% if notification.event_type == 'new_game' %}fa-gamepad{% elif notification.event_type == 'game_update' %}fa-cloud-arrow-down{% elif 'request' in notification.event_type %}fa-paper-plane{% elif 'issue' in notification.event_type %}fa-bug{% else %}fa-bell{% endif %}"></i>
                 </span>
                 <div class="notification-copy">
                     <div class="notification-title-row">
@@ -60,7 +61,7 @@
         <div class="notification-empty">
             <i class="fas fa-bell-slash" aria-hidden="true"></i>
             <h2>{{ 'No unread notifications' if unread_only else 'No notifications yet' }}</h2>
-            <p>{{ 'You are all caught up.' if unread_only else 'New library and request activity will appear here.' }}</p>
+            <p>{{ 'You are all caught up.' if unread_only else 'New library, request, and issue activity will appear here.' }}</p>
         </div>
     {% endif %}
     </section>

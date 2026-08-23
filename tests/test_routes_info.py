@@ -79,7 +79,7 @@ class TestAdminServerStatusRoute:
 
     def test_admin_server_status_requires_login(self, client):
         """Test that admin server status route requires authentication."""
-        response = client.get('/admin/server_status_page')
+        response = client.get('/admin/server-status')
         
         # Should redirect to login
         assert response.status_code == 302
@@ -93,7 +93,7 @@ class TestAdminServerStatusRoute:
         mock_current_user.id = regular_user.id
         
         with patch('flask_login.utils._get_user', return_value=regular_user):
-            response = client.get('/admin/server_status_page')
+            response = client.get('/admin/server-status')
             
             # Should redirect or return 403
             assert response.status_code in [302, 403]
@@ -111,12 +111,8 @@ class TestAdminServerStatusRoute:
     @patch('sharewarez.routes_info.get_active_users')
     @patch('sharewarez.routes_info.get_log_info')
     @patch('sharewarez.routes_info.get_database_info')
-    @patch('sharewarez.routes_info.get_formatted_system_uptime')
-    @patch('sharewarez.routes_info.get_formatted_app_uptime')
-    @patch('sharewarez.routes_info.format_bytes')
     @patch('sharewarez.routes_info.current_user')
-    def test_admin_server_status_success(self, mock_current_user, mock_format_bytes,
-                                       mock_app_uptime, mock_system_uptime, mock_database_info,
+    def test_admin_server_status_success(self, mock_current_user, mock_database_info,
                                        mock_log_info, mock_active_users, mock_config_values, mock_system_info,
                                        mock_warez_usage, mock_disk_usage, mock_memory_usage,
                                        mock_open_files, mock_process_count, mock_cpu_usage,
@@ -172,12 +168,8 @@ class TestAdminServerStatusRoute:
         mock_latest_log.timestamp = datetime(2023, 1, 1, 12, 0, 0)
         mock_latest_log.event_text = 'Test log entry'
         mock_log_info.return_value = {'count': 100, 'latest': mock_latest_log}
-        mock_system_uptime.return_value = '2 days, 3 hours'
-        mock_app_uptime.return_value = '1 day, 2 hours'
-        mock_format_bytes.side_effect = lambda x: f"{x} bytes"
-
         with patch('flask_login.utils._get_user', return_value=admin_user):
-            response = client.get('/admin/server_status_page')
+            response = client.get('/admin/server-status')
             
         assert response.status_code == 200
         
@@ -193,18 +185,12 @@ class TestAdminServerStatusRoute:
         mock_config_values.assert_called_once()
         mock_active_users.assert_called_once()
         mock_log_info.assert_called_once()
-        mock_system_uptime.assert_called_once()
-        mock_app_uptime.assert_called_once()
-        
         # Verify logging was called
         mock_log_system_event.assert_called_once_with(
-            "Admin accessed server status page", 
-            event_type='audit', 
+            "Admin accessed new server info page",
+            event_type='audit',
             event_level='information'
         )
-        
-        # Verify format_bytes was called for formatting usage statistics
-        assert mock_format_bytes.call_count >= 8  # Should be called for total, used, available, free for each usage dict
 
     @patch('sharewarez.routes_info.check_server_settings')
     @patch('sharewarez.routes_info.current_user')
@@ -219,7 +205,7 @@ class TestAdminServerStatusRoute:
         mock_check_server_settings.return_value = (False, "Database connection failed")
 
         with patch('flask_login.utils._get_user', return_value=admin_user):
-            response = client.get('/admin/server_status_page')
+            response = client.get('/admin/server-status')
             
         assert response.status_code == 302
         assert '/admin' in response.location or 'admin_dashboard' in response.location
@@ -240,7 +226,7 @@ class TestAdminServerStatusRoute:
         mock_cpu_usage.side_effect = Exception("System error occurred")
 
         with patch('flask_login.utils._get_user', return_value=admin_user):
-            response = client.get('/admin/server_status_page')
+            response = client.get('/admin/server-status')
             
         assert response.status_code == 302
         assert '/admin' in response.location or 'admin_dashboard' in response.location
@@ -258,12 +244,8 @@ class TestAdminServerStatusRoute:
     @patch('sharewarez.routes_info.get_active_users')
     @patch('sharewarez.routes_info.get_log_info')
     @patch('sharewarez.routes_info.get_database_info')
-    @patch('sharewarez.routes_info.get_formatted_system_uptime')
-    @patch('sharewarez.routes_info.get_formatted_app_uptime')
-    @patch('sharewarez.routes_info.format_bytes')
     @patch('sharewarez.routes_info.current_user')
-    def test_admin_server_status_with_none_usage_values(self, mock_current_user, mock_format_bytes,
-                                                      mock_app_uptime, mock_system_uptime, mock_database_info,
+    def test_admin_server_status_with_none_usage_values(self, mock_current_user, mock_database_info,
                                                       mock_log_info, mock_active_users, mock_config_values, mock_system_info,
                                                       mock_warez_usage, mock_disk_usage, mock_memory_usage,
                                                       mock_open_files, mock_process_count, mock_cpu_usage,
@@ -301,18 +283,10 @@ class TestAdminServerStatusRoute:
         
         # Mock log info with None latest log
         mock_log_info.return_value = {'count': 0, 'latest': None}
-        mock_system_uptime.return_value = '1 hour'
-        mock_app_uptime.return_value = '30 minutes'
-        mock_format_bytes.side_effect = lambda x: f"{x} bytes"
-
         with patch('flask_login.utils._get_user', return_value=admin_user):
-            response = client.get('/admin/server_status_page')
+            response = client.get('/admin/server-status')
             
         assert response.status_code == 200
-        
-        # Verify format_bytes was only called for non-None usage values
-        # Should only format disk_usage keys (4 calls)
-        assert mock_format_bytes.call_count == 4
 
 
 class TestRouteIntegration:
@@ -324,6 +298,7 @@ class TestRouteIntegration:
             # Check that the route exists
             rules = [rule.rule for rule in app.url_map.iter_rules()]
             assert '/admin/server_status_page' in rules
+            assert '/admin/server-status' in rules
 
     def test_info_blueprint_context_processor(self, app):
         """Test that the info blueprint context processor is registered."""
@@ -377,7 +352,7 @@ class TestErrorHandling:
         mock_check_server_settings.return_value = (False, "Configuration error")
 
         with patch('flask_login.utils._get_user', return_value=admin_user):
-            response = client.get('/admin/server_status_page')
+            response = client.get('/admin/server-status')
             
         assert response.status_code == 302
 
@@ -397,6 +372,6 @@ class TestErrorHandling:
         mock_get_system_info.side_effect = Exception("Failed to get system info")
 
         with patch('flask_login.utils._get_user', return_value=admin_user):
-            response = client.get('/admin/server_status_page')
+            response = client.get('/admin/server-status')
             
         assert response.status_code == 302

@@ -45,7 +45,7 @@ class TestEditFiltersRoute:
     
     def test_edit_filters_requires_login(self, client):
         """Test that edit_filters requires login."""
-        response = client.get('/admin/edit_filters')
+        response = client.get('/admin/scan_management?active_tab=scan_filters')
         assert response.status_code == 302
         assert 'login' in response.location
     
@@ -55,7 +55,7 @@ class TestEditFiltersRoute:
             sess['_user_id'] = str(regular_user.id)
             sess['_fresh'] = True
         
-        response = client.get('/admin/edit_filters')
+        response = client.get('/admin/scan_management?active_tab=scan_filters')
         assert response.status_code == 302
         assert 'login' in response.location
     
@@ -65,7 +65,7 @@ class TestEditFiltersRoute:
             sess['_user_id'] = str(admin_user.id)
             sess['_fresh'] = True
         
-        response = client.get('/admin/edit_filters')
+        response = client.get('/admin/scan_management?active_tab=scan_filters')
         assert response.status_code == 200
     
     def test_edit_filters_displays_existing_groups(self, client, admin_user):
@@ -81,7 +81,7 @@ class TestEditFiltersRoute:
             sess['_user_id'] = str(admin_user.id)
             sess['_fresh'] = True
         
-        response = client.get('/admin/edit_filters')
+        response = client.get('/admin/scan_management?active_tab=scan_filters')
         assert response.status_code == 200
         response_data = response.get_data(as_text=True)
         assert f'TestGroup1_{unique_suffix}' in response_data
@@ -93,7 +93,7 @@ class TestEditFiltersRoute:
             sess['_user_id'] = str(admin_user.id)
             sess['_fresh'] = True
         
-        response = client.get('/admin/edit_filters')
+        response = client.get('/admin/scan_management?active_tab=scan_filters')
         assert response.status_code == 200
     
     def test_edit_filters_post_valid_data(self, client, admin_user):
@@ -111,7 +111,7 @@ class TestEditFiltersRoute:
         })
         
         assert response.status_code == 302
-        assert '/admin/edit_filters' in response.location
+        assert '/admin/scan_management?active_tab=scan_filters' in response.location
         
         # Verify the group was added to database
         new_group = db.session.query(ReleaseGroup).filter_by(filter_pattern=f'NewGroup_{unique_suffix}').first()
@@ -185,7 +185,7 @@ class TestEditFiltersRoute:
             sess['_user_id'] = str(admin_user.id)
             sess['_fresh'] = True
         
-        response = client.get('/admin/edit_filters')
+        response = client.get('/admin/scan_management?active_tab=scan_filters')
         assert response.status_code == 200
         
         # Verify ordering in database
@@ -234,7 +234,7 @@ class TestDeleteFilterRoute:
         
         response = client.get(f'/delete_filter/{group_id}')
         assert response.status_code == 302
-        assert '/admin/edit_filters' in response.location
+        assert '/admin/scan_management?active_tab=scan_filters' in response.location
         
         # Verify the group was deleted
         deleted_group = db.session.get(ReleaseGroup, group_id)
@@ -337,7 +337,7 @@ class TestFiltersIntegration:
         })
         
         # Make a new GET request
-        response = client.get('/admin/edit_filters')
+        response = client.get('/admin/scan_management?active_tab=scan_filters')
         assert response.status_code == 200
         response_data = response.get_data(as_text=True)
         assert f'Persist_{unique_suffix}' in response_data
@@ -347,3 +347,12 @@ class TestFiltersIntegration:
         with app.test_request_context():
             assert url_for('admin2.edit_filters') == '/admin/edit_filters'
             assert url_for('admin2.delete_filter', id=1) == '/delete_filter/1'
+
+    def test_edit_filters_legacy_get_redirects_to_scan_manager(self, client, admin_user):
+        with client.session_transaction() as sess:
+            sess['_user_id'] = str(admin_user.id)
+            sess['_fresh'] = True
+
+        response = client.get('/admin/edit_filters')
+        assert response.status_code == 308
+        assert response.location.endswith('/admin/scan_management?active_tab=scan_filters')

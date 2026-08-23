@@ -446,6 +446,101 @@ class Notification(db.Model):
 
     user = db.relationship('User', back_populates='notifications')
 
+
+class PushSubscription(db.Model):
+    __tablename__ = 'push_subscriptions'
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False, index=True)
+    endpoint = db.Column(db.String(2048), nullable=False, unique=True)
+    p256dh = db.Column(db.String(255), nullable=False)
+    auth = db.Column(db.String(255), nullable=False)
+    created_at = db.Column(db.DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
+
+    user = db.relationship('User', foreign_keys=[user_id])
+
+
+class GameIssue(db.Model):
+    __tablename__ = 'game_issues'
+
+    id = db.Column(db.Integer, primary_key=True)
+    game_uuid = db.Column(
+        db.String(36),
+        db.ForeignKey('games.uuid', ondelete='CASCADE'),
+        nullable=False,
+        index=True,
+    )
+    reporter_id = db.Column(
+        db.Integer,
+        db.ForeignKey('users.id', ondelete='CASCADE'),
+        nullable=False,
+        index=True,
+    )
+    category = db.Column(db.String(32), nullable=False, index=True)
+    title = db.Column(db.String(160), nullable=False)
+    description = db.Column(db.Text, nullable=False)
+    status = db.Column(db.String(32), nullable=False, default='open', index=True)
+    handled_by_user_id = db.Column(
+        db.Integer,
+        db.ForeignKey('users.id', ondelete='SET NULL'),
+        nullable=True,
+        index=True,
+    )
+    created_at = db.Column(
+        db.DateTime(timezone=True), nullable=False,
+        default=lambda: datetime.now(timezone.utc), index=True,
+    )
+    updated_at = db.Column(
+        db.DateTime(timezone=True), nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc), index=True,
+    )
+    resolved_at = db.Column(db.DateTime(timezone=True), nullable=True)
+
+    game = db.relationship('Game', foreign_keys=[game_uuid])
+    reporter = db.relationship('User', foreign_keys=[reporter_id])
+    handled_by = db.relationship('User', foreign_keys=[handled_by_user_id])
+    comments = db.relationship(
+        'GameIssueComment',
+        back_populates='issue',
+        cascade='all, delete-orphan',
+        order_by='GameIssueComment.created_at',
+    )
+
+    @property
+    def is_closed(self):
+        return self.status in {'resolved', 'closed'}
+
+
+class GameIssueComment(db.Model):
+    __tablename__ = 'game_issue_comments'
+
+    id = db.Column(db.Integer, primary_key=True)
+    issue_id = db.Column(
+        db.Integer,
+        db.ForeignKey('game_issues.id', ondelete='CASCADE'),
+        nullable=False,
+        index=True,
+    )
+    author_id = db.Column(
+        db.Integer,
+        db.ForeignKey('users.id', ondelete='SET NULL'),
+        nullable=True,
+        index=True,
+    )
+    body = db.Column(db.Text, nullable=False)
+    is_internal = db.Column(db.Boolean, nullable=False, default=False)
+    kind = db.Column(db.String(16), nullable=False, default='comment')
+    created_at = db.Column(
+        db.DateTime(timezone=True), nullable=False,
+        default=lambda: datetime.now(timezone.utc), index=True,
+    )
+    edited_at = db.Column(db.DateTime(timezone=True), nullable=True)
+
+    issue = db.relationship('GameIssue', back_populates='comments')
+    author = db.relationship('User', foreign_keys=[author_id])
+
+
 class DownloadRequest(db.Model):
     __tablename__ = 'download_requests'
 
@@ -532,6 +627,7 @@ class GameRequest(db.Model):
     status = db.Column(db.String(32), nullable=False, default='pending', index=True)
     public_response = db.Column(db.Text, nullable=True)
     internal_note = db.Column(db.Text, nullable=True)
+    issue_category = db.Column(db.String(32), nullable=True)
     source_game_uuid = db.Column(db.String(36), db.ForeignKey('games.uuid', ondelete='SET NULL'), nullable=True)
     fulfilled_game_uuid = db.Column(db.String(36), db.ForeignKey('games.uuid', ondelete='SET NULL'), nullable=True)
     handled_by_user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'), nullable=True)
@@ -830,6 +926,7 @@ class UserPreference(db.Model):
     default_sort_order = db.Column(db.String(4), default='asc')
     theme = db.Column(db.String(50), default='default')
     saved_searches = db.Column(JSONEncodedDict, nullable=False, default=list)
+    sidebar_collapsed = db.Column(db.Boolean, nullable=False, default=False)
     
     user = db.relationship('User', back_populates='preferences')
 
@@ -849,6 +946,8 @@ class GlobalSettings(db.Model):
     smtp_default_sender = db.Column(db.String(255), nullable=True)
     smtp_last_tested = db.Column(db.DateTime, nullable=True)
     smtp_enabled = db.Column(db.Boolean, default=False)
+    vapid_private_key = db.Column(EncryptedString(), nullable=True)
+    vapid_public_key = db.Column(db.String(255), nullable=True)
     discord_bot_name = db.Column(db.String(100), nullable=True)
     discord_bot_avatar_url = db.Column(db.String(512), nullable=True)
     enable_delete_game_on_disk = db.Column(db.Boolean, default=True)

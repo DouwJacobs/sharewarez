@@ -387,7 +387,7 @@ def update_request_status(game_request, admin, status, public_response=None, int
     if status not in REQUEST_STATUSES:
         raise ValueError('Invalid request status.')
     fulfilled_game = None
-    if status == 'fulfilled':
+    if status == 'fulfilled' and game_request.request_type != 'issue':
         if not game_uuid:
             raise ValueError('A library game is required when fulfilling a request.')
         fulfilled_game = db.session.execute(select(Game).filter_by(uuid=game_uuid)).scalars().first()
@@ -425,7 +425,12 @@ def update_request_status(game_request, admin, status, public_response=None, int
     game_request.fulfilled_game = fulfilled_game
     game_request.handled_by_user_id = admin.id
     game_request.resolved_at = datetime.now(timezone.utc) if status in RESOLVED_STATUSES else None
-    if status == 'fulfilled':
+    if status == 'fulfilled' and game_request.request_type == 'issue':
+        for link in game_request.requesters:
+            if link.withdrawn_at is None:
+                link.satisfied_at = datetime.now(timezone.utc)
+                affected_links.append(link)
+    elif status == 'fulfilled':
         exact_links = [link for link in game_request.requesters if link.withdrawn_at is None]
         alternative_links = db.session.execute(
             select(GameRequestUser)

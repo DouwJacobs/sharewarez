@@ -2106,6 +2106,22 @@ pre {
 .game-storefront .screenshot-image { width: 260px; height: 146px; }
 
 @media (max-width: 1050px) {
+    .game-storefront .game-card-gamename {
+        grid-template-columns: 1fr;
+        gap: 14px;
+        min-height: 0;
+        padding: 24px 28px 22px;
+    }
+    .game-storefront-heading h1 {
+        max-width: 18ch;
+        font-size: clamp(2rem, 4.2vw, 3.25rem);
+        line-height: 1.02;
+    }
+    .game-storefront .game-card-topq {
+        grid-template-columns: minmax(190px, 230px) minmax(0, 1fr);
+        gap: 26px;
+        padding: 0 28px 24px;
+    }
     .game-storefront .game-card-q2 { grid-template-columns: 1fr; padding-top: 12px; }
     .game-storefront .game-card-downloads { position: static; }
 }

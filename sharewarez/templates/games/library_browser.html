@@ -141,8 +141,8 @@
 
 
     <script>
-        var libraryManagerUrl = "{{ url_for('library.libraries') }}";
-		var libraryScanUrl = "{{ url_for('main.scan_management', library_uuid=library_uuid) }}";
+        var libraryManagerUrl = "{{ url_for('library.admin_libraries') }}";
+		var libraryScanUrl = "{{ url_for('main.admin_scan_management', library_uuid=library_uuid) }}";
 		var libraryCount = Number("{{ library_count }}");
 		var gamesCount = Number("{{ games_count }}");
 

@@ -97,7 +97,7 @@ class TestDiscordSettings:
         assert response.status_code == 302  # Redirect due to admin_required decorator
     
     def test_discord_settings_get_without_existing_settings(self, client, admin_user, db_session):
-        """Test discord_settings GET when no settings exist."""
+        """Test legacy Discord GET redirect when no settings exist."""
         # Clear any existing settings first
         db_session.query(GlobalSettings).delete()
         db_session.commit()
@@ -107,16 +107,11 @@ class TestDiscordSettings:
             sess['_fresh'] = True
         
         response = client.get('/admin/discord_settings')
-        assert response.status_code == 200
-        
-        # Check default values are used
-        response_data = response.get_data(as_text=True)
-        assert 'insert_webhook_url_here' in response_data
-        assert 'Game Library Bot' in response_data
-        assert 'insert_bot_avatar_url_here' in response_data
+        assert response.status_code == 308
+        assert response.location.endswith('/admin/integrations#discord')
     
     def test_discord_settings_get_with_existing_settings(self, client, admin_user, db_session):
-        """Test discord_settings GET when settings exist."""
+        """Test legacy Discord GET redirect when settings exist."""
         from sqlalchemy import select
         
         # Get or create existing settings and update them
@@ -135,11 +130,8 @@ class TestDiscordSettings:
             sess['_fresh'] = True
         
         response = client.get('/admin/discord_settings')
-        assert response.status_code == 200
-        
-        # Just check that we got a successful response - the exact HTML content may vary
-        response_data = response.get_data(as_text=True)
-        assert 'Discord' in response_data or 'discord' in response_data  # Some form of discord reference
+        assert response.status_code == 308
+        assert response.location.endswith('/admin/integrations#discord')
     
     def test_discord_settings_post_requires_login(self, client):
         """Test that discord_settings POST requires user login."""

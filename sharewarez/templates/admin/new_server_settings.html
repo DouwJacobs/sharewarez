@@ -6,8 +6,8 @@
 {% endblock %}
 {% block content %}
 
-<main class="app-page admin-page server-settings-page" aria-labelledby="server-settings-title">
-    {{ admin_page_header('Server Settings', 'Configure application features, scanning behavior, integrations, and user requests.', 'System', 'fa-sliders') }}
+<main class="app-page admin-page server-settings-page" aria-labelledby="server-settings-title" data-initial-settings-section="{{ initial_section|default('general') }}">
+    {{ admin_page_header('Application Settings', 'Set global policies by ownership area. Connection credentials live under Integrations.', 'Configure', 'fa-sliders') }}
 
     <section class="admin-surface server-settings-surface">
         <div id="settingsSavedNotification" class="alert alert-success" role="alert" style="display: none;">
@@ -28,7 +28,8 @@
                         <button type="button" class="settings-category" data-settings-target="downloads"><i class="fas fa-download" aria-hidden="true"></i><span><strong>Downloads</strong><small>Delivery limits and speed</small></span></button>
                         <button type="button" class="settings-category" data-settings-target="metadata"><i class="fas fa-file-code" aria-hidden="true"></i><span><strong>Metadata</strong><small>HLTB and local files</small></span></button>
                         <button type="button" class="settings-category" data-settings-target="interface"><i class="fas fa-display" aria-hidden="true"></i><span><strong>Interface</strong><small>Navigation and visibility</small></span></button>
-                        <button type="button" class="settings-category" data-settings-target="requests"><i class="fas fa-paper-plane" aria-hidden="true"></i><span><strong>Requests</strong><small>Rules and notifications</small></span></button>
+                        <button type="button" class="settings-category" data-settings-target="requests"><i class="fas fa-paper-plane" aria-hidden="true"></i><span><strong>Community</strong><small>Request and issue rules</small></span></button>
+                        <button type="button" class="settings-category" data-settings-target="notifications"><i class="fas fa-bell" aria-hidden="true"></i><span><strong>Notifications</strong><small>Email, Discord, and admin alerts</small></span></button>
                     </nav>
 
                     <div class="settings-panels">
@@ -45,7 +46,7 @@
                         </section>
 
                         <section class="settings-panel" data-settings-panel="scanning" aria-labelledby="settings-scanning-title" hidden>
-                            <div class="settings-panel-heading"><span class="settings-panel-icon"><i class="fas fa-magnifying-glass" aria-hidden="true"></i></span><div><p class="admin-panel-kicker">Library</p><h3 id="settings-scanning-title">Scanning &amp; images</h3><p>Choose what the scanner discovers and how much work it performs in parallel.</p></div></div>
+                            <div class="settings-panel-heading"><span class="settings-panel-icon"><i class="fas fa-magnifying-glass" aria-hidden="true"></i></span><div><p class="admin-panel-kicker">Library policy</p><h3 id="settings-scanning-title">Scanning &amp; images</h3><p>Choose what the scanner discovers and how much work it performs in parallel.</p><a class="settings-owner-link" href="{{ url_for('main.admin_scan_management') }}"><i class="fas fa-arrow-up-right-from-square" aria-hidden="true"></i> Open Scan Manager for runs, schedules, filters, and queues</a></div></div>
                             <div class="settings-option-list">
                                 <label class="settings-toggle"><input type="checkbox" id="enableGameUpdates"><span><strong>Game updates</strong><small>Scan each game for a configured updates folder.</small></span></label>
                                 <div class="settings-inline-control"><label for="updateFolderName">Updates folder</label><input type="text" class="form-control" id="updateFolderName"></div>
@@ -61,7 +62,7 @@
                         </section>
 
                         <section class="settings-panel" data-settings-panel="downloads" aria-labelledby="settings-downloads-title" hidden>
-                            <div class="settings-panel-heading"><span class="settings-panel-icon"><i class="fas fa-download" aria-hidden="true"></i></span><div><p class="admin-panel-kicker">Delivery</p><h3 id="settings-downloads-title">Download controls</h3><p>Protect server capacity while keeping transfers predictable for users.</p></div></div>
+                            <div class="settings-panel-heading"><span class="settings-panel-icon"><i class="fas fa-download" aria-hidden="true"></i></span><div><p class="admin-panel-kicker">Delivery policy</p><h3 id="settings-downloads-title">Download controls</h3><p>Protect server capacity while keeping transfers predictable for users.</p><a class="settings-owner-link" href="{{ url_for('download.manage_downloads') }}"><i class="fas fa-arrow-up-right-from-square" aria-hidden="true"></i> Open Download Activity to monitor live transfers</a></div></div>
                             <div class="settings-callout"><i class="fas fa-circle-info" aria-hidden="true"></i><p>Limits apply to direct files and generated ZIP downloads. Existing range and resume support is preserved.</p></div>
                             <div class="settings-field-grid settings-field-grid--two">
                                 <div class="settings-field-block"><label for="maxConcurrentDownloadsPerUser">Concurrent downloads per user</label><p>Extra transfers receive a retry response until a slot is available.</p><input type="number" class="form-control" id="maxConcurrentDownloadsPerUser" min="1" max="20"></div>
@@ -99,14 +100,21 @@
                         </section>
 
                         <section class="settings-panel" data-settings-panel="requests" aria-labelledby="settings-requests-title" hidden>
-                            <div class="settings-panel-heading"><span class="settings-panel-icon"><i class="fas fa-paper-plane" aria-hidden="true"></i></span><div><p class="admin-panel-kicker">Community</p><h3 id="settings-requests-title">Requests &amp; notifications</h3><p>Set request rules and decide which status changes send notifications.</p></div></div>
+                            <div class="settings-panel-heading"><span class="settings-panel-icon"><i class="fas fa-paper-plane" aria-hidden="true"></i></span><div><p class="admin-panel-kicker">Community policy</p><h3 id="settings-requests-title">Requests &amp; issues</h3><p>Set the submission rules for community requests and game reports.</p><a class="settings-owner-link" href="{{ url_for('game_requests.admin_requests') }}"><i class="fas fa-arrow-up-right-from-square" aria-hidden="true"></i> Open Game Requests to review submissions</a></div></div>
                             <div class="settings-option-list">
                                 <label class="settings-toggle"><input type="checkbox" id="enableGameRequests"><span><strong>Game requests</strong><small>Allow users to request games.</small></span></label>
+                                <label class="settings-toggle"><input type="checkbox" id="enableGameIssues"><span><strong>Game issues</strong><small>Allow users to report problems with library games.</small></span></label>
                                 <label class="settings-toggle"><input type="checkbox" id="allowRequestNotes"><span><strong>Requester notes</strong><small>Allow supporting context with requests.</small></span></label>
                                 <label class="settings-toggle"><input type="checkbox" id="allowRequestAnyEdition"><span><strong>Any edition</strong><small>Allow requests without a specific edition.</small></span></label>
                             </div>
                             <div class="settings-field-block"><label for="maxActiveRequestsPerUser">Maximum active requests per user</label><p>Limits unresolved requests from each account.</p><input type="number" class="form-control" id="maxActiveRequestsPerUser" min="1" max="100"></div>
-                            <div class="settings-subsection"><h4>Notification channels</h4><div class="settings-option-grid"><label class="settings-toggle"><input type="checkbox" id="notifyRequesterRequestEmail"><span><strong>User email</strong><small>Email users when request status changes.</small></span></label><label class="settings-toggle"><input type="checkbox" id="notifyAdminRequestEmail"><span><strong>Administrator email</strong><small>Email admins about new requests.</small></span></label><label class="settings-toggle"><input type="checkbox" id="notifyDiscordNewRequests"><span><strong>Discord: new requests</strong><small>Post new requests to the webhook.</small></span></label><label class="settings-toggle"><input type="checkbox" id="notifyDiscordRequestUpdates"><span><strong>Discord: status changes</strong><small>Post request updates to the webhook.</small></span></label></div></div>
+                        </section>
+
+                        <section class="settings-panel" data-settings-panel="notifications" aria-labelledby="settings-notifications-title" hidden>
+                            <div class="settings-panel-heading"><span class="settings-panel-icon"><i class="fas fa-bell" aria-hidden="true"></i></span><div><p class="admin-panel-kicker">Event policy</p><h3 id="settings-notifications-title">Notification rules</h3><p>Choose which events notify users or administrators. Delivery still depends on a configured channel.</p><a class="settings-owner-link" href="{{ url_for('admin2.integrations') }}"><i class="fas fa-arrow-up-right-from-square" aria-hidden="true"></i> Configure and test email, Discord, and IGDB connections</a></div></div>
+                            <div class="settings-subsection settings-subsection--first"><h4>Requests and issues</h4><div class="settings-option-grid"><label class="settings-toggle"><input type="checkbox" id="notifyRequesterRequestEmail"><span><strong>Request user email</strong><small>Email users when request status changes.</small></span></label><label class="settings-toggle"><input type="checkbox" id="notifyAdminRequestEmail"><span><strong>Request admin email</strong><small>Email admins about new requests.</small></span></label><label class="settings-toggle"><input type="checkbox" id="notifyAdminIssueEmail"><span><strong>Issue admin email</strong><small>Email admins about new issues and user replies.</small></span></label><label class="settings-toggle"><input type="checkbox" id="notifyReporterIssueEmail"><span><strong>Issue reporter email</strong><small>Email reporters about replies and status changes.</small></span></label><label class="settings-toggle"><input type="checkbox" id="notifyDiscordNewRequests"><span><strong>Discord: new requests</strong><small>Post new requests to the webhook.</small></span></label><label class="settings-toggle"><input type="checkbox" id="notifyDiscordRequestUpdates"><span><strong>Discord: status changes</strong><small>Post request updates to the webhook.</small></span></label></div></div>
+                            <div class="settings-subsection"><h4>Download behavior</h4><div class="settings-option-grid"><label class="settings-toggle"><input type="checkbox" id="notifyAdminDownloadCancellations"><span><strong>Cancelled downloads</strong><small>Notify administrators when a user cancels a download request.</small></span></label><label class="settings-toggle"><input type="checkbox" id="notifyAdminRepeatDownloads"><span><strong>Repeated downloads</strong><small>Notify administrators on the second and later transfer of the same request.</small></span></label></div></div>
+                            <div class="settings-callout"><i class="fas fa-mobile-screen-button" aria-hidden="true"></i><p>Browser push is enabled per device from user Settings. These rules decide when an event is created; each administrator controls where they receive it.</p></div>
                         </section>
                     </div>
                 </div>

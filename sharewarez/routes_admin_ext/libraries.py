@@ -105,7 +105,7 @@ def add_library():
 
         # Save library
         if _save_library(library, is_new=True):
-            return redirect(url_for('library.libraries'))
+            return redirect(url_for('library.admin_libraries'))
     else:
         # Form validation failed
         if form.errors:
@@ -148,7 +148,7 @@ def edit_library(library_uuid):
 
         # Save library
         if _save_library(library, is_new=False):
-            return redirect(url_for('library.libraries'))
+            return redirect(url_for('library.admin_libraries'))
     else:
         # Form validation failed
         if form.errors:

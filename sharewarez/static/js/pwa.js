@@ -54,4 +54,50 @@
             console.warn('PWA service worker registration failed.', error);
         }
     });
+
+    const pushButton = document.querySelector('[data-push-toggle]');
+    if (!pushButton || !('PushManager' in window)) return;
+    pushButton.hidden = false;
+
+    const decodeKey = value => {
+        const padded = `${value}${'='.repeat((4 - value.length % 4) % 4)}`;
+        return Uint8Array.from(atob(padded.replace(/-/g, '+').replace(/_/g, '/')), char => char.charCodeAt(0));
+    };
+    const csrf = () => document.querySelector('meta[name="csrf-token"]')?.content || '';
+
+    navigator.serviceWorker.ready.then(async registration => {
+        const current = await registration.pushManager.getSubscription();
+        pushButton.textContent = current ? 'Disable browser alerts' : 'Enable browser alerts';
+        pushButton.addEventListener('click', async () => {
+            pushButton.disabled = true;
+            try {
+                let subscription = await registration.pushManager.getSubscription();
+                if (subscription) {
+                    await fetch('/api/push/subscriptions', {
+                        method: 'DELETE',
+                        headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrf()},
+                        body: JSON.stringify({endpoint: subscription.endpoint})
+                    });
+                    await subscription.unsubscribe();
+                    pushButton.textContent = 'Enable browser alerts';
+                    return;
+                }
+                if (await Notification.requestPermission() !== 'granted') return;
+                const keyResponse = await fetch('/api/push/public-key');
+                const {publicKey} = await keyResponse.json();
+                subscription = await registration.pushManager.subscribe({
+                    userVisibleOnly: true,
+                    applicationServerKey: decodeKey(publicKey)
+                });
+                await fetch('/api/push/subscriptions', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrf()},
+                    body: JSON.stringify(subscription)
+                });
+                pushButton.textContent = 'Disable browser alerts';
+            } finally {
+                pushButton.disabled = false;
+            }
+        });
+    });
 })();

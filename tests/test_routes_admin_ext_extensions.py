@@ -44,7 +44,7 @@ def regular_user(db_session):
 class TestExtensionsRoute:
     
     def test_extensions_route_requires_login(self, client):
-        response = client.get('/admin/extensions')
+        response = client.get('/admin/scan_management?active_tab=file_extensions')
         assert response.status_code == 302
         assert 'login' in response.location
     
@@ -53,7 +53,7 @@ class TestExtensionsRoute:
             sess['_user_id'] = str(regular_user.id)
             sess['_fresh'] = True
         
-        response = client.get('/admin/extensions')
+        response = client.get('/admin/scan_management?active_tab=file_extensions')
         assert response.status_code == 302
         assert 'login' in response.location
     
@@ -62,7 +62,7 @@ class TestExtensionsRoute:
             sess['_user_id'] = str(admin_user.id)
             sess['_fresh'] = True
         
-        response = client.get('/admin/extensions')
+        response = client.get('/admin/scan_management?active_tab=file_extensions')
         assert response.status_code == 200
         assert b'admin_manage_extensions.html' in response.data or b'Extensions' in response.data
     
@@ -80,7 +80,7 @@ class TestExtensionsRoute:
             sess['_fresh'] = True
         
         with client.application.app_context():
-            response = client.get('/admin/extensions')
+            response = client.get('/admin/scan_management?active_tab=file_extensions')
             assert response.status_code == 200
             
             response_data = response.get_data(as_text=True)
@@ -100,7 +100,7 @@ class TestExtensionsRoute:
             sess['_fresh'] = True
         
         with client.application.app_context():
-            response = client.get('/admin/extensions')
+            response = client.get('/admin/scan_management?active_tab=file_extensions')
             assert response.status_code == 200
     
     def test_extensions_empty_allowed_types(self, client, admin_user):
@@ -108,7 +108,7 @@ class TestExtensionsRoute:
             sess['_user_id'] = str(admin_user.id)
             sess['_fresh'] = True
         
-        response = client.get('/admin/extensions')
+        response = client.get('/admin/scan_management?active_tab=file_extensions')
         assert response.status_code == 200
     
     def test_extensions_template_context(self, client, admin_user):
@@ -121,7 +121,7 @@ class TestExtensionsRoute:
             sess['_user_id'] = str(admin_user.id)
             sess['_fresh'] = True
         
-        response = client.get('/admin/extensions')
+        response = client.get('/admin/scan_management?active_tab=file_extensions')
         assert response.status_code == 200
     
     def test_extensions_database_query_execution(self, client, admin_user):
@@ -140,7 +140,7 @@ class TestExtensionsRoute:
             sess['_user_id'] = str(admin_user.id)
             sess['_fresh'] = True
         
-        response = client.get('/admin/extensions')
+        response = client.get('/admin/scan_management?active_tab=file_extensions')
         assert response.status_code == 200
         
         # Verify that the query was executed successfully and our test data exists
@@ -158,3 +158,12 @@ class TestExtensionsRoute:
     def test_extensions_route_blueprint_registration(self, app):
         with app.test_request_context():
             assert url_for('admin2.extensions') == '/admin/extensions'
+
+    def test_extensions_legacy_route_redirects_to_scan_manager(self, client, admin_user):
+        with client.session_transaction() as sess:
+            sess['_user_id'] = str(admin_user.id)
+            sess['_fresh'] = True
+
+        response = client.get('/admin/extensions')
+        assert response.status_code == 308
+        assert response.location.endswith('/admin/scan_management?active_tab=file_extensions')

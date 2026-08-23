@@ -1,30 +1,24 @@
-.admin_manage_invites-panel {
-    width: min(1200px, calc(100% - 48px));
-    margin: 24px auto;
-    padding: 24px;
-    border: 1px solid var(--theme-border-color, rgba(255, 255, 255, 0.08));
-    border-radius: 18px;
-    background: var(--theme-card-background, linear-gradient(145deg, rgba(18, 18, 28, 0.96), rgba(12, 12, 20, 0.98)));
-}
-
-.admin_manage_invites-heading { margin: 0 0 20px; color: var(--theme-text-primary, #fff); }
+.admin-invites-surface { padding: 20px; }
+.admin-invites-summary { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; gap: 24px; }
+.admin-invites-summary > div { display: flex; align-items: baseline; gap: 7px; }
+.admin-invites-summary strong { color: var(--theme-text, var(--text-white)); font-size: 1.35rem; }
+.admin-invites-summary span,
+.admin-invites-summary p { color: var(--theme-text-muted, var(--text-muted)); font-size: .76rem; }
+.admin-invites-summary p { max-width: 620px; margin: 0; }
 .admin_manage_invites-table-div { margin: 0; overflow-x: auto; }
-.admin_manage_invites-table-div table { width: 100%; min-width: 680px; }
-.admin_manage_invites-table-div th:nth-child(1) { width: 38%; }
-.admin_manage_invites-table-div th:nth-child(2) { width: 22%; }
-.admin_manage_invites-table-div th:nth-child(3) { width: 40%; }
-.admin_manage_invites-table-div form {
-    display: grid !important;
-    grid-template-columns: minmax(96px, 1fr) auto;
-    align-items: center;
-    gap: 0.75rem !important;
-    min-width: 240px;
-}
-.admin_manage_invites-table-div .form-control { width: 100%; min-width: 0; }
-.admin_manage_invites-table-div .btn { white-space: nowrap; }
-
+.admin_manage_invites-table { min-width: 680px; margin: 0; color: var(--theme-text, var(--text-white)); }
+.admin_manage_invites-table th { color: var(--theme-text-muted, var(--text-muted)); font-size: .68rem; text-transform: uppercase; }
+.admin_manage_invites-table th:nth-child(1) { width: 38%; }
+.admin_manage_invites-table th:nth-child(2) { width: 22%; }
+.admin_manage_invites-table th:nth-child(3) { width: 40%; }
+.admin_manage_invites-table td { vertical-align: middle; }
+.admin_manage_invites-table td strong,
+.admin_manage_invites-table td small { display: block; }
+.admin_manage_invites-table td strong { font-size: .84rem; }
+.admin_manage_invites-table td small { margin-top: 2px; color: var(--theme-text-muted, var(--text-muted)); font-size: .7rem; }
+.admin_manage_invites-table form { display: grid; grid-template-columns: minmax(90px, 1fr) auto; align-items: center; gap: 8px; min-width: 220px; }
+.admin-invites-empty { padding: 32px !important; color: var(--theme-text-muted, var(--text-muted)); text-align: center; }
 @media (max-width: 768px) {
-    .admin_manage_invites-panel { width: calc(100% - 24px); margin: 12px auto; padding: 16px; }
-    .admin_manage_invites-table-div table { min-width: 620px; }
-    .admin_manage_invites-table-div form { min-width: 220px; }
+  .admin-invites-surface { padding: 14px; }
+  .admin-invites-summary { align-items: flex-start; flex-direction: column; gap: 5px; }
 }

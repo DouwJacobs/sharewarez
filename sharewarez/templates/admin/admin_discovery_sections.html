@@ -1,57 +1,35 @@
 {% extends "base.html" %}
-{% block content %}
-
-
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.14.0/Sortable.min.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.14.0/Sortable.min.js"></script>
-
+{% from "partials/ui_components.html" import admin_page_header %}
+{% block styles %}
+{{ super() }}
 <link rel="stylesheet" href="{{ 'css/admin/admin_discovery_sections.css'|theme_asset }}">
-
+{% endblock %}
+{% block content %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.14.0/Sortable.min.js"></script>
 <script src="{{ 'js/admin/discovery_sections.js'|theme_asset }}"></script>
 
-<main class="app-page app-page--narrow discovery-sections-page">
-    <div class="row">
-        <div class="col-12">
-            <div class="card">
-                <header class="app-page-header card-header">
-                    <h1><i class="fas fa-compass"></i> Discovery Sections</h1>
-                    <p>Choose which collections appear on the Discover page and in what order.</p>
-                </header>
-                <div class="card-body">
-                    <div id="discovery-sections-list" class="sections-list">
-                        {% for section in sections %}
-                        <div class="section-item" data-section-id="{{ section.id }}">
-                            <div class="section-content">
-                                <div class="drag-handle-container">
-                                <i class="fas fa-grip-vertical drag-handle"></i>
-                                </div>
-                                <span class="section-name">{{ section.name }}</span>
-                                <span class="section-count">
-                                    {% if section_counts[section.identifier] > 0 %}
-                                        ({{ section_counts[section.identifier] }} items)
-                                    {% else %}
-                                        (empty)
-                                    {% endif %}
-                                </span>
-                                <div class="section-controls">
-                                    <div class="form-check form-switch">
-                                        <input type="checkbox" 
-                                               class="form-check-input section-visibility-toggle" 
-                                               id="visibility-{{ section.id }}"
-                                               data-section-id="{{ section.id }}"
-                                               {% if section.is_visible %}checked{% endif %}>
-                                        <label class="form-check-label" for="visibility-{{ section.id }}">
-                                            Visible
-                                        </label>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        {% endfor %}
-                    </div>
-                </div>
-            </div>
+<main class="app-page app-page--narrow discovery-sections-page" aria-labelledby="discovery-sections-title">
+  {{ admin_page_header('Discovery sections', 'Choose which sections appear on Discover and drag them into the order members should see.', 'Library', 'fa-compass', title_id='discovery-sections-title') }}
+
+  <section class="app-surface discovery-sections-surface">
+    <div class="discovery-sections-heading"><h2>Section order</h2><p>Visibility changes and drag order are saved automatically.</p></div>
+    <div id="discovery-sections-list" class="sections-list">
+      {% for section in sections %}
+      <div class="section-item" data-section-id="{{ section.id }}">
+        <div class="section-content">
+          <button type="button" class="drag-handle" aria-label="Move {{ section.name }}"><i class="fas fa-grip-vertical" aria-hidden="true"></i></button>
+          <span class="section-name">{{ section.name }}</span>
+          <span class="section-count">{{ section_counts[section.identifier] }} item{{ '' if section_counts[section.identifier] == 1 else 's' }}</span>
+          <div class="section-controls form-check form-switch">
+            <input type="checkbox" class="form-check-input section-visibility-toggle" id="visibility-{{ section.id }}" data-section-id="{{ section.id }}" {% if section.is_visible %}checked{% endif %}>
+            <label class="form-check-label" for="visibility-{{ section.id }}">Visible</label>
+          </div>
         </div>
+      </div>
+      {% else %}
+      <p class="discovery-sections-empty">No discovery sections are configured.</p>
+      {% endfor %}
     </div>
+  </section>
 </main>
 {% endblock %}

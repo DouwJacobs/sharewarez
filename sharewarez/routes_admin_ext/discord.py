@@ -19,6 +19,8 @@ def discord_help():
 @login_required
 @admin_required
 def discord_settings():
+    if request.method == 'GET':
+        return redirect(url_for('admin2.integrations') + '#discord', code=308)
     settings = db.session.execute(select(GlobalSettings)).scalars().first()
     
     if request.method == 'POST':

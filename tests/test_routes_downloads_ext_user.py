@@ -196,7 +196,10 @@ class TestDeleteDownloadRoute:
             audit_logs = db.session.execute(
                 select(SystemEvents).filter_by(event_type='audit')
             ).scalars().all()
-            assert any('deleted download request' in log.event_text for log in audit_logs)
+            assert any(
+                f'User {authenticated_user.name} deleted download request' in log.event_text
+                for log in audit_logs
+            )
     
     def test_delete_download_path_traversal_blocked(self, client, authenticated_user, sample_download_request, app, db_session):
         """Test deletion works regardless of zip file paths (no file validation needed)."""
@@ -357,7 +360,7 @@ class TestSecurityLogging:
             ).scalars().all()
 
             assert len(audit_logs) == 1
-            assert f'User {authenticated_user.id} deleted download request' in audit_logs[0].event_text
+            assert f'User {authenticated_user.name} deleted download request' in audit_logs[0].event_text
             assert audit_logs[0].audit_user == authenticated_user.id
     
     def test_security_logs_created_for_violations(self, client, authenticated_user):

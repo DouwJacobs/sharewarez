@@ -62,7 +62,8 @@
 
 .app-surface--flush { padding: 0; }
 .app-stack { display: grid; min-width: 0; gap: var(--spacing-lg, 24px); }
-.app-grid { display: grid; min-width: 0; gap: var(--spacing-lg, 24px); }
+.app-grid { display: grid; min-width: 0; align-items: stretch; gap: var(--spacing-lg, 24px); }
+.app-grid > .app-surface { height: 100%; }
 
 /* Shared feedback treatment for route-specific loading, empty, and error
    states retained during the layout migration. */

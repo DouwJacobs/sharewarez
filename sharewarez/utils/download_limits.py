@@ -172,6 +172,15 @@ def reserve_transfer(user_id, filename, expected_bytes, download_request_id=None
     )
     db.session.add(transfer)
     db.session.commit()
+    from sharewarez.utils.download_notifications import notify_admin_repeat_download
+    try:
+        notify_admin_repeat_download(transfer)
+    except Exception as error:
+        from sharewarez.utils.event_logging import log_system_event
+        log_system_event(
+            f"Repeated download notification failed: {error}",
+            event_type='notification', event_level='error', audit_user='system',
+        )
     return transfer.id, used_bytes, quota_bytes
 
 

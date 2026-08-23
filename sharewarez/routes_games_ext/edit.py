@@ -84,7 +84,8 @@ def game_edit(game_uuid):
             db.session.rollback()
             return render_template('admin/admin_game_identify.html', form=form, library_name=library_name, game_uuid=game_uuid, action="edit")
         
-        igdb_id_changed = game.igdb_id != form.igdb_id.data
+        previous_igdb_id = game.igdb_id
+        igdb_id_changed = previous_igdb_id != form.igdb_id.data
         
         # Validate and truncate field lengths
         game.library_uuid = form.library_uuid.data
@@ -311,21 +312,52 @@ def game_edit(game_uuid):
                     game_version=game.version
                 )
 
-            if igdb_id_changed:
-                # Single flash message that will show progress spinner via JavaScript
-                flash('Game updated, downloading images', 'image-refresh')
+            def start_reidentified_image_refresh():
+                if game.igdb_id is None:
+                    flash(
+                        'Game updated without an IGDB ID; images were not refreshed.',
+                        'warning',
+                    )
+                    return
+
+                expected_igdb_id = game.igdb_id
+                audit_user_id = current_user.id
+                flash('Game updated, downloading replacement images', 'image-refresh')
+                current_app.logger.info(
+                    'Game re-identification image refresh queued game_uuid=%s '
+                    'game_name=%s previous_igdb_id=%s new_igdb_id=%s '
+                    'user_id=%s user_name=%s',
+                    game_uuid, game.name, previous_igdb_id,
+                    expected_igdb_id, audit_user_id, current_user.name,
+                )
+                log_system_event(
+                    f'Game re-identified: game={game_uuid} IGDB '
+                    f'{previous_igdb_id or "none"} → {expected_igdb_id} '
+                    f'by={current_user.name}; replacement images queued; '
+                    f'{game.name[:72]}',
+                    event_type='image_refresh',
+                    event_level='information',
+                    audit_user=audit_user_id,
+                )
+
                 @copy_current_request_context
                 def refresh_images_in_thread():
-                    refresh_images_in_background(game_uuid)
+                    refresh_images_in_background(
+                        game_uuid,
+                        replace_existing=True,
+                        expected_igdb_id=expected_igdb_id,
+                        audit_user_id=audit_user_id,
+                        refresh_reason='reidentify',
+                    )
+
                 thread = Thread(target=refresh_images_in_thread, daemon=True)
                 thread.start()
-                current_app.logger.info(f"Refresh images thread started for game UUID: {game_uuid}")
-                # Store game_uuid in session so JavaScript can track progress
+                current_app.logger.info(
+                    'Replacement image refresh started for game UUID %s and IGDB ID %s',
+                    game_uuid, expected_igdb_id,
+                )
                 from flask import session
                 session['image_refresh_game_uuid'] = game_uuid
-            else:
-                flash('Game updated successfully.', 'success')
-                current_app.logger.debug(f"IGDB ID unchanged. Skipping image refresh for game UUID: {game_uuid}")
 
             if request.form.get('action') == 'save_and_refresh':
                 try:
@@ -366,7 +398,21 @@ def game_edit(game_uuid):
                         'Save-and-refresh: metadata refresh failed for %s (%s)', game.name, game_uuid
                     )
                     flash(f'Game saved, but metadata refresh failed: {exc}', 'warning')
+
+                if igdb_id_changed:
+                    # Metadata refresh and image replacement must not race one
+                    # another for the newly selected IGDB identity.
+                    start_reidentified_image_refresh()
                 return redirect(url_for('games.game_details', game_uuid=game_uuid))
+
+            if igdb_id_changed:
+                start_reidentified_image_refresh()
+            else:
+                flash('Game updated successfully.', 'success')
+                current_app.logger.debug(
+                    'IGDB ID unchanged. Skipping image refresh for game UUID: %s',
+                    game_uuid,
+                )
 
             return redirect(url_for('library.library'))
         except IntegrityError as e:

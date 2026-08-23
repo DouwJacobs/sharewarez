@@ -242,7 +242,9 @@
     border-bottom: 1px solid rgba(var(--theme-accent-soft-rgb, 154, 177, 255), .14);
 }
 .settings-panel-heading h3 { margin: 2px 0 4px; color: var(--theme-text-primary, #f5f7ff); font-size: 1.35rem; }
-.settings-panel-heading p:last-child { margin: 0; color: var(--theme-text-secondary, #c5ccdc); }
+.settings-panel-heading p { margin: 0; color: var(--theme-text-secondary, #c5ccdc); }
+.settings-owner-link { display: inline-flex; align-items: center; margin-top: 7px; gap: 6px; color: rgb(var(--theme-accent-soft-rgb, 154, 177, 255)); font-size: .76rem; text-decoration: none; }
+.settings-owner-link:hover, .settings-owner-link:focus-visible { color: var(--theme-text-primary, #f5f7ff); text-decoration: underline; outline: none; }
 .settings-panel-icon {
     display: grid; place-items: center; flex: 0 0 42px; height: 42px; border-radius: 12px;
     background: rgba(var(--theme-accent-rgb, 98, 122, 239), .16); color: rgb(var(--theme-accent-soft-rgb, 154, 177, 255));
@@ -275,6 +277,7 @@
 .settings-callout i { color: rgb(var(--theme-accent-soft-rgb, 154, 177, 255)); }
 .settings-callout p { margin: 0; font-size: .82rem; }
 .settings-subsection { margin-top: 26px; padding-top: 22px; border-top: 1px solid rgba(var(--theme-accent-soft-rgb, 154, 177, 255), .14); }
+.settings-subsection--first { margin-top: 0; padding-top: 0; border-top: 0; }
 .settings-subsection h4 { margin: 0 0 4px; color: var(--theme-text-primary, #f5f7ff); font-size: 1rem; }
 .settings-subsection > p { margin: 0 0 16px; color: var(--theme-text-secondary, #c5ccdc); font-size: .82rem; }
 

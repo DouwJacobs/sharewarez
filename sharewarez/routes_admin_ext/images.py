@@ -1,6 +1,6 @@
 # /sharewarez/routes_admin_ext/images.py
 import os
-from flask import render_template, request, jsonify, current_app
+from flask import request, jsonify, current_app, redirect, url_for
 from flask_login import login_required
 from sharewarez.models import Image, Game
 from sharewarez import db
@@ -13,7 +13,10 @@ from sqlalchemy import select, func, delete
 @admin_required
 def image_queue():
     """Display the image queue management interface."""
-    return render_template('admin/admin_manage_image_queue.html')
+    return redirect(
+        url_for('main.admin_scan_management', active_tab='image_queue'),
+        code=308,
+    )
 
 
 @admin2_bp.route('/admin/api/image_queue_list')

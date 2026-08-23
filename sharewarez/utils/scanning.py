@@ -1,5 +1,6 @@
 import json
 import os
+import time
 from datetime import date, datetime, timezone
 from flask import current_app, flash, has_request_context
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
@@ -325,27 +326,106 @@ def process_game_extras(game_name, full_disk_path, extras_folder, library_uuid, 
     print(f"Finished processing extras for game: {game_name}")
 
 
-def refresh_images_in_background(game_uuid):
+def refresh_images_in_background(
+    game_uuid, *, replace_existing=False, expected_igdb_id=None,
+    audit_user_id=None, refresh_reason='background',
+):
+    """Refresh a game's IGDB media.
+
+    Normal refreshes merge new media into the current collection so a partial
+    provider response cannot erase valid local images.  Re-identification uses
+    ``replace_existing`` to discard media belonging to the previous IGDB game,
+    but only after the new identity has returned a valid media response.
+    ``expected_igdb_id`` prevents an older background task from writing images
+    after the game has been re-identified again.
+    """
     from sharewarez import cache
     from sharewarez.utils.game_core import store_image_url_for_download
     from sharewarez.utils.functions import download_image as _download_image
 
     print(f"[IMAGE REFRESH] Starting background refresh process for game UUID: {game_uuid}")
     with current_app.app_context():
+        started_at = time.monotonic()
+
+        def admin_event(message, level='information'):
+            if audit_user_id is not None:
+                log_system_event(
+                    message,
+                    event_type='image_refresh',
+                    event_level=level,
+                    audit_user=audit_user_id,
+                )
+
+        current_app.logger.info(
+            'Image refresh started game_uuid=%s expected_igdb_id=%s '
+            'replace_existing=%s reason=%s audit_user_id=%s',
+            game_uuid, expected_igdb_id, replace_existing,
+            refresh_reason, audit_user_id,
+        )
+        lock_key = f'image_refresh_lock_{game_uuid}'
+        if not cache.add(lock_key, True, timeout=300):
+            message = 'An image refresh is already running for this game'
+            print(f"[IMAGE REFRESH] {message}: {game_uuid}")
+            current_app.logger.warning(
+                'Image refresh rejected because another refresh is active '
+                'game_uuid=%s reason=%s', game_uuid, refresh_reason,
+            )
+            admin_event(f'Image refresh already running for game {game_uuid}', 'warning')
+            return False, message
+        lock_owned = True
+
         cache.set(f'image_refresh_progress_{game_uuid}', {'status': 'in_progress', 'progress': 0}, timeout=300)
 
         try:
-            game = db.session.execute(select(Game).filter_by(uuid=game_uuid)).scalar_one_or_none()
+            game = db.session.execute(
+                select(Game).filter_by(uuid=game_uuid).with_for_update()
+            ).scalar_one_or_none()
             if not game:
                 print(f"[IMAGE REFRESH] Game with UUID {game_uuid} not found.")
+                current_app.logger.warning(
+                    'Image refresh game not found game_uuid=%s reason=%s',
+                    game_uuid, refresh_reason,
+                )
+                admin_event(f'Image refresh failed: game={game_uuid} was not found', 'warning')
                 cache.set(f'image_refresh_progress_{game_uuid}', {'status': 'error', 'progress': 0}, timeout=300)
-                return False
+                return False, 'Game not found'
 
             print(f"[IMAGE REFRESH] Found game: {game.name} (IGDB ID: {game.igdb_id})")
             if game.igdb_id is None:
                 print(f"[IMAGE REFRESH] Game '{game.name}' has no IGDB ID, cannot refresh images.")
+                current_app.logger.warning(
+                    'Image refresh skipped because game has no IGDB ID '
+                    'game_uuid=%s game_name=%s', game_uuid, game.name,
+                )
+                admin_event(
+                    f'Image refresh skipped: game={game_uuid} has no IGDB ID; '
+                    f'{game.name[:80]}',
+                    'warning',
+                )
                 cache.set(f'image_refresh_progress_{game_uuid}', {'status': 'error', 'progress': 0}, timeout=300)
-                return False
+                return False, 'Game has no IGDB ID'
+
+            if (
+                expected_igdb_id is not None
+                and str(game.igdb_id) != str(expected_igdb_id)
+            ):
+                message = 'Game identity changed before the image refresh started'
+                print(f"[IMAGE REFRESH] {message}: {game_uuid}")
+                current_app.logger.warning(
+                    'Stale image refresh aborted game_uuid=%s expected_igdb_id=%s '
+                    'current_igdb_id=%s reason=%s',
+                    game_uuid, expected_igdb_id, game.igdb_id, refresh_reason,
+                )
+                admin_event(
+                    f'Stale image refresh stopped: game={game_uuid} identity changed; '
+                    f'{game.name[:80]}',
+                    'warning',
+                )
+                cache.set(
+                    f'image_refresh_progress_{game_uuid}',
+                    {'status': 'error', 'progress': 0}, timeout=300,
+                )
+                return False, message
 
             cache.set(f'image_refresh_progress_{game_uuid}', {'status': 'in_progress', 'progress': 20}, timeout=300)
 
@@ -363,6 +443,15 @@ def refresh_images_in_background(game_uuid):
                     else 'IGDB returned no matching game'
                 )
                 print(f"[IMAGE REFRESH] IGDB API returned an error: {error}")
+                current_app.logger.warning(
+                    'IGDB media lookup failed game_uuid=%s igdb_id=%s error=%s',
+                    game_uuid, game.igdb_id, error,
+                )
+                admin_event(
+                    f'Image refresh failed: game={game_uuid} IGDB={game.igdb_id} '
+                    f'media lookup failed; {game.name[:72]}',
+                    'warning',
+                )
                 cache.set(f'image_refresh_progress_{game_uuid}', {'status': 'error', 'progress': 0}, timeout=300)
                 return False, error
 
@@ -374,16 +463,19 @@ def refresh_images_in_background(game_uuid):
             existing_images = db.session.execute(
                 select(Image).filter_by(game_uuid=game_uuid)
             ).scalars().all()
+            original_image_ids = {image.id for image in existing_images}
             existing_by_igdb_id = {}
             for existing_image in existing_images:
                 existing_by_igdb_id.setdefault(
                     str(existing_image.igdb_image_id), []
                 ).append(existing_image)
+            desired_image_ids = set()
 
             def queue_if_missing(image_data, image_type):
                 image_id = image_data.get('id') if isinstance(image_data, dict) else image_data
                 if image_id is None:
                     return
+                desired_image_ids.add(str(image_id))
                 existing = existing_by_igdb_id.get(str(image_id), [])
                 # Legacy generic artwork should be queried once more so it can
                 # be reclassified as key art or a standalone game logo.
@@ -425,12 +517,20 @@ def refresh_images_in_background(game_uuid):
             )
             if direct_artworks and 'error' not in direct_artworks:
                 artworks_data = direct_artworks
+            current_app.logger.debug(
+                'IGDB media discovered game_uuid=%s igdb_id=%s cover=%s '
+                'screenshots=%s artworks=%s existing_images=%s',
+                game_uuid, game.igdb_id, bool(cover_id),
+                len(screenshots_data), len(artworks_data), len(existing_images),
+            )
             print(f"[IMAGE REFRESH] Queuing {len(artworks_data)} artworks.")
             for artwork in artworks_data:
                 queue_if_missing(artwork, 'artwork')
 
-            # Commit so records appear in queue as pending
-            db.session.commit()
+            # Keep the game row locked until the refresh is complete. This
+            # serializes a concurrent re-identification with image writes and
+            # avoids attaching media from an old identity to the new one.
+            db.session.flush()
             cache.set(f'image_refresh_progress_{game_uuid}', {'status': 'in_progress', 'progress': 75}, timeout=300)
 
             # Immediately download this game's pending images
@@ -439,6 +539,8 @@ def refresh_images_in_background(game_uuid):
             ).scalars().all()
 
             total_pending = len(pending)
+            downloaded_count = 0
+            download_failed_count = 0
             print(f"[IMAGE REFRESH] Downloading {total_pending} queued images.")
             for idx, img in enumerate(pending):
                 if img.download_url:
@@ -446,27 +548,115 @@ def refresh_images_in_background(game_uuid):
                         save_path = os.path.join(current_app.config['IMAGE_SAVE_PATH'], img.url)
                         if _download_image(img.download_url, save_path):
                             img.is_downloaded = True
+                            downloaded_count += 1
                             print(f"[IMAGE REFRESH] Downloaded {img.image_type}: {img.url}")
                         else:
+                            download_failed_count += 1
                             print(f"[IMAGE REFRESH] Validation failed for {img.url}")
+                            current_app.logger.warning(
+                                'Image download validation failed game_uuid=%s '
+                                'image_id=%s image_type=%s local_name=%s',
+                                game_uuid, img.id, img.image_type, img.url,
+                            )
                     except Exception as dl_err:
+                        download_failed_count += 1
                         print(f"[IMAGE REFRESH] Failed to download {img.url}: {dl_err}")
+                        current_app.logger.warning(
+                            'Image download failed game_uuid=%s image_id=%s '
+                            'image_type=%s local_name=%s error=%s',
+                            game_uuid, img.id, img.image_type, img.url, dl_err,
+                        )
+                else:
+                    download_failed_count += 1
+                    current_app.logger.warning(
+                        'Pending image has no download URL game_uuid=%s '
+                        'image_id=%s image_type=%s',
+                        game_uuid, img.id, img.image_type,
+                    )
                 if total_pending > 0:
                     progress = 75 + int(((idx + 1) / total_pending) * 24)
                     cache.set(f'image_refresh_progress_{game_uuid}', {'status': 'in_progress', 'progress': progress}, timeout=300)
 
+            replaced_files = []
+            if replace_existing:
+                refreshed_images = db.session.execute(
+                    select(Image).filter_by(game_uuid=game_uuid)
+                ).scalars().all()
+                for image in refreshed_images:
+                    if (
+                        image.id in original_image_ids
+                        and str(image.igdb_image_id) not in desired_image_ids
+                    ):
+                        replaced_files.append(image.url)
+                        db.session.delete(image)
+
+            # Release the lightweight duplicate-request guard immediately
+            # before the database commit releases the row lock. A waiting
+            # re-identification refresh can then acquire the guard and proceed
+            # as soon as this transaction finishes.
+            cache.delete(lock_key)
+            lock_owned = False
             db.session.commit()
+
+            image_root = os.path.abspath(current_app.config['IMAGE_SAVE_PATH'])
+            for image_url in replaced_files:
+                relative_path = image_url.replace(
+                    '/static/library/images/', '',
+                ).strip('/')
+                image_path = os.path.abspath(os.path.join(image_root, relative_path))
+                try:
+                    if (
+                        os.path.commonpath((image_root, image_path)) == image_root
+                        and os.path.isfile(image_path)
+                    ):
+                        os.remove(image_path)
+                except (OSError, ValueError) as file_error:
+                    current_app.logger.warning(
+                        'Could not remove replaced image %s: %s',
+                        image_path, file_error,
+                    )
+
             cache.set(f'image_refresh_progress_{game_uuid}', {'status': 'complete', 'progress': 100}, timeout=300)
             print(f"[IMAGE REFRESH] Successfully finished for '{game.name}'")
+            duration_ms = round((time.monotonic() - started_at) * 1000, 2)
+            removed_count = len(replaced_files)
+            current_app.logger.info(
+                'Image refresh completed game_uuid=%s game_name=%s igdb_id=%s '
+                'reason=%s pending=%s downloaded=%s failed=%s removed=%s '
+                'duration_ms=%s',
+                game_uuid, game.name, game.igdb_id, refresh_reason,
+                total_pending, downloaded_count, download_failed_count,
+                removed_count, duration_ms,
+            )
+            admin_event(
+                f'Image refresh complete: game={game_uuid} IGDB={game.igdb_id}; '
+                f'downloaded={downloaded_count}/{total_pending} '
+                f'failed={download_failed_count} removed={removed_count}; '
+                f'{game.name[:64]}',
+                'warning' if download_failed_count else 'information',
+            )
             return True, None
 
         except Exception as e:
             db.session.rollback()
             print(f"[IMAGE REFRESH] Exception: {str(e)}")
+            current_app.logger.exception(
+                'Image refresh crashed game_uuid=%s expected_igdb_id=%s '
+                'reason=%s duration_ms=%s',
+                game_uuid, expected_igdb_id, refresh_reason,
+                round((time.monotonic() - started_at) * 1000, 2),
+            )
+            admin_event(
+                f'Image refresh failed: game={game_uuid} error={type(e).__name__}',
+                'error',
+            )
             import traceback
             traceback.print_exc()
             cache.set(f'image_refresh_progress_{game_uuid}', {'status': 'error', 'progress': 0}, timeout=300)
             return False, str(e)
+        finally:
+            if lock_owned:
+                cache.delete(lock_key)
             
 def delete_game_images(game_uuid):
     with current_app.app_context():

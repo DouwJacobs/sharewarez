@@ -17,6 +17,9 @@
         {% endif %}
     </div>
     {% endif %}
+    {% if enable_game_issues %}<div class="menu-item">
+        <button type="button" class="menu-button" onclick="toggleReportIssueModal()" id="reportIssueBtn">Report Issue</button>
+    </div>{% endif %}
 
     <form action="{{ url_for('games.game_edit', game_uuid=game_uuid) }}" method="get" class="menu-item">
         {{ form.csrf_token }}

@@ -10,6 +10,7 @@ from sharewarez.utils.event_logging import log_system_event
 from . import download_bp
 from sharewarez import db
 from sharewarez.utils.download_limits import calculate_download_expiry, expire_download_requests
+from sharewarez.utils.download_notifications import notify_admin_download_cancelled
 
 @download_bp.route('/downloads')
 @login_required
@@ -43,7 +44,14 @@ def cancel_download(download_id):
     else:
         download_request.status = 'cancelled'
         db.session.commit()
-        log_system_event(f"User {current_user.id} cancelled download request {download_id}", event_type='audit', event_level='information')
+        try:
+            notify_admin_download_cancelled(download_request, current_user.name)
+        except Exception as error:
+            log_system_event(
+                f"Download cancellation notification failed: {error}",
+                event_type='notification', event_level='error',
+            )
+        log_system_event(f"User {current_user.name} cancelled download request {download_id}", event_type='audit', event_level='information')
         flash('Download request cancelled.', 'success')
     return redirect(url_for('download.downloads'))
 
@@ -65,7 +73,7 @@ def retry_download(download_id):
         settings = db.session.execute(select(GlobalSettings)).scalars().first()
         download_request.expires_at = calculate_download_expiry(settings)
         db.session.commit()
-        log_system_event(f"User {current_user.id} retried download request {download_id}", event_type='audit', event_level='information')
+        log_system_event(f"User {current_user.name} retried download request {download_id}", event_type='audit', event_level='information')
         flash('Download request is available again.', 'success')
     return redirect(url_for('download.downloads'))
 
@@ -93,7 +101,7 @@ def delete_download(download_id):
     db.session.delete(download_request)
     db.session.commit()
     
-    log_system_event(f"User {current_user.id} deleted download request {download_id}", 
+    log_system_event(f"User {current_user.name} deleted download request {download_id}",
                    event_type='audit', event_level='information')
 
     return redirect(url_for('download.downloads'))

@@ -162,6 +162,11 @@
 }
 .admin-request-search > i { flex: none; color: var(--theme-primary, #03b2f8); }
 .admin-request-search input { flex: 1; padding: 0; text-align: left; height: 100%; }
+#content #requestAdminSearch {
+    border-radius: 0 !important;
+    background-color: transparent !important;
+    background-image: none !important;
+}
 .admin-request-search input::placeholder { text-align: left; }
 .request-desktop-filters { display: grid; gap: .65rem; padding-top: .15rem; }
 .request-filter-group { display: grid; grid-template-columns: 54px minmax(0, 1fr); align-items: center; gap: .75rem; }

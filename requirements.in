@@ -11,6 +11,7 @@ cryptography
 pillow
 WTForms_SQLAlchemy
 requests
+pywebpush
 psycopg2_binary
 discord_webhook
 python_dotenv

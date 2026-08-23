@@ -335,6 +335,15 @@ function toggleRequestUpdateModal() {
     document.body.style.overflow = isOpening ? "hidden" : "";
 }
 
+function toggleReportIssueModal() {
+    const modal = document.getElementById('reportIssueModal');
+    if (!modal) return;
+    const isOpening = !modal.classList.contains('is-open');
+    modal.classList.toggle('is-open', isOpening);
+    modal.setAttribute('aria-hidden', isOpening ? 'false' : 'true');
+    document.body.style.overflow = isOpening ? 'hidden' : '';
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     const updateForm = document.getElementById('requestUpdateForm');
     if (!updateForm) return;
@@ -417,4 +426,33 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+    const form = document.getElementById('reportIssueForm');
+    if (!form) return;
+    form.addEventListener('submit', async event => {
+        event.preventDefault();
+        const button = document.getElementById('submitIssueBtn');
+        button.disabled = true;
+        try {
+            const response = await fetch(`/game_details/${form.dataset.gameUuid}/issues`, {
+                method: 'POST',
+                headers: CSRFUtils.getHeaders({'Content-Type': 'application/json'}),
+                body: JSON.stringify({
+                    category: document.getElementById('issueCategory').value,
+                    title: document.getElementById('issueTitle').value,
+                    description: document.getElementById('issueDescription').value
+                })
+            });
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.error || 'Failed to report issue.');
+            window.location.assign(data.url || '/issues');
+        } catch (error) {
+            if (window.jQuery?.notify) window.jQuery.notify(error.message, 'error');
+            else alert(error.message);
+        } finally {
+            button.disabled = false;
+        }
+    });
 });

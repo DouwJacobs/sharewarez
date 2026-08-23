@@ -44,6 +44,8 @@ def inject_settings():
 @login_required
 @admin_required
 def libraries():
+    if request.path == '/libraries':
+        return redirect(url_for('library.admin_libraries'), code=308)
     libraries = db.session.execute(select(Library).order_by(Library.display_order.asc())).scalars().all()
     csrf_form = CsrfProtectForm()
     game_count = db.session.execute(select(func.count(Game.id))).scalar()  # Fetch the game count here

@@ -17,7 +17,13 @@ def bulk_metadata_library(db_session):
     )
     db_session.add(library)
     db_session.flush()
-    db_session.add(Game(name='Refresh Me', library_uuid=library.uuid, igdb_id=12345))
+    # Avoid colliding with a row committed by a daemon refresh from another
+    # route test in the shared PostgreSQL test database.
+    unique_igdb_id = int(uuid4().hex[:7], 16)
+    db_session.add(Game(
+        name='Refresh Me', library_uuid=library.uuid,
+        igdb_id=unique_igdb_id,
+    ))
     db_session.commit()
     return library
 

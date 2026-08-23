@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block content %}
+<link rel="stylesheet" href="{{ 'css/issues.css'|theme_asset }}">
+<main class="app-page app-page--wide issues-page issue-detail-page admin-issue-detail-page">
+    <nav class="issue-detail-nav"><a class="btn btn-secondary" href="{{ url_for('issues.admin_issues', status='all') }}"><i class="fas fa-arrow-left"></i> All issues</a></nav>
+    <header class="app-surface issue-detail-header">
+        <div class="issue-detail-title"><p class="eyebrow">Issue #{{ issue.id }} · {{ category_labels[issue.category] }}</p><h1>{{ issue.title }}</h1><p><a href="{{ url_for('games.game_details', game_uuid=issue.game.uuid) }}">{{ issue.game.name }}</a> · Reported by <strong>{{ issue.reporter.name }}</strong></p></div>
+        <span class="issue-status status-{{ issue.status }}">{{ status_labels[issue.status] }}</span>
+    </header>
+
+    <div class="issue-detail-layout">
+        <div class="app-stack">
+            <section class="app-surface issue-description"><div class="issue-section-heading"><h2>Reported problem</h2></div><p class="issue-prose">{{ issue.description }}</p></section>
+            <section class="app-surface issue-conversation">
+                <div class="issue-section-heading"><div><p class="eyebrow">Activity</p><h2>Conversation &amp; history</h2></div><span>{{ issue.comments|length }} event{{ '' if issue.comments|length == 1 else 's' }}</span></div>
+                <div class="issue-timeline">
+                    {% for comment in issue.comments %}<article class="issue-comment{% if comment.kind == 'status' %} issue-comment--status{% elif comment.is_internal %} issue-comment--internal{% elif comment.author and comment.author.role == 'admin' %} issue-comment--admin{% endif %}">
+                        <span class="issue-comment-avatar"><i class="fas {{ 'fa-rotate' if comment.kind == 'status' else ('fa-lock' if comment.is_internal else ('fa-shield-halved' if comment.author and comment.author.role == 'admin' else 'fa-user')) }}" aria-hidden="true"></i></span>
+                        <div><header><strong>{{ 'System activity' if comment.kind == 'status' else (comment.author.name if comment.author else 'Deleted user') }}{% if comment.is_internal %}<span class="internal-label">Internal note</span>{% endif %}</strong><time datetime="{{ comment.created_at.isoformat() }}">{{ comment.created_at.strftime('%d %b %Y %H:%M') }}</time></header><p>{{ comment.body }}</p></div>
+                    </article>{% else %}<p class="issue-no-comments">No replies yet.</p>{% endfor %}
+                </div>
+                <form class="issue-reply-form" method="post" action="{{ url_for('issues.add_admin_comment', issue_id=issue.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><label for="adminIssueReply">Add a reply or note</label><textarea id="adminIssueReply" class="form-control" name="body" rows="4" maxlength="4000" required placeholder="Reply to the reporter or record an internal note…"></textarea><label class="issue-internal-toggle"><input type="checkbox" name="is_internal"><span><strong>Internal note</strong><small>Visible only to administrators and does not notify the reporter.</small></span></label><button class="btn btn-primary" type="submit"><i class="fas fa-paper-plane"></i> Add message</button></form>
+            </section>
+        </div>
+
+        <aside class="app-stack issue-detail-aside">
+            <section class="app-surface issue-workflow"><h2>Workflow</h2><form class="issue-form" method="post" action="{{ url_for('issues.admin_update_issue', issue_id=issue.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><label>Status<select class="form-select" name="status">{% for value, label in status_labels.items() %}<option value="{{ value }}"{% if value == issue.status %} selected{% endif %}>{{ label }}</option>{% endfor %}</select></label><label>Category<select class="form-select" name="category">{% for value, label in category_labels.items() %}<option value="{{ value }}"{% if value == issue.category %} selected{% endif %}>{{ label }}</option>{% endfor %}</select></label><label>Title<input class="form-control" name="title" value="{{ issue.title }}" minlength="5" maxlength="160" required></label><label>Description<textarea class="form-control" name="description" rows="6" minlength="10" maxlength="5000" required>{{ issue.description }}</textarea></label><button class="btn btn-primary" type="submit"><i class="fas fa-check"></i> Save changes</button></form></section>
+            <section class="app-surface issue-meta"><h2>Tracking</h2><dl><div><dt>Reported by</dt><dd>{{ issue.reporter.name }}</dd></div><div><dt>Created</dt><dd>{{ issue.created_at.strftime('%d %b %Y %H:%M') }}</dd></div><div><dt>Last updated</dt><dd>{{ issue.updated_at.strftime('%d %b %Y %H:%M') }}</dd></div><div><dt>Last handled by</dt><dd>{{ issue.handled_by.name if issue.handled_by else 'Unassigned' }}</dd></div>{% if issue.resolved_at %}<div><dt>Resolved</dt><dd>{{ issue.resolved_at.strftime('%d %b %Y %H:%M') }}</dd></div>{% endif %}</dl></section>
+            <section class="app-surface issue-danger-zone"><h2>Danger zone</h2><p>Permanently removes this issue and all comments.</p><form method="post" action="{{ url_for('issues.delete_issue', issue_id=issue.id) }}" onsubmit="return confirm('Permanently delete this issue and all of its comments?')"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-danger" type="submit"><i class="fas fa-trash"></i> Delete issue</button></form></section>
+        </aside>
+    </div>
+</main>
+{% endblock %}

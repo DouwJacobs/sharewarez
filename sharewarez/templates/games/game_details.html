@@ -157,6 +157,39 @@
     </div>
 </div>
 {% endif %}
+<div id="reportIssueModal" class="modal-request-update" role="dialog" aria-modal="true" aria-labelledby="reportIssueModalTitle" aria-hidden="true" data-focus-managed-dialog>
+    <div class="modal-request-update-content">
+        <div class="modal-request-update-header">
+            <h3 id="reportIssueModalTitle">Report an Issue with {{ game.name }}</h3>
+            <button type="button" class="close" onclick="toggleReportIssueModal()" aria-label="Close" data-dialog-close>&times;</button>
+        </div>
+        <p class="request-update-intro">Tell administrators about a broken download, missing files, launch problem, or incorrect information.</p>
+        <form id="reportIssueForm" data-game-uuid="{{ game.uuid }}">
+            <div class="form-group mb-3">
+                <label for="issueCategory">Issue type</label>
+                <select id="issueCategory" class="form-control" required>
+                    <option value="broken_download">Broken or corrupt download</option>
+                    <option value="missing_files">Missing files</option>
+                    <option value="launch_problem">Launch or installation problem</option>
+                    <option value="metadata">Incorrect game information</option>
+                    <option value="other">Other</option>
+                </select>
+            </div>
+            <div class="form-group mb-3">
+                <label for="issueTitle">Short title</label>
+                <input id="issueTitle" class="form-control" type="text" minlength="5" maxlength="160" required placeholder="e.g. Installer stops at 80%">
+            </div>
+            <div class="form-group mb-3">
+                <label for="issueDescription">What is wrong?</label>
+                <textarea id="issueDescription" class="form-control" rows="5" minlength="10" maxlength="5000" required placeholder="Describe what happened and include any useful error message."></textarea>
+            </div>
+            <div class="modal-request-update-actions">
+                <button type="button" class="btn btn-secondary" onclick="toggleReportIssueModal()">Cancel</button>
+                <button type="submit" class="btn btn-primary" id="submitIssueBtn"><i class="fas fa-bug"></i> Submit Issue</button>
+            </div>
+        </form>
+    </div>
+</div>
 <div id="summaryModal" class="summary-modal" role="dialog" aria-modal="true" aria-labelledby="summaryModalTitle" aria-hidden="true" data-focus-managed-dialog>
     <div class="summary-modal-content">
         <button type="button" class="summary-close" aria-label="Close" data-dialog-close>&times;</button>

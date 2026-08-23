@@ -110,14 +110,14 @@ class TestImageQueueRoute:
         assert response.status_code == 302  # Redirected by admin_required
 
     def test_image_queue_renders_template_for_admin(self, client, admin_user):
-        """Test that image_queue route renders template for admin user."""
+        """Test that the legacy image queue route redirects to Scan Manager."""
         with client.session_transaction() as sess:
             sess['_user_id'] = str(admin_user.id)
             sess['_fresh'] = True
         
         response = client.get('/admin/image_queue')
-        assert response.status_code == 200
-        assert b'admin_manage_image_queue.html' in response.data or b'Image Queue' in response.data
+        assert response.status_code == 308
+        assert response.location.endswith('/admin/scan_management?active_tab=image_queue')
 
 
 

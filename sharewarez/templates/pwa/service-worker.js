@@ -64,3 +64,22 @@ self.addEventListener('fetch', event => {
 self.addEventListener('message', event => {
     if (event.data === 'SKIP_WAITING') self.skipWaiting();
 });
+
+self.addEventListener('push', event => {
+    const data = event.data ? event.data.json() : {};
+    event.waitUntil(self.registration.showNotification(data.title || 'Game Library', {
+        body: data.message || 'New activity is available.',
+        icon: '/pwa/icon-192.png',
+        badge: '/pwa/icon-192.png',
+        data: { url: data.url || '/notifications' }
+    }));
+});
+
+self.addEventListener('notificationclick', event => {
+    event.notification.close();
+    const url = new URL(event.notification.data?.url || '/notifications', self.location.origin).href;
+    event.waitUntil(clients.matchAll({ type: 'window', includeUncontrolled: true }).then(windows => {
+        const existing = windows.find(window => window.url === url);
+        return existing ? existing.focus() : clients.openWindow(url);
+    }));
+});

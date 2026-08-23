@@ -136,7 +136,7 @@ def setup_igdb():
             insert_default_scanning_filters()
             initialize_default_settings()
             initialize_allowed_file_types()
-            return redirect(url_for('library.libraries'))
+            return redirect(url_for('library.admin_libraries'))
         except Exception as e:
             db.session.rollback()
             flash(f'Error saving IGDB settings: {str(e)}', 'error')

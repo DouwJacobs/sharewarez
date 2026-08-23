@@ -91,3 +91,17 @@ def test_admin_search_returns_request_results(client, search_records, db_session
         and result['url'] == f'/admin/game-requests/{game_request.id}'
         for result in results
     )
+
+
+def test_admin_search_returns_centralized_admin_destinations(client, search_records):
+    user, _, _ = search_records
+    login(client, user)
+
+    results = client.get('/api/global-search?q=notification rules').get_json()['results']
+
+    assert any(
+        result['type'] == 'Admin'
+        and result['title'] == 'Notification rules'
+        and result['url'] == '/admin/settings?section=notifications'
+        for result in results
+    )

@@ -34,7 +34,7 @@ def add_game_manual():
         # Determine redirection based from_unmatched
         from_unmatched = request.args.get('from_unmatched', 'false') == 'true'
         if from_unmatched:
-            return redirect(url_for('main.scan_management', active_tab='unmatched'))
+            return redirect(url_for('main.admin_scan_management', active_tab='unmatched'))
         else:
             return redirect(url_for('library.library'))
     
@@ -220,7 +220,7 @@ def add_game_manual():
             )
             
             if from_unmatched:
-                return redirect(url_for('main.scan_management', active_tab='unmatched'))
+                return redirect(url_for('main.admin_scan_management', active_tab='unmatched'))
             else:
                 return redirect(url_for('library.library'))
         except SQLAlchemyError as e:

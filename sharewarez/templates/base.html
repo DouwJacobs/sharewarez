@@ -9,16 +9,16 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     {% set route_titles = {
         '/login': 'Login', '/register': 'Register', '/reset_password_request': 'Reset password',
-        '/discover': 'Discover', '/library': 'Library', '/requests': 'Game requests',
+        '/discover': 'Discover', '/library': 'Library', '/requests': 'Game requests', '/issues': 'My issues',
         '/downloads': 'Downloads', '/favorites': 'Favorites', '/notifications': 'Notifications', '/trailers': 'Trailers', '/help': 'Help',
         '/settings_profile_view': 'Profile', '/settings_profile_edit': 'Edit profile',
         '/settings_password': 'Change password', '/settings_panel': 'Preferences', '/user/invites': 'Invitations',
         '/admin/dashboard': 'Administration', '/admin/libraries': 'Libraries',
         '/admin/library/add': 'Add library', '/admin/scan_management': 'Scan management',
-        '/admin/discovery_sections': 'Discovery sections', '/admin/game-requests': 'Game requests',
-        '/admin/new_server_settings': 'Server settings', '/admin/attract_mode_settings': 'Attract mode',
+        '/admin/discovery_sections': 'Discovery sections', '/admin/game-requests': 'Game requests', '/admin/issues': 'Game issues',
+        '/admin/settings': 'Application settings', '/admin/new_server_settings': 'Application settings', '/admin/attract_mode_settings': 'Attract mode',
         '/admin/integrations': 'Integrations', '/admin/statistics': 'Statistics',
-        '/admin/system_logs': 'System logs', '/admin/new_server_info': 'Server status',
+        '/admin/system_logs': 'System logs', '/admin/server-status': 'Server status', '/admin/new_server_info': 'Server status',
         '/admin/users': 'Users', '/admin/whitelist': 'Whitelist', '/admin/manage_invites': 'Invitations',
         '/admin/branding': 'Branding', '/admin/manage-downloads': 'Download requests',
         '/admin/themes': 'Themes', '/admin/newsletter': 'Newsletter', '/admin/email-templates': 'Email templates',
@@ -31,10 +31,11 @@
         'admin2.add_library': 'Add library', 'admin2.edit_library': 'Edit library',
         'admin2.discord_help': 'Discord help', 'admin2.discord_settings': 'Discord settings',
         'admin2.edit_filters': 'Scanning filters', 'admin2.igdb_settings': 'IGDB settings',
-        'admin2.smtp_settings': 'SMTP settings', 'admin2.settings': 'Server settings',
+        'admin2.smtp_settings': 'SMTP settings', 'admin2.settings': 'Application settings',
         'admin2.theme_builder': 'Theme builder', 'admin2.theme_readme': 'Theme guide',
         'admin2.view_newsletter': 'Newsletter details',
         'game_requests.admin_request_details': 'Request details',
+        'issues.issue_detail': 'Issue details', 'issues.admin_issue_detail': 'Issue details',
         'info.admin_server_status': 'Server status'
     } %}
     {% set document_page_title = title|default(route_titles.get(request.path) or endpoint_titles.get(request.endpoint), true) %}
@@ -150,6 +151,7 @@
     <link rel="stylesheet" href="{{ 'css/form-components.css'|theme_asset }}">
     <link rel="stylesheet" href="{{ 'css/table-components.css'|theme_asset }}">
     <link rel="stylesheet" href="{{ 'css/admin-components.css'|theme_asset }}">
+    <link rel="stylesheet" href="{{ 'css/admin/admin_navigation.css'|theme_asset }}">
 
     <link rel="stylesheet" href="{{ 'css/site/sidebar.css'|theme_asset }}">
     <link rel="stylesheet" href="{{ 'css/components.css'|theme_asset }}">
@@ -216,7 +218,7 @@
         }
     </style>
 </head>
-<body class="{% if request.path.startswith('/admin') or request.endpoint in ['download.manage_downloads', 'library.libraries', 'main.scan_management'] %}admin-ui{% endif %}" data-enable-game-updates="{{ enable_game_updates|lower }}" data-enable-game-extras="{{ enable_game_extras|lower }}"{% if request.path == '/library' %} data-user-per-page="{{ user_per_page }}" data-user-default-sort="{{ user_default_sort }}" data-user-default-sort-order="{{ user_default_sort_order }}" data-enable-delete-game-on-disk="{{ enable_delete_game_on_disk|lower }}" data-discord-configured="{{ discord_configured|lower }}" data-discord-manual-trigger="{{ discord_manual_trigger_enabled|lower }}" data-is-admin="{{ is_admin|lower }}" data-show-play-status="{{ show_play_status|lower }}" data-current-filters="{{ filters|tojson|e }}" data-current-page="{{ current_page }}" data-total-pages="{{ pages }}"{% endif %}>
+<body class="{% if request.path.startswith('/admin') or request.endpoint in ['download.manage_downloads', 'library.admin_libraries', 'main.admin_scan_management'] %}admin-ui{% endif %}" data-enable-game-updates="{{ enable_game_updates|lower }}" data-enable-game-extras="{{ enable_game_extras|lower }}"{% if request.path == '/library' %} data-user-per-page="{{ user_per_page }}" data-user-default-sort="{{ user_default_sort }}" data-user-default-sort-order="{{ user_default_sort_order }}" data-enable-delete-game-on-disk="{{ enable_delete_game_on_disk|lower }}" data-discord-configured="{{ discord_configured|lower }}" data-discord-manual-trigger="{{ discord_manual_trigger_enabled|lower }}" data-is-admin="{{ is_admin|lower }}" data-show-play-status="{{ show_play_status|lower }}" data-current-filters="{{ filters|tojson|e }}" data-current-page="{{ current_page }}" data-total-pages="{{ pages }}"{% endif %}>
 
 
 
@@ -258,7 +260,8 @@
 <!-- Sidebar Backdrop (mobile only) -->
 <div id="sidebarBackdrop" class="sidebar-backdrop"></div>
 
-<div id="sidebar" class="sidebar">
+{% set desktop_sidebar_collapsed = current_user.is_authenticated and current_user.preferences and current_user.preferences.sidebar_collapsed %}
+<div id="sidebar" class="sidebar{% if desktop_sidebar_collapsed %} collapsed{% endif %}">
     <a href="/discover">
         {% if show_logo %}
             <div class="menu-logo-image"><img src="{{ url_for('static', filename=brand_logo_path) }}" alt="{{ site_title }} logo"></div>
@@ -272,7 +275,7 @@
     {% endif %}
     
     <div class="sidebar-header">
-        <button id="toggleSidebar" class="toggle-sidebar" type="button" aria-label="Collapse navigation" aria-expanded="true" aria-controls="sidebar">
+        <button id="toggleSidebar" class="toggle-sidebar" type="button" aria-label="{{ 'Expand' if desktop_sidebar_collapsed else 'Collapse' }} navigation" aria-expanded="{{ 'false' if desktop_sidebar_collapsed else 'true' }}" aria-controls="sidebar">
             <i class="fas fa-chevron-right icon-chevron"></i>
         </button>
     </div>
@@ -285,6 +288,9 @@
             <a href="{{ url_for('library.library') }}" class="sidebar-link{% if request.path.startswith('/library') %} active{% endif %}" title="Library"{% if request.path.startswith('/library') %} aria-current="page"{% endif %}><i class="fas fa-gamepad"></i><span class="link-text">Library</span></a>
             {% if enable_game_requests %}
                 <a href="{{ url_for('game_requests.requests_page') }}" class="sidebar-link{% if request.path.startswith('/requests') %} active{% endif %}" title="Requests"{% if request.path.startswith('/requests') %} aria-current="page"{% endif %}><i class="fas fa-paper-plane"></i><span class="link-text">Requests</span></a>
+            {% endif %}
+            {% if enable_game_issues %}
+                <a href="{{ url_for('issues.my_issues') }}" class="sidebar-link{% if request.path.startswith('/issues') %} active{% endif %}" title="Issues"{% if request.path.startswith('/issues') %} aria-current="page"{% endif %}><i class="fas fa-bug"></i><span class="link-text">Issues</span></a>
             {% endif %}
             <a href="{{ url_for('download.downloads') }}" class="sidebar-link{% if request.path.startswith('/downloads') %} active{% endif %}" title="Downloads"{% if request.path.startswith('/downloads') %} aria-current="page"{% endif %}><i class="fas fa-download"></i><span class="link-text">Downloads</span></a>
             <a href="{{ url_for('notifications.notification_center') }}" class="sidebar-link sidebar-notification-link{% if request.path.startswith('/notifications') %} active{% endif %}" title="Notifications"{% if request.path.startswith('/notifications') %} aria-current="page"{% endif %}><i class="fas fa-bell"></i><span class="link-text">Notifications</span>{% if unread_notification_count %}<span class="notification-nav-badge" aria-label="{{ unread_notification_count }} unread notifications">{{ '99+' if unread_notification_count > 99 else unread_notification_count }}</span>{% endif %}</a>
@@ -345,7 +351,7 @@
     </section>
 </div>
 {% endif %}
-<div id="content" class="{% if is_setup_mode %}setup-mode-content{% endif %}">
+<div id="content" class="{% if is_setup_mode %}setup-mode-content {% endif %}{% if desktop_sidebar_collapsed %}collapsed{% endif %}">
     {% if current_user.is_authenticated and not is_setup_mode %}
     <div class="content-global-search">
         <i class="fas fa-magnifying-glass" aria-hidden="true"></i>
@@ -354,7 +360,7 @@
     </div>
     {% endif %}
     {% include 'partials/flash_messages.html' %}
-    {% if (request.path.startswith('/admin') and request.path != '/admin/dashboard') or request.endpoint in ['library.libraries', 'main.scan_management'] %}
+    {% if (request.path.startswith('/admin') and request.path != '/admin/dashboard') or request.endpoint in ['library.admin_libraries', 'main.admin_scan_management'] %}
     <nav class="admin-breadcrumb" aria-label="Admin navigation">
         <a href="{{ url_for('site.admin_dashboard') }}" aria-label="Return to the admin dashboard">
             <i class="fas fa-arrow-left" aria-hidden="true"></i>
@@ -363,6 +369,9 @@
         <i class="fas fa-chevron-right admin-breadcrumb-separator" aria-hidden="true"></i>
         <span class="admin-breadcrumb-current">{{ document_page_title or 'Administration' }}</span>
     </nav>
+    {% endif %}
+    {% if admin_navigation and (request.path.startswith('/admin') or request.path in ['/libraries', '/scan_management']) %}
+        {% include 'partials/admin_navigation.html' %}
     {% endif %}
     {% block content %}{% endblock %}
 </div>
@@ -384,6 +393,7 @@
         <div class="mobile-more-menu">
             {% for item in mobile_nav.links[4:] %}<a href="{{ item.href }}"{% if item.active %} class="active" aria-current="page"{% endif %}><i class="fas {{ item.icon }}" aria-hidden="true"></i><span>{{ item.label }}</span></a>{% endfor %}
             {% if show_trailers %}<a href="{{ url_for('site.random_trailers') }}"{% if request.path.startswith('/trailers') %} class="active" aria-current="page"{% endif %}><i class="fas fa-film" aria-hidden="true"></i><span>Trailers</span></a>{% endif %}
+            {% if enable_game_issues %}<a href="{{ url_for('issues.my_issues') }}"{% if request.path.startswith('/issues') %} class="active" aria-current="page"{% endif %}><i class="fas fa-bug" aria-hidden="true"></i><span>Issues</span></a>{% endif %}
             {% if current_user.role == 'admin' %}<a href="{{ url_for('site.admin_dashboard') }}"{% if request.path.startswith('/admin') %} class="active" aria-current="page"{% endif %}><i class="fas fa-shield-halved" aria-hidden="true"></i><span>Administration</span></a>{% endif %}
             <a href="{{ url_for('notifications.notification_center') }}"{% if request.path.startswith('/notifications') %} class="active" aria-current="page"{% endif %}><i class="fas fa-bell" aria-hidden="true"></i><span>Notifications{% if unread_notification_count %} ({{ unread_notification_count }}){% endif %}</span></a>
             {% if show_help_button %}<a href="{{ url_for('site.helpfaq') }}"{% if request.path.startswith('/help') %} class="active" aria-current="page"{% endif %}><i class="fas fa-circle-question" aria-hidden="true"></i><span>Help</span></a>{% endif %}
@@ -416,13 +426,49 @@
         closeAllSubmenus();
     
         // Toggle sidebar (desktop chevron)
+        const sidebarPreferenceKey = "gamelibrary.sidebar.collapsed";
+        const sidebarElement = document.getElementById("sidebar");
+        const contentElement = document.getElementById("content");
         const toggleSidebar = document.getElementById("toggleSidebar");
+
+        function setDesktopSidebarCollapsed(collapsed) {
+            if (!sidebarElement || !contentElement) return;
+            sidebarElement.classList.toggle("collapsed", collapsed);
+            contentElement.classList.toggle("collapsed", collapsed);
+            if (toggleSidebar) {
+                toggleSidebar.setAttribute("aria-expanded", String(!collapsed));
+                toggleSidebar.setAttribute("aria-label", collapsed ? "Expand navigation" : "Collapse navigation");
+            }
+        }
+
+        try {
+            const cookiePreference = document.cookie
+                .split("; ")
+                .find(cookie => cookie.startsWith("sidebar_collapsed="))
+                ?.split("=")[1];
+            setDesktopSidebarCollapsed(
+                localStorage.getItem(sidebarPreferenceKey) === "true" || cookiePreference === "true"
+            );
+        } catch (error) {
+            console.warn("Sidebar preference could not be restored.", error);
+        }
+
         if (toggleSidebar) {
             toggleSidebar.addEventListener("click", function() {
-                const collapsed = document.getElementById("sidebar").classList.toggle("collapsed");
-                document.getElementById("content").classList.toggle("collapsed");
-                this.setAttribute("aria-expanded", String(!collapsed));
-                this.setAttribute("aria-label", collapsed ? "Expand navigation" : "Collapse navigation");
+                const collapsed = !sidebarElement.classList.contains("collapsed");
+                setDesktopSidebarCollapsed(collapsed);
+                try {
+                    localStorage.setItem(sidebarPreferenceKey, String(collapsed));
+                    document.cookie = `sidebar_collapsed=${collapsed}; Path=/; Max-Age=31536000; SameSite=Lax`;
+                    fetch('/api/preferences/sidebar', {
+                        method: 'POST',
+                        headers: CSRFUtils.getHeaders({'Content-Type': 'application/json'}),
+                        body: JSON.stringify({collapsed}),
+                        keepalive: true
+                    }).catch(error => console.warn("Sidebar preference could not be synced.", error));
+                } catch (error) {
+                    console.warn("Sidebar preference could not be saved.", error);
+                }
                 closeAllSubmenus();
             });
         }

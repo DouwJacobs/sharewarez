@@ -3,6 +3,10 @@
     margin: 24px auto 48px;
 }
 
+.admin-ui .admin_manage_libraries-library-container {
+    width: min(1440px, 100%);
+}
+
 .admin_manage_libraries-library-container .container-settings {
     min-width: 0;
     margin: 0;

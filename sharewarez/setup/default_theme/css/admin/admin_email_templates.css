@@ -3,7 +3,8 @@
 .email-templates-header > div { min-width: 0; }
 .email-templates-eyebrow,
 .email-template-status { margin: 0 0 6px; color: rgb(var(--theme-accent-soft-rgb, 154, 177, 255)); font-size: .72rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
-.email-templates-layout { display: grid; grid-template-columns: 260px minmax(420px, 1fr) minmax(360px, .9fr); align-items: start; gap: 18px; }
+.email-templates-layout { display: grid; grid-template-columns: 260px minmax(420px, 1fr) minmax(360px, .9fr); align-items: stretch; gap: 18px; }
+.email-templates-layout > .app-surface { height: 100%; }
 .email-template-list { display: grid; gap: 7px; padding: 10px; }
 .email-template-link { display: grid; grid-template-columns: 38px minmax(0, 1fr); align-items: center; gap: 10px; padding: 11px; border: 1px solid transparent; border-radius: 12px; color: var(--theme-text-secondary, #c4c9d8); text-decoration: none; }
 .email-template-link:hover { border-color: rgba(var(--theme-accent-soft-rgb,154,177,255),.2); background: rgba(var(--theme-accent-rgb,98,122,239),.07); color: var(--theme-text-primary,#fff); }
@@ -32,7 +33,7 @@
 .email-template-body-heading span { color: var(--text-muted); font-size: .68rem; text-align: right; }
 .email-template-form-actions { display: flex; justify-content: flex-end; gap: 10px; padding-top: 8px; }
 .email-template-error { margin: 0; padding: 10px 12px; border: 1px solid rgba(255,90,110,.35); border-radius: 9px; background: rgba(255,90,110,.08); color: #ff9baa; font-size: .8rem; }
-.email-template-preview { position: sticky; top: 18px; }
+.email-template-preview { position: relative; }
 .email-template-preview-heading span:first-child { color: rgb(var(--theme-accent-soft-rgb,154,177,255)); font-size: .68rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
 .email-template-preview-badge { padding: 5px 8px; border: 1px solid rgba(var(--theme-accent-soft-rgb,154,177,255),.2); border-radius: 999px; color: var(--text-muted); font-size: .66rem; }
 .email-template-preview-subject { display: grid; gap: 4px; padding: 15px 0; }

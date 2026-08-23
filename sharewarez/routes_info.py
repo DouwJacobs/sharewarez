@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, redirect, url_for, flash
+from flask import Blueprint, render_template, redirect, url_for, flash, request
 from flask_login import current_user, login_required  # noqa: F401
 from sharewarez.utils.auth import admin_required
 from sharewarez.utils.processors import get_global_settings
@@ -23,69 +23,17 @@ def inject_settings():
 @login_required
 @admin_required
 def admin_server_status():
-    # Check server settings
-    settings_valid, error_message = check_server_settings()
-    if not settings_valid:
-        flash(error_message, 'warning')
-        return redirect(url_for('site.admin_dashboard'))
-
-    try:
-        # Get all required statistics
-        cpu_usage = get_cpu_usage()
-        process_count = get_process_count()
-        open_files = get_open_files()
-        memory_usage = get_memory_usage()
-        disk_usage = get_disk_usage()
-        warez_usage = get_warez_folder_usage()
-        system_info = get_system_info()
-        config_values = get_config_values()
-        active_users = get_active_users()
-        log_info = get_log_info()
-        database_info = get_database_info()
-        diagnostics = get_instance_diagnostics()
-        
-        # Format usage statistics
-        for usage in [memory_usage, disk_usage, warez_usage]:
-            if usage:
-                for key in ['total', 'used', 'available', 'free']:
-                    if key in usage:
-                        usage[f'{key}_formatted'] = format_bytes(usage[key])
-
-        # Add uptime information to system_info
-        system_info['System Uptime'] = get_formatted_system_uptime()
-        system_info['Application Uptime'] = get_formatted_app_uptime(app_start_time)
-
-        # Log the access
-        log_system_event("Admin accessed server status page", event_type='audit', event_level='information')
-
-    except Exception as e:
-        flash(f'Error accessing server settings: {str(e)}', 'error')
-        return redirect(url_for('site.admin_dashboard'))
-
-    return render_template(
-        'admin/admin_server_status.html',
-        config_values=config_values,
-        system_info=system_info,
-        app_version=app_version,
-        process_count=process_count,
-        open_files=open_files,
-        cpu_usage=cpu_usage,
-        memory_usage=memory_usage,
-        disk_usage=disk_usage,
-        warez_usage=warez_usage,
-        log_count=log_info['count'],
-        active_users=active_users,
-        latest_log=log_info['latest'],
-        database_info=database_info,
-        diagnostics=diagnostics,
-    )
+    return redirect(url_for('info.server_status'), code=308)
 
 
 @info_bp.route('/admin/new_server_info')
+@info_bp.route('/admin/server-status', endpoint='server_status')
 @login_required
 @admin_required
 def new_server_info():
     """New server info page - same functionality as original but for new settings section."""
+    if request.path == '/admin/new_server_info':
+        return redirect(url_for('info.server_status'), code=308)
     # Check server settings
     settings_valid, error_message = check_server_settings()
     if not settings_valid:

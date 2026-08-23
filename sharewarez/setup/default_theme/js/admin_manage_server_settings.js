@@ -27,6 +27,9 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     });
+    const initialSection = document.querySelector('.server-settings-page')?.dataset.initialSettingsSection || 'general';
+    const initialButton = categoryButtons.find(button => button.dataset.settingsTarget === initialSection);
+    if (initialButton) initialButton.click();
 
     // Apply current settings to form
     Object.keys(currentSettings).forEach(function(key) {
@@ -97,6 +100,7 @@ document.addEventListener('DOMContentLoaded', function() {
             useLocalImages: document.getElementById('useLocalImages').checked,
             localMetadataFilename: document.getElementById('localMetadataFilename').value,
             enableGameRequests: document.getElementById('enableGameRequests').checked,
+            enableGameIssues: document.getElementById('enableGameIssues').checked,
             allowRequestNotes: document.getElementById('allowRequestNotes').checked,
             allowRequestAnyEdition: document.getElementById('allowRequestAnyEdition').checked,
             maxActiveRequestsPerUser: parseInt(document.getElementById('maxActiveRequestsPerUser').value),
@@ -104,6 +108,10 @@ document.addEventListener('DOMContentLoaded', function() {
             notifyAdminRequestEmail: document.getElementById('notifyAdminRequestEmail').checked,
             notifyDiscordNewRequests: document.getElementById('notifyDiscordNewRequests').checked,
             notifyDiscordRequestUpdates: document.getElementById('notifyDiscordRequestUpdates').checked,
+            notifyAdminIssueEmail: document.getElementById('notifyAdminIssueEmail').checked,
+            notifyReporterIssueEmail: document.getElementById('notifyReporterIssueEmail').checked,
+            notifyAdminDownloadCancellations: document.getElementById('notifyAdminDownloadCancellations').checked,
+            notifyAdminRepeatDownloads: document.getElementById('notifyAdminRepeatDownloads').checked,
             mobileNavOrder: (function() {
                 const pinned = mobileNavSlots.map(select => select.value);
                 return pinned.concat(mobileNavItems.filter(item => !pinned.includes(item)));

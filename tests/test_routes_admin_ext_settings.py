@@ -274,7 +274,7 @@ class TestSettingsRoutes:
             sess['_user_id'] = str(admin_user.id)
             sess['_fresh'] = True
 
-        response = client.get('/admin/new_server_settings')
+        response = client.get('/admin/settings')
         assert response.status_code == 200
 
     def test_update_settings_requires_login(self, client):
@@ -380,13 +380,14 @@ class TestLegacyRouteHandler:
     """Test the legacy manage_settings route handler."""
     
     def test_legacy_route_get(self, client, admin_user, global_settings):
-        """Test legacy route with GET method."""
+        """Test the legacy GET permanently redirects to canonical settings."""
         with client.session_transaction() as sess:
             sess['_user_id'] = str(admin_user.id)
             sess['_fresh'] = True
 
         response = client.get('/admin/new_server_settings')
-        assert response.status_code == 200
+        assert response.status_code == 308
+        assert response.location.endswith('/admin/settings')
 
     @patch('sharewarez.routes_admin_ext.settings.log_system_event')
     @patch('sharewarez.routes_admin_ext.settings.cache.delete')
@@ -415,7 +416,7 @@ class TestSettingsIntegration:
             sess['_fresh'] = True
 
         # Step 1: GET initial settings
-        response = client.get('/admin/new_server_settings')
+        response = client.get('/admin/settings')
         assert response.status_code == 200
         
         # Step 2: Update settings
@@ -445,7 +446,7 @@ class TestSettingsIntegration:
         assert settings_record.site_url == 'https://mygames.local'
         
         # Step 4: GET updated settings to verify
-        response = client.get('/admin/new_server_settings')
+        response = client.get('/admin/settings')
         assert response.status_code == 200
 
     def test_settings_persistence(self, client, admin_user, db_session, clean_settings):

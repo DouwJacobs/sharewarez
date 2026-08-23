@@ -1,14 +1,57 @@
 from datetime import datetime, timezone
 
-from flask import Blueprint, abort, redirect, render_template, request, url_for
+from flask import Blueprint, abort, jsonify, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 from sqlalchemy import select, update
 
 from sharewarez import db
-from sharewarez.models import Notification
+from sharewarez.models import Notification, PushSubscription
+from sharewarez.utils.web_push import get_or_create_vapid_keys
 
 
 notifications_bp = Blueprint('notifications', __name__)
+
+
+@notifications_bp.get('/api/push/public-key')
+@login_required
+def push_public_key():
+    _, public_key = get_or_create_vapid_keys()
+    return jsonify({'publicKey': public_key})
+
+
+@notifications_bp.post('/api/push/subscriptions')
+@login_required
+def save_push_subscription():
+    payload = request.get_json(silent=True) or {}
+    keys = payload.get('keys') or {}
+    endpoint = str(payload.get('endpoint') or '')
+    if not endpoint.startswith('https://') or not keys.get('p256dh') or not keys.get('auth'):
+        return jsonify({'error': 'Invalid push subscription.'}), 400
+    subscription = db.session.execute(
+        select(PushSubscription).where(PushSubscription.endpoint == endpoint)
+    ).scalar_one_or_none()
+    if subscription is None:
+        subscription = PushSubscription(endpoint=endpoint)
+        db.session.add(subscription)
+    subscription.user_id = current_user.id
+    subscription.p256dh = str(keys['p256dh'])[:255]
+    subscription.auth = str(keys['auth'])[:255]
+    db.session.commit()
+    return jsonify({'message': 'Browser notifications enabled.'})
+
+
+@notifications_bp.delete('/api/push/subscriptions')
+@login_required
+def delete_push_subscription():
+    endpoint = str((request.get_json(silent=True) or {}).get('endpoint') or '')
+    subscription = db.session.execute(select(PushSubscription).where(
+        PushSubscription.endpoint == endpoint,
+        PushSubscription.user_id == current_user.id,
+    )).scalar_one_or_none()
+    if subscription:
+        db.session.delete(subscription)
+        db.session.commit()
+    return '', 204
 
 
 @notifications_bp.route('/notifications')

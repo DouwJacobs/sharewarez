@@ -36,6 +36,7 @@ desktop sidebar remains the full navigation surface.
 ## Users and community
 
 - [x] In-app notification center
+- [x] Game issue reporting with grouped admin queues, comments, and lifecycle tracking
 - [ ] Per-event email, Discord, webhook, and in-app preferences
 - [x] Admin-managed templates for account confirmation, invitations, password resets, and request notifications
 - [ ] Play history and time played

@@ -525,6 +525,99 @@ class TestRefreshImagesInBackground:
         # Should process cover and screenshots
         expected_calls = 3  # 1 cover + 2 screenshots
         assert mock_store_image.call_count == expected_calls
+
+    @patch('sharewarez.utils.scanning.log_system_event')
+    @patch('sharewarez.utils.functions.download_image', return_value=True)
+    @patch('sharewarez.utils.game_core.make_igdb_api_request')
+    @patch('sharewarez.utils.scanning.make_igdb_api_request')
+    def test_reidentified_game_replaces_previous_identity_images(
+        self, mock_game_api, mock_media_api, _mock_download, mock_system_event,
+        app, db_session, sample_game,
+    ):
+        """A re-identification must not retain media from the old IGDB game."""
+        old_cover = Image(
+            game_uuid=sample_game.uuid,
+            url='old-cover.jpg',
+            image_type='cover',
+            igdb_image_id='10',
+            is_downloaded=True,
+        )
+        old_screenshot = Image(
+            game_uuid=sample_game.uuid,
+            url='old-screenshot.jpg',
+            image_type='screenshot',
+            igdb_image_id='20',
+            is_downloaded=True,
+            is_default=True,
+        )
+        db_session.add_all((old_cover, old_screenshot))
+        db_session.commit()
+
+        mock_game_api.side_effect = [
+            [{'id': sample_game.igdb_id, 'cover': 110, 'screenshots': [220], 'artworks': []}],
+            [],
+        ]
+        mock_media_api.side_effect = [
+            [{'url': '//images.igdb.com/igdb/image/upload/t_thumb/new-cover.jpg'}],
+            [{'url': '//images.igdb.com/igdb/image/upload/t_thumb/new-shot.jpg'}],
+        ]
+        app.config['IGDB_API_ENDPOINT'] = 'https://api.igdb.com/v4/games'
+
+        result = refresh_images_in_background(
+            sample_game.uuid,
+            replace_existing=True,
+            expected_igdb_id=sample_game.igdb_id,
+            audit_user_id=77,
+            refresh_reason='reidentify',
+        )
+
+        images = db_session.query(Image).filter_by(game_uuid=sample_game.uuid).all()
+        assert result == (True, None)
+        assert {(image.image_type, image.igdb_image_id) for image in images} == {
+            ('cover', '110'),
+            ('screenshot', '220'),
+        }
+        assert not any(image.url == 'old-screenshot.jpg' for image in images)
+        mock_system_event.assert_called_once()
+        event_args, event_kwargs = mock_system_event.call_args
+        assert event_args[0].startswith(
+            f'Image refresh complete: game={sample_game.uuid} '
+            f'IGDB={sample_game.igdb_id}; downloaded=2/2 failed=0 removed=1'
+        )
+        assert event_kwargs == {
+            'event_type': 'image_refresh',
+            'event_level': 'information',
+            'audit_user': 77,
+        }
+
+    @patch('sharewarez.utils.scanning.log_system_event')
+    @patch('sharewarez.utils.scanning.make_igdb_api_request')
+    def test_refresh_aborts_when_game_identity_changed(
+        self, mock_api, mock_system_event, app, db_session, sample_game,
+    ):
+        """A stale background refresh cannot write media to a new identity."""
+        previous_igdb_id = sample_game.igdb_id
+        sample_game.igdb_id += 1
+        db_session.commit()
+
+        result = refresh_images_in_background(
+            sample_game.uuid,
+            expected_igdb_id=previous_igdb_id,
+            audit_user_id=77,
+            refresh_reason='manual',
+        )
+
+        assert result == (
+            False, 'Game identity changed before the image refresh started',
+        )
+        mock_api.assert_not_called()
+        mock_system_event.assert_called_once_with(
+            f'Stale image refresh stopped: game={sample_game.uuid} '
+            'identity changed; Test Game',
+            event_type='image_refresh',
+            event_level='warning',
+            audit_user=77,
+        )
     
     @patch('sharewarez.utils.scanning.make_igdb_api_request')
     def test_refresh_images_in_background_api_error(self, mock_api, app, db_session, sample_game):

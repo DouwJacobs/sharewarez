@@ -229,3 +229,29 @@ When adding or revising a page:
 # Admin multi-section workspaces
 
 Admin pages with multiple configuration areas use a consistent focused-workspace pattern: a descriptive category rail beside one active content panel. On mobile, the rail becomes a horizontally scrollable selector. The reusable `.admin-tab-workspace`, `.admin-tab-nav`, `.admin-tab-link`, and `.admin-tab-content` primitives live in the default theme `components.css`; Server Settings uses the equivalent interactive settings workspace, while Integrations and Scan Manager retain Bootstrap tab semantics through these shared presentation classes.
+
+## Admin information architecture and visual re-audit (2026-08-23)
+
+The administrator area now has one categorized destination registry in `sharewarez/utils/admin_navigation.py`. The persistent rail and global search both consume that registry, preventing navigation and search ownership from drifting apart. Destinations are grouped by operator intent:
+
+- Overview: work requiring attention and instance health.
+- Library: libraries, scanning, collections, and Discovery ordering.
+- Community: game requests, game issues, and download activity.
+- People: users, invitations, and registration whitelist.
+- Operations: jobs, logs, server status, and statistics.
+- Configure: application policy, notification rules, integrations, branding, themes, attract mode, newsletter, and email templates.
+
+Application Settings owns global behavior and notification event policy. Integrations owns SMTP, Discord, and IGDB credentials/testing. Scan Manager owns filters, extensions, image queue, and scan jobs. The old settings, integration, scan-tool, and status URLs remain authenticated compatibility endpoints but redirect GET requests permanently to their canonical workspace and tab.
+
+The dashboard was reduced to a compact status strip, a single attention list, instance health, and three frequent actions. It intentionally avoids decorative metric cards, repeated directory links, gradients used as ornament, and duplicated navigation. Discovery Sections, Invitations, Whitelist, and Attract Mode were migrated from legacy presentation to the shared page header and surface system. Decorative whitelist artwork was removed.
+
+Visual verification used the live authenticated application with computer vision at the default desktop viewport, 1024 × 900, and 390 × 844. Default, Ember, and Midnight Cyan themes were checked; the original Midnight Cyan preference was restored afterward. All 23 top-level admin destinations were loaded at 390 px and checked for one visible H1, document-level horizontal overflow, and visible elements escaping an unclipped container. No failures were found. Wide tables and horizontal selectors retain intentional internal scrolling. The mobile admin destination rail is a single horizontally scrollable row, not a multi-row block.
+
+Shared interaction details verified in this pass:
+
+- opening one admin category closes any previously open category;
+- clicking outside or pressing Escape closes the active category menu;
+- adjacent email-template panels have equal measured height on desktop;
+- the whitelist email control remains full width at mobile and desktop sizes;
+- Discovery ordering rows retain an 8 px visual gap and independent focus/drag boundaries;
+- the collapsed sidebar keeps its notification bell centered and overlays the unread count at the bell's upper-right corner.

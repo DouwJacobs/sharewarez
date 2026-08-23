@@ -468,6 +468,7 @@ class TestSendEmail:
         mock_is_reachable.return_value = True
         
         mock_server = MagicMock()
+        mock_server.send_message.return_value = {}
         mock_smtp_class.return_value.__enter__.return_value = mock_server
         
         # Test
@@ -488,6 +489,43 @@ class TestSendEmail:
             f"Email sent to {self.test_to} with subject: {self.test_subject}",
             event_type='email',
             event_level='information'
+        )
+
+    @patch('sharewarez.utils.smtp.log_system_event')
+    @patch('sharewarez.utils.smtp.flash')
+    @patch('sharewarez.utils.smtp.smtplib.SMTP')
+    @patch('sharewarez.utils.smtp.is_server_reachable', return_value=True)
+    @patch('sharewarez.utils.smtp.is_smtp_config_valid', return_value=(True, "Configuration valid"))
+    @patch('sharewarez.utils.smtp.get_smtp_settings')
+    def test_send_email_refused_recipient(
+        self, mock_get_settings, _mock_is_valid, _mock_is_reachable,
+        mock_smtp_class, mock_flash, mock_log,
+    ):
+        mock_get_settings.return_value = {
+            'SMTP_ENABLED': True,
+            'MAIL_SERVER': 'smtp.example.com',
+            'MAIL_PORT': 587,
+            'MAIL_USERNAME': 'testuser@example.com',
+            'MAIL_PASSWORD': 'testpass123',
+            'MAIL_USE_TLS': True,
+            'MAIL_DEFAULT_SENDER': 'noreply@example.com',
+        }
+        mock_server = MagicMock()
+        mock_server.send_message.return_value = {
+            self.test_to: (550, b'Unknown recipient'),
+        }
+        mock_smtp_class.return_value.__enter__.return_value = mock_server
+
+        result = send_email(self.test_to, self.test_subject, self.test_template)
+
+        assert result is False
+        mock_flash.assert_called_with(
+            f"SMTP server refused recipient(s): {self.test_to}", "error"
+        )
+        mock_log.assert_called_with(
+            f"Failed to send email to {self.test_to}: SMTP server refused recipient",
+            event_type='email',
+            event_level='error',
         )
     
     @patch('sharewarez.utils.smtp.log_system_event')

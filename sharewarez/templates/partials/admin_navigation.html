@@ -1,0 +1,46 @@
+<nav class="admin-workspace-nav" aria-label="Administrator workspace">
+    {% for group in admin_navigation %}
+        {% if group.key == 'overview' %}
+        {% set overview = group['items'][0] %}
+        <a class="admin-workspace-overview{% if overview.active %} active{% endif %}" href="{{ overview.url }}"{% if overview.active %} aria-current="page"{% endif %}>
+            <i class="fas {{ overview.icon }}" aria-hidden="true"></i><span>Overview</span>
+        </a>
+        {% else %}
+        <details class="admin-workspace-group{% if group.active %} active{% endif %}">
+            <summary><i class="fas {{ group.icon }}" aria-hidden="true"></i><span>{{ group.label }}</span><i class="fas fa-chevron-down admin-workspace-chevron" aria-hidden="true"></i></summary>
+            <div class="admin-workspace-menu">
+                <p>{{ group.label }}</p>
+                {% for item in group['items'] %}
+                <a href="{{ item.url }}"{% if item.active %} class="active" aria-current="page"{% endif %}>
+                    <span class="admin-workspace-menu-icon"><i class="fas {{ item.icon }}" aria-hidden="true"></i></span>
+                    <span><strong>{{ item.label }}</strong><small>{{ item.description }}</small></span>
+                </a>
+                {% endfor %}
+            </div>
+        </details>
+        {% endif %}
+    {% endfor %}
+</nav>
+<script>
+(() => {
+    const nav = document.currentScript.previousElementSibling;
+    if (!nav || !nav.classList.contains('admin-workspace-nav')) return;
+
+    const groups = [...nav.querySelectorAll('.admin-workspace-group')];
+    groups.forEach(group => group.addEventListener('toggle', () => {
+        if (!group.open) return;
+        groups.forEach(other => {
+            if (other !== group) other.open = false;
+        });
+    }));
+
+    document.addEventListener('pointerdown', event => {
+        if (!nav.contains(event.target)) groups.forEach(group => { group.open = false; });
+    });
+    nav.addEventListener('keydown', event => {
+        if (event.key !== 'Escape') return;
+        groups.forEach(group => { group.open = false; });
+        nav.querySelector('summary:focus')?.focus();
+    });
+})();
+</script>

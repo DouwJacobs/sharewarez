@@ -20,6 +20,7 @@ JOB_DISPLAY_NAMES = {
     'library.scan': 'Library scan',
     'library.bulk_metadata_refresh': 'Bulk metadata refresh',
     'library.bulk_image_refresh': 'Bulk image refresh',
+    'notifications.send_email': 'Send notification email',
 }
 
 
@@ -221,6 +222,22 @@ def worker_identity():
 def noop_task(context, payload):
     context.heartbeat(100, 'Completed')
     return {'echo': payload}
+
+
+@register_task('notifications.send_email')
+def send_notification_email_task(context, payload):
+    """Deliver a previously rendered transactional email outside the web request."""
+    from sharewarez.utils.smtp import send_email
+
+    recipient = str(payload.get('recipient') or '').strip()
+    subject = str(payload.get('subject') or '').strip()
+    html = str(payload.get('html') or '')
+    if not recipient or not subject or not html:
+        raise ValueError('Email job payload is incomplete.')
+    context.heartbeat(25, 'Connecting to mail server')
+    sent = send_email(recipient, subject, html, show_feedback=False)
+    context.heartbeat(100, 'Email sent' if sent else 'Email delivery skipped')
+    return {'sent': bool(sent)}
 
 
 @register_task('library.scan')

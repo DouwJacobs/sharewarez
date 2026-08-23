@@ -91,7 +91,8 @@ class TestIGDBSettingsRoute:
             sess['_fresh'] = True
         
         response = client.get('/admin/igdb_settings')
-        assert response.status_code == 200
+        assert response.status_code == 308
+        assert response.location.endswith('/admin/integrations#igdb')
     
     def test_igdb_settings_get_with_existing_settings(self, client, admin_user, clean_global_settings):
         """Test GET request displays existing IGDB settings."""
@@ -100,10 +101,8 @@ class TestIGDBSettingsRoute:
             sess['_fresh'] = True
         
         response = client.get('/admin/igdb_settings')
-        assert response.status_code == 200
-        # The template should receive the settings object
-        response_data = response.get_data(as_text=True)
-        assert 'admin_manage_igdb_settings.html' in response_data or 'settings' in response_data
+        assert response.status_code == 308
+        assert response.location.endswith('/admin/integrations#igdb')
     
     def test_igdb_settings_get_no_existing_settings(self, client, admin_user):
         """Test GET request when no settings exist."""
@@ -112,7 +111,8 @@ class TestIGDBSettingsRoute:
             sess['_fresh'] = True
         
         response = client.get('/admin/igdb_settings')
-        assert response.status_code == 200
+        assert response.status_code == 308
+        assert response.location.endswith('/admin/integrations#igdb')
     
     def test_igdb_settings_post_create_new_settings(self, client, admin_user, clean_db):
         """Test POST request creates new settings when none exist."""
@@ -424,9 +424,10 @@ class TestIGDBIntegration:
                    json=settings_data,
                    content_type='application/json')
         
-        # Retrieve settings via GET request
+        # The legacy GET now points to the consolidated integrations page.
         response = client.get('/admin/igdb_settings')
-        assert response.status_code == 200
+        assert response.status_code == 308
+        assert response.location.endswith('/admin/integrations#igdb')
         
         # Verify settings are still in database
         settings = db.session.execute(db.select(GlobalSettings)).scalars().first()

@@ -187,7 +187,7 @@
                         <h4>Welcome to Scan Management</h4>
                         <p>Get started by creating your first library to organize your game collection.</p>
                         <p class="help-text">Libraries help organize your games by platform, genre, or any way you prefer.</p>
-                        <a href="{{ url_for('library.libraries') }}" class="btn btn-elegant create-library-btn">
+                        <a href="{{ url_for('library.admin_libraries') }}" class="btn btn-elegant create-library-btn">
                             <i class="fas fa-plus-circle"></i> Create Your First Library
                         </a>
                     </div>
@@ -725,7 +725,7 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <a href="{{ url_for('admin2.new_server_settings') }}" class="btn btn-secondary">
+                <a href="{{ url_for('admin2.settings') }}" class="btn btn-secondary">
                     <i class="fa-solid fa-cog"></i> Go to Settings
                 </a>
                 <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Close</button>

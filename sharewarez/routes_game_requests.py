@@ -64,7 +64,9 @@ def requests_page():
     query = (
         select(GameRequestUser)
         .options(selectinload(GameRequestUser.game_request).selectinload(GameRequest.fulfilled_game))
+        .join(GameRequest)
         .where(GameRequestUser.user_id == current_user.id, GameRequestUser.withdrawn_at.is_(None))
+        .where(GameRequest.request_type != 'issue')
         .order_by(GameRequestUser.created_at.desc())
     )
     pagination = db.paginate(query, page=page, per_page=20, error_out=False)
@@ -74,6 +76,7 @@ def requests_page():
             GameRequestUser.user_id == current_user.id,
             GameRequestUser.withdrawn_at.is_(None),
             GameRequestUser.satisfied_at.is_(None),
+            GameRequest.request_type != 'issue',
             ~GameRequest.status.in_(RESOLVED_STATUSES),
         )
     ).scalar_one()
@@ -236,7 +239,9 @@ def admin_requests():
     req_type = (request.args.get('type') or '').strip()
     sort = (request.args.get('sort') or 'newest').strip()
     search_term = (request.args.get('q') or '').strip()[:100]
-    query = select(GameRequest).options(selectinload(GameRequest.requesters))
+    query = select(GameRequest).options(selectinload(GameRequest.requesters)).where(
+        GameRequest.request_type != 'issue'
+    )
     if status in REQUEST_STATUSES:
         query = query.where(GameRequest.status == status)
     if req_type in {'new_game', 'update'}:
@@ -271,8 +276,16 @@ def admin_requests():
         sort = 'newest'
     query = query.order_by(*orderings[sort])
     pagination = db.paginate(query, page=page, per_page=24, error_out=False)
-    counts = dict(db.session.execute(select(GameRequest.status, func.count(GameRequest.id)).group_by(GameRequest.status)).all())
-    type_counts = dict(db.session.execute(select(GameRequest.request_type, func.count(GameRequest.id)).group_by(GameRequest.request_type)).all())
+    counts = dict(db.session.execute(
+        select(GameRequest.status, func.count(GameRequest.id))
+        .where(GameRequest.request_type != 'issue')
+        .group_by(GameRequest.status)
+    ).all())
+    type_counts = dict(db.session.execute(
+        select(GameRequest.request_type, func.count(GameRequest.id))
+        .where(GameRequest.request_type != 'issue')
+        .group_by(GameRequest.request_type)
+    ).all())
     return render_template(
         'admin/admin_game_requests.html', pagination=pagination,
         statuses=REQUEST_STATUSES, selected_status=status, selected_type=req_type, search_term=search_term,

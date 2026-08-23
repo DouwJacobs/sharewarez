@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block content %}
+<link rel="stylesheet" href="{{ 'css/issues.css'|theme_asset }}">
+<main class="app-page app-stack issues-page admin-issues-page">
+    <header class="app-page-header app-surface issues-hero">
+        <div><p class="eyebrow">Administration</p><h1>Game issues</h1><p>Review reports grouped by game, reply to users, and track each issue through resolution.</p></div>
+    </header>
+
+    <section class="app-surface issue-admin-filters">
+        <form method="get" class="issue-filter-form">
+            <input type="hidden" name="status" value="{{ selected_scope }}">
+            <label class="issue-search"><i class="fas fa-search" aria-hidden="true"></i><input class="form-control" type="search" name="q" value="{{ search_term }}" placeholder="Search game, issue, description, or user…"></label>
+            <label><span>Category</span><select class="form-select" name="category" onchange="this.form.submit()"><option value="">All categories</option>{% for value, label in category_labels.items() %}<option value="{{ value }}"{% if selected_category == value %} selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+            <button class="btn btn-secondary" type="submit">Search</button>
+        </form>
+        {% set open_count = namespace(value=0) %}{% for key in open_statuses %}{% set open_count.value = open_count.value + status_counts.get(key, 0) %}{% endfor %}
+        {% set closed_count = namespace(value=0) %}{% for key in closed_statuses %}{% set closed_count.value = closed_count.value + status_counts.get(key, 0) %}{% endfor %}
+        <nav class="issue-filter-bar" aria-label="Issue status filters">
+            <a href="{{ url_for('issues.admin_issues', status='open', category=selected_category, q=search_term) }}"{% if selected_scope == 'open' %} class="active" aria-current="page"{% endif %}>Open <span>{{ open_count.value }}</span></a>
+            <a href="{{ url_for('issues.admin_issues', status='closed', category=selected_category, q=search_term) }}"{% if selected_scope == 'closed' %} class="active" aria-current="page"{% endif %}>Closed <span>{{ closed_count.value }}</span></a>
+            <a href="{{ url_for('issues.admin_issues', status='all', category=selected_category, q=search_term) }}"{% if selected_scope == 'all' %} class="active" aria-current="page"{% endif %}>All <span>{{ open_count.value + closed_count.value }}</span></a>
+        </nav>
+    </section>
+
+    {% if groups %}<div class="issue-groups">
+        {% for group in groups %}<section class="app-surface issue-game-group">
+            <header class="issue-game-header">
+                <span class="issue-game-icon"><i class="fas fa-gamepad" aria-hidden="true"></i></span>
+                <div><h2>{{ group.game.name }}</h2><p><strong>{{ group.open_count }}</strong> open · {{ group.closed_count }} closed in this view</p></div>
+                <a class="btn btn-secondary" href="{{ url_for('games.game_details', game_uuid=group.game.uuid) }}">View game</a>
+            </header>
+            <div class="issue-list">
+                {% for issue in group.issues %}<a class="issue-list-row" href="{{ url_for('issues.admin_issue_detail', issue_id=issue.id) }}">
+                    <span class="issue-category-icon"><i class="fas fa-bug" aria-hidden="true"></i></span>
+                    <span class="issue-list-copy"><strong>{{ issue.title }}</strong><small>{{ issue.reporter.name }} · {{ category_labels[issue.category] }} · Updated {{ issue.updated_at.strftime('%d %b %Y %H:%M') }}</small></span>
+                    <span class="issue-comment-count"><i class="fas fa-comment" aria-hidden="true"></i> {{ issue.comments|length }}</span>
+                    <span class="issue-status status-{{ issue.status }}">{{ status_labels[issue.status] }}</span>
+                    <i class="fas fa-chevron-right issue-row-arrow" aria-hidden="true"></i>
+                </a>{% endfor %}
+            </div>
+        </section>{% endfor %}
+    </div>{% else %}<section class="app-surface issue-empty"><i class="fas fa-inbox" aria-hidden="true"></i><h2>No matching issues</h2><p>Try another status, category, or search.</p></section>{% endif %}
+
+    {% if pagination.pages > 1 %}<nav class="issue-pagination" aria-label="Issue pages">{% for page in pagination.iter_pages() %}{% if page %}<a href="{{ url_for('issues.admin_issues', page=page, status=selected_scope, category=selected_category, q=search_term) }}"{% if page == pagination.page %} class="active" aria-current="page"{% endif %}>{{ page }}</a>{% else %}<span>…</span>{% endif %}{% endfor %}</nav>{% endif %}
+</main>
+{% endblock %}

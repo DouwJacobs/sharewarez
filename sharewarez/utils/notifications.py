@@ -42,4 +42,10 @@ def create_notifications(user_ids, event_type, title, message, link_url=None,
         created += 1
     if commit and created:
         db.session.commit()
+        try:
+            from sharewarez.utils.web_push import send_push_notifications
+            send_push_notifications(user_ids, title, message, link_url)
+        except Exception:
+            # Browser push is best-effort; the durable in-app notification remains authoritative.
+            db.session.rollback()
     return created

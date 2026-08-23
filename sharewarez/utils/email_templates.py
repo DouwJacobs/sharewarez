@@ -131,6 +131,29 @@ TEMPLATE_DEFINITIONS = {
             'game_url': 'https://games.example/game_details/sample-game',
         },
     ),
+    'issue_activity': EmailTemplateDefinition(
+        key='issue_activity',
+        name='Game issue activity',
+        description='Sent when a game issue is created, updated, or receives a reply.',
+        icon='fa-bug',
+        subject='{{ heading }}: {{ game_name }}',
+        html='''
+<h1>{{ heading }}</h1>
+<p>Hello {{ user_name }},</p>
+<p><strong>{{ game_name }}</strong> — {{ issue_title }}</p>
+<div class="email-note">{{ message }}</div>
+<p><a class="email-button" href="{{ issue_url }}">View issue</a></p>
+'''.strip(),
+        variables=('user_name', 'heading', 'game_name', 'issue_title', 'message', 'issue_url'),
+        sample_context={
+            'user_name': 'Alex',
+            'heading': 'Issue status changed to In Progress',
+            'game_name': 'Example Game',
+            'issue_title': 'Installer exits before completing',
+            'message': 'An administrator is investigating the installer logs.',
+            'issue_url': 'https://games.example/issues/17',
+        },
+    ),
 }
 
 

@@ -1,11 +1,11 @@
 {% extends "base.html" %}
+{% from "partials/ui_components.html" import admin_page_header %}
 {% block content %}
 
+<main class="app-page app-page--narrow attract-settings-page" aria-labelledby="attract-settings-title">
+    {{ admin_page_header('Attract mode', 'Configure automatic trailer playback after the interface has been idle.', 'Configure', 'fa-tv', title_id='attract-settings-title') }}
 
-<div class="app-page app-page--narrow container-status-page container-settings">
-    <div class="card">
-        <h2>Attract Mode Settings</h2>
-        <p class="text-muted">Configure automatic trailer playback when the system is idle</p>
+    <section class="app-surface attract-settings-surface">
 
         <div id="settingsSavedNotification" class="alert alert-success" role="alert" style="display: none;">
             Attract mode settings saved successfully!
@@ -17,8 +17,8 @@
 
         <div class="settingsform-admin">
             <form id="attractModeForm">
-                <div class="d-flex justify-content-between align-items-center mb-4">
-                    <h3 class="mb-0">Attract Mode Configuration</h3>
+                <div class="attract-settings-toolbar">
+                    <div><h2>Playback defaults</h2><p>Users can override filters and playback behavior in their own preferences.</p></div>
                     <button type="submit" class="btn btn-primary">
                         <i class="fas fa-save"></i> Save Settings
                     </button>
@@ -188,8 +188,8 @@
                 </div>
             </form>
         </div>
-    </div>
-</div>
+    </section>
+</main>
 
 <!-- Include the attract mode admin JavaScript -->
 <link rel="stylesheet" href="{{ 'css/admin_attract_mode.css'|theme_asset }}">

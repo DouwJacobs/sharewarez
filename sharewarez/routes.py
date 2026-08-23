@@ -45,6 +45,7 @@ from sharewarez.utils.unmatched import handle_delete_unmatched
 from sharewarez.utils.processors import get_global_settings
 from sharewarez.utils.pagination import normalize_library_pagination
 from sharewarez.utils.incremental_scanning import SCHEDULE_INTERVALS
+from sharewarez.utils.event_logging import log_system_event
 bp = Blueprint('main', __name__)
 
 def get_serializer():
@@ -267,6 +268,11 @@ def scan_folder():
 @login_required
 @admin_required
 def scan_management():
+    if request.path == '/scan_management':
+        return redirect(
+            url_for('main.admin_scan_management', **request.args),
+            code=308,
+        )
     auto_form = AutoScanForm()
     manual_form = ScanFolderForm()
     release_group_form = ReleaseGroupForm()
@@ -335,7 +341,7 @@ def scan_management():
             db.session.add(new_group)
             db.session.commit()
             flash('New scanning filter added.', 'success')
-            return redirect(url_for('main.scan_management', active_tab='scan_filters'))
+            return redirect(url_for('main.admin_scan_management', active_tab='scan_filters'))
         elif submit_action == 'DeleteReleaseGroup':
             # Handle deleting scanning filter
             filter_id = request.form.get('filter_id')
@@ -347,10 +353,10 @@ def scan_management():
                     flash('Scanning filter removed.', 'success')
                 else:
                     flash('Filter not found.', 'error')
-            return redirect(url_for('main.scan_management', active_tab='scan_filters'))
+            return redirect(url_for('main.admin_scan_management', active_tab='scan_filters'))
         else:
             flash("Unrecognized action.", "error")
-            return redirect(url_for('main.scan_management'))
+            return redirect(url_for('main.admin_scan_management'))
 
     game_paths_dict = session.get('game_paths', {})
     game_names_with_ids = [{'name': name, 'full_path': path} for name, path in game_paths_dict.items()]
@@ -390,7 +396,7 @@ def cancel_scan_job(job_id):
         print(f"Scan job {job_id} is stopping. Waiting for threads to complete...")
     else:
         flash('Scan job not found or not in a cancellable state.', 'error')
-    return redirect(url_for('main.scan_management'))
+    return redirect(url_for('main.admin_scan_management'))
 
 @bp.route('/restart_scan_job/<job_id>', methods=['POST'])
 @login_required
@@ -400,7 +406,7 @@ def restart_scan_job(job_id):
     job = db.session.get(ScanJob, job_id) or abort(404)    
     if job.status == 'Running':
         flash('Cannot restart a running scan.', 'error')
-        return redirect(url_for('main.scan_management'))
+        return redirect(url_for('main.admin_scan_management'))
 
     # Reset the existing job's counters instead of creating a new job
     job.status = 'Running'
@@ -439,7 +445,7 @@ def restart_scan_job(job_id):
 
     thread = Thread(target=start_scan, daemon=True)
     thread.start()
-    return redirect(url_for('main.scan_management'))
+    return redirect(url_for('main.admin_scan_management'))
 
 
 @bp.route('/edit_game_images/<game_uuid>', methods=['GET'])
@@ -627,7 +633,7 @@ def delete_scan_job(job_id):
     db.session.delete(job)
     db.session.commit()
     flash('Scan job deleted successfully.', 'success')
-    return redirect(url_for('main.scan_management'))
+    return redirect(url_for('main.admin_scan_management'))
 
 @bp.route('/clear_all_scan_jobs', methods=['POST'])
 @login_required
@@ -636,7 +642,7 @@ def clear_all_scan_jobs():
     db.session.execute(delete(ScanJob))
     db.session.commit()
     flash('All scan jobs cleared successfully.', 'success')
-    return redirect(url_for('main.scan_management'))
+    return redirect(url_for('main.admin_scan_management'))
 
 
 
@@ -659,7 +665,7 @@ def delete_all_unmatched_folders():
         error_message = f"An unexpected error occurred while deleting all unmatched folders: {str(e)}"
         print(error_message)
         flash(error_message, 'error')
-    return redirect(url_for('main.scan_management'))
+    return redirect(url_for('main.admin_scan_management'))
 
 
 @bp.route('/update_unmatched_folder_status', methods=['POST'])
@@ -692,7 +698,7 @@ def update_unmatched_folder_status():
     else:
         flash('Folder not found.', 'error')
 
-    return redirect(url_for('main.scan_management'))
+    return redirect(url_for('main.admin_scan_management'))
 
 @bp.route('/clear_unmatched_entry/<folder_id>', methods=['POST'])
 @login_required
@@ -711,7 +717,7 @@ def clear_unmatched_entry(folder_id):
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return jsonify({'status': 'error', 'message': str(e)}), 500
         flash(f'Error clearing unmatched folder entry: {str(e)}', 'error')
-    return redirect(url_for('main.scan_management'))
+    return redirect(url_for('main.admin_scan_management'))
 
 @bp.route('/toggle_ignore_status/<folder_id>', methods=['POST'])
 @login_required
@@ -742,19 +748,48 @@ def toggle_ignore_status(folder_id):
             return jsonify({'status': 'error', 'message': str(e)}), 500
         flash(f'Error toggling ignore status: {str(e)}', 'error')
 
-    return redirect(url_for('main.scan_management'))
+    return redirect(url_for('main.admin_scan_management'))
 
 
 @bp.route('/refresh_game_images/<game_uuid>', methods=['POST'])
 @login_required
 @admin_required
 def refresh_game_images(game_uuid):
-    game_name = get_game_name_by_uuid(game_uuid)
+    game = db.session.execute(
+        select(Game).filter_by(uuid=game_uuid)
+    ).scalar_one_or_none()
+    if game is None:
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({'status': 'error', 'message': 'Game not found.'}), 404
+        abort(404)
+
+    game_name = game.name
+    expected_igdb_id = game.igdb_id
+    audit_user_id = current_user.id
     print(f"Route: /refresh_game_images - {current_user.name} - {current_user.role} method: {request.method} UUID: {game_uuid} Name: {game_name}")
+    current_app.logger.info(
+        'Manual image refresh requested game_uuid=%s game_name=%s '
+        'igdb_id=%s user_id=%s user_name=%s',
+        game_uuid, game_name, expected_igdb_id,
+        audit_user_id, current_user.name,
+    )
+    log_system_event(
+        f'Image refresh requested: game={game_uuid} '
+        f'IGDB={expected_igdb_id or "none"} by={current_user.name}; '
+        f'{game_name[:80]}',
+        event_type='image_refresh',
+        event_level='information',
+        audit_user=audit_user_id,
+    )
 
     @copy_current_request_context
     def refresh_images_in_thread():
-        refresh_images_in_background(game_uuid)
+        refresh_images_in_background(
+            game_uuid,
+            expected_igdb_id=expected_igdb_id,
+            audit_user_id=audit_user_id,
+            refresh_reason='manual',
+        )
 
     thread = Thread(target=refresh_images_in_thread, daemon=True)
     thread.start()

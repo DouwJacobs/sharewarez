@@ -8,13 +8,28 @@ import os
 import random
 import re
 from datetime import datetime
-from sharewarez.models import Image, Game, Library, Genre, Theme, GameRequest
+from sharewarez.models import Image, Game, Library, Genre, Theme, GameRequest, UserPreference
 from sharewarez.utils.processors import get_global_settings
 from sharewarez.utils.auth import admin_required
 from sharewarez.utils.functions import format_size
 from sharewarez import cache
 
 site_bp = Blueprint('site', __name__)
+
+
+@site_bp.post('/api/preferences/sidebar')
+@login_required
+def save_sidebar_preference():
+    collapsed = (request.get_json(silent=True) or {}).get('collapsed')
+    if not isinstance(collapsed, bool):
+        return jsonify({'error': 'Invalid sidebar preference.'}), 400
+    preferences = current_user.preferences
+    if preferences is None:
+        preferences = UserPreference(user_id=current_user.id)
+        db.session.add(preferences)
+    preferences.sidebar_collapsed = collapsed
+    db.session.commit()
+    return '', 204
 
 
 @site_bp.route('/manifest.webmanifest')
@@ -145,10 +160,8 @@ def index():
 @admin_required
 def admin_dashboard():
     print(f"Route: /admin/dashboard - {current_user.name} - {current_user.role} method: {request.method}")
-    pending_request_count = db.session.execute(
-        select(func.count(GameRequest.id)).where(GameRequest.status.in_(['pending', 'reviewing']))
-    ).scalar_one()
-    return render_template('admin/admin_dashboard.html', pending_request_count=pending_request_count)
+    from sharewarez.utils.admin_dashboard import get_admin_dashboard_context
+    return render_template('admin/admin_dashboard.html', **get_admin_dashboard_context())
 
 
 @site_bp.route('/favorites')

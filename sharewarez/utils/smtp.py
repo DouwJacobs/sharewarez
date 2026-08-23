@@ -163,7 +163,19 @@ def send_email(to, subject, template, show_feedback=True):
             print("5. Login successful")
             
             print("6. Sending message")
-            server.send_message(msg)
+            refused_recipients = server.send_message(msg)
+            if refused_recipients:
+                refused = ', '.join(str(address) for address in refused_recipients)
+                failure_message = f"SMTP server refused recipient(s): {refused}"
+                print(failure_message)
+                if show_feedback:
+                    flash(failure_message, "error")
+                log_system_event(
+                    f"Failed to send email to {to}: SMTP server refused recipient",
+                    event_type='email',
+                    event_level='error',
+                )
+                return False
             print("7. Message sent successfully")
             
         print("=== SMTP Transaction Complete ===")
@@ -177,18 +189,22 @@ def send_email(to, subject, template, show_feedback=True):
         print(f"SMTP Authentication failed: {e}")
         if show_feedback:
             flash(f"SMTP Authentication failed: {e}", "error")
+        log_system_event(f"Failed to send email to {to}: SMTP authentication failed", event_type='email', event_level='error')
     except smtplib.SMTPException as e:
         print(f"SMTP error occurred: {str(e)}")
         if show_feedback:
             flash(f"SMTP error occurred: {str(e)}", "error")
+        log_system_event(f"Failed to send email to {to}: SMTP error: {e}", event_type='email', event_level='error')
     except socket.timeout as e:
         print(f"Connection timed out: {str(e)}")
         if show_feedback:
             flash("Connection timed out while sending email", "error")
+        log_system_event(f"Failed to send email to {to}: Connection timed out", event_type='email', event_level='error')
     except socket.gaierror as e:
         print(f"DNS lookup failed: {str(e)}")
         if show_feedback:
             flash("DNS lookup failed for SMTP server", "error")
+        log_system_event(f"Failed to send email to {to}: SMTP DNS lookup failed", event_type='email', event_level='error')
     except Exception as e:
         print(f"Unexpected error occurred while sending email: {str(e)}")
         print(f"Error type: {type(e)}")

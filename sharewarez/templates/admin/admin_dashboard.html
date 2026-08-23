@@ -1,100 +1,73 @@
 {% extends "base.html" %}
 
-{% macro admin_tool(href, icon, title, description, badge=none) %}
-<a href="{{ href }}" class="admin-tool-card" aria-label="{{ title }}: {{ description }}">
-    <span class="admin-tool-icon"><i class="fas {{ icon }}" aria-hidden="true"></i></span>
-    <span class="admin-tool-copy">
-        <span class="admin-tool-title">{{ title }}{% if badge %}<span class="admin-count-badge" aria-label="{{ badge }} pending">{{ badge }}</span>{% endif %}</span>
-    </span>
-    <i class="fas fa-chevron-right admin-tool-arrow" aria-hidden="true"></i>
-</a>
-{% endmacro %}
-
 {% block content %}
 <link rel="stylesheet" href="{{ 'css/admin/admin_dashboard.css'|theme_asset }}">
 
-<main class="app-page admin-dashboard-page" aria-labelledby="admin-dashboard-title">
-    <header class="app-page-header admin-dashboard-header">
+<main class="app-page admin-overview" aria-labelledby="admin-dashboard-title">
+    <header class="app-page-header admin-overview-header">
         <div>
-            <p class="admin-dashboard-eyebrow">Administration</p>
-            <h1 id="admin-dashboard-title">Admin dashboard</h1>
-            <p>Manage your library, server, users, and site.</p>
+            <h1 id="admin-dashboard-title">Admin overview</h1>
+            <p>Work that needs attention and the current state of this instance.</p>
         </div>
-        <a class="btn btn-secondary admin-dashboard-help" href="{{ url_for('admin2.admin_help') }}">
-            <i class="fas fa-circle-question" aria-hidden="true"></i> Admin guide
-        </a>
+        <div class="app-page-actions">
+            <a class="btn btn-secondary" href="{{ url_for('admin2.settings') }}">Settings</a>
+        </div>
     </header>
 
-    <div class="admin-dashboard-grid">
-        <section class="app-surface admin-section admin-section--library" aria-labelledby="admin-library-title">
-            <header class="admin-section-heading">
-                <span class="admin-section-icon"><i class="fas fa-book-open" aria-hidden="true"></i></span>
-                <div>
-                    <h2 id="admin-library-title">Library &amp; discovery</h2>
-                </div>
-            </header>
-            <div class="admin-tool-grid">
-                {{ admin_tool(url_for('library.admin_libraries'), 'fa-book', 'Libraries', 'Add, edit, and organize game libraries.') }}
-                {{ admin_tool(url_for('main.admin_scan_management'), 'fa-magnifying-glass', 'Scan manager', 'Run scans and manage file detection.') }}
-                {{ admin_tool(url_for('admin2.discovery_sections'), 'fa-compass', 'Discovery', 'Choose and order homepage sections.') }}
-                {{ admin_tool(url_for('admin2.collections'), 'fa-layer-group', 'Collections', 'Create curated and smart collections.') }}
-                {% if enable_game_requests %}
-                {{ admin_tool(url_for('game_requests.admin_requests'), 'fa-paper-plane', 'Game requests', 'Review and manage member requests.', pending_request_count) }}
-                {% endif %}
-            </div>
-        </section>
+    <section class="admin-overview-metrics" aria-label="Needs attention summary">
+        {% for metric in dashboard_metrics %}
+        <a class="admin-metric admin-metric--{{ metric.tone }}" href="{{ metric.url }}" aria-label="{{ metric.label }}: {{ metric.value }} {{ metric.detail }}{% if metric.secondary %}, {{ metric.secondary }}{% endif %}">
+            <span class="admin-metric-copy"><small>{{ metric.label }}</small><strong>{{ metric.value }}</strong><span>{{ metric.detail }}</span>{% if metric.secondary %}<em>{{ metric.secondary }}</em>{% endif %}</span>
+        </a>
+        {% endfor %}
+    </section>
 
-        <section class="app-surface admin-section admin-section--access" aria-labelledby="admin-access-title">
-            <header class="admin-section-heading">
-                <span class="admin-section-icon"><i class="fas fa-user-shield" aria-hidden="true"></i></span>
-                <div>
-                    <h2 id="admin-access-title">Access &amp; users</h2>
-                </div>
+    <section class="admin-overview-workspace" aria-label="Operational overview">
+        <article class="app-surface admin-attention-panel">
+            <header class="admin-panel-heading">
+                <div><h2>Needs attention</h2><p>Open community work and recent failures.</p></div>
+                <span class="admin-panel-count">{{ dashboard_attention|length }}</span>
             </header>
-            <div class="admin-tool-grid">
-                {{ admin_tool(url_for('admin2.manage_users'), 'fa-users-gear', 'Users', 'Manage accounts, roles, and access.') }}
-                {{ admin_tool(url_for('admin2.whitelist'), 'fa-list-check', 'Whitelist', 'Control which email addresses can join.') }}
-                {{ admin_tool(url_for('admin2.manage_invites'), 'fa-envelope-open-text', 'Invitations', 'Create and review registration invites.') }}
+            {% if dashboard_attention %}
+            <div class="admin-attention-list">
+                {% for item in dashboard_attention %}
+                <a class="admin-attention-item admin-attention-item--{{ item.tone }}" href="{{ item.url }}">
+                    <span class="admin-attention-icon"><i class="fas {{ item.icon }}" aria-hidden="true"></i></span>
+                    <span class="admin-attention-copy"><small>{{ item.kind }}</small><strong>{{ item.title }}</strong><span>{{ item.detail }}</span></span>
+                    {% if item.created_at %}<time datetime="{{ item.created_at.isoformat() }}">{{ item.created_at.strftime('%d %b, %H:%M') }}</time>{% endif %}
+                    <i class="fas fa-chevron-right" aria-hidden="true"></i>
+                </a>
+                {% endfor %}
             </div>
-        </section>
+            {% else %}
+            <div class="admin-overview-empty"><i class="fas fa-circle-check" aria-hidden="true"></i><div><strong>Nothing needs attention</strong><p>Requests, issues, failed downloads, and jobs will appear here.</p></div></div>
+            {% endif %}
+        </article>
 
-        <section class="app-surface admin-section admin-section--server" aria-labelledby="admin-server-title">
-            <header class="admin-section-heading">
-                <span class="admin-section-icon"><i class="fas fa-server" aria-hidden="true"></i></span>
-                <div>
-                    <h2 id="admin-server-title">Server &amp; integrations</h2>
-                </div>
+        <aside class="app-surface admin-health-panel" aria-labelledby="admin-health-title">
+            <header class="admin-panel-heading">
+                <div><h2 id="admin-health-title">Instance health</h2><p>Core services and connections.</p></div>
+                <span class="admin-health-overall admin-health-overall--{{ dashboard_overall_health }}">{{ dashboard_overall_health|title }}</span>
             </header>
-            <div class="admin-tool-grid admin-tool-grid--wide">
-                {{ admin_tool(url_for('admin2.new_server_settings'), 'fa-sliders', 'Server settings', 'Configure core application behavior.') }}
-                {{ admin_tool(url_for('admin2.attract_mode_settings_page'), 'fa-tv', 'Attract mode', 'Configure idle trailer playback.') }}
-                {{ admin_tool(url_for('admin2.integrations'), 'fa-plug', 'Integrations', 'Connect email, IGDB, and Discord.') }}
-                {{ admin_tool(url_for('download.statistics'), 'fa-chart-column', 'Statistics', 'Review download and usage activity.') }}
-                {{ admin_tool(url_for('admin2.system_logs'), 'fa-clipboard-list', 'System logs', 'Inspect application events and errors.') }}
-                {{ admin_tool(url_for('admin2.background_jobs'), 'fa-list-check', 'Background jobs', 'Monitor queued and completed work.') }}
-                {% if enable_server_status %}
-                {{ admin_tool(url_for('info.new_server_info'), 'fa-circle-info', 'Server status', 'Check runtime and system information.') }}
-                {% endif %}
+            <div class="admin-health-list">
+                {% for item in dashboard_health %}
+                <a href="{{ item.url }}" class="admin-health-item">
+                    <span class="admin-health-icon"><i class="fas {{ item.icon }}" aria-hidden="true"></i></span>
+                    <span><strong>{{ item.name }}</strong><small>{{ item.message }}</small></span>
+                    <i class="fas fa-circle admin-health-status admin-health-status--{{ item.status }}" aria-label="{{ item.status }}"></i>
+                </a>
+                {% endfor %}
             </div>
-        </section>
+        </aside>
+    </section>
 
-        <section class="app-surface admin-section admin-section--tools" aria-labelledby="admin-tools-title">
-            <header class="admin-section-heading">
-                <span class="admin-section-icon"><i class="fas fa-wand-magic-sparkles" aria-hidden="true"></i></span>
-                <div>
-                    <h2 id="admin-tools-title">Site &amp; communication</h2>
-                </div>
-            </header>
-            <div class="admin-tool-grid">
-                {{ admin_tool(url_for('admin2.branding'), 'fa-signature', 'Branding', 'Update the site title and identity.') }}
-                {{ admin_tool(url_for('download.manage_downloads'), 'fa-download', 'Downloads', 'Manage member download requests.') }}
-                {{ admin_tool(url_for('admin2.manage_themes'), 'fa-palette', 'Themes', 'Install, edit, and select themes.') }}
-                {% if enable_newsletter %}
-                {{ admin_tool(url_for('admin2.newsletter'), 'fa-newspaper', 'Newsletter', 'Compose and send library updates.') }}
-                {% endif %}
-                {{ admin_tool(url_for('admin2.email_templates'), 'fa-envelope', 'Email templates', 'Customize transactional messages.') }}
-            </div>
-        </section>
-    </div>
+    <section class="admin-quick-actions" aria-labelledby="admin-quick-actions-title">
+        <h2 id="admin-quick-actions-title">Quick actions</h2>
+        <div>
+            <a href="{{ url_for('admin2.add_library') }}"><i class="fas fa-plus" aria-hidden="true"></i>Add library</a>
+            <a href="{{ url_for('main.admin_scan_management', active_tab='manual') }}"><i class="fas fa-magnifying-glass" aria-hidden="true"></i>Run a scan</a>
+            <a href="{{ url_for('admin2.manage_invites') }}"><i class="fas fa-user-plus" aria-hidden="true"></i>Invite a user</a>
+        </div>
+    </section>
 </main>
 {% endblock %}

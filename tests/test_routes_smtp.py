@@ -111,7 +111,7 @@ class TestSmtpSettings:
     
     @patch('sharewarez.routes_smtp.render_template')
     def test_get_success_no_settings(self, mock_render, client, admin_user, db_session):
-        """Test GET request with no existing settings."""
+        """Test the legacy GET redirects when no settings exist."""
         # Delete any existing settings first
         db_session.execute(delete(GlobalSettings))
         db_session.commit()
@@ -123,21 +123,17 @@ class TestSmtpSettings:
             sess['_fresh'] = True
         
         response = client.get('/admin/smtp_settings')
-        assert response.status_code == 200
-        
-        # Verify template was rendered with correct arguments
-        mock_render.assert_called_once()
-        args, kwargs = mock_render.call_args
-        assert args[0] == 'admin/admin_manage_smtp_settings.html'
-        assert kwargs['settings'] is None
+        assert response.status_code == 308
+        assert response.location.endswith('/admin/integrations#smtp')
+        mock_render.assert_not_called()
     
     @patch('sharewarez.routes_smtp.render_template')
     def test_get_success_with_settings(self, mock_render, client, admin_user, db_session):
-        """Test GET request with existing settings."""
+        """Test the legacy GET redirects when settings exist."""
         # Delete any default settings first, then use our test settings
         db_session.execute(delete(GlobalSettings))
         db_session.commit()
-        test_settings = create_test_settings(db_session)
+        create_test_settings(db_session)
         
         mock_render.return_value = 'rendered template'
         
@@ -146,13 +142,9 @@ class TestSmtpSettings:
             sess['_fresh'] = True
         
         response = client.get('/admin/smtp_settings')
-        assert response.status_code == 200
-        
-        # Verify template was rendered with settings
-        mock_render.assert_called_once()
-        args, kwargs = mock_render.call_args
-        assert args[0] == 'admin/admin_manage_smtp_settings.html'
-        assert kwargs['settings'].smtp_server == test_settings.smtp_server
+        assert response.status_code == 308
+        assert response.location.endswith('/admin/integrations#smtp')
+        mock_render.assert_not_called()
     
     def test_post_requires_login(self, client):
         """Test that POST request requires login."""

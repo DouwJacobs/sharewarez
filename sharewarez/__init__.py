@@ -137,12 +137,18 @@ def create_app():
                     Notification.read_at.is_(None),
                 )
             ).scalar_one()
+        global_settings = get_global_settings()
+        admin_navigation = []
+        if current_user.is_authenticated and current_user.role == 'admin':
+            from sharewarez.utils.admin_navigation import build_admin_navigation
+            admin_navigation = build_admin_navigation(global_settings)
         return dict(
             current_theme=current_theme,
             pwa_theme_color=pwa_branding['theme_color'],
             pwa_revision=pwa_branding['revision'],
             unread_notification_count=unread_notification_count,
-            **get_global_settings(),
+            admin_navigation=admin_navigation,
+            **global_settings,
         )
 
     @app.before_request
@@ -194,6 +200,7 @@ def create_app():
     from sharewarez.routes_game_requests import game_requests_bp
     from sharewarez.routes_health import health_bp
     from sharewarez.routes_notifications import notifications_bp
+    from sharewarez.routes_issues import issues_bp
 
     # Register all blueprints
     app.register_blueprint(routes.bp)
@@ -212,6 +219,7 @@ def create_app():
     app.register_blueprint(game_requests_bp)
     app.register_blueprint(health_bp)
     app.register_blueprint(notifications_bp)
+    app.register_blueprint(issues_bp)
 
     with app.app_context():
         # Database initialization is handled by the InitializationManager before workers start

@@ -13,13 +13,14 @@ from sharewarez.utils.email_templates import (
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def test_five_system_email_templates_are_defined():
+def test_system_email_templates_are_defined():
     assert set(TEMPLATE_DEFINITIONS) == {
         'account_confirmation',
         'password_reset',
         'user_invitation',
         'admin_new_request',
         'request_status_update',
+        'issue_activity',
     }
 
 
@@ -84,9 +85,11 @@ def test_all_transactional_email_paths_use_managed_renderer():
     smtp = (ROOT / 'sharewarez/utils/smtp.py').read_text(encoding='utf-8')
     login = (ROOT / 'sharewarez/routes_login.py').read_text(encoding='utf-8')
     requests = (ROOT / 'sharewarez/utils/request_notifications.py').read_text(encoding='utf-8')
+    issues = (ROOT / 'sharewarez/utils/issue_notifications.py').read_text(encoding='utf-8')
 
     assert "render_system_email('password_reset'" in smtp
     assert "render_system_email('user_invitation'" in smtp
     assert "render_system_email('account_confirmation'" in login
     assert "render_system_email('admin_new_request'" in requests
     assert "render_system_email('request_status_update'" in requests
+    assert "render_system_email('issue_activity'" in issues

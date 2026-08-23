@@ -554,6 +554,26 @@ class TestGameEditSuccessScenarios:
     def test_save_and_refresh_calls_shared_metadata_refresh(self, client, admin_user, test_game, form_data):
         """The edit action must invoke the same metadata refresh used by the card menu."""
         form_data['action'] = 'save_and_refresh'
+        events = []
+
+        class ImmediateThread:
+            def __init__(self, target, daemon):
+                self.target = target
+                self.daemon = daemon
+
+            def start(self):
+                self.target()
+
+        def refresh_metadata(game_uuid):
+            events.append(('metadata', game_uuid))
+            return SimpleNamespace(
+                game_name='Updated Game Name', filesystem_skipped=False,
+                filesystem_message=None,
+            )
+
+        def refresh_images(game_uuid, **kwargs):
+            events.append(('images', game_uuid, kwargs))
+            return True, None
 
         with client.session_transaction() as sess:
             sess['_user_id'] = str(admin_user.id)
@@ -565,15 +585,38 @@ class TestGameEditSuccessScenarios:
              patch('sharewarez.routes_games_ext.edit.read_first_nfo_content', return_value='Updated NFO'), \
              patch(
                  'sharewarez.routes_games_ext.edit.refresh_game_metadata_and_updates',
-                 return_value=SimpleNamespace(
-                     game_name='Updated Game Name', filesystem_skipped=False,
-                     filesystem_message=None,
-                 ),
-             ) as refresh:
+                 side_effect=refresh_metadata,
+             ) as refresh, \
+             patch(
+                 'sharewarez.routes_games_ext.edit.refresh_images_in_background',
+                 side_effect=refresh_images,
+             ) as image_refresh, \
+             patch(
+                 'sharewarez.routes_games_ext.edit.Thread',
+                 side_effect=lambda **kwargs: ImmediateThread(**kwargs),
+             ), \
+             patch(
+                 'sharewarez.routes_games_ext.edit.log_system_event',
+             ) as system_event:
             response = client.post(f'/game_edit/{test_game.uuid}', data=form_data)
 
         assert response.status_code == 302
         refresh.assert_called_once_with(test_game.uuid)
+        image_refresh.assert_called_once_with(
+            test_game.uuid,
+            replace_existing=True,
+            expected_igdb_id=int(form_data['igdb_id']),
+            audit_user_id=admin_user.id,
+            refresh_reason='reidentify',
+        )
+        assert [event[0] for event in events] == ['metadata', 'images']
+        reidentify_events = [
+            logged_call for logged_call in system_event.call_args_list
+            if logged_call.kwargs.get('event_type') == 'image_refresh'
+        ]
+        assert len(reidentify_events) == 1
+        assert 'replacement images queued' in reidentify_events[0].args[0]
+        assert reidentify_events[0].kwargs['audit_user'] == admin_user.id
 
     def test_edit_javascript_preserves_clicked_action_before_disabling_buttons(self):
         """Regression coverage for browsers omitting disabled submitters from form data."""
