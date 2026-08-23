@@ -71,14 +71,14 @@ def test_runtime_context_is_html_escaped(monkeypatch):
 def test_admin_email_template_ui_and_routes_are_registered():
     route = (ROOT / 'sharewarez/routes_admin_ext/email_templates.py').read_text(encoding='utf-8')
     template = (ROOT / 'sharewarez/templates/admin/admin_email_templates.html').read_text(encoding='utf-8')
-    dashboard = (ROOT / 'sharewarez/templates/admin/admin_dashboard.html').read_text(encoding='utf-8')
+    navigation = (ROOT / 'sharewarez/utils/admin_navigation.py').read_text(encoding='utf-8')
 
     assert "@admin2_bp.route('/admin/email-templates'" in route
     assert "@admin2_bp.post('/admin/email-templates/<template_key>/preview')" in route
     assert "@admin2_bp.post('/admin/email-templates/<template_key>/reset')" in route
     assert 'emailTemplatePreviewFrame' in template
     assert 'email-variable-chip' in template
-    assert "url_for('admin2.email_templates')" in dashboard
+    assert "'endpoint': 'admin2.email_templates'" in navigation
 
 
 def test_all_transactional_email_paths_use_managed_renderer():
