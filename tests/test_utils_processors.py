@@ -106,6 +106,7 @@ class TestGetGlobalSettings:
             'enable_game_updates': True,
             'enable_game_extras': True,
             'enable_game_requests': True,
+            'enable_game_issues': True,
             'discord_configured': False,
             'discord_manual_trigger_enabled': False,
             'app_version': app_version,
@@ -147,6 +148,7 @@ class TestGetGlobalSettings:
             'enable_game_updates': True,
             'enable_game_extras': True,
             'enable_game_requests': True,
+            'enable_game_issues': True,
             'discord_configured': False,
             'discord_manual_trigger_enabled': False,
             'app_version': app_version,
@@ -266,6 +268,7 @@ class TestGetGlobalSettings:
             'enable_game_updates',
             'enable_game_extras',
             'enable_game_requests',
+            'enable_game_issues',
             'discord_configured',
             'discord_manual_trigger_enabled',
             'app_version',
@@ -287,7 +290,7 @@ class TestGetGlobalSettings:
 
         # Should not cause errors and return valid result
         assert isinstance(result, dict)
-        assert len(result) == 20
+        assert len(result) == 21
         assert all(key in result for key in [
             'show_logo', 'show_help_button', 'enable_web_links',
             'enable_server_status', 'enable_newsletter', 'show_version',
