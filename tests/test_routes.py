@@ -305,7 +305,7 @@ class TestMainBlueprint:
         with client.session_transaction() as sess:
             sess['_user_id'] = str(admin_user.id)
         
-        response = client.get('/scan_management')
+        response = client.get('/admin/scan_management')
         assert response.status_code == 200
 
     @patch('flask_login.current_user')
@@ -316,12 +316,12 @@ class TestMainBlueprint:
         mock_current_user.is_authenticated = True
         mock_current_user.role = 'admin'
         from flask import Response
-        mock_handle_auto_scan.return_value = Response('', status=302, headers={'Location': '/scan_management'})
+        mock_handle_auto_scan.return_value = Response('', status=302, headers={'Location': '/admin/scan_management'})
         
         with client.session_transaction() as sess:
             sess['_user_id'] = str(admin_user.id)
         
-        response = client.post('/scan_management', data={
+        response = client.post('/admin/scan_management', data={
             'submit': 'AutoScan',
             'folder_path': '/test/folder',
             'library_uuid': str(test_library.uuid),
@@ -338,12 +338,12 @@ class TestMainBlueprint:
         mock_current_user.is_authenticated = True
         mock_current_user.role = 'admin'
         from flask import Response
-        mock_handle_manual_scan.return_value = Response('', status=302, headers={'Location': '/scan_management'})
+        mock_handle_manual_scan.return_value = Response('', status=302, headers={'Location': '/admin/scan_management'})
         
         with client.session_transaction() as sess:
             sess['_user_id'] = str(admin_user.id)
         
-        response = client.post('/scan_management', data={
+        response = client.post('/admin/scan_management', data={
             'submit': 'ManualScan',
             'folder_path': '/test/folder', 
             'library_uuid': str(test_library.uuid),
@@ -360,12 +360,12 @@ class TestMainBlueprint:
         mock_current_user.is_authenticated = True
         mock_current_user.role = 'admin'
         from flask import Response
-        mock_handle_delete.return_value = Response('', status=302, headers={'Location': '/scan_management'})
+        mock_handle_delete.return_value = Response('', status=302, headers={'Location': '/admin/scan_management'})
         
         with client.session_transaction() as sess:
             sess['_user_id'] = str(admin_user.id)
         
-        response = client.post('/scan_management', data={
+        response = client.post('/admin/scan_management', data={
             'submit': 'DeleteAllUnmatched',
             'csrf_token': 'test_token'
         })
