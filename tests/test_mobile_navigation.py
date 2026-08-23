@@ -99,7 +99,7 @@ def test_shared_page_header_only_uses_flex_for_standard_actions():
     dashboard = Path('sharewarez/templates/admin/admin_dashboard.html').read_text()
 
     assert '.app-page-header:has(> .app-page-actions)' in css
-    header = dashboard.split('<header class="app-page-header admin-dashboard-header">', 1)[1]
+    header = dashboard.split('<header class="app-page-header admin-overview-header">', 1)[1]
     assert header.lstrip().startswith('<div>')
 
 
@@ -136,15 +136,19 @@ def test_ui_consistency_feature_uses_shared_theme_and_navigation_patterns():
     assert '.filter-select' in theme_components
 
 
-def test_admin_dashboard_uses_responsive_tool_cards():
+def test_admin_dashboard_uses_responsive_operational_layout():
     template = Path('sharewarez/templates/admin/admin_dashboard.html').read_text()
     css = Path('sharewarez/setup/default_theme/css/admin/admin_dashboard.css').read_text()
 
-    assert 'admin_tool(' in template
-    assert template.count('app-surface admin-section') == 4
+    assert 'dashboard_metrics' in template
+    assert 'dashboard_attention' in template
+    assert 'dashboard_health' in template
+    assert template.count('app-surface admin-') == 2
     assert 'data-toggle="tooltip"' not in template
     assert 'btn-circle' not in template
-    assert '.admin-dashboard-grid' in css
-    assert '.admin-tool-card' in css
-    assert 'grid-template-columns: repeat(2, minmax(0, 1fr))' in css
-    assert '@media (max-width: 768px)' in css
+    assert '.admin-overview-metrics' in css
+    assert '.admin-overview-workspace' in css
+    assert '.admin-attention-panel' in css
+    assert '.admin-health-panel' in css
+    assert 'grid-template-columns: repeat(5, minmax(0, 1fr))' in css
+    assert '@media (max-width: 620px)' in css
