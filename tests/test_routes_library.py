@@ -142,7 +142,7 @@ class TestLibraryBlueprint:
         
         with patch('sharewarez.routes_library.render_template') as mock_render:
             mock_render.return_value = 'rendered template'
-            response = client.get('/libraries')
+            response = client.get('/admin/libraries')
             
         assert response.status_code == 200
         mock_render.assert_called_once()
