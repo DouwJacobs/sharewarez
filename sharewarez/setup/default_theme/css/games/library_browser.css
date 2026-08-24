@@ -839,6 +839,12 @@
     .game-library-container .game-cover { width: 100%; max-width: none; max-height: none; }
     .library-game-title { width: 100%; font-size: .82rem; text-align: left; }
     .library-game-metadata { display: block; }
+    .library-view-grid .library-game-genres,
+    .library-view-grid .library-game-metadata-separator,
+    .library-view-grid .library-game-metadata-unknown,
+    .library-view-compact .library-game-genres,
+    .library-view-compact .library-game-metadata-separator,
+    .library-view-compact .library-game-metadata-unknown { display: none; }
     .game-library-container.library-view-compact { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; gap: 8px; }
     .library-view-compact .library-game-metadata { font-size: .6rem; }
     .game-library-container.library-view-list { grid-template-columns: 1fr !important; }

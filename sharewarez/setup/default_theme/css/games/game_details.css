@@ -2215,5 +2215,6 @@ pre {
     .game-mobile-actions > button { display: grid; min-width: 0; min-height: 48px; place-content: center; gap: 4px; border: 0; border-radius: 10px; background: transparent; color: var(--theme-text-secondary); font-size: .65rem; }
     .game-mobile-actions > button:first-child { background: var(--theme-accent-color); color: var(--theme-button-text, #fff); }
     .game-mobile-actions > button > i { font-size: .95rem; }
+    .game-mobile-actions > .game-status-btn-mobile { position: static; width: auto; height: auto; opacity: 1; transform: none; }
     .game-mobile-actions > .status-dropdown-mobile { right: 0; bottom: calc(100% + 8px); width: min(240px, calc(100vw - 24px)); }
 }

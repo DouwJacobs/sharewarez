@@ -561,7 +561,7 @@ $(document).ready(function() {
                 <!-- Details and screenshots will be injected here by JavaScript -->
             </div>
         </div>
-        <div class="library-game-copy"><a class="library-game-title" href="/game_details/${game.uuid}">${safeName}</a><span class="library-game-metadata">${genres || 'Game'} · ${game.size}</span></div>
+        <div class="library-game-copy"><a class="library-game-title" href="/game_details/${game.uuid}">${safeName}</a><span class="library-game-metadata${game.size === 'Unknown size' ? ' library-game-metadata-unknown' : ''}"><span class="library-game-genres">${genres || 'Game'}</span><span class="library-game-metadata-separator" aria-hidden="true"> · </span><span class="library-game-size">${game.size}</span></span></div>
     </div>
     `;
         return gameCardHtml;
