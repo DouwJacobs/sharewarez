@@ -812,8 +812,11 @@
         padding: 22px 0 18px;
     }
 
-    .library-browser-actions { width: 100%; flex-wrap: wrap; justify-content: flex-start; }
-    .library-browser-count { margin-right: auto; }
+    .library-browser-actions { width: 100%; align-items: center; flex-wrap: wrap; justify-content: flex-start; }
+    .library-browser-count { display: inline-flex; box-sizing: border-box; min-height: 44px; align-items: center; margin-right: auto; }
+    .library-view-switcher { box-sizing: border-box; height: 44px; align-items: center; }
+    .library-view-switcher button { height: 36px; min-height: 36px; }
+    .library-saved-views > summary { display: inline-flex; box-sizing: border-box; min-height: 44px; align-items: center; }
     .library-saved-views-panel { position: fixed; top: 76px; right: 12px; left: 12px; width: auto; }
     .game-library-container {
         grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
@@ -835,6 +838,10 @@
         max-width: none;
         margin: 0;
     }
+
+    .game-library-container .game-card > .button-glass-hamburger { top: 10px; left: 10px; }
+    .game-library-container .game-card > .favorite-btn { top: 10px; right: 10px; }
+    .game-library-container .game-card > .game-status-btn { right: 10px; bottom: 10px; }
 
     .game-library-container .game-cover { width: 100%; max-width: none; max-height: none; }
     .library-game-title { width: 100%; font-size: .82rem; text-align: left; }
