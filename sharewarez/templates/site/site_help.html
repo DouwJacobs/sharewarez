@@ -12,8 +12,22 @@
         <p class="help-subtitle">Your complete guide to using {{ site_title }}</p>
     </header>
 
+    <section class="app-surface help-tools" aria-label="Help tools">
+        <label class="help-search"><i class="fas fa-magnifying-glass" aria-hidden="true"></i><input id="helpSearch" type="search" placeholder="Search help topics…" autocomplete="off"></label>
+        {% if current_user.is_authenticated %}
+        <div class="help-checklist" data-help-checklist>
+            <div><p class="help-eyebrow">First steps</p><h2>Make the library yours</h2></div>
+            <label><input type="checkbox" data-check="browse"> <span>Browse or filter the <a href="{{ url_for('library.library') }}">Library</a></span></label>
+            <label><input type="checkbox" data-check="favorite"> <span>Favorite a game</span></label>
+            <label><input type="checkbox" data-check="status"> <span>Set a play status</span></label>
+            <label><input type="checkbox" data-check="notifications"> <span>Review <a href="{{ url_for('settings.settings_panel') }}#notification-settings-title">notification preferences</a></span></label>
+        </div>
+        {% endif %}
+    </section>
+    <p class="help-no-results" id="helpNoResults" hidden>No help topics match that search.</p>
+
     <div class="help-content-grid">
-        <div class="help-card getting-started">
+        <div class="help-card getting-started" id="getting-started" data-help-topic>
             <div class="card-header">
                 <i class="fas fa-play-circle"></i>
                 <h2>Getting Started</h2>
@@ -41,7 +55,7 @@
             </div>
         </div>
 
-        <div class="help-card downloads">
+        <div class="help-card downloads" id="downloads" data-help-topic>
             <div class="card-header">
                 <i class="fas fa-download"></i>
                 <h2>Downloads</h2>
@@ -64,12 +78,12 @@
                 </div>
                 <div class="help-item">
                     <i class="fas fa-clock"></i>
-                    <span>Downloaded files are available until you (or the admin) remove them from the list</span>
+                    <span>Ready files may expire. Downloads shows the expiry time and lets you retry failed or expired requests.</span>
                 </div>
             </div>
         </div>
 
-        <div class="help-card library">
+        <div class="help-card library" id="library" data-help-topic>
             <div class="card-header">
                 <i class="fas fa-heart"></i>
                 <h2>Your Library</h2>
@@ -98,7 +112,7 @@
         </div>
 
         {% if enable_game_requests %}
-        <div class="help-card requests">
+        <div class="help-card requests" id="requests" data-help-topic>
             <div class="card-header"><i class="fas fa-paper-plane"></i><h2>Game Requests</h2><div class="toggle-icon"><i class="fas fa-chevron-down"></i></div></div>
             <div class="card-content">
                 <div class="help-item"><i class="fas fa-magnifying-glass"></i><span>Search IGDB from Requests and choose the exact edition you want.</span></div>
@@ -109,7 +123,7 @@
         </div>
         {% endif %}
 
-        <div class="help-card support">
+        <div class="help-card support" id="issues" data-help-topic>
             <div class="card-header">
                 <i class="fas fa-life-ring"></i>
                 <h2>Need Help?</h2>
@@ -122,7 +136,7 @@
                 
                 <div class="help-item">
                     <i class="fas fa-bug"></i>
-                    <span>Report technical issues on the <a href="https://github.com/DouwJacobs/sharewarez" target="_blank" rel="noopener noreferrer">project repository</a>.</span>
+                    <span>{% if current_user.is_authenticated %}Open the affected game and choose <strong>Report an issue</strong>. You can track replies under <a href="{{ url_for('issues.my_issues') }}">My issues</a>.{% else %}Sign in, open the affected game, and choose <strong>Report an issue</strong>.{% endif %}</span>
                 </div>
             </div>
         </div>
@@ -164,6 +178,39 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     });
+
+    const search = document.getElementById('helpSearch');
+    const topics = [...document.querySelectorAll('[data-help-topic]')];
+    const noResults = document.getElementById('helpNoResults');
+    search?.addEventListener('input', () => {
+        const query = search.value.trim().toLocaleLowerCase();
+        let matches = 0;
+        topics.forEach(topic => {
+            const match = !query || topic.textContent.toLocaleLowerCase().includes(query);
+            topic.hidden = !match;
+            if (match) matches += 1;
+            if (query && match) {
+                topic.classList.add('expanded');
+                const content = topic.querySelector('.card-content');
+                content.style.maxHeight = content.scrollHeight + 'px';
+                topic.querySelector('.card-header')?.setAttribute('aria-expanded', 'true');
+            }
+        });
+        noResults.hidden = matches > 0;
+    });
+
+    const checklist = document.querySelector('[data-help-checklist]');
+    if (checklist) {
+        let state = {};
+        try { state = JSON.parse(localStorage.getItem('sharewarez-help-checklist') || '{}'); } catch (_error) {}
+        checklist.querySelectorAll('[data-check]').forEach(input => {
+            input.checked = Boolean(state[input.dataset.check]);
+            input.addEventListener('change', () => {
+                state[input.dataset.check] = input.checked;
+                localStorage.setItem('sharewarez-help-checklist', JSON.stringify(state));
+            });
+        });
+    }
 });
 </script>
 {% endblock %}

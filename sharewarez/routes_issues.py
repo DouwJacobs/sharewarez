@@ -9,7 +9,7 @@ from sqlalchemy import func, or_, select
 from sqlalchemy.orm import selectinload
 
 from sharewarez import db
-from sharewarez.models import Game, GameIssue, GameIssueComment, GlobalSettings, User
+from sharewarez.models import Game, GameIssue, GameIssueComment, GlobalSettings, Notification, User
 from sharewarez.utils.auth import admin_required
 from sharewarez.utils.event_logging import log_system_event
 from sharewarez.utils.issue_notifications import (
@@ -230,6 +230,18 @@ def my_issues():
 def issue_detail(issue_id):
     _require_enabled()
     issue = _issue_or_404(issue_id)
+    unread_updates = db.session.execute(
+        select(Notification).where(
+            Notification.user_id == current_user.id,
+            Notification.link_url == f'/issues/{issue.id}',
+            Notification.read_at.is_(None),
+        )
+    ).scalars().all()
+    if unread_updates:
+        now = datetime.now(timezone.utc)
+        for notification in unread_updates:
+            notification.read_at = now
+        db.session.commit()
     public_comments = [comment for comment in issue.comments if not comment.is_internal]
     return render_template(
         'issues/issue_detail.html', issue=issue, comments=public_comments,

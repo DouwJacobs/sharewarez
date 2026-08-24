@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% from "partials/ui_components.html" import status_badge, empty_state %}
+{% block title %}My activity · {{ site_title }}{% endblock %}
+{% block styles %}{{ super() }}<link rel="stylesheet" href="{{ 'css/site/activity.css'|theme_asset }}">{% endblock %}
+{% block content %}
+<main class="app-page activity-page">
+    <header class="app-page-header">
+        <div><p class="activity-eyebrow">Your account</p><h1>My activity</h1><p>Requests, issues, downloads, and replies that may need your attention.</p></div>
+        <a class="btn btn-secondary" href="{{ url_for('notifications.notification_center') }}"><i class="fas fa-bell" aria-hidden="true"></i> Notification inbox</a>
+    </header>
+
+    {% if replies %}
+    <section class="app-surface activity-attention" aria-labelledby="attention-title">
+        <div class="activity-section-heading"><div><p>Needs attention</p><h2 id="attention-title">New replies</h2></div><span>{{ replies|length }}</span></div>
+        <div class="activity-list">
+            {% for item in replies %}<a href="{{ item.link_url or url_for('notifications.notification_center') }}"><i class="fas {{ 'fa-bug' if 'issue' in item.event_type else 'fa-paper-plane' }}" aria-hidden="true"></i><span><strong>{{ item.title }}</strong><small>{{ item.message }} · {{ item.created_at|friendly_datetime }}</small></span><i class="fas fa-chevron-right" aria-hidden="true"></i></a>{% endfor %}
+        </div>
+    </section>
+    {% endif %}
+
+    <div class="activity-grid">
+        <section class="app-surface activity-section">
+            <div class="activity-section-heading"><div><p>Community</p><h2>Requests</h2></div><a href="{{ url_for('game_requests.requests_page') }}">View all</a></div>
+            {% if requests %}<div class="activity-list">{% for link in requests %}<a href="{{ url_for('game_requests.requests_page') }}"><i class="fas fa-paper-plane"></i><span><strong>{{ link.game_request.game_name }}</strong><small>{{ link.game_request.status|replace('_', ' ')|title }} · {{ link.game_request.updated_at|friendly_datetime }}</small></span><i class="fas fa-chevron-right"></i></a>{% endfor %}</div>{% else %}<p class="activity-empty">No game requests yet.</p>{% endif %}
+        </section>
+        <section class="app-surface activity-section">
+            <div class="activity-section-heading"><div><p>Support</p><h2>Issues</h2></div><a href="{{ url_for('issues.my_issues', status='all') }}">View all</a></div>
+            {% if issues %}<div class="activity-list">{% for issue in issues %}<a href="{{ url_for('issues.issue_detail', issue_id=issue.id) }}"><i class="fas fa-bug"></i><span><strong>{{ issue.game.name }} · {{ issue.title }}</strong><small>{{ issue.status|replace('_', ' ')|title }} · {{ issue.updated_at|friendly_datetime }}</small></span><i class="fas fa-chevron-right"></i></a>{% endfor %}</div>{% else %}<p class="activity-empty">No reported issues.</p>{% endif %}
+        </section>
+        <section class="app-surface activity-section activity-section--wide">
+            <div class="activity-section-heading"><div><p>Files</p><h2>Downloads</h2></div><a href="{{ url_for('download.downloads') }}">Manage</a></div>
+            {% if downloads %}<div class="activity-list activity-list--columns">{% for item in downloads %}<a href="{{ url_for('download.downloads') }}"><i class="fas fa-download"></i><span><strong>{{ item.content_title or item.game.name }}</strong><small>{{ item.status|replace('_', ' ')|title }} · {{ item.request_time|friendly_datetime }}</small></span><i class="fas fa-chevron-right"></i></a>{% endfor %}</div>{% else %}<p class="activity-empty">No downloads yet.</p>{% endif %}
+        </section>
+    </div>
+</main>
+{% endblock %}

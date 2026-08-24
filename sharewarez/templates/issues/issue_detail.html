@@ -22,7 +22,7 @@
                     {% for comment in comments %}
                     <article class="issue-comment{% if comment.kind == 'status' %} issue-comment--status{% elif comment.author and comment.author.role == 'admin' %} issue-comment--admin{% endif %}">
                         <span class="issue-comment-avatar"><i class="fas {{ 'fa-rotate' if comment.kind == 'status' else ('fa-shield-halved' if comment.author and comment.author.role == 'admin' else 'fa-user') }}" aria-hidden="true"></i></span>
-                        <div><header><strong>{{ 'System activity' if comment.kind == 'status' else (comment.author.name if comment.author else 'Deleted user') }}</strong><time datetime="{{ comment.created_at.isoformat() }}">{{ comment.created_at.strftime('%d %b %Y %H:%M') }}</time></header><p>{{ comment.body }}</p></div>
+                        <div><header><strong>{{ 'System activity' if comment.kind == 'status' else (comment.author.name if comment.author else 'Deleted user') }}</strong><time datetime="{{ comment.created_at.isoformat() }}">{{ comment.created_at|friendly_datetime }}</time></header><p>{{ comment.body }}</p></div>
                     </article>
                     {% else %}<p class="issue-no-comments">No replies yet. Administrators have been notified.</p>{% endfor %}
                 </div>
@@ -31,7 +31,7 @@
         </div>
 
         <aside class="app-stack issue-detail-aside">
-            <section class="app-surface issue-meta"><h2>Tracking</h2><dl><div><dt>Reported</dt><dd>{{ issue.created_at.strftime('%d %b %Y %H:%M') }}</dd></div><div><dt>Updated</dt><dd>{{ issue.updated_at.strftime('%d %b %Y %H:%M') }}</dd></div><div><dt>Handled by</dt><dd>{{ issue.handled_by.name if issue.handled_by else 'Unassigned' }}</dd></div>{% if issue.resolved_at %}<div><dt>Resolved</dt><dd>{{ issue.resolved_at.strftime('%d %b %Y %H:%M') }}</dd></div>{% endif %}</dl></section>
+            <section class="app-surface issue-meta"><h2>Tracking</h2><dl><div><dt>Reported</dt><dd>{{ issue.created_at|friendly_datetime }}</dd></div><div><dt>Updated</dt><dd>{{ issue.updated_at|friendly_datetime }}</dd></div><div><dt>Handled by</dt><dd>{{ issue.handled_by.name if issue.handled_by else 'Unassigned' }}</dd></div>{% if issue.resolved_at %}<div><dt>Resolved</dt><dd>{{ issue.resolved_at|friendly_datetime }}</dd></div>{% endif %}</dl></section>
             <section class="app-surface issue-actions"><h2>Actions</h2>{% if issue.is_closed %}<form method="post" action="{{ url_for('issues.reopen_issue', issue_id=issue.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-primary" type="submit"><i class="fas fa-rotate-left"></i> Reopen issue</button></form>{% else %}<form method="post" action="{{ url_for('issues.close_issue', issue_id=issue.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-secondary" type="submit"><i class="fas fa-check"></i> Close issue</button></form>{% endif %}</section>
         </aside>
     </div>

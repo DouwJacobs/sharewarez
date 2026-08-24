@@ -40,6 +40,26 @@ def global_search():
         return jsonify({'query': query, 'results': [], 'suggestions': saved_searches})
 
     results = []
+    global_settings = get_global_settings()
+    navigation = [
+        ('Discover', 'Featured games and personalized rows', '/discover', 'fa-compass', 'home featured'),
+        ('Library', 'Browse, filter, and sort games', '/library', 'fa-gamepad', 'games collection'),
+        ('My activity', 'Requests, issues, downloads, and replies', '/activity', 'fa-list-check', 'status tracking replies'),
+        ('Downloads', 'Manage queued and ready files', '/downloads', 'fa-download', 'files retry cancel'),
+        ('Notifications', 'Open the activity inbox', '/notifications', 'fa-bell', 'alerts replies'),
+        ('Preferences', 'Appearance, Library, and notification settings', '/settings_panel', 'fa-sliders', 'theme browser alerts'),
+        ('Help', 'Search guidance and reporting help', '/help', 'fa-circle-question', 'faq support'),
+    ]
+    if global_settings.get('enable_game_requests', True):
+        navigation.append(('Requests', 'Request a game or update', '/requests', 'fa-paper-plane', 'community igdb'))
+    if global_settings.get('enable_game_issues', True):
+        navigation.append(('My issues', 'Track reported game problems', '/issues', 'fa-bug', 'report support'))
+    lowered = query.lower()
+    results.extend({
+        'type': 'Go to', 'title': title, 'subtitle': subtitle, 'url': url,
+        'icon': icon, 'score': 1.2 if lowered == title.lower() else .65,
+    } for title, subtitle, url, icon, keywords in navigation
+      if lowered in f'{title} {subtitle} {keywords}'.lower())
     games = db.session.execute(
         _ranked_search(Game, Game.name, (Game.name, Game.summary), query, 8)
     ).all()
@@ -96,7 +116,6 @@ def global_search():
     } for library, score in libraries)
 
     if current_user.role == 'admin':
-        global_settings = get_global_settings()
         users = db.session.execute(
             _ranked_search(User, User.name, (User.name, User.email), query, 5)
         ).all()

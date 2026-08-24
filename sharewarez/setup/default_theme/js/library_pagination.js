@@ -299,7 +299,13 @@ $(document).ready(function() {
         const requestSequence = ++gamesRequestSequence;
         const paginationButtons = $('#firstPage, #firstPageBottom, #prevPage, #prevPageBottom, #nextPage, #nextPageBottom, #lastPage, #lastPageBottom');
         paginationButtons.prop('disabled', true);
-        $('#gamesContainer').attr('aria-busy', 'true').html('<div class="game-grid-loading" role="status"><i class="fas fa-circle-notch fa-spin" aria-hidden="true"></i><span>Loading games…</span></div>');
+        const skeletonCards = Array.from({length: 8}, () => `
+            <div class="game-card-skeleton" aria-hidden="true">
+                <span class="game-card-skeleton-cover"></span>
+                <span class="game-card-skeleton-line is-title"></span>
+                <span class="game-card-skeleton-line"></span>
+            </div>`).join('');
+        $('#gamesContainer').attr('aria-busy', 'true').html(`<div class="sr-only" role="status">Loading games…</div>${skeletonCards}`);
         activeGamesRequest = $.ajax({
             url: '/browse_games',
             data: filters,
@@ -479,6 +485,10 @@ $(document).ready(function() {
         var tags = game.tags ? game.tags.join(', ') : '';
         var defaultCover = 'newstyle/default_cover.jpg';
         var fullCoverUrl = !game.cover_url || game.cover_url === defaultCover ? '/static/' + defaultCover : '/static/library/images/' + game.cover_url;
+        var initials = $('<div>').text((game.name || '??').slice(0, 2).toUpperCase()).html();
+        var coverHtml = game.has_cover
+            ? `<img src="${fullCoverUrl}" alt="${safeName}" class="game-cover" loading="lazy">`
+            : `<span class="game-cover game-cover-placeholder"><i class="fas fa-gamepad" aria-hidden="true"></i><strong>${initials}</strong><small>${safeName}</small></span>`;
         var popupMenuHtml = createPopupMenuHtml(game);
 
         // Check if play status feature is enabled
@@ -537,7 +547,7 @@ $(document).ready(function() {
         var gameCardHtml = `
     <div class="game-card-container">
         <div class="game-card" onmouseover="showDetails(this, '${game.uuid}')" onmouseout="hideDetails()" onfocusin="showDetails(this, '${game.uuid}')" onfocusout="hideDetails()" data-name="${safeName}" data-size="${game.size}" data-genres="${genres}" data-tags="${tags}">
-            <button id="menuButton-${game.uuid}" class="button-glass-hamburger" type="button" aria-label="Open actions for ${safeName}" aria-haspopup="menu" aria-expanded="false"><i class="fas fa-bars" aria-hidden="true"></i></button>
+            <button id="menuButton-${game.uuid}" class="button-glass-hamburger" type="button" aria-label="Open actions for ${safeName}" aria-haspopup="menu" aria-expanded="false"><i class="fas fa-ellipsis-vertical" aria-hidden="true"></i></button>
             <button class="favorite-btn" type="button" data-game-uuid="${game.uuid}" data-is-favorite="${game.is_favorite}" data-game-name="${safeName}" aria-label="${game.is_favorite ? 'Remove' : 'Add'} ${safeName} ${game.is_favorite ? 'from' : 'to'} favorites">
                 <i class="fas fa-heart" aria-hidden="true"></i>
             </button>
@@ -545,13 +555,13 @@ $(document).ready(function() {
             ${statusButtonHtml}
 
             <a href="/game_details/${game.uuid}">
-                <img src="${fullCoverUrl}" alt="${safeName}" class="game-cover">
+                ${coverHtml}
             </a>
             <div id="details-${game.uuid}" class="popup-game-details hidden">
                 <!-- Details and screenshots will be injected here by JavaScript -->
             </div>
         </div>
-        <a class="library-game-title" href="/game_details/${game.uuid}">${safeName}</a>
+        <div class="library-game-copy"><a class="library-game-title" href="/game_details/${game.uuid}">${safeName}</a><span class="library-game-metadata">${genres || 'Game'} · ${game.size}</span></div>
     </div>
     `;
         return gameCardHtml;

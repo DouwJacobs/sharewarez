@@ -295,7 +295,17 @@ class UserPreferencesForm(FlaskForm):
     items_per_page = SelectField('Max items per Page', choices=items_per_page_choices, coerce=int)
     default_sort = SelectField('Default Sort', choices=default_sort_choices)
     default_sort_order = SelectField('Default Sort Order', choices=default_sort_order_choices)
+    library_view = SelectField('Library view', choices=[
+        ('grid', 'Cover grid'),
+        ('compact', 'Compact grid'),
+        ('list', 'List'),
+    ])
     theme = SelectField('Theme', choices=[(SITE_DEFAULT_THEME_VALUE, 'Site default')])
+    notify_requests = BooleanField('Requests and administrator replies')
+    notify_issues = BooleanField('Issues and administrator replies')
+    notify_downloads = BooleanField('Download status changes')
+    notify_games = BooleanField('New games and library updates')
+    notify_browser = BooleanField('Send enabled categories to this account’s browser subscriptions')
     submit = SubmitField('Save Preferences')
 
     def __init__(self, *args, **kwargs):

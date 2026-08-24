@@ -1978,7 +1978,7 @@ pre {
 .game-storefront .download-form,
 .game-storefront .download-buttons-spacer { width: 100%; margin: 0; }
 .game-storefront .download-buttons-spacer { display: grid; gap: 10px; }
-.game-storefront :is(.button-glass-download, .button-glass-play, .button-glass-extras) {
+.game-storefront :is(.button-glass-download, .button-glass-play, .button-glass-extras, .button-glass-report) {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -1988,6 +1988,9 @@ pre {
     margin: 0;
     border-radius: 11px;
 }
+.game-storefront .button-glass-report { border: 1px solid var(--theme-border-color); background: transparent; color: var(--theme-text-secondary); }
+.game-storefront .button-glass-report:hover { border-color: var(--theme-accent-color); color: var(--theme-text-primary); }
+.game-card-coverimage .game-cover-placeholder { aspect-ratio: 3 / 4; border-radius: inherit; }
 
 .game-storefront .button-glass-download {
     border: 1px solid rgba(var(--theme-accent-soft-rgb, 154, 177, 255), .34) !important;
@@ -2021,6 +2024,18 @@ pre {
     padding: 24px 42px;
     border-top: 1px solid var(--theme-border-color, rgba(255,255,255,.12));
 }
+.game-details-disclosure > summary { display: flex; align-items: center; justify-content: space-between; gap: 16px; color: var(--theme-text-primary); font-size: .88rem; font-weight: 750; cursor: pointer; list-style: none; }
+.game-details-disclosure > summary::-webkit-details-marker { display: none; }
+.game-details-disclosure > summary > span { display: inline-flex; align-items: center; gap: 8px; }
+.game-details-disclosure > summary > span i { color: var(--theme-text-secondary); }
+.game-details-disclosure[open] > summary > i { transform: rotate(180deg); }
+.game-details-disclosure-body { display: grid; gap: 20px; }
+.game-relationships > summary + .game-details-disclosure-body { margin-top: 18px; }
+.game-relationships .game-relationships-heading > .game-card-labels { display: none; }
+.game-media-disclosure { display: grid; gap: 18px; padding: 24px 42px 32px; border-top: 1px solid var(--theme-border-color); }
+.game-media-disclosure .game-details-disclosure-body { min-width: 0; }
+.game-media-disclosure .screenshot-gallery, .game-media-disclosure .game-videos-row { padding: 0; }
+.game-mobile-actions { display: none; }
 
 .game-relationships-heading {
     display: flex;
@@ -2128,6 +2143,7 @@ pre {
 
 @media (max-width: 768px) {
     .game-details-page { width: 100% !important; margin: 0 0 24px !important; }
+    .game-details-page { padding-bottom: 88px !important; }
     .game-storefront {
         box-sizing: border-box;
         width: 100% !important;
@@ -2185,12 +2201,18 @@ pre {
     .game-storefront .rating-container { display: grid; grid-template-columns: 1fr 1fr; }
     .game-storefront .rating-row { min-width: 0; }
     .game-storefront .game-card-downloads { padding: 18px 0 0 !important; border-left: 0 !important; border-top: 1px solid var(--theme-border-color, rgba(255,255,255,.14)) !important; }
+    .game-storefront :is(.download-form, .button-glass-report, .favorite-btn-cover, .game-status-btn-cover) { display: none !important; }
     .game-storefront .game-card-bottom-info { grid-template-columns: 1fr; gap: 24px; padding: 24px 16px; }
     .game-storefront .screenshot-gallery,
     .game-storefront .game-videos-row { padding-right: 16px; padding-left: 16px; }
     .game-storefront .game-videos-row { padding-top: 18px; }
     .game-storefront .screenshot-image { width: 220px; height: 124px; }
     .game-relationships { padding: 22px 16px; }
+    .game-media-disclosure { padding: 20px 16px; }
     .game-relationships-heading { align-items: flex-start; flex-direction: column; }
     .game-relationship-groups { grid-template-columns: 1fr; gap: 17px; }
+    .game-mobile-actions { position: fixed; z-index: 520; right: 12px; bottom: calc(68px + env(safe-area-inset-bottom)); left: 12px; display: grid; grid-template-columns: repeat(auto-fit, minmax(72px, 1fr)); padding: 7px; border: 1px solid var(--theme-border-color); border-radius: 15px; background: color-mix(in srgb, var(--theme-panel-bg) 94%, transparent); box-shadow: 0 14px 36px rgba(0,0,0,.38); backdrop-filter: blur(18px); }
+    .game-mobile-actions button { display: grid; min-width: 0; min-height: 48px; place-content: center; gap: 4px; border: 0; border-radius: 10px; background: transparent; color: var(--theme-text-secondary); font-size: .65rem; }
+    .game-mobile-actions button:first-child { background: var(--theme-accent-color); color: var(--theme-button-text, #fff); }
+    .game-mobile-actions i { font-size: .95rem; }
 }

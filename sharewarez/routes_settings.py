@@ -13,6 +13,7 @@ from sharewarez import cache
 from sharewarez import db
 from sharewarez.utils.api_tokens import API_TOKEN_SCOPES, create_api_token
 from sharewarez.utils.event_logging import log_system_event
+from sharewarez.utils.user_preferences import get_experience_settings, update_experience_settings
 from datetime import datetime, timezone
 
 settings_bp = Blueprint('settings', __name__)
@@ -239,15 +240,21 @@ def revoke_personal_api_token(token_id):
 def _populate_preferences_form(form):
     """Populate a preferences form from the current user's effective settings."""
     preferences = current_user.preferences
-    if not preferences:
-        return
-
-    form.items_per_page.data = preferences.items_per_page
-    form.default_sort.data = preferences.default_sort
-    form.default_sort_order.data = preferences.default_sort_order
+    if preferences:
+        form.items_per_page.data = preferences.items_per_page
+        form.default_sort.data = preferences.default_sort
+        form.default_sort_order.data = preferences.default_sort_order
+    experience = get_experience_settings(current_user)
+    form.library_view.data = experience['library_view']
+    notifications = experience['notifications']
+    form.notify_requests.data = notifications['requests']
+    form.notify_issues.data = notifications['issues']
+    form.notify_downloads.data = notifications['downloads']
+    form.notify_games.data = notifications['games']
+    form.notify_browser.data = notifications['browser']
 
     from sharewarez.utils.themes import SITE_DEFAULT_THEME_VALUE
-    saved_theme = preferences.theme or SITE_DEFAULT_THEME_VALUE
+    saved_theme = (preferences.theme if preferences else None) or SITE_DEFAULT_THEME_VALUE
     theme_ids = {value for value, _label in form.theme.choices}
     if saved_theme not in theme_ids:
         installed_themes = ThemeManager(current_app).get_installed_themes()
@@ -291,6 +298,27 @@ def settings_panel():
         current_user.preferences.default_sort_order = form.default_sort_order.data
         from sharewarez.utils.themes import SITE_DEFAULT_THEME_VALUE
         current_user.preferences.theme = None if form.theme.data == SITE_DEFAULT_THEME_VALUE else form.theme.data
+        current_experience = get_experience_settings(current_user)
+        library_view = getattr(getattr(form, 'library_view', None), 'data', None)
+        if library_view not in {'grid', 'compact', 'list'}:
+            library_view = current_experience['library_view']
+
+        def notification_value(field_name, default):
+            value = getattr(getattr(form, field_name, None), 'data', default)
+            return value if isinstance(value, bool) else default
+
+        current_notifications = current_experience['notifications']
+        update_experience_settings(
+            current_user,
+            library_view=library_view,
+            notifications={
+                'requests': notification_value('notify_requests', current_notifications['requests']),
+                'issues': notification_value('notify_issues', current_notifications['issues']),
+                'downloads': notification_value('notify_downloads', current_notifications['downloads']),
+                'games': notification_value('notify_games', current_notifications['games']),
+                'browser': notification_value('notify_browser', current_notifications['browser']),
+            },
+        )
         
         try:
             db.session.add(current_user.preferences)

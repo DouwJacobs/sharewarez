@@ -105,12 +105,12 @@ class TestFormatSize:
     def test_format_size_none_input(self):
         """Test format_size with None input."""
         result = format_size(None)
-        assert result == '0 MB'
+        assert result == 'Unknown size'
     
     def test_format_size_zero_bytes(self):
         """Test format_size with 0 bytes."""
         result = format_size(0)
-        assert result == '0.00 KB'
+        assert result == 'Unknown size'
     
     def test_format_size_kilobytes(self):
         """Test format_size for kilobyte range."""
@@ -148,7 +148,7 @@ class TestFormatSize:
         # Test with string input that can't be divided
         with patch('builtins.print') as mock_print:
             result = format_size('invalid')
-            assert result == '0 MB'
+            assert result == 'Unknown size'
             mock_print.assert_called_once()
 
 

@@ -13,6 +13,7 @@ from sharewarez.utils.security import sanitize_path_for_logging
 from sharewarez.utils.event_logging import log_system_event
 from sharewarez.utils.collections import collection_visibility_clause
 from sharewarez.utils.game_relationships import serialize_game_families, serialize_game_relationships
+from sharewarez.utils.user_preferences import remember_recent_game
 from urllib.parse import urlparse
 
 from . import games_bp
@@ -81,6 +82,8 @@ def game_details(game_uuid):
     game = get_game_by_uuid(str(valid_uuid))
 
     if game:
+        remember_recent_game(current_user, game.uuid)
+        db.session.commit()
         # Explicitly load updates and extras
         updates = db.session.execute(
             select(GameUpdate).filter_by(game_uuid=game.uuid).order_by(

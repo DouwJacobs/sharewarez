@@ -495,6 +495,26 @@
     align-items: center;
     gap: 10px;
 }
+.library-view-switcher { display: flex; padding: 3px; border: 1px solid var(--theme-border-color); border-radius: 10px; background: var(--theme-input-bg); }
+.library-view-switcher button { display: grid; width: 34px; height: 32px; place-items: center; border: 0; border-radius: 7px; background: transparent; color: var(--theme-text-secondary); }
+.library-view-switcher button.active { background: var(--theme-selected-surface); color: var(--theme-text-primary); }
+.library-saved-views { position: relative; }
+.library-saved-views > summary { list-style: none; }
+.library-saved-views > summary::-webkit-details-marker { display: none; }
+.library-saved-views-panel { position: absolute; z-index: 100; top: calc(100% + 8px); right: 0; width: min(340px, calc(100vw - 32px)); padding: 14px; border: 1px solid var(--theme-border-color); border-radius: 13px; background: var(--theme-panel-bg); box-shadow: 0 18px 42px rgba(0,0,0,.34); }
+.library-saved-views-panel form { display: grid; gap: 7px; }
+.library-saved-views-panel label { color: var(--theme-text-secondary); font-size: .72rem; font-weight: 700; }
+.library-saved-views-panel form > div { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 7px; }
+.library-saved-views-panel > p { margin: 12px 0 0; color: var(--theme-text-secondary); font-size: .76rem; }
+.library-saved-list { display: grid; margin-top: 10px; border-top: 1px solid var(--theme-border-color); }
+.library-saved-list > div { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; min-height: 39px; border-bottom: 1px solid var(--theme-border-color); }
+.library-saved-list a { overflow: hidden; color: var(--theme-text-primary); font-size: .8rem; text-overflow: ellipsis; white-space: nowrap; }
+.library-saved-list button { display: grid; width: 28px; height: 28px; place-items: center; border: 0; border-radius: 7px; background: transparent; color: var(--theme-text-secondary); }
+.library-active-filters { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; margin: 0 0 16px; }
+.library-active-filters > span { color: var(--theme-text-secondary); font-size: .7rem; font-weight: 750; text-transform: uppercase; }
+.library-active-filters > a { display: inline-flex; align-items: center; gap: 6px; padding: 5px 9px; border: 1px solid var(--theme-border-color); border-radius: 999px; background: var(--theme-input-bg); color: var(--theme-text-primary); font-size: .72rem; text-decoration: none; }
+.library-active-filters > a:hover { border-color: var(--theme-accent-color); }
+.library-active-filters > .library-clear-filters { border-color: transparent; background: transparent; color: var(--theme-accent-color); }
 
 .library-filter-count {
     display: inline-flex;
@@ -531,6 +551,13 @@
 .game-grid-empty > i { color: rgba(154, 177, 255, 0.9); font-size: 1.5rem; }
 .game-grid-empty p { margin: 0; }
 .game-grid-error { border-color: rgba(231, 106, 120, 0.35); }
+
+.game-card-skeleton { display: grid; gap: 10px; align-content: start; min-width: 0; }
+.game-card-skeleton-cover,
+.game-card-skeleton-line { display: block; border-radius: 10px; background: linear-gradient(100deg, var(--theme-input-bg) 30%, color-mix(in srgb, var(--theme-input-bg) 70%, var(--theme-text-secondary)) 50%, var(--theme-input-bg) 70%); background-size: 240% 100%; animation: mediaSkeleton 1.4s ease-in-out infinite; }
+.game-card-skeleton-cover { aspect-ratio: 3 / 4; border: 1px solid var(--theme-border-color); border-radius: 14px; }
+.game-card-skeleton-line { width: 68%; height: 10px; }
+.game-card-skeleton-line.is-title { width: 88%; height: 14px; }
 
 .game-discovery-container {
     display: flex;
@@ -739,6 +766,21 @@
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
 }
+.library-game-copy { display: grid; min-width: 0; gap: 3px; }
+.library-game-metadata { display: none; overflow: hidden; color: var(--theme-text-secondary); font-size: .69rem; line-height: 1.35; text-overflow: ellipsis; white-space: nowrap; }
+.game-library-container.library-view-compact { grid-template-columns: repeat(auto-fill, minmax(138px, 1fr)); gap: 13px; }
+.library-view-compact .library-game-title { font-size: .78rem; }
+.game-library-container.library-view-list { grid-template-columns: 1fr; justify-items: stretch; gap: 8px; }
+.library-view-list .game-card-container { display: grid; grid-template-columns: 72px minmax(0, 1fr); align-items: center; gap: 14px; width: 100%; min-height: 102px; padding: 8px; border: 1px solid var(--theme-border-color); border-radius: 12px; background: var(--theme-card-background); }
+.library-view-list .game-card { width: 72px; }
+.library-view-list .game-card .game-cover { width: 72px; height: 96px; aspect-ratio: 3 / 4; border-radius: 8px; }
+.library-view-list .library-game-title { width: 100%; margin: 0; font-size: .95rem; text-align: left; }
+.library-view-list .library-game-metadata { display: block; }
+@media (hover: hover) and (pointer: fine) {
+    .game-library-container .game-card :is(.button-glass-hamburger, .favorite-btn, .game-status-btn) { opacity: 0; transition: opacity .16s ease; }
+    .game-library-container .game-card:hover :is(.button-glass-hamburger, .favorite-btn, .game-status-btn),
+    .game-library-container .game-card:focus-within :is(.button-glass-hamburger, .favorite-btn, .game-status-btn) { opacity: 1; }
+}
 
 .library-game-title:hover,
 .library-game-title:focus-visible {
@@ -770,7 +812,9 @@
         padding: 22px 0 18px;
     }
 
-    .library-browser-actions { width: 100%; justify-content: space-between; }
+    .library-browser-actions { width: 100%; flex-wrap: wrap; justify-content: flex-start; }
+    .library-browser-count { margin-right: auto; }
+    .library-saved-views-panel { position: fixed; top: 76px; right: 12px; left: 12px; width: auto; }
     .game-library-container {
         grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
         justify-items: stretch;
@@ -794,6 +838,11 @@
 
     .game-library-container .game-cover { width: 100%; max-width: none; max-height: none; }
     .library-game-title { width: 100%; font-size: .82rem; text-align: left; }
+    .library-game-metadata { display: block; }
+    .game-library-container.library-view-compact { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; gap: 8px; }
+    .library-view-compact .library-game-metadata { font-size: .6rem; }
+    .game-library-container.library-view-list { grid-template-columns: 1fr !important; }
+    .game-library-container.library-view-list .game-card-container { display: grid; grid-template-columns: 72px minmax(0, 1fr); align-items: center; justify-content: stretch; min-height: 112px; }
 
     /* Pagination header stacks on mobile */
     .pagination-header {

@@ -11,6 +11,7 @@
 <script src="{{ 'js/library_pagination.js'|theme_asset }}"></script>
 <script src="{{ 'js/favorites_manager.js'|theme_asset }}"></script>
 <script src="{{ 'js/game_status_manager.js'|theme_asset }}"></script>
+<script src="{{ 'js/library_preferences.js'|theme_asset }}"></script>
 
 <main class="app-page library-browser-page">
 
@@ -22,17 +23,28 @@
             </div>
             <div class="library-browser-actions">
                 <p class="library-browser-count">{{ total }} game{% if total != 1 %}s{% endif %}</p>
+                <div class="library-view-switcher" role="group" aria-label="Library view">
+                    {% for value, icon, label in [('grid', 'fa-table-cells-large', 'Grid'), ('compact', 'fa-table-cells', 'Compact'), ('list', 'fa-list', 'List')] %}<button type="button" data-library-view="{{ value }}" class="{% if library_view == value %}active{% endif %}" aria-pressed="{{ 'true' if library_view == value else 'false' }}" title="{{ label }} view"><i class="fas {{ icon }}" aria-hidden="true"></i><span class="visually-hidden">{{ label }} view</span></button>{% endfor %}
+                </div>
+                <details class="library-saved-views">
+                    <summary class="btn btn-secondary btn-sm"><i class="fas fa-bookmark" aria-hidden="true"></i> Views</summary>
+                    <div class="library-saved-views-panel">
+                        <form data-save-library-view><label for="libraryViewName">Save current filters</label><div><input id="libraryViewName" class="form-control" maxlength="40" placeholder="e.g. Couch co-op"><button class="btn btn-primary btn-sm" type="submit">Save</button></div></form>
+                        {% if saved_library_views %}<div class="library-saved-list">{% for saved_view in saved_library_views %}<div><a href="{{ url_for('library.library') }}{% if saved_view.query %}?{{ saved_view.query }}{% endif %}">{{ saved_view.name }}</a><button type="button" data-delete-library-view="{{ saved_view.name }}" aria-label="Delete saved view {{ saved_view.name }}"><i class="fas fa-times"></i></button></div>{% endfor %}</div>{% else %}<p>No saved views yet.</p>{% endif %}
+                    </div>
+                </details>
             </div>
         </header>
         {% include 'games/library_filters.html' %}
+        {% if active_filter_chips %}<div class="library-active-filters" aria-label="Active filters"><span>Active</span>{% for chip in active_filter_chips %}<a href="{{ chip.remove_url }}">{{ chip.label }}: {{ chip.value }} <i class="fas fa-times" aria-hidden="true"></i></a>{% endfor %}<a class="library-clear-filters" href="{{ url_for('library.library') }}">Clear all</a></div>{% endif %}
   
         <!-- The deleteGameModal is now included globally in base.html -->
 
-        <div class="game-library-container" id="gamesContainer">
+        <div class="game-library-container library-view-{{ library_view }}" id="gamesContainer">
             {% for game in games %}
             <div class="game-card-container">
                 <div class="game-card" onmouseover="showDetails(this, '{{ game.uuid }}')" onmouseout="hideDetails()" onfocusin="showDetails(this, '{{ game.uuid }}')" onfocusout="hideDetails()" data-uuid="{{ game.uuid }}" data-name="{{ game.name }}" data-size="{{ game.size }}" data-genres="{{ game.genres|join(', ') }}" data-tags="{{ game.tags|join(', ') }}">
-                    <button id="menuButton-{{ game.uuid }}" class="button-glass-hamburger" type="button" aria-label="Open actions for {{ game.name }}" aria-haspopup="menu" aria-expanded="false"><i class="fas fa-bars" aria-hidden="true"></i></button>
+                    <button id="menuButton-{{ game.uuid }}" class="button-glass-hamburger" type="button" aria-label="Open actions for {{ game.name }}" aria-haspopup="menu" aria-expanded="false"><i class="fas fa-ellipsis-vertical" aria-hidden="true"></i></button>
                     <button class="favorite-btn" data-game-uuid="{{ game.uuid }}"
                            data-is-favorite="{{ game.is_favorite|lower }}" data-game-name="{{ game.name }}" type="button" aria-label="{% if game.is_favorite %}Remove {{ game.name }} from favorites{% else %}Add {{ game.name }} to favorites{% endif %}">
                         <i class="fas fa-heart" aria-hidden="true"></i>
@@ -91,7 +103,7 @@
                     </a>
                     {% else %}
                         <a href="{{ url_for('games.game_details', game_uuid=game.uuid) }}">
-                            <img src="{{ url_for('static', filename='newstyle/default_cover.jpg') }}" alt="Default Cover Image" class="game-cover">
+                            <span class="game-cover game-cover-placeholder"><i class="fas fa-gamepad" aria-hidden="true"></i><strong>{{ game.name[:2]|upper }}</strong><small>{{ game.name }}</small></span>
                         </a>
                     {% endif %}
                     {% if game.has_local_override %}
@@ -101,7 +113,7 @@
                         <!-- Details and screenshots will be injected here by JavaScript -->
                     </div>
                 </div>
-                <a class="library-game-title" href="{{ url_for('games.game_details', game_uuid=game.uuid) }}">{{ game.name }}</a>
+                <div class="library-game-copy"><a class="library-game-title" href="{{ url_for('games.game_details', game_uuid=game.uuid) }}">{{ game.name }}</a><span class="library-game-metadata">{{ game.genres[:2]|join(' · ') if game.genres else 'Game' }} · {{ game.size }}</span></div>
             
             </div>
             {% endfor %}

@@ -125,7 +125,9 @@ def log_unmatched_folder(scan_job_id, folder_path, matched_status, library_uuid=
 
 
 def process_game_updates(game_name, full_disk_path, updates_folder, library_uuid, update_folder_name=None):
-    settings = db.session.execute(select(GlobalSettings)).scalar_one_or_none()
+    settings = db.session.execute(
+        select(GlobalSettings).order_by(GlobalSettings.id).limit(1)
+    ).scalar_one_or_none()
     # Use passed parameter or fallback to database query
     if update_folder_name is None:
         if not settings or not settings.update_folder_name:
@@ -272,7 +274,9 @@ def _optional_iso_date(value):
 def process_game_extras(game_name, full_disk_path, extras_folder, library_uuid, extras_folder_name=None):
     # Use passed parameter or fallback to database query
     if extras_folder_name is None:
-        settings = db.session.execute(select(GlobalSettings)).scalar_one_or_none()
+        settings = db.session.execute(
+            select(GlobalSettings).order_by(GlobalSettings.id).limit(1)
+        ).scalar_one_or_none()
         if not settings or not settings.extras_folder_name:
             print("No extras folder configuration found in database")
             return

@@ -2,7 +2,7 @@
 
 {% macro game_card(game) %}
 <a class="home-game-card" href="{{ url_for('games.game_details', game_uuid=game.uuid) }}" aria-label="View {{ game.name }}">
-    <span class="home-game-cover"><img src="{{ game.cover_url }}" alt="Cover for {{ game.name }}" loading="lazy"></span>
+    <span class="home-game-cover">{% if game.has_cover %}<img src="{{ game.cover_url }}" alt="Cover for {{ game.name }}" loading="lazy">{% else %}<span class="game-cover-placeholder"><i class="fas fa-gamepad" aria-hidden="true"></i><strong>{{ game.name[:2]|upper }}</strong><small>{{ game.name }}</small></span>{% endif %}</span>
     <span class="home-game-info">
         <strong title="{{ game.name }}">{{ game.name }}</strong>
         <span class="home-game-genres">{% if game.genres %}{{ game.genres[:2]|join(', ') }}{% else %}Game{% endif %}</span>
@@ -22,6 +22,21 @@
             <a href="{{ url_for('library.library', sort_by='date_identified', sort_order='desc') }}">New releases</a>
             <a href="{{ url_for('library.library', sort_by='rating', sort_order='desc') }}">Top rated</a>
             <a href="{{ url_for('site.favorites') }}">Wishlist</a>
+            <details class="discover-customizer">
+                <summary aria-label="Customize Discover"><i class="fas fa-sliders" aria-hidden="true"></i></summary>
+                <div class="discover-customizer-panel" data-discover-customizer>
+                    <div><strong>Customize Discover</strong><small>Choose and order your collection rows.</small></div>
+                    <div class="discover-customizer-list">
+                    {% for section in all_discovery_sections %}
+                        <div data-discover-section="{{ section.identifier }}">
+                            <label><input type="checkbox"{% if section.identifier not in hidden_discovery_sections %} checked{% endif %}> <span>{{ section.name }}</span></label>
+                            <span><button type="button" data-move="up" aria-label="Move {{ section.name }} up"><i class="fas fa-arrow-up"></i></button><button type="button" data-move="down" aria-label="Move {{ section.name }} down"><i class="fas fa-arrow-down"></i></button></span>
+                        </div>
+                    {% endfor %}
+                    </div>
+                    <button type="button" class="btn btn-primary btn-sm" data-discover-save>Save layout</button>
+                </div>
+            </details>
         </nav>
     </header>
 
@@ -57,15 +72,6 @@
         </div>
         {% endif %}
     </section>
-        {% set noteworthy = section_data.get('latest_games', [])[1:4] %}
-        {% if noteworthy %}
-        <aside class="storefront-noteworthy" aria-labelledby="noteworthy-title">
-            <div class="storefront-noteworthy-heading"><p class="home-eyebrow">Fresh arrivals</p><h2 id="noteworthy-title">New & noteworthy</h2></div>
-            {% for game in noteworthy %}
-            <a href="{{ url_for('games.game_details', game_uuid=game.uuid) }}"><img src="{{ game.cover_url }}" alt=""><span><strong>{{ game.name }}</strong><small>{% if game.genres %}{{ game.genres[0] }}{% else %}Recently added{% endif %}</small><b>View game <i class="fas fa-arrow-right"></i></b></span></a>
-            {% endfor %}
-        </aside>
-        {% endif %}
     </div>
     {% else %}
     <section class="home-welcome">
@@ -83,12 +89,12 @@
         <a href="{{ url_for('library.library') }}"><i class="fas fa-circle-check"></i><span><strong>{{ library_stats.completed }}</strong>Completed</span></a>
     </section>
 
-    {% if continue_games or recent_downloads or recent_requests %}
+    {% if personalized_games or recent_downloads or recent_requests %}
     <div class="home-personal-grid">
-        {% if continue_games %}
+        {% if personalized_games %}
         <section class="home-section home-continue" aria-labelledby="continue-title">
-            <header class="home-section-header"><div><p class="home-eyebrow">Pick up where you left off</p><h2 id="continue-title">Continue playing</h2></div><a href="{{ url_for('library.library') }}">View library <i class="fas fa-arrow-right"></i></a></header>
-            <div class="home-card-rail">{% for game in continue_games %}{{ game_card(game) }}{% endfor %}</div>
+            <header class="home-section-header"><div><p class="home-eyebrow">{{ personalized_eyebrow }}</p><h2 id="continue-title">{{ personalized_title }}</h2></div><a href="{{ url_for('library.library') }}">View library <i class="fas fa-arrow-right"></i></a></header>
+            <div class="home-card-rail">{% for game in personalized_games %}{{ game_card(game) }}{% endfor %}</div>
         </section>
         {% endif %}
 
@@ -118,7 +124,7 @@
         </div>
     </section>
 
-    {% for collection in collection_rows %}
+    {% for collection in collection_rows[:1] %}
     <section class="home-section home-curated-collection{% if collection.artwork_url %} has-collection-artwork{% endif %}" aria-labelledby="collection-{{ collection.slug }}"{% if collection.artwork_url %} style="--collection-artwork:url('{{ collection.artwork_url|e }}')"{% endif %}>
         <header class="home-section-header">
             <div><p class="home-eyebrow">{{ collection.group_name or 'Curated collection' }}</p><h2 id="collection-{{ collection.slug }}">{{ collection.name }}</h2>{% if collection.description %}<p>{{ collection.description }}</p>{% endif %}</div>
@@ -128,7 +134,25 @@
     </section>
     {% endfor %}
 
-    {% for section in visible_sections %}
+    {% set discovery = namespace(primary='') %}
+    {% for section in visible_sections %}{% if section.identifier != 'libraries' and section_data.get(section.identifier) and not discovery.primary %}{% set discovery.primary = section.identifier %}{% endif %}{% endfor %}
+    {% for section in visible_sections if section.identifier == discovery.primary %}
+        {% set games = section_data.get(section.identifier) %}
+        <section class="home-section" aria-labelledby="section-{{ section.identifier }}">
+            <header class="home-section-header"><div><p class="home-eyebrow">Selected for you</p><h2 id="section-{{ section.identifier }}">{{ section.name }}</h2></div><a href="{{ url_for('library.library') }}">View all <i class="fas fa-arrow-right"></i></a></header>
+            <div class="home-card-rail">{% for game in games %}{{ game_card(game) }}{% endfor %}</div>
+        </section>
+    {% endfor %}
+
+    {% set extra_rows = collection_rows[1:]|length + (visible_sections|length - (1 if discovery.primary else 0)) %}
+    {% if extra_rows > 0 %}<details class="home-more-sections"><summary><span><strong>Explore more</strong><small>Libraries and additional collection rows</small></span><i class="fas fa-chevron-down" aria-hidden="true"></i></summary><div class="home-more-sections-body">
+    {% for collection in collection_rows[1:] %}
+    <section class="home-section home-curated-collection" aria-labelledby="collection-{{ collection.slug }}">
+        <header class="home-section-header"><div><p class="home-eyebrow">{{ collection.group_name or 'Curated collection' }}</p><h2 id="collection-{{ collection.slug }}">{{ collection.name }}</h2></div><a href="{{ url_for('library.library', collection=collection.slug) }}">View collection <i class="fas fa-arrow-right"></i></a></header>
+        <div class="home-card-rail">{% for game in collection.games %}{{ game_card(game) }}{% endfor %}</div>
+    </section>
+    {% endfor %}
+    {% for section in visible_sections if section.identifier != discovery.primary %}
         {% set games = section_data.get(section.identifier) %}
         {% if section.identifier == 'libraries' and games %}
         <section class="home-section" aria-labelledby="home-libraries-title">
@@ -144,6 +168,7 @@
         </section>
         {% endif %}
     {% endfor %}
+    </div></details>{% endif %}
 </main>
 <script src="{{ 'js/games/discover.js'|theme_asset }}"></script>
 {% endblock %}

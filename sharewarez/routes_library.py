@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash
+from flask import Blueprint, jsonify, render_template, request, redirect, url_for, flash
 from flask_login import login_required, current_user
 from sharewarez.models import Library, Game, Genre, GameMode, PlayerPerspective, Theme, GameTag, Image, UserPreference, Collection, CollectionGame, GameGroup
 from sharewarez import db
@@ -10,6 +10,7 @@ from sqlalchemy import select, func, and_
 from sharewarez.utils.processors import get_global_settings
 from sharewarez import cache
 from sharewarez.utils.pagination import normalize_library_pagination
+from sharewarez.utils.user_preferences import get_experience_settings, update_experience_settings
 import json
 import urllib.parse
 
@@ -121,6 +122,27 @@ def library():
     library_data = get_library_count()
     games_count_data = get_games_count()
     
+    experience = get_experience_settings(current_user)
+    library_view = request.args.get('view') or experience['library_view']
+    if library_view not in {'grid', 'compact', 'list'}:
+        library_view = 'grid'
+    chip_labels = {
+        'library_uuid': 'Library', 'genre': 'Genre', 'rating': 'Rating',
+        'game_mode': 'Mode', 'player_perspective': 'Perspective',
+        'theme': 'Theme', 'tag': 'Tag', 'collection': 'Collection',
+        'family': 'Series',
+    }
+    active_filter_chips = []
+    for key, value in filters.items():
+        args = request.args.to_dict()
+        args.pop(key, None)
+        args.pop('page', None)
+        active_filter_chips.append({
+            'label': chip_labels.get(key, key.replace('_', ' ').title()),
+            'value': value,
+            'remove_url': url_for('library.library', **args),
+        })
+
     return render_template(
         'games/library_browser.html',
         games=game_data,
@@ -134,9 +156,54 @@ def library():
         user_default_sort_order=sort_order,
         filters=filters,
         form=CsrfForm(),
-        library_uuid = library_uuid,
-        is_admin=current_user.role == 'admin'
+        library_uuid=library_uuid,
+        is_admin=current_user.role == 'admin',
+        library_view=library_view,
+        saved_library_views=experience['saved_library_views'],
+        active_filter_chips=active_filter_chips,
     )
+
+
+@library_bp.post('/api/preferences/library')
+@login_required
+def save_library_preferences():
+    data = request.get_json(silent=True) or {}
+    action = data.get('action')
+    experience = get_experience_settings(current_user)
+    if action == 'set_view':
+        view = data.get('view')
+        if view not in {'grid', 'compact', 'list'}:
+            return jsonify({'error': 'Choose a valid Library view.'}), 400
+        update_experience_settings(current_user, library_view=view)
+    elif action == 'save_view':
+        name = str(data.get('name') or '').strip()[:40]
+        query = str(data.get('query') or '').lstrip('?')[:1200]
+        if len(name) < 2:
+            return jsonify({'error': 'Enter a view name of at least two characters.'}), 400
+        allowed_keys = {
+            'library_uuid', 'genre', 'rating', 'game_mode', 'player_perspective',
+            'theme', 'tag', 'collection', 'family', 'sort_by', 'sort_order',
+            'per_page', 'view',
+        }
+        pairs = [(key, value) for key, value in urllib.parse.parse_qsl(query) if key in allowed_keys]
+        safe_query = urllib.parse.urlencode(pairs)
+        views = [
+            item for item in experience['saved_library_views']
+            if isinstance(item, dict) and item.get('name', '').casefold() != name.casefold()
+        ]
+        views.insert(0, {'name': name, 'query': safe_query})
+        update_experience_settings(current_user, saved_library_views=views[:8])
+    elif action == 'delete_view':
+        name = str(data.get('name') or '').strip().casefold()
+        views = [
+            item for item in experience['saved_library_views']
+            if isinstance(item, dict) and item.get('name', '').casefold() != name
+        ]
+        update_experience_settings(current_user, saved_library_views=views)
+    else:
+        return jsonify({'error': 'Unknown Library preference action.'}), 400
+    db.session.commit()
+    return jsonify({'message': 'Library preference saved.'})
 
 
 def get_games(page=1, per_page=20, sort_by='name', sort_order='asc', **filters):
@@ -225,7 +292,9 @@ def get_games(page=1, per_page=20, sort_by='name', sort_order='asc', **filters):
         user_statuses = {row[0]: row[1] for row in status_results}
 
     from sharewarez.models import GlobalSettings
-    settings = db.session.execute(select(GlobalSettings)).scalar_one_or_none()
+    settings = db.session.execute(
+        select(GlobalSettings).order_by(GlobalSettings.id).limit(1)
+    ).scalar_one_or_none()
     game_data = []
     for game in games:
         cover_url = cover_urls.get(game.uuid, "newstyle/default_cover.jpg")
@@ -250,6 +319,7 @@ def get_games(page=1, per_page=20, sort_by='name', sort_order='asc', **filters):
             'uuid': game.uuid,
             'name': game.name,
             'cover_url': cover_url,
+            'has_cover': game.uuid in cover_urls,
             'summary': game.summary,
             'url': game.url,
             'size': game_size_formatted,

@@ -46,6 +46,27 @@
                 <div class="invalid-feedback">{{ error }}</div>
                 {% endfor %}
             </div>
+            <div class="settings-field">
+                {{ form.library_view.label(class="form-label") }}
+                {{ form.library_view(class="form-select") }}
+                <small>Choose the default layout used when opening your Library.</small>
+            </div>
+            </div>
+        </section>
+
+        <section class="app-surface settings-section" aria-labelledby="notification-settings-title">
+            <div class="settings-section-heading">
+                <span class="settings-section-icon"><i class="fas fa-bell" aria-hidden="true"></i></span>
+                <div><p class="settings-section-kicker">Activity</p><h2 id="notification-settings-title">Notifications</h2><p>Choose which changes appear in your inbox and may reach subscribed browsers.</p></div>
+            </div>
+            <div class="settings-notification-grid">
+                {% for field in [form.notify_requests, form.notify_issues, form.notify_downloads, form.notify_games] %}
+                <label class="settings-check-row">{{ field() }} <span>{{ field.label.text }}</span></label>
+                {% endfor %}
+            </div>
+            <div class="settings-browser-row">
+                <label class="settings-check-row">{{ form.notify_browser() }} <span>{{ form.notify_browser.label.text }}</span></label>
+                <button class="btn btn-secondary" type="button" data-push-toggle hidden>Enable browser alerts</button>
             </div>
         </section>
 

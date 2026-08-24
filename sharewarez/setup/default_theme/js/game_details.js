@@ -456,3 +456,15 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 });
+document.addEventListener('DOMContentLoaded', () => {
+    if (window.matchMedia('(max-width: 768px)').matches) {
+        document.querySelectorAll('.game-details-disclosure[open]').forEach(disclosure => {
+            disclosure.removeAttribute('open');
+        });
+    }
+
+    const mobileActions = document.querySelector('.game-mobile-actions');
+    if (mobileActions && mobileActions.parentElement !== document.body) {
+        document.body.appendChild(mobileActions);
+    }
+});

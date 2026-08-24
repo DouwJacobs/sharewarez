@@ -1,4 +1,5 @@
 from collections import defaultdict, deque
+from datetime import datetime, timezone
 from threading import Lock
 from time import monotonic
 
@@ -9,7 +10,7 @@ from sqlalchemy.orm import selectinload
 from sqlalchemy.exc import IntegrityError
 
 from sharewarez import db
-from sharewarez.models import Game, GameRequest, GameRequestUser, User
+from sharewarez.models import Game, GameRequest, GameRequestUser, Notification, User
 from sharewarez.utils.auth import admin_required
 from sharewarez.utils.event_logging import log_system_event
 from sharewarez.utils.game_requests import (
@@ -60,6 +61,18 @@ def _require_enabled():
 @login_required
 def requests_page():
     _require_enabled()
+    unread_updates = db.session.execute(
+        select(Notification).where(
+            Notification.user_id == current_user.id,
+            Notification.event_type == 'request_updated',
+            Notification.read_at.is_(None),
+        )
+    ).scalars().all()
+    if unread_updates:
+        now = datetime.now(timezone.utc)
+        for notification in unread_updates:
+            notification.read_at = now
+        db.session.commit()
     page = max(request.args.get('page', 1, type=int), 1)
     query = (
         select(GameRequestUser)

@@ -127,7 +127,7 @@ def test_ui_consistency_feature_uses_shared_theme_and_navigation_patterns():
     assert 'discovery-favorites-container{% if not favorites %} is-empty{% endif %}' in favorites
     assert '.discovery-favorites-container.is-empty .favorites-empty-state' in favorites_css
 
-    assert settings.count('app-surface settings-section') == 2
+    assert settings.count('app-surface settings-section') >= 3
     assert 'settings-panel-page' in settings
     assert '@media (max-width: 768px)' in settings_css
     assert 'grid-template-columns: repeat(2, minmax(0, 1fr))' in settings_css

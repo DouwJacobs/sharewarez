@@ -1,3 +1,5 @@
+from datetime import datetime, timezone
+
 from flask import render_template, redirect, url_for, flash, jsonify, current_app, abort, request
 import os
 from flask_login import login_required, current_user
@@ -26,10 +28,27 @@ def downloads():
         .order_by(DownloadRequest.request_time.desc(), DownloadRequest.id.desc())
     )
     pagination = db.paginate(query, page=page, per_page=per_page, error_out=False)
+    now = datetime.now(timezone.utc)
+    status_labels = {
+        'pending': 'Queued', 'processing': 'Preparing', 'available': 'Ready',
+        'failed': 'Failed', 'cancelled': 'Cancelled', 'expired': 'Expired',
+    }
+    state_counts = {}
     for download_request in pagination.items:
         download_request.formatted_size = format_size(download_request.download_size)
+        download_request.display_status = status_labels.get(download_request.status, download_request.status.replace('_', ' ').title())
+        expiry = download_request.expires_at
+        if expiry and expiry.tzinfo is None:
+            expiry = expiry.replace(tzinfo=timezone.utc)
+        download_request.expiring_soon = bool(
+            download_request.status == 'available' and expiry and 0 < (expiry - now).total_seconds() <= 86400
+        )
+        state_counts[download_request.display_status] = state_counts.get(download_request.display_status, 0) + 1
     form = CsrfProtectForm()
-    return render_template('games/manage_downloads.html', download_requests=pagination.items, pagination=pagination, form=form)
+    return render_template(
+        'games/manage_downloads.html', download_requests=pagination.items,
+        pagination=pagination, form=form, state_counts=state_counts,
+    )
 
 @download_bp.route('/downloads/<int:download_id>/cancel', methods=['POST'])
 @login_required

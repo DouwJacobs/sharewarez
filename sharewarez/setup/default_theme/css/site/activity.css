@@ -1,0 +1,20 @@
+.activity-page { max-width: 1180px; }
+.activity-eyebrow, .activity-section-heading p { margin: 0 0 4px; color: var(--theme-accent-color); font-size: .7rem; font-weight: 750; letter-spacing: .1em; text-transform: uppercase; }
+.activity-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.activity-section, .activity-attention { padding: 20px; }
+.activity-attention { margin-bottom: 16px; }
+.activity-section--wide { grid-column: 1 / -1; }
+.activity-section-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 12px; }
+.activity-section-heading h2 { margin: 0; font-size: 1.1rem; }
+.activity-section-heading > a { color: var(--theme-accent-color); font-size: .8rem; font-weight: 700; }
+.activity-section-heading > span { display: grid; min-width: 28px; height: 28px; place-items: center; border-radius: 999px; background: var(--theme-accent-color); color: var(--theme-button-text, #fff); font-size: .76rem; font-weight: 800; }
+.activity-list { display: grid; }
+.activity-list > a { display: grid; grid-template-columns: 30px minmax(0, 1fr) auto; align-items: center; gap: 10px; min-height: 56px; padding: 9px 4px; border-top: 1px solid var(--theme-border-color); color: var(--theme-text-primary); text-decoration: none; }
+.activity-list > a > i:first-child { color: var(--theme-text-secondary); text-align: center; }
+.activity-list > a > i:last-child { color: var(--theme-text-secondary); font-size: .68rem; }
+.activity-list strong, .activity-list small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.activity-list strong { font-size: .86rem; }
+.activity-list small { margin-top: 3px; color: var(--theme-text-secondary); font-size: .72rem; }
+.activity-list--columns { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 20px; }
+.activity-empty { margin: 18px 0 4px; color: var(--theme-text-secondary); }
+@media (max-width: 760px) { .activity-grid, .activity-list--columns { grid-template-columns: 1fr; } .activity-section--wide { grid-column: auto; } .activity-section, .activity-attention { padding: 16px; } }

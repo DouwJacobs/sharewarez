@@ -1,5 +1,7 @@
 from datetime import datetime, timezone
 
+from collections import OrderedDict
+
 from flask import Blueprint, abort, jsonify, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 from sqlalchemy import select, update
@@ -7,9 +9,28 @@ from sqlalchemy import select, update
 from sharewarez import db
 from sharewarez.models import Notification, PushSubscription
 from sharewarez.utils.web_push import get_or_create_vapid_keys
+from sharewarez.utils.user_preferences import get_experience_settings, notification_category
 
 
 notifications_bp = Blueprint('notifications', __name__)
+
+
+def _group_notifications(notifications):
+    groups = OrderedDict()
+    for notification in notifications:
+        category = notification_category(notification.event_type)
+        subject = notification.link_url or notification.title.casefold()
+        key = f'{category}:{subject}'
+        group = groups.setdefault(key, {
+            'category': category,
+            'latest': notification,
+            'items': [],
+            'unread_count': 0,
+        })
+        group['items'].append(notification)
+        if notification.read_at is None:
+            group['unread_count'] += 1
+    return list(groups.values())
 
 
 @notifications_bp.get('/api/push/public-key')
@@ -68,7 +89,9 @@ def notification_center():
     )
     return render_template(
         'site/notifications.html', notifications=pagination.items,
+        notification_groups=_group_notifications(pagination.items),
         pagination=pagination, unread_only=unread_only,
+        notification_preferences=get_experience_settings(current_user)['notifications'],
     )
 
 
@@ -114,3 +137,24 @@ def mark_all_notifications_read():
     )
     db.session.commit()
     return redirect(url_for('notifications.notification_center'))
+
+
+@notifications_bp.post('/notifications/read-group')
+@login_required
+def mark_notification_group_read():
+    notification_ids = [
+        value for value in request.form.getlist('notification_id')
+        if value.isdigit()
+    ]
+    if notification_ids:
+        db.session.execute(
+            update(Notification)
+            .where(
+                Notification.user_id == current_user.id,
+                Notification.id.in_([int(value) for value in notification_ids]),
+                Notification.read_at.is_(None),
+            )
+            .values(read_at=datetime.now(timezone.utc))
+        )
+        db.session.commit()
+    return redirect(request.referrer or url_for('notifications.notification_center'))

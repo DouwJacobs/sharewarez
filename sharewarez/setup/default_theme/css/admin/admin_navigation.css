@@ -36,6 +36,7 @@
 .admin-workspace-group > summary { list-style: none; }
 .admin-workspace-group > summary::-webkit-details-marker { display: none; }
 .admin-workspace-group { position: relative; }
+.admin-workspace-group:not([open]) > .admin-workspace-menu { display: none; }
 .admin-workspace-chevron { margin-left: 3px; font-size: .6rem; transition: transform 150ms ease; }
 .admin-workspace-group[open] .admin-workspace-chevron { transform: rotate(180deg); }
 

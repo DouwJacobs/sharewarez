@@ -17,8 +17,8 @@ from sharewarez.utils.security import is_safe_path, get_allowed_base_directories
 def format_size(size_in_bytes):
     """Format file size from bytes to human-readable format."""
     try:
-        if size_in_bytes is None:
-            return '0 MB'
+        if size_in_bytes is None or size_in_bytes <= 0:
+            return 'Unknown size'
         units = ['KB', 'MB', 'GB', 'TB', 'PB', 'EB']
         size = size_in_bytes / 1024  # Start with KB
         unit_index = 0
@@ -28,7 +28,7 @@ def format_size(size_in_bytes):
         return f"{size:.2f} {units[unit_index]}"
     except Exception as e:
         print(f"An error occurred: {e}")
-        return '0 MB'
+        return 'Unknown size'
 
 
 def square_image(image, size):

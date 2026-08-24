@@ -11,6 +11,15 @@
 .notification-title-row h2 { margin: 0; font-size: 1rem; }
 .notification-copy p { margin: 6px 0; color: var(--theme-text-secondary); overflow-wrap: anywhere; }
 .notification-copy time { color: var(--theme-text-secondary); font-size: .74rem; }
+.notification-timeline { margin-top: 10px; }
+.notification-timeline summary { display: inline-flex; align-items: center; gap: 6px; color: var(--theme-accent-color); font-size: .78rem; font-weight: 700; cursor: pointer; list-style: none; }
+.notification-timeline summary::-webkit-details-marker { display: none; }
+.notification-timeline[open] summary i { transform: rotate(180deg); }
+.notification-timeline ol { display: grid; gap: 8px; margin: 12px 0 0; padding: 0 0 0 18px; }
+.notification-timeline li { padding-left: 4px; color: var(--theme-text-secondary); font-size: .8rem; }
+.notification-timeline li.is-unread { color: var(--theme-text-primary); }
+.notification-timeline li span { display: block; }
+.notification-timeline li time { display: block; margin-top: 2px; font-size: .69rem; }
 .notification-unread-label { padding: 2px 7px; border-radius: 999px; background: var(--theme-accent-color); color: var(--theme-button-text, #fff); font-size: .66rem; font-weight: 750; text-transform: uppercase; }
 .notification-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
 .notification-actions form, .app-page-actions form { margin: 0; }
@@ -19,6 +28,12 @@
 .notification-empty h2 { font-size: 1.1rem; }
 .notification-empty p { color: var(--theme-text-secondary); }
 .notification-pagination { display: flex; gap: 12px; align-items: center; justify-content: center; margin-top: 16px; }
+
+@media (max-width: 1100px) {
+    .notification-page > .app-page-header { display: grid; grid-template-columns: minmax(0, 1fr); align-items: start; }
+    .notification-page > .app-page-header > div:first-child { width: 100%; }
+    .notification-page .app-page-actions { width: 100%; justify-content: flex-start; }
+}
 
 @media (max-width: 768px) {
     .notification-item { grid-template-columns: auto minmax(0, 1fr); padding: 16px 14px; }

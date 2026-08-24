@@ -9,6 +9,7 @@
 {% block content %}
 <section class="app-page downloads-page" aria-labelledby="downloads-page-title">
     {{ page_header('My downloads', 'Track your requested files and return to a game whenever you need more details.', 'Library activity', 'fa-download', pagination.total, 'request') }}
+    {% if state_counts %}<div class="download-state-summary" aria-label="Download status summary">{% for label, count in state_counts.items() %}<span><strong>{{ count }}</strong>{{ label }}</span>{% endfor %}<a href="{{ url_for('site.helpfaq') }}#downloads">How downloads work</a></div>{% endif %}
     <div class="app-surface downloads-panel">
         {% if download_requests %}
         <div class="table-responsive">
@@ -24,21 +25,21 @@
                 <tbody>
                     {% for download in download_requests %}
                     <tr data-download-id="{{ download.id }}" data-download-status="{{ download.status }}">
-                        <td>
+                        <td data-label="Game">
                             <a class="downloads-game-link" href="{{ url_for('games.game_details', game_uuid=download.game_uuid) }}">
                                 <i class="fas fa-gamepad" aria-hidden="true"></i>
                                 <span>{{ download.game.name }}</span>
                                 <i class="fas fa-arrow-up-right-from-square downloads-game-link-icon" aria-hidden="true"></i>
                             </a>
                         </td>
-                        <td class="status-cell">
-                            {{ status_badge(download.status) }}
+                        <td class="status-cell" data-label="Status">
+                            {{ status_badge(download.display_status) }}
                             {% if download.status == 'failed' %}<small class="download-failure-reason">{% if not download.file_location %}The source location is unavailable.{% else %}The previous request could not be completed. Retry to validate the source.{% endif %}</small>{% endif %}
                             {% if download.status == 'expired' %}<small class="download-failure-reason">This download link expired. Retry to create a fresh link.</small>{% endif %}
-                            {% if download.status == 'available' and download.expires_at %}<small class="download-expiry">Available until {{ download.expires_at.strftime('%Y-%m-%d %H:%M') }}</small>{% endif %}
+                            {% if download.status == 'available' and download.expires_at %}<small class="download-expiry{% if download.expiring_soon %} is-urgent{% endif %}">{{ 'Expires soon · ' if download.expiring_soon else 'Available until ' }}{{ download.expires_at|friendly_datetime }}</small>{% endif %}
                         </td>
-                        <td>{{ download.formatted_size }}</td>
-                        <td class="actions-cell text-end">
+                        <td data-label="Size">{{ download.formatted_size }}</td>
+                        <td class="actions-cell text-end" data-label="Actions">
                             {% if download.status == 'available' %}
                             <a href="{{ url_for('download.download_zip', download_id=download.id) }}" class="btn btn-primary btn-sm"><i class="fas fa-download" aria-hidden="true"></i> Download</a>
                             {% endif %}

@@ -3,7 +3,7 @@
 <link rel="stylesheet" href="{{ 'css/issues.css'|theme_asset }}">
 <main class="app-page app-stack issues-page">
     <header class="app-page-header app-surface issues-hero">
-        <div><p class="eyebrow">Support</p><h1>My issues</h1><p>Track problems you have reported and continue the conversation with administrators.</p></div>
+        <div><p class="eyebrow">Support</p><h1>My issues</h1><p>Track problems you have reported and continue the conversation with administrators. <a class="context-help-link" href="{{ url_for('site.helpfaq') }}#issues"><i class="fas fa-circle-question" aria-hidden="true"></i> Reporting guide</a></p></div>
     </header>
 
     <nav class="app-surface issue-filter-bar" aria-label="Issue filters">
@@ -27,7 +27,7 @@
                 {% for issue in group.issues %}
                 <a class="issue-list-row" href="{{ url_for('issues.issue_detail', issue_id=issue.id) }}">
                     <span class="issue-category-icon"><i class="fas fa-bug" aria-hidden="true"></i></span>
-                    <span class="issue-list-copy"><strong>{{ issue.title }}</strong><small>{{ category_labels[issue.category] }} · Updated {{ issue.updated_at.strftime('%d %b %Y %H:%M') }}</small></span>
+                    <span class="issue-list-copy"><strong>{{ issue.title }}</strong><small>{{ category_labels[issue.category] }} · Updated {{ issue.updated_at|friendly_datetime }}</small></span>
                     <span class="issue-comment-count"><i class="fas fa-comment" aria-hidden="true"></i> {{ issue.comments|rejectattr('is_internal')|list|length }}</span>
                     <span class="issue-status status-{{ issue.status }}">{{ status_labels[issue.status] }}</span>
                     <i class="fas fa-chevron-right issue-row-arrow" aria-hidden="true"></i>

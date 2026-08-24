@@ -34,7 +34,7 @@
                 <a class="admin-attention-item admin-attention-item--{{ item.tone }}" href="{{ item.url }}">
                     <span class="admin-attention-icon"><i class="fas {{ item.icon }}" aria-hidden="true"></i></span>
                     <span class="admin-attention-copy"><small>{{ item.kind }}</small><strong>{{ item.title }}</strong><span>{{ item.detail }}</span></span>
-                    {% if item.created_at %}<time datetime="{{ item.created_at.isoformat() }}">{{ item.created_at.strftime('%d %b, %H:%M') }}</time>{% endif %}
+                    {% if item.created_at %}<time datetime="{{ item.created_at.isoformat() }}">{{ item.created_at|friendly_datetime }}</time>{% endif %}
                     <i class="fas fa-chevron-right" aria-hidden="true"></i>
                 </a>
                 {% endfor %}

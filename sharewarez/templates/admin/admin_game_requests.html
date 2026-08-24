@@ -72,7 +72,7 @@
                     {% endif %}
                 </div>
                 <h2>{{ item.parent_game_name or item.game_name }}</h2>
-                <div class="admin-request-tile-meta"><span title="Active requesters"><i class="fas fa-users"></i> {{ item.interested_requesters|length }} active</span>{% if item.satisfied_requesters %}<span title="Satisfied requesters"><i class="fas fa-circle-check"></i> {{ item.satisfied_requesters|length }}</span>{% endif %}<span><i class="fas fa-clock"></i> {{ item.created_at.strftime('%d %b %Y') }}</span></div>
+                <div class="admin-request-tile-meta"><span title="Active requesters"><i class="fas fa-users"></i> {{ item.interested_requesters|length }} active</span>{% if item.satisfied_requesters %}<span title="Satisfied requesters"><i class="fas fa-circle-check"></i> {{ item.satisfied_requesters|length }}</span>{% endif %}<span><i class="fas fa-clock"></i> {{ item.created_at|friendly_date }}</span></div>
             </div>
         </a>
         {% endfor %}

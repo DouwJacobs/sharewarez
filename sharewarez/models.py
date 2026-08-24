@@ -927,6 +927,7 @@ class UserPreference(db.Model):
     theme = db.Column(db.String(50), default='default')
     saved_searches = db.Column(JSONEncodedDict, nullable=False, default=list)
     sidebar_collapsed = db.Column(db.Boolean, nullable=False, default=False)
+    experience_settings = db.Column(JSONEncodedDict, nullable=False, default=dict)
     
     user = db.relationship('User', back_populates='preferences')
 

@@ -111,6 +111,10 @@ def create_app():
     init_observability(app)
     init_http_security(app)
 
+    from sharewarez.utils.formatting import friendly_date, friendly_datetime
+    app.add_template_filter(friendly_date, 'friendly_date')
+    app.add_template_filter(friendly_datetime, 'friendly_datetime')
+
     @app.errorhandler(413)
     def request_entity_too_large(error):
         """Handle file upload size limit exceeded errors."""
@@ -128,6 +132,8 @@ def create_app():
         current_theme = resolve_theme_id(current_user, app)
         pwa_branding = get_pwa_branding()
         unread_notification_count = 0
+        unread_request_count = 0
+        unread_issue_count = 0
         if current_user.is_authenticated:
             from sqlalchemy import func, select
             from sharewarez.models import Notification
@@ -135,6 +141,20 @@ def create_app():
                 select(func.count(Notification.id)).where(
                     Notification.user_id == current_user.id,
                     Notification.read_at.is_(None),
+                )
+            ).scalar_one()
+            unread_request_count = db.session.execute(
+                select(func.count(Notification.id)).where(
+                    Notification.user_id == current_user.id,
+                    Notification.read_at.is_(None),
+                    Notification.event_type == 'request_updated',
+                )
+            ).scalar_one()
+            unread_issue_count = db.session.execute(
+                select(func.count(Notification.id)).where(
+                    Notification.user_id == current_user.id,
+                    Notification.read_at.is_(None),
+                    Notification.event_type.in_(('issue_comment', 'issue_status', 'issue_deleted')),
                 )
             ).scalar_one()
         global_settings = get_global_settings()
@@ -147,6 +167,8 @@ def create_app():
             pwa_theme_color=pwa_branding['theme_color'],
             pwa_revision=pwa_branding['revision'],
             unread_notification_count=unread_notification_count,
+            unread_request_count=unread_request_count,
+            unread_issue_count=unread_issue_count,
             admin_navigation=admin_navigation,
             **global_settings,
         )

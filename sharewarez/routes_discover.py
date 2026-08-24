@@ -1,5 +1,5 @@
-from flask import Blueprint, render_template, url_for
-from sqlalchemy import func, select
+from flask import Blueprint, jsonify, render_template, request, url_for
+from sqlalchemy import case, func, select
 from sqlalchemy.orm import selectinload
 from sharewarez.utils.functions import format_size
 from sharewarez.utils.processors import get_loc
@@ -21,6 +21,7 @@ from sharewarez.models import Image
 from sharewarez.utils.processors import get_global_settings
 from sharewarez import cache
 from sharewarez.utils.collections import collection_visibility_clause, evaluate_smart_collection
+from sharewarez.utils.user_preferences import get_experience_settings, update_experience_settings
 
 discover_bp = Blueprint('discover', __name__)
 
@@ -37,7 +38,25 @@ def discover():
     page_loc = get_loc("discover")
     
     # Get visible sections in correct order
-    visible_sections = db.session.execute(select(DiscoverySection).filter_by(is_visible=True).order_by(DiscoverySection.display_order)).scalars().all()
+    all_discovery_sections = db.session.execute(
+        select(DiscoverySection).filter_by(is_visible=True).order_by(DiscoverySection.display_order)
+    ).scalars().all()
+    experience = get_experience_settings(current_user)
+    saved_order = [
+        identifier for identifier in experience['discover_section_order']
+        if any(section.identifier == identifier for section in all_discovery_sections)
+    ]
+    saved_order.extend(
+        section.identifier for section in all_discovery_sections
+        if section.identifier not in saved_order
+    )
+    section_lookup = {section.identifier: section for section in all_discovery_sections}
+    all_discovery_sections = [section_lookup[identifier] for identifier in saved_order]
+    hidden_sections = set(experience['discover_hidden_sections'])
+    visible_sections = [
+        section for section in all_discovery_sections
+        if section.identifier not in hidden_sections
+    ]
     
     def image_url(path, version=None):
         if not path:
@@ -67,12 +86,14 @@ def discover():
 
         game_details = []
         for game in games:
-            cover_url = image_url(covers.get(game.uuid))
+            cover_path = covers.get(game.uuid)
+            cover_url = image_url(cover_path)
             game_details.append({
                 'id': game.id,
                 'uuid': game.uuid,
                 'name': game.name,
                 'cover_url': cover_url,
+                'has_cover': bool(cover_path),
                 'summary': game.summary,
                 'url': game.url,
                 'size': format_size(game.size),
@@ -96,6 +117,21 @@ def discover():
         .order_by(user_game_status.c.updated_at.desc()),
         limit=6,
     )
+    recent_uuids = experience['recently_viewed_game_uuids']
+    recently_viewed_games = []
+    if recent_uuids:
+        ordering = case(
+            {game_uuid: index for index, game_uuid in enumerate(recent_uuids)},
+            value=Game.uuid,
+            else_=len(recent_uuids),
+        )
+        recently_viewed_games = fetch_game_details(
+            select(Game).where(Game.uuid.in_(recent_uuids)).order_by(ordering),
+            limit=6,
+        )
+    personalized_games = continue_games or recently_viewed_games
+    personalized_title = 'Continue playing' if continue_games else 'Recently viewed'
+    personalized_eyebrow = 'Pick up where you left off' if continue_games else 'Back to something familiar'
 
     status_counts = dict(db.session.execute(
         select(user_game_status.c.status, func.count())
@@ -252,6 +288,7 @@ def discover():
             'uuid': game.uuid,
             'name': game.name,
             'cover_url': image_url(*(curated_covers.get(game.uuid) or (None, None))),
+            'has_cover': game.uuid in curated_covers,
             'summary': game.summary,
             'url': game.url,
             'size': format_size(game.size),
@@ -314,11 +351,33 @@ def discover():
 
     return render_template('games/discover.html',
                            visible_sections=visible_sections,
+                           all_discovery_sections=all_discovery_sections,
+                           hidden_discovery_sections=hidden_sections,
                            section_data=section_data,
                            featured_games=featured_games,
                            collection_rows=collection_rows,
-                           continue_games=continue_games,
+                           personalized_games=personalized_games,
+                           personalized_title=personalized_title,
+                           personalized_eyebrow=personalized_eyebrow,
                            library_stats=library_stats,
                            recent_downloads=recent_downloads,
                            recent_requests=recent_requests,
                            loc=page_loc)
+
+
+@discover_bp.post('/api/preferences/discover')
+@login_required
+def save_discover_preferences():
+    data = request.get_json(silent=True) or {}
+    valid = set(db.session.execute(select(DiscoverySection.identifier)).scalars())
+    order = [value for value in data.get('order', []) if value in valid]
+    hidden = [value for value in data.get('hidden', []) if value in valid]
+    if len(order) != len(set(order)) or len(hidden) != len(set(hidden)):
+        return jsonify({'error': 'Duplicate section identifiers are not allowed.'}), 400
+    update_experience_settings(
+        current_user,
+        discover_section_order=order,
+        discover_hidden_sections=hidden,
+    )
+    db.session.commit()
+    return jsonify({'message': 'Discover layout saved.'})

@@ -3,12 +3,16 @@ from flask import Blueprint, render_template, redirect, url_for, current_app, se
 from flask_login import login_required, logout_user, current_user
 
 from sqlalchemy import func, select
+from sqlalchemy.orm import selectinload
 from sharewarez import db
 import os
 import random
 import re
 from datetime import datetime
-from sharewarez.models import Image, Game, Library, Genre, Theme, GameRequest, UserPreference
+from sharewarez.models import (
+    DownloadRequest, Game, GameIssue, GameRequest, GameRequestUser, Genre,
+    Image, Library, Notification, Theme, UserPreference,
+)
 from sharewarez.utils.processors import get_global_settings
 from sharewarez.utils.auth import admin_required
 from sharewarez.utils.functions import format_size
@@ -130,7 +134,53 @@ def restricted():
 @site_bp.route('/help')
 def helpfaq():
     print("Route: /help")
-    return render_template('site/site_help.html')
+    return render_template('site/site_help.html', title='Help')
+
+
+@site_bp.get('/activity')
+@login_required
+def activity():
+    """A compact account-level view of work that still needs attention."""
+    requests = db.session.execute(
+        select(GameRequestUser)
+        .options(selectinload(GameRequestUser.game_request))
+        .where(
+            GameRequestUser.user_id == current_user.id,
+            GameRequestUser.withdrawn_at.is_(None),
+        )
+        .order_by(GameRequestUser.created_at.desc())
+        .limit(6)
+    ).scalars().all()
+    issues = db.session.execute(
+        select(GameIssue)
+        .options(selectinload(GameIssue.game))
+        .where(GameIssue.reporter_id == current_user.id)
+        .order_by(GameIssue.updated_at.desc())
+        .limit(6)
+    ).scalars().all()
+    downloads = db.session.execute(
+        select(DownloadRequest)
+        .options(selectinload(DownloadRequest.game))
+        .where(DownloadRequest.user_id == current_user.id)
+        .order_by(DownloadRequest.request_time.desc())
+        .limit(6)
+    ).scalars().all()
+    replies = db.session.execute(
+        select(Notification)
+        .where(
+            Notification.user_id == current_user.id,
+            Notification.read_at.is_(None),
+            Notification.event_type.in_((
+                'request_updated', 'issue_comment', 'issue_status',
+            )),
+        )
+        .order_by(Notification.created_at.desc())
+        .limit(6)
+    ).scalars().all()
+    return render_template(
+        'site/activity.html', requests=requests, issues=issues,
+        downloads=downloads, replies=replies, title='My activity',
+    )
 
 @site_bp.route('/logout')
 def logout():

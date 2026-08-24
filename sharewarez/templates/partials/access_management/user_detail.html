@@ -235,7 +235,7 @@
                     {% if user.created_at %}
                     <div class="activity-item">
                         <i class="fas fa-user-plus"></i>
-                        <span>Account created: {{ user.created_at }}</span>
+                        <span>Account created: {{ user.created_at|friendly_date }}</span>
                     </div>
                     {% endif %}
                 </div>

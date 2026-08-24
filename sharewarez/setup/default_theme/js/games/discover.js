@@ -70,3 +70,42 @@ document.addEventListener('DOMContentLoaded', () => {
     document.addEventListener('visibilitychange', start);
     start();
 });
+
+document.addEventListener('DOMContentLoaded', () => {
+    const panel = document.querySelector('[data-discover-customizer]');
+    if (!panel) return;
+    const list = panel.querySelector('.discover-customizer-list');
+    list.addEventListener('click', event => {
+        const button = event.target.closest('[data-move]');
+        if (!button) return;
+        const row = button.closest('[data-discover-section]');
+        const sibling = button.dataset.move === 'up' ? row.previousElementSibling : row.nextElementSibling;
+        if (!sibling) return;
+        if (button.dataset.move === 'up') list.insertBefore(row, sibling);
+        else list.insertBefore(sibling, row);
+    });
+
+    panel.querySelector('[data-discover-save]')?.addEventListener('click', async event => {
+        const button = event.currentTarget;
+        const rows = [...list.querySelectorAll('[data-discover-section]')];
+        button.disabled = true;
+        try {
+            const response = await fetch('/api/preferences/discover', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': CSRFUtils.getToken(),
+                },
+                body: JSON.stringify({
+                    order: rows.map(row => row.dataset.discoverSection),
+                    hidden: rows.filter(row => !row.querySelector('input').checked).map(row => row.dataset.discoverSection),
+                }),
+            });
+            if (!response.ok) throw new Error((await response.json()).error || 'Unable to save layout.');
+            window.location.reload();
+        } catch (error) {
+            button.disabled = false;
+            button.textContent = error.message;
+        }
+    });
+});

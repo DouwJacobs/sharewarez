@@ -64,8 +64,8 @@
             </section>
             <section class="request-panel request-workflow-meta" aria-label="Request activity">
                 <div class="request-section-heading"><div><p class="eyebrow">Activity</p><h2>Current ownership</h2></div></div>
-                <p><strong>Created:</strong> {{ game_request.created_at.strftime('%d %b %Y %H:%M') }}</p>
-                <p><strong>Last updated:</strong> {{ game_request.updated_at.strftime('%d %b %Y %H:%M') }}</p>
+                <p><strong>Created:</strong> {{ game_request.created_at|friendly_datetime }}</p>
+                <p><strong>Last updated:</strong> {{ game_request.updated_at|friendly_datetime }}</p>
                 <p><strong>Last handled by:</strong> {{ game_request.handled_by.name if game_request.handled_by else 'Unassigned' }}</p>
                 {% if game_request.resolved_at %}<p><strong>Resolved:</strong> {{ game_request.resolved_at.strftime('%d %b %Y %H:%M') }}</p>{% endif %}
                 <p class="form-text">Reopening or changing fulfillment automatically reconciles affected requester records.</p>

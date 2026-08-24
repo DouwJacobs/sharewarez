@@ -299,7 +299,9 @@ def game_edit(game_uuid):
             # Update local metadata file if enabled
             from sharewarez.utils.local_metadata import write_local_metadata
             from sharewarez.models import GlobalSettings
-            settings = db.session.execute(select(GlobalSettings)).scalar_one_or_none()
+            settings = db.session.execute(
+                select(GlobalSettings).order_by(GlobalSettings.id).limit(1)
+            ).scalar_one_or_none()
             if settings and settings.write_local_metadata:
                 metadata_filename = settings.local_metadata_filename or 'sharewarez.json'
                 write_local_metadata(

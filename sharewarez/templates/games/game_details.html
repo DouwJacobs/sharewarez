@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% block title %}{{ game.name }} · {{ site_title }}{% endblock %}
 {% block content %}
 
 
@@ -296,7 +297,7 @@
                 <div class="game-storefront-heading">
                     <h1>{{ game.name or 'Game Name Not Available' }}</h1>
                     <div class="game-storefront-subtitle">
-                        {% if game.first_release_date %}<span>{{ game.first_release_date }}</span>{% endif %}
+                        {% if game.first_release_date %}<span>{{ game.first_release_date|friendly_date }}</span>{% endif %}
                         {% if game.developer %}<span>{{ game.developer }}</span>{% endif %}
                         {% if game.genres %}<span>{{ game.genres[:2]|join(' · ') }}</span>{% endif %}
                     </div>
@@ -324,9 +325,7 @@
                                      class="game-card-cover-image animated-entry">
                             {% endfor %}
                         {% else %}
-                            <img src="{{ url_for('static', filename='newstyle/default_cover.jpg') }}"
-                                 alt="{{ game.name }} Default Cover"
-                                 class="game-card-cover-image animated-entry">
+                            <span class="game-card-cover-image game-cover-placeholder animated-entry"><i class="fas fa-gamepad" aria-hidden="true"></i><strong>{{ game.name[:2]|upper }}</strong><small>{{ game.name }}</small></span>
                         {% endif %}
 
                         {# Favorite button on cover #}
@@ -421,13 +420,13 @@
 
                         <div class="flex-row-horiz">
                             {{ detail_item("Category", game.category) }}
-                            {{ detail_item("Released", game.first_release_date) }}
+                            {{ detail_item("Released", game.first_release_date|friendly_date) }}
                             {{ detail_item("Developer", game.developer) }}
                         </div>
 
                         {% if game.last_updated != "N/A" %}
                             <div class="flex-row-horiz">
-                                {{ detail_item("Last Updated", game.last_updated) }}
+                                {{ detail_item("Last Updated", game.last_updated|friendly_date) }}
                             </div>
                         {% endif %}
 
@@ -472,7 +471,7 @@
                             <div><strong>{{ game.size or 'Unknown' }}</strong><small>Download size</small></div>
                         </div>
                         <div class="download-buttons">
-                            <form action="{{ url_for('download.download_game', game_uuid=game.uuid) }}" method="get" class="download-form">
+                            <form id="gameDownloadForm" action="{{ url_for('download.download_game', game_uuid=game.uuid) }}" method="get" class="download-form">
                                 <button type="submit" class="button-glass-download" data-game-uuid="{{ game.uuid }}"><i class="fas fa-download" aria-hidden="true"></i> Download</button>
                                 {{ form.csrf_token }}
                             </form>
@@ -564,6 +563,7 @@
                                     {% endif %}
                                 </button>
                             {% endif %}
+                            {% if enable_game_issues %}<button type="button" class="button-glass-report" onclick="toggleReportIssueModal()"><i class="fas fa-bug" aria-hidden="true"></i> Report an issue</button>{% endif %}
                         </div>
                         {% if game.nfo_content and game.nfo_content.lower() != 'none' %}
                             <button type="button" class="nfo-button" onclick="openNfoModal()" title="View NFO">
@@ -576,7 +576,9 @@
             </div>
 
             {% if game.families or game.relationship_groups %}
-            <section class="game-relationships" aria-labelledby="game-relationships-title">
+            <details class="game-relationships game-details-disclosure" open>
+                <summary><span><i class="fas fa-code-branch" aria-hidden="true"></i> Related releases</span><i class="fas fa-chevron-down" aria-hidden="true"></i></summary>
+                <div class="game-details-disclosure-body">
                 <div class="game-relationships-heading">
                     <div class="game-card-labels" id="game-relationships-title"><i class="fas fa-code-branch" aria-hidden="true"></i> Related releases</div>
                     {% if game.families %}
@@ -604,7 +606,8 @@
                     {% endfor %}
                 </div>
                 {% endif %}
-            </section>
+                </div>
+            </details>
             {% endif %}
 
             {# Full width content section #}
@@ -633,6 +636,7 @@
             </div>
 
             {# Screenshots Gallery #}
+            {% if screenshot_images or game.video_urls %}<details class="game-media-disclosure game-details-disclosure" open><summary><span><i class="fas fa-images" aria-hidden="true"></i> Media</span><i class="fas fa-chevron-down" aria-hidden="true"></i></summary><div class="game-details-disclosure-body">{% endif %}
             {% if screenshot_images %}
                 <div class="screenshot-gallery">
                     {% for image in screenshot_images %}
@@ -653,7 +657,14 @@
                     {% endfor %}
                 </div>
             {% endif %}
+            {% if screenshot_images or game.video_urls %}</div></details>{% endif %}
     </article>
+    <nav class="game-mobile-actions" aria-label="Game actions">
+        <button type="submit" form="gameDownloadForm"><i class="fas fa-download" aria-hidden="true"></i><span>Get game</span></button>
+        <button type="button" onclick="document.querySelector('.favorite-btn-cover')?.click()"><i class="fas fa-heart" aria-hidden="true"></i><span>Favorite</span></button>
+        {% if show_play_status %}<button type="button" onclick="document.querySelector('.game-status-btn-cover')?.click()"><i class="fas {{ status_icon or 'fa-circle' }}" aria-hidden="true"></i><span>Status</span></button>{% endif %}
+        {% if enable_game_issues %}<button type="button" onclick="toggleReportIssueModal()"><i class="fas fa-bug" aria-hidden="true"></i><span>Issue</span></button>{% endif %}
+    </nav>
     </main>
 {% else %}
     <div class="alert alert-warning" role="alert">

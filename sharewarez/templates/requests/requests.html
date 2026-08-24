@@ -4,7 +4,7 @@
 
 <main class="app-page app-stack requests-page">
     <section class="app-surface requests-hero request-main-card">
-        <div><h1>Game Requests</h1><p>Search IGDB, choose the exact edition, and follow its progress.</p></div>
+        <div><h1>Game Requests</h1><p>Search IGDB, choose the exact edition, and follow its progress. <a class="context-help-link" href="{{ url_for('site.helpfaq') }}#requests"><i class="fas fa-circle-question" aria-hidden="true"></i> How requests work</a></p></div>
         <form id="requestSearchForm" class="request-search-wrap" role="search">
             <i class="fas fa-magnifying-glass request-search-icon" aria-hidden="true"></i>
             <input id="requestSearch" type="search" maxlength="100" placeholder="Search IGDB for a game or edition…" autocomplete="off" aria-label="Search IGDB games" data-request-search-input>
@@ -27,7 +27,7 @@
                 {% if item.formatted_cover_url %}<img src="{{ item.formatted_cover_url }}" alt="Cover for {{ item.game_name }}" loading="lazy">{% endif %}
                 <div class="request-history-content">
                     <div class="request-history-title"><div class="request-history-title-copy"><h3>{{ item.game_name }}</h3>{% if item.request_type == 'update' %}<span class="request-edition-chip" style="background: rgba(3, 178, 248, 0.2); color: #03b2f8;"><i class="fas fa-rotate"></i> Update Request</span>{% elif item.edition_name %}<span class="request-edition-chip">{{ item.edition_name }}</span>{% endif %}</div><div class="request-history-heading-actions">{% if can_edit_request and has_editable_preferences %}<button class="request-edit-button" type="button" data-bs-toggle="modal" data-bs-target="#editRequestModal-{{ item.id }}" aria-label="Edit request for {{ item.game_name }}" title="Edit request"><i class="fas fa-pen" aria-hidden="true"></i></button>{% endif %}<span class="request-chip status-{{ item.status }}">{{ item.status|replace('_', ' ')|title }}</span></div></div>
-                    <p class="request-history-updated">Updated {{ item.updated_at.strftime('%d %b %Y') }}</p>
+                    <p class="request-history-updated">Updated {{ item.updated_at|friendly_datetime }}</p>
                     {% if link.accept_any_edition %}<p><i class="fas fa-layer-group"></i> Any related edition is acceptable</p>{% endif %}
                     {% if link.requester_note %}<div class="requester-own-note"><strong>Your request details</strong><p>{{ link.requester_note|urlize(target="_blank") }}</p></div>{% endif %}
                     {% if item.public_response %}<div class="admin-response"><strong>Admin response</strong><p>{{ item.public_response }}</p></div>{% endif %}

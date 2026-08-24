@@ -174,6 +174,7 @@ def browse_games():
             'uuid': game.uuid,
             'name': game.name,
             'cover_url': cover_url,
+            'has_cover': game.uuid in cover_urls,
             'summary': game.summary,
             'url': game.url,
             'size': game_size_formatted,

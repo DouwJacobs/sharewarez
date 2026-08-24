@@ -332,17 +332,15 @@ html {
 @keyframes fadeInPage {
     from {
         opacity: 0;
-        transform: translateY(10px);
     }
 
     to {
         opacity: 1;
-        transform: translateY(0);
     }
 }
 
 #content {
-    animation: fadeInPage 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+    animation: fadeInPage 0.18s ease-out;
 }
 
 body {

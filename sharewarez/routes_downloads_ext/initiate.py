@@ -23,7 +23,10 @@ def download_game(game_uuid):
         abort(400)
     
     game = db.session.execute(select(Game).filter_by(uuid=game_uuid)).scalars().first() or abort(404)
-    log_system_event(f"User initiated download for game: {game.name}", event_type='game', event_level='information')
+    log_system_event(
+        f"User {current_user.name} initiated a download for {game.name} ({game.uuid})",
+        event_type='game', event_level='information',
+    )
 
     # Validate game path is within allowed directories
     allowed_bases = get_allowed_base_directories(current_app)
@@ -42,6 +45,10 @@ def download_game(game_uuid):
     existing_request = db.session.execute(select(DownloadRequest).filter_by(user_id=current_user.id, file_location=game.full_disk_path)).scalars().first()
     
     if existing_request:
+        log_system_event(
+            f"User {current_user.name} reopened existing download request {existing_request.id} for {game.name}",
+            event_type='audit', event_level='information',
+        )
         flash("You already have a download request for this game in your basket. Please check your downloads page.", "info")
         return redirect(url_for('download.downloads'))
 
@@ -93,14 +100,20 @@ def download_game(game_uuid):
         game.times_downloaded += 1
         db.session.commit()
 
-        log_system_event(f"Download request created for game: {game.name} (instant streaming)", event_type='game', event_level='information')
+        log_system_event(
+            f"User {current_user.name} created download request {new_request.id} for {game.name} (ready to stream)",
+            event_type='audit', event_level='information',
+        )
         
         # No background processing needed - ASGI handler manages streaming
         return redirect(url_for('download.downloads'))
         
     except Exception as e:
         db.session.rollback()
-        log_system_event(f"Error creating download request for game {game_uuid}: {str(e)}", event_type='game', event_level='error')
+        log_system_event(
+            f"Download request creation failed for user {current_user.name}, game {game.name} ({game_uuid}): {e}",
+            event_type='game', event_level='error',
+        )
         flash("An error occurred processing your request.", "error")
         return redirect(url_for('download.downloads'))
 
@@ -160,6 +173,10 @@ def download_other(file_type, game_uuid, file_id):
         file_location=file_record.file_path
     )).scalars().first()
     if existing_request:
+        log_system_event(
+            f"User {current_user.name} reopened existing download request {existing_request.id} for {file_type} {file_record.id}",
+            event_type='audit', event_level='information',
+        )
         flash("You already have a download request for this file", "info")
         return redirect(url_for('download.downloads'))
     
@@ -203,19 +220,28 @@ def download_other(file_type, game_uuid, file_id):
         file_record.times_downloaded += 1
         db.session.commit()
 
-        log_system_event(f"Download request created for {file_type}: {base_name} (streaming enabled)", event_type='game', event_level='information')
+        log_system_event(
+            f"User {current_user.name} created download request {new_request.id} for {file_type} {base_name} (ready to stream)",
+            event_type='audit', event_level='information',
+        )
         
         # No background thread needed - ASGI handler will manage the streaming
         return redirect(url_for('download.downloads'))
         
     except SQLAlchemyError as e:
         db.session.rollback()
-        log_system_event(f"Database error creating {file_type} download request: {str(e)}", event_type='system', event_level='error')
+        log_system_event(
+            f"Database error creating {file_type} download request for user {current_user.name}, file {file_record.id}: {e}",
+            event_type='system', event_level='error',
+        )
         flash("Database error occurred", "error")
         return redirect(url_for('games.game_details', game_uuid=game_uuid))
     except Exception as e:
         db.session.rollback()
-        log_system_event(f"Error creating {file_type} download request: {str(e)}", event_type='system', event_level='error')
+        log_system_event(
+            f"Error creating {file_type} download request for user {current_user.name}, file {file_record.id}: {e}",
+            event_type='system', event_level='error',
+        )
         flash("An error occurred processing your request.", "error")
         return redirect(url_for('games.game_details', game_uuid=game_uuid))
 

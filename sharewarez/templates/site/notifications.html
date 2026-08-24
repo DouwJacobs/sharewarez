@@ -13,6 +13,7 @@
         </div>
         <div class="app-page-actions">
             <button class="btn btn-secondary" type="button" data-push-toggle hidden>Enable browser alerts</button>
+            <a class="btn btn-secondary" href="{{ url_for('settings.settings_panel') }}#notification-settings-title"><i class="fas fa-sliders" aria-hidden="true"></i> Preferences</a>
             <a class="btn {{ 'btn-primary' if not unread_only else 'btn-secondary' }}" href="{{ url_for('notifications.notification_center') }}">All</a>
             <a class="btn {{ 'btn-primary' if unread_only else 'btn-secondary' }}" href="{{ url_for('notifications.notification_center', filter='unread') }}">Unread</a>
             {% if unread_notification_count %}
@@ -25,20 +26,31 @@
     </header>
 
     <section class="app-surface notification-surface" aria-label="Notification list">
-    {% if notifications %}
+    {% if notification_groups %}
         <div class="notification-list">
-        {% for notification in notifications %}
-            <article class="notification-item{% if not notification.read_at %} is-unread{% endif %}">
+        {% for group in notification_groups %}
+            {% set notification = group.latest %}
+            <article class="notification-item{% if group.unread_count %} is-unread{% endif %}">
                 <span class="notification-icon" aria-hidden="true">
                     <i class="fas {% if notification.event_type == 'new_game' %}fa-gamepad{% elif notification.event_type == 'game_update' %}fa-cloud-arrow-down{% elif 'request' in notification.event_type %}fa-paper-plane{% elif 'issue' in notification.event_type %}fa-bug{% else %}fa-bell{% endif %}"></i>
                 </span>
                 <div class="notification-copy">
                     <div class="notification-title-row">
                         <h2>{{ notification.title }}</h2>
-                        {% if not notification.read_at %}<span class="notification-unread-label">New</span>{% endif %}
+                        {% if group.unread_count %}<span class="notification-unread-label">{{ group.unread_count }} new</span>{% endif %}
                     </div>
                     <p>{{ notification.message }}</p>
-                    <time datetime="{{ notification.created_at.isoformat() }}">{{ notification.created_at.strftime('%Y-%m-%d %H:%M') }}</time>
+                    <time datetime="{{ notification.created_at.isoformat() }}">{{ notification.created_at|friendly_datetime }}</time>
+                    {% if group['items']|length > 1 %}
+                    <details class="notification-timeline">
+                        <summary>{{ group['items']|length }} updates <i class="fas fa-chevron-down" aria-hidden="true"></i></summary>
+                        <ol>
+                            {% for event in group['items'] %}
+                            <li{% if not event.read_at %} class="is-unread"{% endif %}><span>{{ event.message }}</span><time datetime="{{ event.created_at.isoformat() }}">{{ event.created_at|friendly_datetime }}</time></li>
+                            {% endfor %}
+                        </ol>
+                    </details>
+                    {% endif %}
                 </div>
                 <div class="notification-actions">
                     {% if notification.link_url %}
@@ -47,10 +59,11 @@
                         <button class="btn btn-primary" type="submit">View</button>
                     </form>
                     {% endif %}
-                    {% if not notification.read_at %}
-                    <form method="post" action="{{ url_for('notifications.mark_notification_read', notification_id=notification.id) }}">
+                    {% if group.unread_count %}
+                    <form method="post" action="{{ url_for('notifications.mark_notification_group_read') }}">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                        <button class="btn btn-secondary" type="submit" aria-label="Mark {{ notification.title }} as read">Mark read</button>
+                        {% for event in group['items'] %}<input type="hidden" name="notification_id" value="{{ event.id }}">{% endfor %}
+                        <button class="btn btn-secondary" type="submit" aria-label="Mark updates for {{ notification.title }} as read">Mark read</button>
                     </form>
                     {% endif %}
                 </div>
