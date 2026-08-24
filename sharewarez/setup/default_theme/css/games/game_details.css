@@ -2200,7 +2200,7 @@ pre {
     }
     .game-storefront .rating-container { display: grid; grid-template-columns: 1fr 1fr; }
     .game-storefront .rating-row { min-width: 0; }
-    .game-storefront .game-card-downloads { padding: 18px 0 0 !important; border-left: 0 !important; border-top: 1px solid var(--theme-border-color, rgba(255,255,255,.14)) !important; }
+    .game-storefront .game-card-downloads { padding: 18px 0 !important; border-left: 0 !important; border-top: 1px solid var(--theme-border-color, rgba(255,255,255,.14)) !important; }
     .game-storefront .game-storefront-acquisition { align-items: center; }
     .game-storefront :is(.download-form, .button-glass-report, .favorite-btn-cover, .game-status-btn-cover) { display: none !important; }
     .game-storefront .game-card-bottom-info { grid-template-columns: 1fr; gap: 24px; padding: 24px 16px; }
