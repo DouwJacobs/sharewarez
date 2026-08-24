@@ -2212,7 +2212,8 @@ pre {
     .game-relationships-heading { align-items: flex-start; flex-direction: column; }
     .game-relationship-groups { grid-template-columns: 1fr; gap: 17px; }
     .game-mobile-actions { position: fixed; z-index: 520; right: 12px; bottom: calc(68px + env(safe-area-inset-bottom)); left: 12px; display: grid; grid-template-columns: repeat(auto-fit, minmax(72px, 1fr)); padding: 7px; border: 1px solid var(--theme-border-color); border-radius: 15px; background: color-mix(in srgb, var(--theme-panel-bg) 94%, transparent); box-shadow: 0 14px 36px rgba(0,0,0,.38); backdrop-filter: blur(18px); }
-    .game-mobile-actions button { display: grid; min-width: 0; min-height: 48px; place-content: center; gap: 4px; border: 0; border-radius: 10px; background: transparent; color: var(--theme-text-secondary); font-size: .65rem; }
-    .game-mobile-actions button:first-child { background: var(--theme-accent-color); color: var(--theme-button-text, #fff); }
-    .game-mobile-actions i { font-size: .95rem; }
+    .game-mobile-actions > button { display: grid; min-width: 0; min-height: 48px; place-content: center; gap: 4px; border: 0; border-radius: 10px; background: transparent; color: var(--theme-text-secondary); font-size: .65rem; }
+    .game-mobile-actions > button:first-child { background: var(--theme-accent-color); color: var(--theme-button-text, #fff); }
+    .game-mobile-actions > button > i { font-size: .95rem; }
+    .game-mobile-actions > .status-dropdown-mobile { right: 0; bottom: calc(100% + 8px); width: min(240px, calc(100vw - 24px)); }
 }

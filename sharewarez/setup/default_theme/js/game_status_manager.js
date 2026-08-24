@@ -198,8 +198,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await response.json();
 
             if (data.success) {
-                // Update button appearance
-                updateButtonAppearance(button, data.status);
+                // Keep every instance (card, cover, and mobile action bar) in sync.
+                document.querySelectorAll(`.game-status-btn[data-game-uuid="${CSS.escape(gameUuid)}"]`)
+                    .forEach(statusButton => updateButtonAppearance(statusButton, data.status));
 
                 // Show success animation
                 await showSuccessAnimation(button);
