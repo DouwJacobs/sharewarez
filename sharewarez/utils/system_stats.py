@@ -6,7 +6,9 @@ import platform
 def get_cpu_usage():
     """Get CPU usage percentage"""
     try:
-        cpu_percent = psutil.cpu_percent(interval=1)
+        # Use psutil's non-blocking sample. A one-second interval made every
+        # Server Status request wait for a fresh measurement before rendering.
+        cpu_percent = psutil.cpu_percent(interval=None)
         cpu_count_physical = psutil.cpu_count(logical=False)
         cpu_count_logical = psutil.cpu_count(logical=True)
         return {

@@ -60,9 +60,6 @@ class TestGetDownloadStatistics:
                 (date(2025, 8, 11), 1), (date(2025, 8, 6), 1), (date(2025, 8, 28), 1)
             ]
             
-            # Mock top_downloaders query
-            top_downloaders_data = [('alice', 5), ('bob', 3), ('charlie', 1)]
-            
             # Mock top_collectors query
             top_collectors_data = [('alice', 2), ('bob', 1)]
             
@@ -74,9 +71,8 @@ class TestGetDownloadStatistics:
                 downloads_per_user_data,       # First call: downloads_per_user
                 top_games_data,                # Second call: top_games
                 download_trends_data,          # Third call: download_trends
-                top_downloaders_data,          # Fourth call: top_downloaders
-                top_collectors_data,           # Fifth call: top_collectors
-                users_with_invites_data        # Sixth call: users_with_invites
+                top_collectors_data,           # Fourth call: top_collectors
+                users_with_invites_data        # Fifth call: users_with_invites
             ]
             
             with patch('sharewarez.utils.statistics.db.session.execute', mock_execute):
@@ -137,7 +133,6 @@ class TestGetDownloadStatistics:
                 [],  # downloads_per_user - empty
                 [],  # top_games - empty
                 [],  # download_trends - empty
-                [],  # top_downloaders - empty
                 [('alice', 2), ('bob', 1)],  # top_collectors - has data
                 []   # users_with_invites - empty
             ]
@@ -167,7 +162,6 @@ class TestGetDownloadStatistics:
                 [],  # downloads_per_user - empty
                 [],  # top_games - empty
                 [],  # download_trends - empty
-                [],  # top_downloaders - empty
                 [],  # top_collectors - empty
                 [('alice', 3), ('bob', 1)]  # users_with_invites - has data
             ]
@@ -200,7 +194,6 @@ class TestGetDownloadStatistics:
                 [('alice', 6), ('bob', 3)],  # downloads_per_user (includes all downloads)
                 [('Game Alpha', 4), ('Game Beta', 3), ('Game Gamma', 2)],  # top_games (all)
                 [(date(2025, 8, 26), 1), (date(2025, 8, 21), 1), (date(2025, 8, 16), 1)],  # download_trends (only recent)
-                [('alice', 6), ('bob', 3)],  # top_downloaders (all)
                 [],  # top_collectors - empty
                 []   # users_with_invites - empty
             ]
@@ -230,10 +223,9 @@ class TestGetDownloadStatistics:
             top_games_data = [(f'Game {i:02d}', 20-i) for i in range(10)]  # Decreasing order
             
             mock_execute.return_value.all.side_effect = [
-                [],  # downloads_per_user - empty for this test
+                top_downloaders_data,     # downloads per user (also supplies top downloaders)
                 top_games_data,           # top_games - ordered by count desc, limited to 10
                 [],  # download_trends - empty
-                top_downloaders_data,     # top_downloaders - ordered by count desc, limited to 10
                 [],  # top_collectors - empty
                 users_with_invites_data   # users_with_invites - ordered by count desc, limited to 10
             ]

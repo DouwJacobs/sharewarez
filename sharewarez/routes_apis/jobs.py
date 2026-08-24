@@ -1,6 +1,6 @@
 from flask import jsonify, request
 from flask_login import login_required
-from sqlalchemy import select
+from sqlalchemy import func, or_, select
 
 from sharewarez import db
 from sharewarez.models import BackgroundJob
@@ -31,11 +31,33 @@ def _serialize(job):
 def background_jobs():
     limit = min(max(request.args.get('limit', 50, type=int), 1), 200)
     status = (request.args.get('status') or '').strip().lower()
+    search = (request.args.get('q') or '').strip()[:100]
+    visible_ids = [value for value in request.args.getlist('job_id') if value][:200]
     query = select(BackgroundJob).order_by(BackgroundJob.created_at.desc()).limit(limit)
     if status:
         query = query.where(BackgroundJob.status == status)
+    if search:
+        pattern = f'%{search}%'
+        query = query.where(or_(
+            BackgroundJob.task_name.ilike(pattern),
+            BackgroundJob.queue.ilike(pattern),
+            BackgroundJob.id.ilike(pattern),
+            BackgroundJob.progress_message.ilike(pattern),
+            BackgroundJob.error_message.ilike(pattern),
+        ))
     jobs = db.session.execute(query).scalars().all()
-    return jsonify({'jobs': [_serialize(job) for job in jobs]})
+    if visible_ids:
+        visible_jobs = db.session.execute(
+            select(BackgroundJob).where(BackgroundJob.id.in_(visible_ids))
+        ).scalars().all()
+        jobs_by_id = {job.id: job for job in jobs}
+        jobs_by_id.update({job.id: job for job in visible_jobs})
+        jobs = list(jobs_by_id.values())
+    counts = dict(db.session.execute(
+        select(BackgroundJob.status, func.count(BackgroundJob.id))
+        .group_by(BackgroundJob.status)
+    ).all())
+    return jsonify({'jobs': [_serialize(job) for job in jobs], 'counts': counts})
 
 
 @apis_bp.route('/background-jobs/<job_id>', methods=['GET'])

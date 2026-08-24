@@ -8,9 +8,10 @@ def get_download_statistics():
     
     # Downloads per user
     downloads_per_user = db.session.execute(
-        select(User.name, func.count(DownloadRequest.id))
+        select(User.name, func.count(DownloadRequest.id).label('download_count'))
         .join(DownloadRequest)
         .group_by(User.id)
+        .order_by(func.count(DownloadRequest.id).desc())
     ).all()
 
     # Top downloaded games
@@ -28,16 +29,11 @@ def get_download_statistics():
         select(func.date(DownloadRequest.request_time), func.count(DownloadRequest.id))
         .filter(DownloadRequest.request_time >= thirty_days_ago)
         .group_by(func.date(DownloadRequest.request_time))
+        .order_by(func.date(DownloadRequest.request_time))
     ).all()
 
-    # Users with most downloads
-    top_downloaders = db.session.execute(
-        select(User.name, func.count(DownloadRequest.id).label('download_count'))
-        .join(DownloadRequest)
-        .group_by(User.id)
-        .order_by(func.count(DownloadRequest.id).desc())
-        .limit(10)
-    ).all()
+    # Reuse the ordered per-user aggregation instead of running it twice.
+    top_downloaders = downloads_per_user[:10]
 
     # Users with most favorites
     top_collectors = db.session.execute(
@@ -54,6 +50,7 @@ def get_download_statistics():
         .join(InviteToken, User.user_id == InviteToken.creator_user_id)
         .group_by(User.id)
         .order_by(func.count(InviteToken.id).desc())
+        .limit(10)
     ).all()
 
     return {

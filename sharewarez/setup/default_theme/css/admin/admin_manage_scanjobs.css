@@ -1089,8 +1089,8 @@
 
 /* Final layout layer: shared rhythm and responsive behavior across every tab. */
 .scan-management-heading {
-    width: min(1440px, calc(100% - 48px));
-    margin: 28px auto 0;
+    width: 100%;
+    margin: 0 0 var(--spacing-lg, 24px);
 }
 
 .scan-management-eyebrow {
@@ -1278,7 +1278,7 @@
 @media (max-width: 768px) {
     .scan-management-heading,
     .admin_manage_scanjobs-nav-panel {
-        width: calc(100% - 24px);
+        width: 100%;
     }
 
     .admin_manage_scanjobs-nav-panel .container-settings {
@@ -1370,8 +1370,8 @@
 
 /* ── Scan management UI refresh ───────────────────────────── */
 .admin_manage_scanjobs-nav-panel {
-    width: min(1440px, calc(100% - 48px));
-    margin: 24px auto 48px;
+    width: 100%;
+    margin: 0 0 48px;
     overflow: hidden;
     background: linear-gradient(145deg, rgba(18, 18, 28, 0.96), rgba(12, 12, 20, 0.98));
     border: 1px solid rgba(255, 255, 255, 0.09);

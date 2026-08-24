@@ -238,7 +238,7 @@ class TestStatisticsIntegration:
         # Create sample invite token
         invite = InviteToken(
             creator_user_id=admin_user.user_id,
-            token='test-token',
+            token=f'test-token-{uuid4()}',
             created_at=datetime.now(timezone.utc)
         )
         db_session.add(invite)

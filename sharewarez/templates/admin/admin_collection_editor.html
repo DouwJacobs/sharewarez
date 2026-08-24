@@ -5,8 +5,6 @@
 {% endblock %}
 {% block content %}
 <main class="app-page collections-admin-shell collection-editor-shell">
-    <form class="app-surface collection-editor-card card" method="post" data-collection-editor data-search-url="{{ url_for('admin2.search_collection_games') }}">
-        {{ form.hidden_tag() }}
         <header class="app-page-header collections-admin-header">
             <div>
                 <p class="collections-eyebrow">{{ 'Featured spotlight' if collection and collection.is_featured else 'Content curation' }}</p>
@@ -14,6 +12,8 @@
                 <p>{% if collection and collection.is_featured %}Choose and order the games that rotate through the Discover hero.{% else %}Build an ordered group of games and choose where users see it.{% endif %}</p>
             </div>
         </header>
+    <form class="app-surface collection-editor-card" method="post" data-collection-editor data-search-url="{{ url_for('admin2.search_collection_games') }}">
+        {{ form.hidden_tag() }}
 
         {% if form.errors %}
         <div class="alert alert-danger" role="alert">

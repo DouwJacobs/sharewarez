@@ -79,4 +79,5 @@ def new_server_info():
         latest_log=log_info['latest'],
         database_info=database_info,
         diagnostics=diagnostics,
+        format_bytes=format_bytes,
     )

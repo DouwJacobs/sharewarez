@@ -3,7 +3,7 @@
 <link rel="stylesheet" href="{{ 'css/issues.css'|theme_asset }}">
 <main class="app-page app-page--wide issues-page issue-detail-page admin-issue-detail-page">
     <nav class="issue-detail-nav"><a class="btn btn-secondary" href="{{ url_for('issues.admin_issues', status='all') }}"><i class="fas fa-arrow-left"></i> All issues</a></nav>
-    <header class="app-surface issue-detail-header">
+    <header class="app-page-header app-surface issue-detail-header">
         <div class="issue-detail-title"><p class="eyebrow">Issue #{{ issue.id }} · {{ category_labels[issue.category] }}</p><h1>{{ issue.title }}</h1><p><a href="{{ url_for('games.game_details', game_uuid=issue.game.uuid) }}">{{ issue.game.name }}</a> · Reported by <strong>{{ issue.reporter.name }}</strong></p></div>
         <span class="issue-status status-{{ issue.status }}">{{ status_labels[issue.status] }}</span>
     </header>

@@ -40,19 +40,17 @@
         </div>
     </div>
 </div>
-<div class="app-stack admin_manage_libraries-library-container">
-    <div class="container-settings">
-        <div class="card">
-            <header class="app-page-header libraries-management-header">
+<header class="app-page-header libraries-management-header">
                 <div>
                     <p class="libraries-management-eyebrow">Collection management</p>
                     <h1>Game Libraries</h1>
                     <p>Organize libraries, edit their settings, and start a scan.</p>
                 </div>
-                <a href="{{ url_for('admin2.add_library') }}" class="btn btn-primary">
+                <div class="app-page-actions"><a href="{{ url_for('admin2.add_library') }}" class="btn btn-primary">
                     <i class="fas fa-plus" aria-hidden="true"></i> Add Library
-                </a>
-            </header>
+                </a></div>
+</header>
+<section class="app-surface admin_manage_libraries-library-container">
             <div class="table-responsive libraries-table-wrapper">
             <table class="libraries-table" id="librariesTable">
             <thead>
@@ -116,9 +114,7 @@
             </tbody>
         </table>
             </div>
-        </div>
-    </div>
-</div>
+</section>
 </main>
 
 <script src="{{ 'js/admin_manage_libs.js'|theme_asset }}"></script>

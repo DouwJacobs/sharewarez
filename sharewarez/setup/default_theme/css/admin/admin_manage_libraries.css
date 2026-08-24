@@ -1,21 +1,4 @@
 .admin_manage_libraries-library-container {
-    width: min(1440px, calc(100% - 48px));
-    margin: 24px auto 48px;
-}
-
-.admin-ui .admin_manage_libraries-library-container {
-    width: min(1440px, 100%);
-}
-
-.admin_manage_libraries-library-container .container-settings {
-    min-width: 0;
-    margin: 0;
-    padding: 0;
-    background: transparent;
-    box-shadow: none;
-}
-
-.admin_manage_libraries-library-container .card {
     padding: 24px;
 }
 
@@ -24,9 +7,6 @@
     align-items: center;
     justify-content: space-between;
     gap: 20px;
-    margin-bottom: 22px;
-    padding-bottom: 18px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .libraries-management-eyebrow {
@@ -40,8 +20,8 @@
 
 .libraries-management-header h1 {
     margin: 0;
-    color: #fff;
-    font-size: 1.65rem;
+    color: var(--theme-text-primary, #fff);
+    font-size: clamp(2rem, 3vw, 2.5rem);
 }
 
 .libraries-management-header p:not(.libraries-management-eyebrow) {
@@ -290,11 +270,6 @@
 
 @media (max-width: 768px) {
     .admin_manage_libraries-library-container {
-        width: 100%;
-        margin: 0;
-    }
-
-    .admin_manage_libraries-library-container .card {
         padding: 16px;
     }
 

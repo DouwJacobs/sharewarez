@@ -7,7 +7,7 @@
 {% endblock %}
 
 {% block content %}
-<section class="app-page downloads-page" aria-labelledby="downloads-page-title">
+<main class="app-page downloads-page" aria-labelledby="downloads-page-title">
     {{ page_header('My downloads', 'Track your requested files and return to a game whenever you need more details.', 'Library activity', 'fa-download', pagination.total, 'request') }}
     {% if state_counts %}<div class="download-state-summary" aria-label="Download status summary">{% for label, count in state_counts.items() %}<span><strong>{{ count }}</strong>{{ label }}</span>{% endfor %}<a href="{{ url_for('site.helpfaq') }}#downloads">How downloads work</a></div>{% endif %}
     <div class="app-surface downloads-panel">
@@ -67,6 +67,6 @@
         {{ empty_state('No downloads yet', 'Files you request from a game page will appear here.', 'fa-box-open', url_for('library.library'), 'Browse library') }}
         {% endif %}
     </div>
-</section>
+</main>
 <script src="{{ 'js/downloads_manager.js'|theme_asset }}"></script>
 {% endblock %}

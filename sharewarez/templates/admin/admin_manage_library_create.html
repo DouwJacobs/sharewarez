@@ -1,12 +1,24 @@
 {% extends "base.html" %}
+{% block styles %}
+{{ super() }}
+<link rel="stylesheet" href="{{ 'css/admin/admin_manage_library_create.css'|theme_asset }}">
+{% endblock %}
+{% block page_vendor_assets %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
+{% endblock %}
 {% block content %}
 
-<link rel="stylesheet" href="{{ 'css/admin/admin_manage_library_create.css'|theme_asset }}">
-
-<div class="app-page app-page--narrow app-surface admin_manage_library_create-panel container glass-panel">
-	<div class="admin_manage_library-header">
-		<h2>{{ page_title }}</h2>
-	</div>
+<main class="app-page app-page--narrow library-editor-page">
+	<header class="app-page-header library-editor-header">
+		<div>
+			<p class="admin-panel-kicker">Collection management</p>
+			<h1>{{ page_title }}</h1>
+			<p>{{ 'Update how this library appears and where its games are grouped.' if library else 'Create a library to organize games by platform or collection.' }}</p>
+		</div>
+		<div class="app-page-actions"><a class="btn btn-secondary" href="{{ url_for('library.admin_libraries') }}"><i class="fas fa-arrow-left" aria-hidden="true"></i> Libraries</a></div>
+	</header>
+	<section class="app-surface library-editor-surface">
 	<form class="admin_manage_library_create-form" action="" method="post" enctype="multipart/form-data">
 		{{ form.hidden_tag() }}
 
@@ -24,7 +36,9 @@
 			</div>
 		{% endif %}
 
-		<div class="admin_manage_library_create-form-name mb-3">
+		<div class="library-editor-grid">
+		<div class="library-editor-fields">
+		<div class="admin_manage_library_create-form-name library-editor-field">
 			{{ form.name.label(class="form-label") }}
 			{{ form.name(class="form-control") }}
 			{% if form.name.errors %}
@@ -35,7 +49,7 @@
 				</div>
 			{% endif %}
 		</div>
-		<div class="admin_manage_library_create-form-platform mb-3">
+		<div class="admin_manage_library_create-form-platform library-editor-field">
 			{{ form.platform.label(class="form-label") }}
 			{{ form.platform(class="form-select") }}
 			{% if form.platform.errors %}
@@ -46,9 +60,10 @@
 				</div>
 			{% endif %}
 		</div>
-		<div class="admin_manage_library_create-form-library-image mb-3">
+		<div class="admin_manage_library_create-form-library-image library-editor-field">
 			{{ form.image.label(class="form-label") }}
 			{{ form.image(class="form-control", id="imageInput") }}
+			<p class="form-text">Choose a square image. You can crop it before saving.</p>
 			{% if form.image.errors %}
 				<div class="text-danger small mt-1">
 					{% for error in form.image.errors %}
@@ -57,28 +72,32 @@
 				</div>
 			{% endif %}
 		</div>
-		<div class="admin_manage_library_create-current-platform mb-3">
-			<p>Current Platform: {{ library.platform.value if library else 'Not set' }}</p>
 		</div>
-		<div class="admin_manage_library_create-image mb-3">
-			<img id="imagePreview" src="{{ library.image_url if library and library.image_url else url_for('static', filename='newstyle/default_library.jpg') }}" alt="Image preview" style="max-width: 200px;" data-default-src="{{ library.image_url if library and library.image_url else url_for('static', filename='newstyle/default_library.jpg') }}">
+		<aside class="library-editor-preview" aria-labelledby="library-preview-title">
+			<div><p class="admin-panel-kicker">Preview</p><h2 id="library-preview-title">Library artwork</h2><p>{{ library.platform.value if library else 'Platform selected above' }}</p></div>
+			<img id="imagePreview" src="{{ library.image_url if library and library.image_url else url_for('static', filename='newstyle/default_library.jpg') }}" alt="Library artwork preview" data-default-src="{{ library.image_url if library and library.image_url else url_for('static', filename='newstyle/default_library.jpg') }}">
+		</aside>
 		</div>
-		<button type="submit" class="admin_manage_library_create-save-btn btn btn-primary">Save Library</button>
+		<footer class="library-editor-actions">
+			<a class="btn btn-secondary" href="{{ url_for('library.admin_libraries') }}">Cancel</a>
+			<button type="submit" class="admin_manage_library_create-save-btn btn btn-primary"><i class="fas fa-check" aria-hidden="true"></i> Save Library</button>
+		</footer>
 	</form>
-</div>
+	</section>
+</main>
 
 <!-- Image Editor Modal -->
 <div class="modal fade" id="imageEditorModal" tabindex="-1" aria-labelledby="imageEditorModalLabel" aria-hidden="true">
 	<div class="modal-dialog modal-xl" role="document">
-		<div class="modal-content glass-panel-modal">
-			<div class="modal-header glass-panel-modal-header">
+		<div class="modal-content library-image-modal">
+			<div class="modal-header">
 				<h5 class="modal-title" id="imageEditorModalLabel">Edit Library Image</h5>
-				<button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 			</div>
-			<div class="modal-body glass-panel-modal-body">
+			<div class="modal-body">
 				<div class="image-editor-container">
 					<div class="image-editor-canvas-container">
-						<img id="imageEditorCanvas" alt="Library artwork preview" style="max-width: 100%; display: none;">
+						<img id="imageEditorCanvas" class="library-image-editor-canvas" alt="Library artwork preview">
 					</div>
 					<div class="image-editor-controls">
 						<div class="d-flex justify-content-center gap-3 mt-3">
@@ -95,7 +114,7 @@
 					</div>
 				</div>
 			</div>
-			<div class="modal-footer glass-panel-modal-footer">
+			<div class="modal-footer">
 				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
 				<button type="button" class="btn btn-primary" id="saveImageBtn">
 					<i class="fas fa-save"></i> Save Image

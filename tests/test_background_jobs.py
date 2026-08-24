@@ -91,6 +91,7 @@ def test_admin_can_list_cancel_and_retry_jobs(client, app, db_session, jobs_admi
     assert response.status_code == 200
     assert response.get_json()['jobs'][0]['id'] == job_id
     assert response.get_json()['jobs'][0]['display_name'] == 'System check'
+    assert response.get_json()['counts']['queued'] == 1
 
     response = client.post(f'/api/background-jobs/{job_id}/cancel')
     assert response.status_code == 200

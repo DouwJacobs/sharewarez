@@ -292,10 +292,10 @@ body.modal-open {
 .install-instructions-section {
     margin-top: 14px;
     padding: 14px 16px !important;
-    background: linear-gradient(135deg, rgba(74, 144, 226, 0.08) 0%, rgba(74, 144, 226, 0.04) 100%) !important;
-    border-left: 3px solid rgba(100, 160, 255, 0.6) !important;
+    background: linear-gradient(135deg, rgba(var(--theme-accent-rgb, 139, 112, 246), .08), rgba(var(--theme-accent-rgb, 139, 112, 246), .04)) !important;
+    border-left: 3px solid rgba(var(--theme-accent-soft-rgb, 174, 151, 255), .6) !important;
     border-radius: 10px !important;
-    border: 1px solid rgba(100, 160, 255, 0.15) !important;
+    border: 1px solid rgba(var(--theme-accent-soft-rgb, 174, 151, 255), .15) !important;
 }
 
 /* ── Q2 — Right: Meta + Downloads ───────────────────────── */
@@ -665,13 +665,13 @@ body.modal-open {
 
 .button-glass-request-update {
     padding: 8px 14px;
-    background: rgba(3, 178, 248, 0.12);
-    border: 1px solid rgba(3, 178, 248, 0.35);
+    background: rgba(var(--theme-accent-rgb, 139, 112, 246), .12);
+    border: 1px solid rgba(var(--theme-accent-soft-rgb, 174, 151, 255), .35);
     border-radius: 10px;
     cursor: pointer;
     transition: all 0.2s ease;
     font-size: 0.82rem;
-    color: #03b2f8;
+    color: var(--theme-primary-color, var(--theme-primary, #9b87f5));
     font-weight: 600;
     user-select: none;
     white-space: nowrap;
@@ -681,11 +681,11 @@ body.modal-open {
 }
 
 .button-glass-request-update:hover:not(:disabled) {
-    background: rgba(3, 178, 248, 0.25);
-    border-color: rgba(3, 178, 248, 0.6);
+    background: rgba(var(--theme-accent-rgb, 139, 112, 246), .25);
+    border-color: rgba(var(--theme-accent-soft-rgb, 174, 151, 255), .6);
     color: #ffffff;
     transform: translateY(-1px);
-    box-shadow: 0 4px 14px rgba(3, 178, 248, 0.3);
+    box-shadow: 0 4px 14px rgba(var(--theme-accent-rgb, 139, 112, 246), .3);
 }
 
 .button-glass-request-update.requested,
@@ -803,9 +803,9 @@ body.modal-open {
 }
 
 .modal-request-update-content textarea:focus {
-    border-color: #03b2f8;
+    border-color: var(--theme-primary-color, var(--theme-primary, #9b87f5));
     outline: none;
-    box-shadow: 0 0 0 3px rgba(3, 178, 248, 0.2);
+    box-shadow: 0 0 0 3px rgba(var(--theme-accent-rgb, 139, 112, 246), .2);
 }
 
 .modal-request-update-actions {
@@ -830,9 +830,9 @@ body.modal-open {
 
 .modal-request-update-content input[type="text"]:focus,
 .modal-request-update-content input[type="url"]:focus {
-    border-color: #03b2f8;
+    border-color: var(--theme-primary-color, var(--theme-primary, #9b87f5));
     outline: none;
-    box-shadow: 0 0 0 3px rgba(3, 178, 248, 0.2);
+    box-shadow: 0 0 0 3px rgba(var(--theme-accent-rgb, 139, 112, 246), .2);
 }
 
 .steamdb-helper-link {
@@ -1561,10 +1561,10 @@ pre {
 .game-card-bottom-info .install-instructions-section {
     margin-top: 0;
     padding: 16px 20px !important;
-    background: linear-gradient(135deg, rgba(74, 144, 226, 0.08) 0%, rgba(74, 144, 226, 0.03) 100%) !important;
-    border-left: 3px solid rgba(100, 160, 255, 0.7) !important;
+    background: linear-gradient(135deg, rgba(var(--theme-accent-rgb, 139, 112, 246), .08), rgba(var(--theme-accent-rgb, 139, 112, 246), .03)) !important;
+    border-left: 3px solid rgba(var(--theme-accent-soft-rgb, 174, 151, 255), .7) !important;
     border-radius: 14px !important;
-    border: 1px solid rgba(100, 160, 255, 0.18) !important;
+    border: 1px solid rgba(var(--theme-accent-soft-rgb, 174, 151, 255), .18) !important;
 }
 
 .game-card-bottom-info .install-instructions-header {
@@ -1580,7 +1580,7 @@ pre {
 }
 
 .game-card-bottom-info .install-instructions-header i {
-    color: #4A90E2;
+    color: var(--theme-primary-color, var(--theme-primary, #9b87f5));
 }
 
 .game-card-bottom-info .install-instructions-content {

@@ -15,7 +15,7 @@
         </span>
     </nav>
 
-    <header class="request-detail-hero request-panel">
+    <header class="app-page-header request-detail-hero request-panel">
         <div class="request-detail-cover">{% if game_request.formatted_cover_url %}<img src="{{ game_request.formatted_cover_url }}" alt="Cover for {{ game_request.game_name }}">{% else %}<span><i class="fas fa-gamepad"></i></span>{% endif %}</div>
         <div class="request-detail-intro">
             <div class="request-history-title">
@@ -32,7 +32,7 @@
                 <span><i class="fas fa-users"></i> {{ game_request.interested_requesters|length }} active</span>
                 {% if game_request.satisfied_requesters %}<span><i class="fas fa-circle-check"></i> {{ game_request.satisfied_requesters|length }} satisfied</span>{% endif %}
                 {% if game_request.source_game %}
-                    <span><i class="fas fa-gamepad"></i> Library Game: <a href="{{ url_for('games.game_details', game_uuid=game_request.source_game.uuid) }}" style="color:var(--theme-primary,#03b2f8);">{{ game_request.source_game.name }}</a></span>
+                    <span><i class="fas fa-gamepad"></i> Library Game: <a class="request-detail-game-link" href="{{ url_for('games.game_details', game_uuid=game_request.source_game.uuid) }}">{{ game_request.source_game.name }}</a></span>
                 {% endif %}
                 {% if game_request.platforms %}<span><i class="fas fa-display"></i> {{ game_request.platforms|join(', ') }}</span>{% endif %}
                 {% if game_request.igdb_id %}<span><i class="fas fa-database"></i> IGDB {{ game_request.igdb_id }}</span>{% endif %}
@@ -60,7 +60,7 @@
         <aside class="request-detail-sidebar">
             <section class="request-panel">
                 <div class="request-section-heading"><div><p class="eyebrow">Community</p><h2>Requesters</h2></div></div>
-                <div class="requester-list">{% for link in game_request.requesters if link.withdrawn_at is none %}<article class="requester-card"><div class="requester-avatar"><i class="fas fa-user"></i></div><div><strong>{{ link.user.name }}</strong>{% if link.satisfied_at %}<p>Satisfied{% if link.satisfied_by_game %} by {{ link.satisfied_by_game.name }}{% endif %}</p>{% elif link.accept_any_edition %}<p>Any edition accepted</p>{% else %}<p>Exact edition requested</p>{% endif %}{% if link.requester_note %}<blockquote style="white-space: pre-line; word-break: break-word; color: #e2e8f0; border-left: 3px solid #03b2f8;">{{ link.requester_note|urlize(target="_blank") }}</blockquote>{% endif %}</div></article>{% else %}<p>No active requesters.</p>{% endfor %}</div>
+                <div class="requester-list">{% for link in game_request.requesters if link.withdrawn_at is none %}<article class="requester-card"><div class="requester-avatar"><i class="fas fa-user"></i></div><div><strong>{{ link.user.name }}</strong>{% if link.satisfied_at %}<p>Satisfied{% if link.satisfied_by_game %} by {{ link.satisfied_by_game.name }}{% endif %}</p>{% elif link.accept_any_edition %}<p>Any edition accepted</p>{% else %}<p>Exact edition requested</p>{% endif %}{% if link.requester_note %}<blockquote>{{ link.requester_note|urlize(target="_blank") }}</blockquote>{% endif %}</div></article>{% else %}<p>No active requesters.</p>{% endfor %}</div>
             </section>
             <section class="request-panel request-workflow-meta" aria-label="Request activity">
                 <div class="request-section-heading"><div><p class="eyebrow">Activity</p><h2>Current ownership</h2></div></div>

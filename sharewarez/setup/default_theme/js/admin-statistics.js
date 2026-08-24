@@ -1,142 +1,50 @@
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', () => {
     const status = document.getElementById('statisticsStatus');
-    const statisticsGrid = document.querySelector('.statistics-grid');
+    const grid = document.querySelector('.statistics-grid');
+    const styles = getComputedStyle(document.documentElement);
+    const accentRgb = styles.getPropertyValue('--theme-accent-rgb').trim() || '117, 84, 214';
+    const mutedRgb = styles.getPropertyValue('--theme-accent-soft-rgb').trim() || accentRgb;
+    const accent = `rgba(${accentRgb}, .72)`;
+    const accentLine = `rgb(${accentRgb})`;
+    const secondary = `rgba(${mutedRgb}, .56)`;
 
-    // Fetch statistics data from the server
-    fetch('/admin/statistics/data')
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Unable to load statistics');
-            }
-            return response.json();
-        })
-        .then(data => {
-            // Downloads per user chart
-            createChart('downloadsPerUserChart', 'bar', {
-                labels: data.downloads_per_user.labels,
-                datasets: [{
-                    label: 'Downloads per User',
-                    data: data.downloads_per_user.data,
-                    backgroundColor: 'rgba(54, 162, 235, 0.5)'
-                }]
-            }, {
-                responsive: true,
-                plugins: {
-                    title: {
-                        display: true,
-                        text: 'Downloads per User'
-                    }
-                }
-            });
-
-            // Top downloaded games chart
-            createChart('topGamesChart', 'bar', {
-                labels: data.top_games.labels,
-                datasets: [{
-                    label: 'Most Downloaded Games',
-                    data: data.top_games.data,
-                    backgroundColor: 'rgba(255, 99, 132, 0.5)'
-                }]
-            }, {
-                responsive: true,
-                plugins: {
-                    title: {
-                        display: true,
-                        text: 'Most Downloaded Games'
-                    }
-                }
-            });
-
-            // Download trends chart
-            createChart('downloadTrendsChart', 'line', {
-                labels: data.download_trends.labels,
-                datasets: [{
-                    label: 'Downloads Over Time',
-                    data: data.download_trends.data,
-                    borderColor: 'rgba(75, 192, 192, 1)',
-                    tension: 0.1
-                }]
-            }, {
-                responsive: true,
-                plugins: {
-                    title: {
-                        display: true,
-                        text: 'Download Trends'
-                    }
-                }
-            });
-
-            // Invite tokens per user chart
-            createChart('inviteTokensChart', 'bar', {
-                labels: data.users_with_invites.labels,
-                datasets: [{
-                    label: 'Invite Tokens Generated',
-                    data: data.users_with_invites.data,
-                    backgroundColor: 'rgba(75, 192, 192, 0.5)',
-                    borderColor: 'rgba(75, 192, 192, 1)',
-                    borderWidth: 1
-                }]
-            }, {
-                responsive: true,
-                plugins: {
-                    title: {
-                        display: true,
-                        text: 'Users with Invite Tokens Generated'
-                    }
-                },
-                scales: {
-                    y: { beginAtZero: true }
-                }
-            });
-
-            // Top downloaders chart
-            createChart('topDownloadersChart', 'bar', {
-                labels: data.top_downloaders.labels,
-                datasets: [{
-                    label: 'Users with Most Downloads',
-                    data: data.top_downloaders.data,
-                    backgroundColor: 'rgba(153, 102, 255, 0.5)'
-                }]
-            }, {
-                responsive: true,
-                plugins: {
-                    title: {
-                        display: true,
-                        text: 'Top Downloaders'
-                    }
-                },
-                scales: {
-                    y: { beginAtZero: true }
-                }
-            });
-
-            // Top collectors chart
-            createChart('topCollectorsChart', 'bar', {
-                labels: data.top_collectors.labels,
-                datasets: [{
-                    label: 'Users with Most Favorites',
-                    data: data.top_collectors.data,
-                    backgroundColor: 'rgba(255, 159, 64, 0.5)'
-                }]
-            }, {
-                responsive: true,
-                plugins: {
-                    title: {
-                        display: true,
-                        text: 'Top Game Collectors'
-                    }
-                },
-                scales: {
-                    y: { beginAtZero: true }
-                }
-            });
-
-            status.textContent = 'Statistics updated.';
-            statisticsGrid?.setAttribute('aria-busy', 'false');
-        })
-        .catch(error => {
-            console.error('Error loading statistics:', error);
-            status.textContent = 'Statistics could not be loaded. Please try again.';
-            statisticsGrid?.setAttribute('aria-busy', 'false');
+    const setText = (id, value) => { const node = document.getElementById(id); if (node) node.textContent = value; };
+    const total = values => (values || []).reduce((sum, value) => sum + Number(value || 0), 0);
+    const showEmpty = canvasId => {
+        const canvas = document.getElementById(canvasId);
+        if (!canvas) return;
+        canvas.hidden = true;
+        const empty = canvas.parentElement.querySelector('.chart-empty');
+        if (empty) empty.hidden = false;
+    };
+    const renderChart = (canvasId, type, series, options = {}) => {
+        if (!series?.data?.length) { showEmpty(canvasId); return; }
+        createChart(canvasId, type, { labels: series.labels, datasets: [{ label: options.label, data: series.data, backgroundColor: options.fill || accent, borderColor: options.line || accentLine, borderWidth: 1, tension: .25, fill: type === 'line' }] }, {
+            responsive: true,
+            maintainAspectRatio: false,
+            indexAxis: options.horizontal ? 'y' : 'x',
+            plugins: { legend: { display: false }, title: { display: false } },
+            scales: {
+                x: { beginAtZero: options.horizontal, ticks: { precision: 0 } },
+                y: { beginAtZero: !options.horizontal, ticks: { precision: 0 } },
+            },
         });
+    };
+
+    fetch('/admin/statistics/data', { credentials: 'same-origin', headers: { Accept: 'application/json' } })
+        .then(response => { if (!response.ok) throw new Error('Unable to load statistics'); return response.json(); })
+        .then(data => {
+            setText('statTotalDownloads', total(data.downloads_per_user.data).toLocaleString());
+            setText('statActiveUsers', data.downloads_per_user.labels.length.toLocaleString());
+            setText('statTopGame', data.top_games.labels[0] || 'None yet');
+            setText('statTopCollector', data.top_collectors.labels[0] || 'None yet');
+            renderChart('downloadTrendsChart', 'line', data.download_trends, { label: 'Downloads', fill: `rgba(${accentRgb}, .16)` });
+            renderChart('topGamesChart', 'bar', data.top_games, { label: 'Downloads', horizontal: true });
+            renderChart('topDownloadersChart', 'bar', data.top_downloaders, { label: 'Downloads', horizontal: true, fill: secondary });
+            renderChart('topCollectorsChart', 'bar', data.top_collectors, { label: 'Favorites', horizontal: true });
+            renderChart('inviteTokensChart', 'bar', data.users_with_invites, { label: 'Invites', horizontal: true, fill: secondary });
+            status.textContent = 'Updated just now';
+        })
+        .catch(error => { console.error('Error loading statistics:', error); status.textContent = 'Statistics could not be loaded. Try refreshing the page.'; })
+        .finally(() => grid?.setAttribute('aria-busy', 'false'));
 });

@@ -30,8 +30,8 @@ class TestGetCpuUsage:
         assert result['cores_physical'] == 4
         assert result['cores_logical'] == 8
         
-        # Verify CPU percent was called with interval=1
-        mock_cpu_percent.assert_called_once_with(interval=1)
+        # Server status must not block while collecting a CPU sample.
+        mock_cpu_percent.assert_called_once_with(interval=None)
         
         # Verify CPU count was called for both logical and physical cores
         assert mock_cpu_count.call_count == 2

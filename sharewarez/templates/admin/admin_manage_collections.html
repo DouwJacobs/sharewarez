@@ -5,14 +5,13 @@
 {% endblock %}
 {% block content %}
 <main class="app-page collections-admin-shell">
-    <section class="app-surface collections-admin-card card">
         <header class="app-page-header collections-admin-header">
             <div>
                 <p class="collections-eyebrow">Content curation</p>
                 <h1>Collections</h1>
                 <p>Group games for discovery, browsing, and the featured spotlight.</p>
             </div>
-            <div class="collection-header-actions">
+            <div class="app-page-actions collection-header-actions">
                 <form method="post" action="{{ url_for('admin2.import_collection') }}" enctype="multipart/form-data">
                     {{ csrf_form.hidden_tag() }}
                     <label class="btn btn-secondary"><i class="fas fa-file-import" aria-hidden="true"></i> Import JSON<input class="visually-hidden" type="file" name="collection_file" accept="application/json,.json" required onchange="this.form.submit()"></label>
@@ -20,7 +19,7 @@
                 <a class="btn btn-primary" href="{{ url_for('admin2.add_collection') }}"><i class="fas fa-plus" aria-hidden="true"></i> New collection</a>
             </div>
         </header>
-
+    <section class="app-surface collections-admin-card">
         <div class="collection-list">
             {% for collection in collections %}
             <article class="collection-admin-row{% if collection.is_featured %} is-featured{% endif %}">

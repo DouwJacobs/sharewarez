@@ -89,7 +89,7 @@
     </section>
 
     {% if personalized_games or recent_downloads or recent_requests %}
-    <div class="home-personal-grid">
+    <div class="home-personal-grid{% if personalized_games and (recent_downloads or recent_requests) %} has-activity{% endif %}">
         {% if personalized_games %}
         <section class="home-section home-continue" aria-labelledby="continue-title">
             <header class="home-section-header"><div><p class="home-eyebrow">{{ personalized_eyebrow }}</p><h2 id="continue-title">{{ personalized_title }}</h2></div><a href="{{ url_for('library.library') }}">View library <i class="fas fa-arrow-right"></i></a></header>
