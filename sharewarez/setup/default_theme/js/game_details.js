@@ -462,9 +462,4 @@ document.addEventListener('DOMContentLoaded', () => {
             disclosure.removeAttribute('open');
         });
     }
-
-    const mobileActions = document.querySelector('.game-mobile-actions');
-    if (mobileActions && mobileActions.parentElement !== document.body) {
-        document.body.appendChild(mobileActions);
-    }
 });

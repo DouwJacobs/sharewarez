@@ -2143,7 +2143,7 @@ pre {
 
 @media (max-width: 768px) {
     .game-details-page { width: 100% !important; margin: 0 0 24px !important; }
-    .game-details-page { padding-bottom: 88px !important; }
+    .game-details-page { padding-bottom: 24px !important; }
     .game-storefront {
         box-sizing: border-box;
         width: 100% !important;
@@ -2212,10 +2212,22 @@ pre {
     .game-media-disclosure { padding: 20px 16px; }
     .game-relationships-heading { align-items: flex-start; flex-direction: column; }
     .game-relationship-groups { grid-template-columns: 1fr; gap: 17px; }
-    .game-mobile-actions { position: fixed; z-index: 520; right: 12px; bottom: calc(68px + env(safe-area-inset-bottom)); left: 12px; display: grid; grid-template-columns: repeat(auto-fit, minmax(72px, 1fr)); padding: 7px; border: 1px solid var(--theme-border-color); border-radius: 15px; background: color-mix(in srgb, var(--theme-panel-bg) 94%, transparent); box-shadow: 0 14px 36px rgba(0,0,0,.38); backdrop-filter: blur(18px); }
+    .game-mobile-actions { position: relative; z-index: 30; display: grid; grid-template-columns: repeat(auto-fit, minmax(72px, 1fr)); width: 100%; box-sizing: border-box; padding: 5px; border: 1px solid var(--theme-border-color); border-radius: 13px; background: var(--theme-input-bg); box-shadow: none; }
     .game-mobile-actions > button { display: grid; min-width: 0; min-height: 48px; place-content: center; gap: 4px; border: 0; border-radius: 10px; background: transparent; color: var(--theme-text-secondary); font-size: .65rem; }
     .game-mobile-actions > button:first-child { background: var(--theme-accent-color); color: var(--theme-button-text, #fff); }
     .game-mobile-actions > button > i { font-size: .95rem; }
-    .game-mobile-actions > .game-status-btn-mobile { position: static; width: auto; height: auto; opacity: 1; transform: none; }
+    .game-mobile-actions > .game-status-btn-mobile,
+    .game-mobile-actions > .game-status-btn-mobile:hover,
+    .game-mobile-actions > .game-status-btn-mobile:focus-visible {
+        position: static;
+        width: auto;
+        height: auto;
+        border: 0 !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        backdrop-filter: none;
+        opacity: 1;
+        transform: none;
+    }
     .game-mobile-actions > .status-dropdown-mobile { right: 0; bottom: calc(100% + 8px); width: min(240px, calc(100vw - 24px)); }
 }

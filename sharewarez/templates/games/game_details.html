@@ -370,6 +370,25 @@
                     </div>
                 </div>
 
+                <nav class="game-mobile-actions" aria-label="Game actions">
+                    <button type="submit" form="gameDownloadForm"><i class="fas fa-download" aria-hidden="true"></i><span>Get game</span></button>
+                    <button type="button" onclick="document.querySelector('.favorite-btn-cover')?.click()"><i class="fas fa-heart" aria-hidden="true"></i><span>Favorite</span></button>
+                    {% if show_play_status %}
+                    <button class="game-status-btn game-status-btn-mobile" type="button" data-game-uuid="{{ game.uuid }}" data-current-status="{{ user_status or '' }}" title="{{ status_label or 'No Status' }}" aria-label="Set play status for {{ game.name }}. Current status: {{ status_label or 'No Status' }}" aria-haspopup="menu" aria-expanded="false">
+                        <i class="fas {{ status_icon or 'fa-circle' }}" aria-hidden="true"></i><span>Status</span>
+                    </button>
+                    <div class="status-dropdown status-dropdown-mobile" data-game-uuid="{{ game.uuid }}" role="menu" aria-label="Play status for {{ game.name }}" style="display: none;">
+                        <button type="button" class="status-dropdown-option" role="menuitem" data-status="unplayed"><i class="fas fa-box" style="color: #808080;"></i><span class="status-label">Unplayed</span></button>
+                        <button type="button" class="status-dropdown-option" role="menuitem" data-status="unfinished"><i class="fas fa-gamepad" style="color: #4A90E2;"></i><span class="status-label">Unfinished</span></button>
+                        <button type="button" class="status-dropdown-option" role="menuitem" data-status="beaten"><i class="fas fa-flag-checkered" style="color: #50C878;"></i><span class="status-label">Beaten</span></button>
+                        <button type="button" class="status-dropdown-option" role="menuitem" data-status="completed"><i class="fas fa-trophy" style="color: #FFD700;"></i><span class="status-label">Completed</span></button>
+                        <button type="button" class="status-dropdown-option" role="menuitem" data-status="null"><i class="fas fa-ban" style="color: #DC3545;"></i><span class="status-label">Won't Play</span></button>
+                        <button type="button" class="status-dropdown-option" role="menuitem" data-status=""><i class="fas fa-times" style="color: #808080;"></i><span class="status-label">Clear Status</span></button>
+                    </div>
+                    {% endif %}
+                    {% if enable_game_issues %}<button type="button" onclick="toggleReportIssueModal()"><i class="fas fa-bug" aria-hidden="true"></i><span>Issue</span></button>{% endif %}
+                </nav>
+
                 <div class="game-card-q2">
                     <div class="game-card-meta">
                         {# Ratings #}
@@ -659,24 +678,6 @@
             {% endif %}
             {% if screenshot_images or game.video_urls %}</div></details>{% endif %}
     </article>
-    <nav class="game-mobile-actions" aria-label="Game actions">
-        <button type="submit" form="gameDownloadForm"><i class="fas fa-download" aria-hidden="true"></i><span>Get game</span></button>
-        <button type="button" onclick="document.querySelector('.favorite-btn-cover')?.click()"><i class="fas fa-heart" aria-hidden="true"></i><span>Favorite</span></button>
-        {% if show_play_status %}
-        <button class="game-status-btn game-status-btn-mobile" type="button" data-game-uuid="{{ game.uuid }}" data-current-status="{{ user_status or '' }}" title="{{ status_label or 'No Status' }}" aria-label="Set play status for {{ game.name }}. Current status: {{ status_label or 'No Status' }}" aria-haspopup="menu" aria-expanded="false">
-            <i class="fas {{ status_icon or 'fa-circle' }}" aria-hidden="true"></i><span>Status</span>
-        </button>
-        <div class="status-dropdown status-dropdown-mobile" data-game-uuid="{{ game.uuid }}" role="menu" aria-label="Play status for {{ game.name }}" style="display: none;">
-            <button type="button" class="status-dropdown-option" role="menuitem" data-status="unplayed"><i class="fas fa-box" style="color: #808080;"></i><span class="status-label">Unplayed</span></button>
-            <button type="button" class="status-dropdown-option" role="menuitem" data-status="unfinished"><i class="fas fa-gamepad" style="color: #4A90E2;"></i><span class="status-label">Unfinished</span></button>
-            <button type="button" class="status-dropdown-option" role="menuitem" data-status="beaten"><i class="fas fa-flag-checkered" style="color: #50C878;"></i><span class="status-label">Beaten</span></button>
-            <button type="button" class="status-dropdown-option" role="menuitem" data-status="completed"><i class="fas fa-trophy" style="color: #FFD700;"></i><span class="status-label">Completed</span></button>
-            <button type="button" class="status-dropdown-option" role="menuitem" data-status="null"><i class="fas fa-ban" style="color: #DC3545;"></i><span class="status-label">Won't Play</span></button>
-            <button type="button" class="status-dropdown-option" role="menuitem" data-status=""><i class="fas fa-times" style="color: #808080;"></i><span class="status-label">Clear Status</span></button>
-        </div>
-        {% endif %}
-        {% if enable_game_issues %}<button type="button" onclick="toggleReportIssueModal()"><i class="fas fa-bug" aria-hidden="true"></i><span>Issue</span></button>{% endif %}
-    </nav>
     </main>
 {% else %}
     <div class="alert alert-warning" role="alert">
