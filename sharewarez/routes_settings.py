@@ -302,8 +302,11 @@ def settings_panel():
         library_view = getattr(getattr(form, 'library_view', None), 'data', None)
         if library_view not in {'grid', 'compact', 'list'}:
             library_view = current_experience['library_view']
+        preserve_notifications = request.form.get('preferences_scope') in {'profile', 'modal'}
 
         def notification_value(field_name, default):
+            if preserve_notifications:
+                return default
             value = getattr(getattr(form, field_name, None), 'data', default)
             return value if isinstance(value, bool) else default
 
@@ -336,6 +339,11 @@ def settings_panel():
         template = 'settings/modal_preferences.html' if request.args.get('modal') == '1' else 'settings/settings_panel.html'
         return render_template(template, form=form, title='Preferences')
     
+    current_app.logger.warning(
+        'Preference form validation failed for user %s: %s',
+        current_user.id,
+        form.errors,
+    )
     return jsonify({
         'success': False,
         'message': 'Form validation failed',

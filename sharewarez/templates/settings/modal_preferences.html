@@ -12,6 +12,7 @@
                 <p class="preferences-modal-intro">Set the defaults used when you browse your library.</p>
                 <form id="preferencesForm" method="POST" action="{{ url_for('settings.settings_panel') }}" class="preferences-form">
                     {{ form.hidden_tag() }}
+                    <input type="hidden" name="preferences_scope" value="modal">
                     <div class="preferences-field">
                         {{ form.items_per_page.label(class="form-label") }}
                         {{ form.items_per_page(class="form-control") }}
@@ -30,6 +31,13 @@
                         {{ form.default_sort_order.label(class="form-label") }}
                         {{ form.default_sort_order(class="form-select") }}
                         {% for error in form.default_sort_order.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    <div class="preferences-field">
+                        {{ form.library_view.label(class="form-label") }}
+                        {{ form.library_view(class="form-select") }}
+                        {% for error in form.library_view.errors %}
                             <div class="invalid-feedback">{{ error }}</div>
                         {% endfor %}
                     </div>

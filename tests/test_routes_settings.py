@@ -570,10 +570,54 @@ class TestSettingsPanel:
             # In real implementation, the theme would be None if form.theme.data == 'default'
             db_session.refresh(test_user)
             # Since we mocked form.theme.data as 'default', verify it was processed
-            # The actual conversion to None happens in the route logic: 
+            # The actual conversion to None happens in the route logic:
             # current_user.preferences.theme = form.theme.data if form.theme.data != 'default' else None
             assert test_user.preferences is not None  # Preferences were created/updated
-    
+
+    def test_post_settings_panel_profile_scope_preserves_notifications(
+        self, client, test_user, test_user_preference, db_session
+    ):
+        """The compact profile form saves display settings without clearing notification choices."""
+        from sharewarez.utils.user_preferences import get_experience_settings
+
+        test_user_preference.items_per_page = 20
+        test_user_preference.experience_settings = {
+            'library_view': 'grid',
+            'notifications': {
+                'requests': True,
+                'issues': False,
+                'downloads': True,
+                'games': False,
+                'browser': True,
+            },
+        }
+        db_session.commit()
+        with client.session_transaction() as sess:
+            sess['_user_id'] = str(test_user.id)
+            sess['_fresh'] = True
+
+        response = client.post('/settings_panel', data={
+            'preferences_scope': 'profile',
+            'items_per_page': '50',
+            'default_sort': 'rating',
+            'default_sort_order': 'asc',
+            'library_view': 'compact',
+            'theme': 'default',
+        })
+
+        assert response.status_code == 200
+        assert response.get_json()['success'] is True
+        db_session.refresh(test_user_preference)
+        settings = get_experience_settings(test_user)
+        assert settings['library_view'] == 'compact'
+        assert settings['notifications'] == {
+            'requests': True,
+            'issues': False,
+            'downloads': True,
+            'games': False,
+            'browser': True,
+        }
+
     def test_post_settings_panel_database_error(self, client, test_user, db_session):
         """Test POST request with database error."""
         with client.session_transaction() as sess:

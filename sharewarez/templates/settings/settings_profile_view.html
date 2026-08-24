@@ -82,6 +82,7 @@
             </div>
             <form id="preferencesForm" method="POST" action="{{ url_for('settings.settings_panel') }}" class="profile-preferences-form">
                 {{ preferences_form.hidden_tag() }}
+                <input type="hidden" name="preferences_scope" value="profile">
                 <div class="preferences-field">
                     {{ preferences_form.items_per_page.label(class="form-label") }}
                     {{ preferences_form.items_per_page(class="form-select") }}
@@ -93,6 +94,10 @@
                 <div class="preferences-field">
                     {{ preferences_form.default_sort_order.label(class="form-label") }}
                     {{ preferences_form.default_sort_order(class="form-select") }}
+                </div>
+                <div class="preferences-field">
+                    {{ preferences_form.library_view.label(class="form-label") }}
+                    {{ preferences_form.library_view(class="form-select") }}
                 </div>
                 <div class="preferences-field">
                     {{ preferences_form.theme.label(class="form-label") }}

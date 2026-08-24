@@ -10,11 +10,13 @@ document.addEventListener('DOMContentLoaded', function() {
             body: formData,
             headers: CSRFUtils.getHeaders()
         })
-        .then(response => {
+        .then(async response => {
+            const data = await response.json().catch(() => ({}));
             if (!response.ok) {
-                throw new Error('Network response was not ok');
+                const validationMessage = Object.values(data.errors || {}).flat()[0];
+                throw new Error(validationMessage || data.message || 'Could not save preferences');
             }
-            return response.json();
+            return data;
         })
         .then(data => {
             if (data.success) {
@@ -38,7 +40,7 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .catch(error => {
             console.error('Error:', error);
-            $.notify("An error occurred while saving preferences", "error");
+            $.notify(error.message || "An error occurred while saving preferences", "error");
         });
     });
 });
