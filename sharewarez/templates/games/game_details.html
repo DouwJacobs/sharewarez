@@ -325,7 +325,7 @@
                                      class="game-card-cover-image animated-entry">
                             {% endfor %}
                         {% else %}
-                            <span class="game-card-cover-image game-cover-placeholder animated-entry"><i class="fas fa-gamepad" aria-hidden="true"></i><strong>{{ game.name[:2]|upper }}</strong><small>{{ game.name }}</small></span>
+                            <span class="game-card-cover-image game-cover-placeholder animated-entry"><i class="fas fa-gamepad" aria-hidden="true"></i><strong>{{ game.name|game_monogram }}</strong><small>{{ game.name }}</small></span>
                         {% endif %}
 
                         {# Favorite button on cover #}

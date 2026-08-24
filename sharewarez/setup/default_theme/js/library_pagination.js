@@ -485,7 +485,14 @@ $(document).ready(function() {
         var tags = game.tags ? game.tags.join(', ') : '';
         var defaultCover = 'newstyle/default_cover.jpg';
         var fullCoverUrl = !game.cover_url || game.cover_url === defaultCover ? '/static/' + defaultCover : '/static/library/images/' + game.cover_url;
-        var initials = $('<div>').text((game.name || '??').slice(0, 2).toUpperCase()).html();
+        const monogramWords = (game.name || '').replace(/[’']s\b/gi, '').match(/[\p{L}\p{N}]+/gu) || [];
+        const fillerWords = new Set(['a', 'an', 'and', 'at', 'for', 'from', 'in', 'of', 'on', 'the', 'to', 'with']);
+        const meaningfulWords = monogramWords.filter(word => !fillerWords.has(word.toLocaleLowerCase()));
+        const selectedWords = meaningfulWords.length ? meaningfulWords : monogramWords;
+        const monogram = selectedWords.length > 1
+            ? selectedWords.slice(0, 3).map(word => [...word][0]).join('').toLocaleUpperCase()
+            : (selectedWords[0] ? [...selectedWords[0]][0].toLocaleUpperCase() : '?');
+        var initials = $('<div>').text(monogram).html();
         var coverHtml = game.has_cover
             ? `<img src="${fullCoverUrl}" alt="${safeName}" class="game-cover" loading="lazy">`
             : `<span class="game-cover game-cover-placeholder"><i class="fas fa-gamepad" aria-hidden="true"></i><strong>${initials}</strong><small>${safeName}</small></span>`;

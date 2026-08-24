@@ -1,6 +1,23 @@
 """Consistent, human-friendly presentation helpers for templates."""
 
 from datetime import date, datetime, timezone
+import re
+
+
+_MONOGRAM_FILLER_WORDS = {'a', 'an', 'and', 'at', 'for', 'from', 'in', 'of', 'on', 'the', 'to', 'with'}
+
+
+def game_monogram(value):
+    """Build a short, meaningful label for artwork placeholders."""
+    title = re.sub(r"[’']s\b", '', str(value or ''), flags=re.IGNORECASE)
+    words = re.findall(r'[^\W_]+', title, flags=re.UNICODE)
+    meaningful = [word for word in words if word.casefold() not in _MONOGRAM_FILLER_WORDS]
+    words = meaningful or words
+    if not words:
+        return '?'
+    if len(words) == 1:
+        return words[0][0].upper()
+    return ''.join(word[0] for word in words[:3]).upper()
 
 
 def _parse_temporal(value):

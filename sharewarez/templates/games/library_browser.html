@@ -104,7 +104,7 @@
                     </a>
                     {% else %}
                         <a href="{{ url_for('games.game_details', game_uuid=game.uuid) }}">
-                            <span class="game-cover game-cover-placeholder"><i class="fas fa-gamepad" aria-hidden="true"></i><strong>{{ game.name[:2]|upper }}</strong><small>{{ game.name }}</small></span>
+                            <span class="game-cover game-cover-placeholder"><i class="fas fa-gamepad" aria-hidden="true"></i><strong>{{ game.name|game_monogram }}</strong><small>{{ game.name }}</small></span>
                         </a>
                     {% endif %}
                     {% if game.has_local_override %}

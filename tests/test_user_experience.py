@@ -3,7 +3,7 @@ from uuid import uuid4
 
 from sharewarez.models import DiscoverySection, User, UserPreference
 from sharewarez.utils.notifications import create_notifications
-from sharewarez.utils.formatting import friendly_date
+from sharewarez.utils.formatting import friendly_date, game_monogram
 from sharewarez.utils.user_preferences import get_experience_settings
 
 
@@ -108,3 +108,10 @@ def test_friendly_date_formats_database_and_iso_values_consistently():
     assert friendly_date(date(2026, 7, 9)) == '9 Jul 2026'
     assert friendly_date('2026-07-09') == '9 Jul 2026'
     assert friendly_date(None) == 'Not available'
+
+
+def test_game_monogram_uses_meaningful_title_words():
+    assert game_monogram('God of War Ragnarök') == 'GWR'
+    assert game_monogram("Assassin's Creed") == 'AC'
+    assert game_monogram('Bellwright') == 'B'
+    assert game_monogram(None) == '?'

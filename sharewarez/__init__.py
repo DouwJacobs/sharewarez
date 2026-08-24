@@ -111,9 +111,10 @@ def create_app():
     init_observability(app)
     init_http_security(app)
 
-    from sharewarez.utils.formatting import friendly_date, friendly_datetime
+    from sharewarez.utils.formatting import friendly_date, friendly_datetime, game_monogram
     app.add_template_filter(friendly_date, 'friendly_date')
     app.add_template_filter(friendly_datetime, 'friendly_datetime')
+    app.add_template_filter(game_monogram, 'game_monogram')
 
     @app.errorhandler(413)
     def request_entity_too_large(error):
