@@ -12,6 +12,13 @@
 .app-page--narrow { max-width: 960px; }
 .app-page--wide { max-width: 1600px; }
 
+/* The admin content shell already provides the desktop viewport gutter. Keep
+   full-width workspaces on the same rail as the shared admin navigation while
+   preserving the deliberately narrower settings and form pages. */
+.admin-ui .app-page:not(.app-page--narrow) {
+    width: min(1440px, 100%);
+}
+
 .app-page-header {
     display: block;
     min-width: 0;
