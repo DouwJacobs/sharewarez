@@ -844,8 +844,11 @@
     .game-library-container .game-card > .game-status-btn { right: 10px; bottom: 10px; }
 
     .game-library-container .game-cover { width: 100%; max-width: none; max-height: none; }
-    .library-game-title { width: 100%; font-size: .82rem; text-align: left; }
+    .library-game-title { width: 100%; font-size: .82rem; text-align: center; }
     .library-game-metadata { display: block; }
+    .library-view-grid .library-game-metadata,
+    .library-view-compact .library-game-metadata { display: none; }
+    .library-view-list .library-game-title { text-align: left; }
     .library-view-grid .library-game-genres,
     .library-view-grid .library-game-metadata-separator,
     .library-view-grid .library-game-metadata-unknown,
