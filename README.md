@@ -110,10 +110,11 @@ git tag "v$(python3 scripts/version.py current)"
 git push origin main --tags
 ```
 
-A matching `vX.Y.Z` tag publishes `X.Y.Z`, `vX.Y.Z`, and `latest` images to
-Docker Hub. The release workflow stops if the Git tag and `VERSION` disagree.
-For a local release build, use `./scripts/build-images.sh`; the Docker build
-also rejects missing or mismatched version metadata.
+A matching `vX.Y.Z` tag identifies the source release. Container images are
+built and published from the release workstation rather than GitHub Actions.
+Use `./scripts/build-images.sh`, then publish the matching `X.Y.Z`, `vX.Y.Z`,
+and `latest` tags to Docker Hub. The Docker build rejects missing or mismatched
+version metadata.
 
 ## Common commands
 
