@@ -142,8 +142,8 @@
 }
 
 .notification-card .form-check-input:checked {
-    background-color: #0096ff;
-    border-color: #0096ff;
+    background-color: var(--theme-primary);
+    border-color: var(--theme-primary);
 }
 
 .notification-card .form-check-input:focus {
@@ -169,7 +169,7 @@
 }
 
 /* Icons in notification cards */
-.notification-card .text-primary { color: #0096ff !important; }
+.notification-card .text-primary { color: var(--theme-primary) !important; }
 .notification-card .text-info { color: #17a2b8 !important; }
 .notification-card .text-warning { color: #ffc107 !important; }
 .notification-card .text-success { color: #28a745 !important; }

@@ -162,8 +162,8 @@
 }
 
 .user-item.active {
-    background: rgba(0, 150, 255, 0.2);
-    border-color: #0096ff;
+    background: rgba(var(--theme-accent-rgb, 98, 122, 239), 0.2);
+    border-color: var(--theme-primary);
 }
 
 .user-checkbox {
@@ -458,7 +458,7 @@
 }
 
 .glass-card .card-header h4 {
-    color: #0096ff;
+    color: var(--theme-primary);
     margin: 0;
     font-size: 1.1rem;
     font-weight: 600;
@@ -546,7 +546,7 @@
 }
 
 input:checked + .toggle-label {
-    background-color: #0096ff;
+    background-color: var(--theme-primary);
     border-color: rgb(var(--theme-accent-rgb, 0, 150, 255));
 }
 
@@ -595,7 +595,7 @@ input:checked + .toggle-label:before {
 .stat-item .stat-value {
     font-size: 1.5rem;
     font-weight: bold;
-    color: #0096ff;
+    color: var(--theme-primary);
     line-height: 1;
 }
 
@@ -656,7 +656,7 @@ input:checked + .toggle-label:before {
 }
 
 .activity-item i {
-    color: #0096ff;
+    color: var(--theme-primary);
     width: 20px;
     text-align: center;
 }
@@ -684,7 +684,7 @@ input:checked + .toggle-label:before {
 .loading-spinner i {
     font-size: 2rem;
     margin-bottom: 1rem;
-    color: #0096ff;
+    color: var(--theme-primary);
 }
 
 /* Responsive Design */

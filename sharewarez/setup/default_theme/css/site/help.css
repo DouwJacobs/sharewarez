@@ -257,7 +257,7 @@
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
-    background: linear-gradient(135deg, var(--btn-primary), #1e40af);
+    background: linear-gradient(135deg, var(--btn-primary), var(--btn-primary-hover));
     color: white;
     text-decoration: none;
     padding: 0.75rem 1.5rem;
@@ -268,7 +268,7 @@
 }
 
 .action-button:hover {
-    background: linear-gradient(135deg, #1e40af, var(--btn-primary));
+    background: linear-gradient(135deg, var(--btn-primary-hover), var(--btn-primary));
     transform: translateY(-2px);
     box-shadow: var(--shadow-primary-brand-strong);
     color: white;

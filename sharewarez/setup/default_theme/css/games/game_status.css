@@ -74,8 +74,8 @@
 
 .game-status-btn:hover,
 .game-status-btn-cover:hover {
-    background: rgba(98, 122, 239, 0.22);
-    border-color: rgba(154, 177, 255, 0.38);
+    background: rgba(var(--theme-accent-rgb, 98, 122, 239), 0.18);
+    border-color: rgba(var(--theme-accent-soft-rgb, 154, 177, 255), 0.34);
     transform: none;
 }
 
@@ -127,11 +127,11 @@
     bottom: 50px;
     right: 0;
     min-width: 180px;
-    background: linear-gradient(145deg, rgba(28, 29, 45, 0.98), rgba(12, 12, 20, 0.98));
+    background: var(--theme-panel-bg, linear-gradient(145deg, rgba(28, 29, 45, 0.98), rgba(12, 12, 20, 0.98)));
     backdrop-filter: blur(16px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--theme-border-color, rgba(255, 255, 255, 0.1));
     border-radius: 12px;
-    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.58), 0 0 24px rgba(80, 120, 255, 0.14);
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.58), 0 0 24px rgba(var(--theme-accent-rgb, 98, 122, 239), 0.12);
     z-index: 100;
     display: none;
     overflow: hidden;
@@ -159,9 +159,11 @@
     border-bottom: none;
 }
 
+.status-dropdown-option--clear { border-top: 1px solid var(--theme-border-color, rgba(255, 255, 255, 0.12)); }
+
 .status-dropdown-option:hover,
 .status-dropdown-option:focus-visible {
-    background-color: rgba(98, 122, 239, 0.16);
+    background-color: var(--theme-hover-surface, rgba(var(--theme-accent-rgb, 98, 122, 239), 0.12));
     outline: none;
 }
 
@@ -177,29 +179,31 @@
 
 /* Status Icon Colors (set via JavaScript) */
 .status-icon-unplayed {
-    color: #808080;
+    color: var(--status-neutral-color);
 }
 
 .status-icon-unfinished {
-    color: #4A90E2;
+    color: var(--status-active-color);
 }
 
 .status-icon-beaten {
-    color: #50C878;
+    color: var(--status-success-color);
 }
 
 .status-icon-completed {
-    color: #FFD700;
+    color: var(--status-warning-color);
 }
 
 .status-icon-null {
-    color: #DC3545;
+    color: var(--status-danger-color);
 }
 
 .status-icon-empty {
-    color: #808080;
+    color: var(--status-neutral-color);
     opacity: 0.4;
 }
+
+.status-icon-progress { color: var(--status-active-color); }
 
 /* Animation for status change success */
 @keyframes statusPulse {

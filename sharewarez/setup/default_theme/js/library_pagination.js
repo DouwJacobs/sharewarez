@@ -301,9 +301,9 @@ $(document).ready(function() {
         paginationButtons.prop('disabled', true);
         const skeletonCards = Array.from({length: 8}, () => `
             <div class="game-card-skeleton" aria-hidden="true">
-                <span class="game-card-skeleton-cover"></span>
-                <span class="game-card-skeleton-line is-title"></span>
-                <span class="game-card-skeleton-line"></span>
+                <span class="app-skeleton game-card-skeleton-cover"></span>
+                <span class="app-skeleton game-card-skeleton-line is-title"></span>
+                <span class="app-skeleton game-card-skeleton-line"></span>
             </div>`).join('');
         $('#gamesContainer').attr('aria-busy', 'true').html(`<div class="sr-only" role="status">Loading games…</div>${skeletonCards}`);
         activeGamesRequest = $.ajax({
@@ -344,16 +344,16 @@ $(document).ready(function() {
                 success: function(response) {
                     let message;
                     if (response.role === 'admin') {
-                        message = `<div class="game-grid-empty"><i class="fas fa-book" aria-hidden="true"></i><p>You have no libraries yet.</p><a class="btn btn-primary" href="${libraryManagerUrl}">Create a library</a></div>`;
+                        message = `<div class="app-empty-state game-grid-empty"><i class="fas fa-book" aria-hidden="true"></i><h2>No libraries yet</h2><p>Create a library, then scan it to start building the collection.</p><a class="btn btn-primary" href="${libraryManagerUrl}">Create a library</a></div>`;
                     } else {
-                        message = '<div class="game-grid-empty"><i class="fas fa-gamepad" aria-hidden="true"></i><p>No games or libraries are available yet.</p></div>';
+                        message = '<div class="app-empty-state game-grid-empty"><i class="fas fa-gamepad" aria-hidden="true"></i><h2>No games available</h2><p>An administrator has not published a library yet.</p></div>';
                     }
                     if ($('#gamesContainer').empty()) {
                         $('#gamesContainer').append(message);
                     }
                 },
                 error: function() {
-                    $('#gamesContainer').append('<div class="game-grid-empty game-grid-error"><p>Unable to load this library state. Please try again.</p></div>');
+                    $('#gamesContainer').append('<div class="app-empty-state game-grid-empty game-grid-error"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i><h2>Library unavailable</h2><p>Unable to load this library state. Please try again.</p></div>');
                 }
             });
             return;
@@ -366,16 +366,16 @@ $(document).ready(function() {
                 success: function(response) {
                     let message;
                     if (response.role === 'admin') {
-                        message = `<p>You have no games!<br> <br>Go to <a href="${libraryScanUrl}">Scan Manager</a> and add some games.</p>`;
+                        message = `<div class="app-empty-state game-grid-empty"><i class="fas fa-magnifying-glass" aria-hidden="true"></i><h2>No games scanned</h2><p>Run a scan to add games from this library.</p><a class="btn btn-primary" href="${libraryScanUrl}">Open Scan Manager</a></div>`;
                     } else {
-                        message = '<p>No games or libraries are available. Contact an administrator for help.</p>';
+                        message = '<div class="app-empty-state game-grid-empty"><i class="fas fa-gamepad" aria-hidden="true"></i><h2>No games available</h2><p>Contact an administrator to scan this library.</p></div>';
                     }
                     if ($('#gamesContainer').empty()) {
                         $('#gamesContainer').append(message);
                     }
                 },
                 error: function() {
-                    $('#gamesContainer').append('<p>Error fetching user role. Please try again later.</p>');
+                    $('#gamesContainer').append('<div class="app-empty-state game-grid-empty game-grid-error"><h2>Unable to load games</h2><p>Please try again later.</p></div>');
                 }
             });
             return;
@@ -388,16 +388,16 @@ $(document).ready(function() {
                 success: function(response) {
                     let message; 
                     if (response.role === 'admin') {
-                        message = `<p>You have no games in this library!<br> <br>Go to <a href="${libraryScanUrl}">Scan Manager</a> and add some games to the library.</p>`;
+                        message = `<div class="app-empty-state game-grid-empty"><i class="fas fa-filter" aria-hidden="true"></i><h2>No matching games</h2><p>Clear the filters or scan this library for new games.</p><a class="btn btn-secondary" href="${libraryScanUrl}">Open Scan Manager</a></div>`;
                     } else {
-                        message = '<p>No games or libraries are available. Contact an administrator for help.</p>';
+                        message = '<div class="app-empty-state game-grid-empty"><i class="fas fa-filter" aria-hidden="true"></i><h2>No matching games</h2><p>Try clearing the active filters.</p></div>';
                     }
                     if ($('#gamesContainer').empty()) {
                         $('#gamesContainer').append(message);
                     }
                 },
                 error: function() {
-                    $('#gamesContainer').append('<p>Error fetching user role. Please try again later.</p>');
+                    $('#gamesContainer').append('<div class="app-empty-state game-grid-empty game-grid-error"><h2>Unable to load games</h2><p>Please try again later.</p></div>');
                 }
             });
             return;
@@ -507,44 +507,44 @@ $(document).ready(function() {
         if (showPlayStatus) {
             // Generate status button and dropdown HTML
             const statusConfig = {
-                'unplayed': { icon: 'fa-box', color: '#808080', label: 'Unplayed' },
-                'unfinished': { icon: 'fa-gamepad', color: '#4A90E2', label: 'Unfinished' },
-                'beaten': { icon: 'fa-flag-checkered', color: '#50C878', label: 'Beaten' },
-                'completed': { icon: 'fa-trophy', color: '#FFD700', label: 'Completed' },
-                'null': { icon: 'fa-ban', color: '#DC3545', label: "Won't Play" }
+                'unplayed': { icon: 'fa-box', label: 'Unplayed' },
+                'unfinished': { icon: 'fa-gamepad', label: 'Unfinished' },
+                'beaten': { icon: 'fa-flag-checkered', label: 'Beaten' },
+                'completed': { icon: 'fa-trophy', label: 'Completed' },
+                'null': { icon: 'fa-ban', label: "Won't Play" }
             };
 
             // Determine current status icon and color
             const currentStatus = game.user_status || '';
-            const config = statusConfig[currentStatus] || { icon: 'fa-circle', color: '#808080', label: 'No Status' };
+            const config = statusConfig[currentStatus] || { icon: 'fa-circle', label: 'No Status' };
 
             statusButtonHtml = `
                 <button class="game-status-btn" type="button" data-game-uuid="${game.uuid}" data-current-status="${currentStatus}" title="${config.label}" aria-label="Set play status for ${safeName}. Current status: ${config.label}" aria-haspopup="menu" aria-expanded="false">
-                    <i class="fas ${config.icon}" style="color: ${config.color}; ${!currentStatus ? 'opacity: 0.4;' : ''}"></i>
+                    <i class="fas ${config.icon} status-icon-${currentStatus || 'empty'}"></i>
                 </button>
                 <div class="status-dropdown" data-game-uuid="${game.uuid}" role="menu" aria-label="Play status for ${safeName}" style="display: none;">
                     <button type="button" class="status-dropdown-option" role="menuitem" data-status="unplayed">
-                        <i class="fas fa-box" style="color: #808080;"></i>
+                        <i class="fas fa-box status-icon-unplayed"></i>
                         <span class="status-label">Unplayed</span>
                     </button>
                     <button type="button" class="status-dropdown-option" role="menuitem" data-status="unfinished">
-                        <i class="fas fa-gamepad" style="color: #4A90E2;"></i>
+                        <i class="fas fa-gamepad status-icon-unfinished"></i>
                         <span class="status-label">Unfinished</span>
                     </button>
                     <button type="button" class="status-dropdown-option" role="menuitem" data-status="beaten">
-                        <i class="fas fa-flag-checkered" style="color: #50C878;"></i>
+                        <i class="fas fa-flag-checkered status-icon-beaten"></i>
                         <span class="status-label">Beaten</span>
                     </button>
                     <button type="button" class="status-dropdown-option" role="menuitem" data-status="completed">
-                        <i class="fas fa-trophy" style="color: #FFD700;"></i>
+                        <i class="fas fa-trophy status-icon-completed"></i>
                         <span class="status-label">Completed</span>
                     </button>
                     <button type="button" class="status-dropdown-option" role="menuitem" data-status="null">
-                        <i class="fas fa-ban" style="color: #DC3545;"></i>
+                        <i class="fas fa-ban status-icon-null"></i>
                         <span class="status-label">Won't Play</span>
                     </button>
-                    <button type="button" class="status-dropdown-option" role="menuitem" data-status="" style="border-top: 1px solid rgba(255, 255, 255, 0.2);">
-                        <i class="fas fa-times" style="color: #808080;"></i>
+                    <button type="button" class="status-dropdown-option status-dropdown-option--clear" role="menuitem" data-status="">
+                        <i class="fas fa-times status-icon-empty"></i>
                         <span class="status-label">Clear Status</span>
                     </button>
                 </div>
@@ -568,7 +568,7 @@ $(document).ready(function() {
                 <!-- Details and screenshots will be injected here by JavaScript -->
             </div>
         </div>
-        <div class="library-game-copy"><a class="library-game-title" href="/game_details/${game.uuid}">${safeName}</a><span class="library-game-metadata${game.size === 'Unknown size' ? ' library-game-metadata-unknown' : ''}"><span class="library-game-genres">${genres || 'Game'}</span><span class="library-game-metadata-separator" aria-hidden="true"> · </span><span class="library-game-size">${game.size}</span></span></div>
+        <div class="library-game-copy"><a class="library-game-title" href="/game_details/${game.uuid}">${safeName}</a><span class="library-game-metadata"><span class="library-game-genres">${genres || 'Game'}</span></span></div>
     </div>
     `;
         return gameCardHtml;

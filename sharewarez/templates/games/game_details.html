@@ -336,33 +336,33 @@
                         {% if show_play_status %}
                         {# Game status button on cover #}
                         <button class="game-status-btn game-status-btn-cover" type="button" data-game-uuid="{{ game.uuid }}" data-current-status="{{ user_status or '' }}" title="{{ status_label or 'No Status' }}" aria-label="Set play status for {{ game.name }}. Current status: {{ status_label or 'No Status' }}" aria-haspopup="menu" aria-expanded="false">
-                            <i class="fas {{ status_icon or 'fa-circle' }}" aria-hidden="true"></i>
+                            <i class="fas {{ status_icon or 'fa-circle' }} status-icon-{{ user_status or 'empty' }}" aria-hidden="true"></i>
                         </button>
 
                         {# Status dropdown menu #}
                         <div class="status-dropdown" data-game-uuid="{{ game.uuid }}" role="menu" aria-label="Play status for {{ game.name }}" style="display: none;">
                             <button type="button" class="status-dropdown-option" role="menuitem" data-status="unplayed">
-                                <i class="fas fa-box" style="color: #808080;"></i>
+                                <i class="fas fa-box status-icon-unplayed"></i>
                                 <span class="status-label">Unplayed</span>
                             </button>
                             <button type="button" class="status-dropdown-option" role="menuitem" data-status="unfinished">
-                                <i class="fas fa-gamepad" style="color: #4A90E2;"></i>
+                                <i class="fas fa-gamepad status-icon-unfinished"></i>
                                 <span class="status-label">Unfinished</span>
                             </button>
                             <button type="button" class="status-dropdown-option" role="menuitem" data-status="beaten">
-                                <i class="fas fa-flag-checkered" style="color: #50C878;"></i>
+                                <i class="fas fa-flag-checkered status-icon-beaten"></i>
                                 <span class="status-label">Beaten</span>
                             </button>
                             <button type="button" class="status-dropdown-option" role="menuitem" data-status="completed">
-                                <i class="fas fa-trophy" style="color: #FFD700;"></i>
+                                <i class="fas fa-trophy status-icon-completed"></i>
                                 <span class="status-label">Completed</span>
                             </button>
                             <button type="button" class="status-dropdown-option" role="menuitem" data-status="null">
-                                <i class="fas fa-ban" style="color: #DC3545;"></i>
+                                <i class="fas fa-ban status-icon-null"></i>
                                 <span class="status-label">Won't Play</span>
                             </button>
-                            <button type="button" class="status-dropdown-option" role="menuitem" data-status="" style="border-top: 1px solid rgba(255, 255, 255, 0.2);">
-                                <i class="fas fa-times" style="color: #808080;"></i>
+                            <button type="button" class="status-dropdown-option status-dropdown-option--clear" role="menuitem" data-status="">
+                                <i class="fas fa-times status-icon-empty"></i>
                                 <span class="status-label">Clear Status</span>
                             </button>
                         </div>
@@ -375,15 +375,15 @@
                     <button type="button" onclick="document.querySelector('.favorite-btn-cover')?.click()"><i class="fas fa-heart" aria-hidden="true"></i><span>Favorite</span></button>
                     {% if show_play_status %}
                     <button class="game-status-btn game-status-btn-mobile" type="button" data-game-uuid="{{ game.uuid }}" data-current-status="{{ user_status or '' }}" title="{{ status_label or 'No Status' }}" aria-label="Set play status for {{ game.name }}. Current status: {{ status_label or 'No Status' }}" aria-haspopup="menu" aria-expanded="false">
-                        <i class="fas {{ status_icon or 'fa-circle' }}" aria-hidden="true"></i><span>Status</span>
+                        <i class="fas {{ status_icon or 'fa-circle' }} status-icon-{{ user_status or 'empty' }}" aria-hidden="true"></i><span>Status</span>
                     </button>
                     <div class="status-dropdown status-dropdown-mobile" data-game-uuid="{{ game.uuid }}" role="menu" aria-label="Play status for {{ game.name }}" style="display: none;">
-                        <button type="button" class="status-dropdown-option" role="menuitem" data-status="unplayed"><i class="fas fa-box" style="color: #808080;"></i><span class="status-label">Unplayed</span></button>
-                        <button type="button" class="status-dropdown-option" role="menuitem" data-status="unfinished"><i class="fas fa-gamepad" style="color: #4A90E2;"></i><span class="status-label">Unfinished</span></button>
-                        <button type="button" class="status-dropdown-option" role="menuitem" data-status="beaten"><i class="fas fa-flag-checkered" style="color: #50C878;"></i><span class="status-label">Beaten</span></button>
-                        <button type="button" class="status-dropdown-option" role="menuitem" data-status="completed"><i class="fas fa-trophy" style="color: #FFD700;"></i><span class="status-label">Completed</span></button>
-                        <button type="button" class="status-dropdown-option" role="menuitem" data-status="null"><i class="fas fa-ban" style="color: #DC3545;"></i><span class="status-label">Won't Play</span></button>
-                        <button type="button" class="status-dropdown-option" role="menuitem" data-status=""><i class="fas fa-times" style="color: #808080;"></i><span class="status-label">Clear Status</span></button>
+                        <button type="button" class="status-dropdown-option" role="menuitem" data-status="unplayed"><i class="fas fa-box status-icon-unplayed"></i><span class="status-label">Unplayed</span></button>
+                        <button type="button" class="status-dropdown-option" role="menuitem" data-status="unfinished"><i class="fas fa-gamepad status-icon-unfinished"></i><span class="status-label">Unfinished</span></button>
+                        <button type="button" class="status-dropdown-option" role="menuitem" data-status="beaten"><i class="fas fa-flag-checkered status-icon-beaten"></i><span class="status-label">Beaten</span></button>
+                        <button type="button" class="status-dropdown-option" role="menuitem" data-status="completed"><i class="fas fa-trophy status-icon-completed"></i><span class="status-label">Completed</span></button>
+                        <button type="button" class="status-dropdown-option" role="menuitem" data-status="null"><i class="fas fa-ban status-icon-null"></i><span class="status-label">Won't Play</span></button>
+                        <button type="button" class="status-dropdown-option status-dropdown-option--clear" role="menuitem" data-status=""><i class="fas fa-times status-icon-empty"></i><span class="status-label">Clear Status</span></button>
                     </div>
                     {% endif %}
                     {% if enable_game_issues %}<button type="button" onclick="toggleReportIssueModal()"><i class="fas fa-bug" aria-hidden="true"></i><span>Issue</span></button>{% endif %}

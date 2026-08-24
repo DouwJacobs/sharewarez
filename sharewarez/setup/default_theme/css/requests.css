@@ -3,7 +3,7 @@
     --theme-inner-card-bg: color-mix(in srgb, var(--theme-card-top, rgba(48,52,70,.94)) 72%, transparent);
     --theme-input-bg: var(--form-bg, rgba(255,255,255,.05));
     --theme-border-color: var(--form-border, rgba(255,255,255,.1));
-    --theme-primary: var(--btn-primary, #2563eb);
+    --theme-primary: var(--btn-primary, rgb(var(--theme-accent-rgb, 98, 122, 239)));
     --theme-text-primary: var(--text-white, #fff);
     --theme-text-secondary: var(--text-muted, #adb5bd);
     --theme-button-text: var(--text-white, #fff);
@@ -529,3 +529,37 @@
     .request-history-content > form,
     .admin-request-form { grid-column: 1 / -1; }
 }
+
+/* Shared cross-app hierarchy and status language. */
+.requests-page .eyebrow,
+.request-edit-eyebrow { color: var(--theme-text-muted, var(--theme-text-secondary, #b9c0d0)) !important; }
+.request-search-wrap > i { color: var(--theme-text-secondary, #b9c0d0); }
+.request-search-wrap:focus-within > i { color: var(--theme-primary); }
+.request-result-meta,
+.edition-label { color: var(--theme-text-secondary, #b9c0d0) !important; }
+.request-chip {
+    min-height: 28px;
+    align-items: center;
+    padding: 4px 10px;
+    border: 1px solid color-mix(in srgb, var(--status-active-color) 34%, transparent);
+    background: color-mix(in srgb, var(--status-active-color) 12%, transparent);
+    color: var(--status-active-color);
+    font-size: .72rem;
+    font-weight: 750;
+}
+.request-chip.status-fulfilled {
+    border-color: color-mix(in srgb, var(--status-success-color) 34%, transparent);
+    background: color-mix(in srgb, var(--status-success-color) 12%, transparent);
+    color: var(--status-success-color);
+}
+.request-chip:is(.status-not_planned, .status-cancelled) {
+    border-color: color-mix(in srgb, var(--status-danger-color) 34%, transparent);
+    background: color-mix(in srgb, var(--status-danger-color) 12%, transparent);
+    color: var(--status-danger-color);
+}
+.request-chip.status-planned {
+    border-color: color-mix(in srgb, var(--status-warning-color) 34%, transparent);
+    background: color-mix(in srgb, var(--status-warning-color) 12%, transparent);
+    color: var(--status-warning-color);
+}
+.requests-page .empty-state > i { color: var(--theme-text-secondary, #b9c0d0); }

@@ -19,32 +19,26 @@ document.addEventListener('DOMContentLoaded', () => {
     const STATUS_CONFIG = {
         'unplayed': {
             icon: 'fa-box',
-            color: '#808080',
             label: 'Unplayed'
         },
         'unfinished': {
             icon: 'fa-gamepad',
-            color: '#4A90E2',
             label: 'Unfinished'
         },
         'beaten': {
             icon: 'fa-flag-checkered',
-            color: '#50C878',
             label: 'Beaten'
         },
         'completed': {
             icon: 'fa-trophy',
-            color: '#FFD700',
             label: 'Completed'
         },
         'null': {
             icon: 'fa-ban',
-            color: '#DC3545',
             label: "Won't Play"
         },
         '': {
             icon: 'fa-circle',
-            color: '#808080',
             label: 'No Status',
             empty: true
         }
@@ -153,15 +147,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (icon) {
             // Remove all possible status icon classes
             icon.className = '';
-            icon.classList.add('fas', config.icon);
-            icon.style.color = config.color;
-
-            // Add opacity for empty status
-            if (config.empty) {
-                icon.style.opacity = '0.4';
-            } else {
-                icon.style.opacity = '1';
-            }
+            icon.classList.add('fas', config.icon, `status-icon-${status || 'empty'}`);
+            icon.style.removeProperty('color');
+            icon.style.removeProperty('opacity');
         }
 
         // Update data attribute
@@ -175,12 +163,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const setGameStatus = async (button, gameUuid, newStatus) => {
         const icon = button.querySelector('i');
         const originalIconClass = icon.className;
-        const originalColor = icon.style.color;
 
         try {
             // Show loading spinner
-            icon.className = 'fas fa-circle-notch fa-spin';
-            icon.style.color = '#4A90E2';
+            icon.className = 'fas fa-circle-notch fa-spin status-icon-progress';
             button.classList.add('processing');
 
             const response = await fetch(`/api/set_game_status/${gameUuid}`, {
@@ -217,7 +203,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Revert appearance
             icon.className = originalIconClass;
-            icon.style.color = originalColor;
 
             $.notify("Failed to update status", "error");
             throw error;
@@ -231,16 +216,13 @@ document.addEventListener('DOMContentLoaded', () => {
         return new Promise((resolve) => {
             const icon = button.querySelector('i');
             const originalClass = icon.className;
-            const originalColor = icon.style.color;
 
             // Show checkmark
-            icon.className = 'fas fa-check';
-            icon.style.color = '#50C878';
+            icon.className = 'fas fa-check status-icon-beaten';
 
             // Restore after 1 second
             setTimeout(() => {
                 icon.className = originalClass;
-                icon.style.color = originalColor;
                 resolve();
             }, 1000);
         });

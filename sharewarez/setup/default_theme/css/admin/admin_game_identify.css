@@ -247,7 +247,7 @@ label {
 
 /* Save button styling */
 .game-edit-savebutton .btn-primary {
-    background-color: var(--btn-primary, #007bff);
+    background-color: var(--btn-primary, rgb(var(--theme-accent-rgb, 98, 122, 239)));
     border: none;
     padding: var(--spacing-sm) var(--spacing-25);
     font-size: 1.1em;
@@ -255,7 +255,7 @@ label {
 }
 
 .game-edit-savebutton .btn-primary:hover {
-    background-color: var(--btn-primary-hover, #0056b3);
+    background-color: var(--btn-primary-hover, color-mix(in srgb, rgb(var(--theme-accent-rgb, 98, 122, 239)) 82%, black));
 }
 
 /* Alert messages */

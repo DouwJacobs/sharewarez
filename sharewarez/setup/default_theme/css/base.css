@@ -21,9 +21,15 @@
     --bg-transparent-5: rgba(255, 255, 255, 0.05);
 
 
+    /* Canonical default-theme accent. Legacy primary aliases intentionally
+       resolve through these tokens so older components stay on-theme. */
+    --theme-accent-rgb: 98, 122, 239;
+    --theme-accent-soft-rgb: 154, 177, 255;
+    --theme-primary: rgb(var(--theme-accent-rgb));
+
     /* Button Colors */
-    --btn-primary: #2563eb;
-    --btn-primary-hover: #1d4ed8;
+    --btn-primary: var(--theme-primary);
+    --btn-primary-hover: color-mix(in srgb, var(--theme-primary) 82%, black);
     --btn-info: rgba(23, 162, 184, 0.5);
     --btn-success: #28a745;
     --btn-danger: #dc3545;
@@ -121,7 +127,7 @@
     --form-border: rgba(255, 255, 255, 0.1);
     --form-focus-bg: rgba(255, 255, 255, 0.1);
     --form-focus-border: var(--btn-primary);
-    --form-focus-shadow: 0 0 0 0.25rem rgba(37, 99, 235, 0.25);
+    --form-focus-shadow: 0 0 0 0.25rem rgba(var(--theme-accent-rgb), 0.25);
     --form-placeholder: rgba(255, 255, 255, 0.4);
 
     /* REM-based Spacing System */
@@ -167,6 +173,11 @@
     --semantic-warning-surface: var(--alert-warning-bg);
     --semantic-danger-surface: var(--alert-danger-bg);
     --semantic-info-surface: var(--alert-info-bg);
+    --status-neutral-color: var(--theme-text-secondary, #c5ccdc);
+    --status-active-color: rgb(var(--theme-accent-soft-rgb, 154, 177, 255));
+    --status-success-color: color-mix(in srgb, var(--semantic-success, #28a745) 72%, white);
+    --status-warning-color: color-mix(in srgb, var(--semantic-warning, #ffc107) 76%, white);
+    --status-danger-color: color-mix(in srgb, var(--semantic-danger, #dc3545) 72%, white);
     --theme-text-muted: var(--text-muted);
     --theme-text-subtle: var(--text-muted-light);
     --theme-selected-surface: rgba(var(--theme-accent-rgb, 98, 122, 239), .16);
@@ -199,15 +210,15 @@
     --glass-panel-border: 1px solid var(--border-light);
     --glass-panel-shadow: var(--shadow-glass-strong);
 
-    /* Primary Brand Color Variants (for consistent blue theming) */
-    --primary-brand-05: rgba(0, 150, 255, 0.05);
-    --primary-brand-10: rgba(0, 150, 255, 0.1);
-    --primary-brand-15: rgba(0, 150, 255, 0.15);
-    --primary-brand-20: rgba(0, 150, 255, 0.2);
-    --primary-brand-25: rgba(0, 150, 255, 0.25);
-    --primary-brand-30: rgba(0, 150, 255, 0.3);
-    --primary-brand-40: rgba(0, 150, 255, 0.4);
-    --primary-brand-50: rgba(0, 150, 255, 0.5);
+    /* Primary Brand Color Variants */
+    --primary-brand-05: rgba(var(--theme-accent-rgb), 0.05);
+    --primary-brand-10: rgba(var(--theme-accent-rgb), 0.1);
+    --primary-brand-15: rgba(var(--theme-accent-rgb), 0.15);
+    --primary-brand-20: rgba(var(--theme-accent-rgb), 0.2);
+    --primary-brand-25: rgba(var(--theme-accent-rgb), 0.25);
+    --primary-brand-30: rgba(var(--theme-accent-rgb), 0.3);
+    --primary-brand-40: rgba(var(--theme-accent-rgb), 0.4);
+    --primary-brand-50: rgba(var(--theme-accent-rgb), 0.5);
 
     /* Additional Common Backgrounds */
     --bg-dark-gradient: rgba(17, 17, 17, 0.9);
@@ -226,10 +237,10 @@
 
     /* Additional Shadow Variants */
     --shadow-box-light: 0 4px 6px rgba(0, 0, 0, 0.2);
-    --shadow-primary-brand: 0 4px 15px rgba(0, 150, 255, 0.3);
-    --shadow-primary-brand-strong: 0 8px 25px rgba(0, 150, 255, 0.4);
-    --shadow-primary-brand-large: 0 15px 40px rgba(0, 150, 255, 0.2);
-    --shadow-primary-brand-xl: 0 20px 40px rgba(0, 150, 255, 0.25);
+    --shadow-primary-brand: 0 4px 15px rgba(var(--theme-accent-rgb), 0.3);
+    --shadow-primary-brand-strong: 0 8px 25px rgba(var(--theme-accent-rgb), 0.4);
+    --shadow-primary-brand-large: 0 15px 40px rgba(var(--theme-accent-rgb), 0.2);
+    --shadow-primary-brand-xl: 0 20px 40px rgba(var(--theme-accent-rgb), 0.25);
     --shadow-success: 0 4px 15px rgba(40, 167, 69, 0.3);
 
     /* Red Color Variants (for danger/error states) */
@@ -1556,7 +1567,7 @@ fieldset:disabled .btn {
 
 .dropdown-perpage:focus {
     outline: none;
-    border-color: #007bff;
+    border-color: var(--theme-primary);
 }
 
 .dropdown-perpage option {

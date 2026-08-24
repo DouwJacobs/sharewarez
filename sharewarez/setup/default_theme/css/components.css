@@ -12,6 +12,15 @@
 .app-page--narrow { max-width: 960px; }
 .app-page--wide { max-width: 1600px; }
 
+@media (prefers-reduced-motion: no-preference) {
+    .app-page { animation: appPageEnter 160ms ease-out both; }
+}
+
+@keyframes appPageEnter {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
 /* The admin content shell already provides the desktop viewport gutter. Keep
    full-width workspaces on the same rail as the shared admin navigation while
    preserving the deliberately narrower settings and form pages. */
@@ -66,6 +75,8 @@
 /* Shared feedback treatment for route-specific loading, empty, and error
    states retained during the layout migration. */
 :is(
+    .app-empty-state,
+    .empty-state,
     .downloads-empty-state,
     .favorites-empty-state,
     .notification-empty,
@@ -85,8 +96,46 @@
     text-align: center;
 }
 
-:is(.downloads-empty-state, .favorites-empty-state, .notification-empty, .logs-empty, .game-grid-empty, .scan-empty-state-panel, .loading-container, .error-container) > i {
+:is(.app-empty-state, .empty-state, .downloads-empty-state, .favorites-empty-state, .notification-empty, .logs-empty, .game-grid-empty, .scan-empty-state-panel, .loading-container, .error-container) > i {
     color: rgb(var(--theme-accent-soft-rgb, 154, 177, 255));
+}
+
+:is(.app-empty-state, .empty-state, .downloads-empty-state, .favorites-empty-state, .notification-empty, .logs-empty, .game-grid-empty, .scan-empty-state-panel) > :is(h2, h3) {
+    margin: 10px 0 4px;
+    color: var(--theme-text-primary, #f5f7ff);
+    font-size: 1.05rem;
+}
+
+:is(.app-empty-state, .empty-state, .downloads-empty-state, .favorites-empty-state, .notification-empty, .logs-empty, .game-grid-empty, .scan-empty-state-panel) > p {
+    max-width: 520px;
+    margin: 0 auto;
+    color: var(--theme-text-secondary, #c5ccdc);
+}
+
+.app-skeleton {
+    display: block;
+    overflow: hidden;
+    border-radius: var(--border-radius-sm, 10px);
+    background: linear-gradient(100deg, var(--theme-input-bg) 30%, color-mix(in srgb, var(--theme-input-bg) 72%, var(--theme-text-secondary)) 50%, var(--theme-input-bg) 70%);
+    background-size: 240% 100%;
+    animation: mediaSkeleton 1.4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) { .app-skeleton { animation: none; } }
+
+.ui-status {
+    display: inline-flex;
+    min-height: 28px;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    font-size: .72rem;
+    font-weight: 750;
+    line-height: 1.1;
+    white-space: nowrap;
 }
 
 .error-container {

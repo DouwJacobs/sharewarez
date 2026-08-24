@@ -2,31 +2,29 @@
 <link rel="stylesheet" href="{{ 'css/games/library_filters.css'|theme_asset }}">
 
 <section class="container-filtersandsort" aria-label="Library filters">
-  <button type="button" class="filters-heading" id="libraryFiltersToggle" aria-expanded="false" aria-controls="libraryFiltersBody">
-    <span class="filters-heading-copy">
-      <span class="filters-heading-title"><i class="fas fa-sliders" aria-hidden="true"></i> Library filters <span id="libraryFilterCount" class="library-filter-count" hidden>0</span></span>
-      <span class="filters-heading-description">Refine and sort your collection</span>
-    </span>
-    <i class="fas fa-chevron-up filters-toggle-icon" aria-hidden="true"></i>
-  </button>
-
-  <div id="libraryFiltersBody" class="library-filters-body" hidden>
+  <div class="library-filter-toolbar">
     <div class="sorting-dropdown">
-      <label for="sortSelect">Sort by</label>
+      <label for="sortSelect">Sort</label>
       <div class="sorting-controls">
-        <select id="sortSelect">
+        <select id="sortSelect" aria-label="Sort library">
           <option value="name">Name</option>
           <option value="rating">Rating</option>
-          <option value="first_release_date">Date Released</option>
-          <option value="date_identified">Date Added</option>
-          <option value="size">Filesize</option>
+          <option value="first_release_date">Release date</option>
+          <option value="date_identified">Date added</option>
+          <option value="size">File size</option>
         </select>
         <button id="sortOrderToggle" class="btn btn-secondary" type="button" aria-label="Toggle sort order" title="Toggle sort order">
           <i class="fas fa-sort-up" aria-hidden="true"></i>
         </button>
       </div>
     </div>
+    <button type="button" class="filters-heading" id="libraryFiltersToggle" aria-expanded="false" aria-controls="libraryFiltersBody">
+      <span class="filters-heading-title"><i class="fas fa-sliders" aria-hidden="true"></i> Filters <span id="libraryFilterCount" class="library-filter-count" hidden>0</span></span>
+      <i class="fas fa-chevron-down filters-toggle-icon" aria-hidden="true"></i>
+    </button>
+  </div>
 
+  <div id="libraryFiltersBody" class="library-filters-body" hidden>
     <div id="library-filters" class="library-filters">
       <form id="filterForm">
         <div class="library-filter-fields">

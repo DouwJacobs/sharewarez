@@ -54,7 +54,11 @@
 }
 
 .admin-workspace-overview > i,
-.admin-workspace-group > summary > i:first-child { color: var(--theme-primary, var(--btn-primary)); }
+.admin-workspace-group > summary > i:first-child { color: var(--theme-text-secondary, var(--text-light)); }
+
+.admin-workspace-overview:is(:hover, :focus-visible, .active) > i,
+.admin-workspace-group:is(.active, [open]) > summary > i:first-child,
+.admin-workspace-group > summary:is(:hover, :focus-visible) > i:first-child { color: var(--theme-primary, var(--btn-primary)); }
 
 .admin-workspace-menu {
     position: absolute;

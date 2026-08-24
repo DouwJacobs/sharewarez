@@ -101,9 +101,9 @@
     white-space: nowrap;
 }
 
-.invite-status { padding: 3px 7px; border-radius: 999px; font-size: 0.7rem; font-weight: 700; }
-.invite-status-pending { background: rgba(98, 122, 239, 0.17); color: #b9c8ff; }
-.invite-status-used { background: rgba(80, 200, 120, 0.15); color: #a6e8bb; }
+.invite-status { display: inline-flex; min-height: 28px; align-items: center; padding: 4px 10px; border: 1px solid transparent; border-radius: 999px; font-size: .72rem; font-weight: 750; }
+.invite-status-pending { border-color: color-mix(in srgb, var(--status-warning-color) 34%, transparent); background: color-mix(in srgb, var(--status-warning-color) 12%, transparent); color: var(--status-warning-color); }
+.invite-status-used { border-color: color-mix(in srgb, var(--status-success-color) 34%, transparent); background: color-mix(in srgb, var(--status-success-color) 12%, transparent); color: var(--status-success-color); }
 
 .invite-card-actions { display: flex; flex: 0 0 auto; gap: 7px; }
 .invite-card-actions .btn { min-height: 32px; }

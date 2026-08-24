@@ -255,3 +255,39 @@ Shared interaction details verified in this pass:
 - the whitelist email control remains full width at mobile and desktop sizes;
 - Discovery ordering rows retain an 8 px visual gap and independent focus/drag boundaries;
 - the collapsed sidebar keeps its notification bell centered and overlays the unread count at the bell's upper-right corner.
+
+## Default-theme accent normalization (2026-08-24)
+
+The default theme has one canonical indigo accent: `--theme-accent-rgb: 98, 122, 239`, with
+`--theme-accent-soft-rgb: 154, 177, 255` for lighter emphasis. Legacy `--theme-primary`,
+`--btn-primary`, form-focus, brand-surface, and brand-shadow variables resolve through those
+tokens. New navigation, action, focus, selection, or decorative emphasis styles must use the
+canonical aliases instead of introducing Bootstrap blue, royal blue, or cyan literals.
+
+Blue remains valid when it carries explicit semantic meaning, such as an informational alert,
+log level, transfer/scan state, or provider-specific branding. Semantic colors must use the
+existing `--semantic-*` aliases so changing a theme accent does not change status meaning.
+
+## Cross-application restraint pass (2026-08-24)
+
+The user and administrator interfaces now share a quieter presentation contract:
+
+- Accent color is reserved for the current destination, primary actions, selection, and focus.
+  Inactive navigation, search, quick-action, and decorative icons use secondary text color.
+- Discover keeps one featured story and a compact divided collection summary. Shortcut
+  collections are collapsed behind a native disclosure instead of competing with the hero.
+- Library cards show one predictable metadata row and do not repeat file size. Sort remains
+  immediately available while advanced filters live behind one accessible disclosure button.
+- Play state, request state, issue state, invitations, whitelist entries, and access tokens use
+  the shared neutral, active, success, warning, and danger status tokens.
+- Empty results use the shared empty-state structure, and asynchronous card loading uses the
+  shared skeleton primitive. Both remain theme-token-driven.
+- `.app-page` uses a short opacity/translate entry transition. The transition and skeleton
+  shimmer are disabled when `prefers-reduced-motion: reduce` is active.
+- Scan Management keeps one page surface; the active workspace panel is flattened so internal
+  field groups do not appear inside several equally weighted cards.
+
+Responsive verification covers the 390 px contracts in automated tests, including page width,
+filter wrapping, bottom-navigation clearance, single-instance game actions, and reduced-motion
+rules. Live authenticated desktop checks cover Discover, Library, Game Details, Requests,
+Issues, Admin Overview, and Scan Management without document-level horizontal overflow.

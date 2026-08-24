@@ -181,6 +181,16 @@ class TestGetDefaultTheme:
 
 
 class TestDefaultThemeControlSystem:
+    def test_legacy_primary_aliases_use_the_canonical_default_accent(self):
+        from pathlib import Path
+
+        css = Path('sharewarez/setup/default_theme/css/base.css').read_text()
+        assert '--theme-accent-rgb: 98, 122, 239' in css
+        assert '--theme-primary: rgb(var(--theme-accent-rgb))' in css
+        assert '--btn-primary: var(--theme-primary)' in css
+        assert '--btn-primary-hover: color-mix(in srgb, var(--theme-primary) 82%, black)' in css
+        assert '#2563eb' not in css
+
     def test_shared_control_tokens_cover_buttons_inputs_and_selects(self):
         from pathlib import Path
 

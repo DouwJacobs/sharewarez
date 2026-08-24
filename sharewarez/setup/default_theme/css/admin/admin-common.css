@@ -87,12 +87,12 @@
 }
 
 .btn-admin-primary {
-    background: linear-gradient(45deg, #007bff, #0056b3);
-    border-color: #007bff;
+    background: linear-gradient(45deg, var(--btn-primary), var(--btn-primary-hover));
+    border-color: var(--btn-primary);
 }
 
 .btn-admin-primary:hover {
-    background: linear-gradient(45deg, #0056b3, #004085);
+    background: linear-gradient(45deg, var(--btn-primary-hover), color-mix(in srgb, var(--btn-primary) 68%, black));
 }
 
 .btn-admin-danger {

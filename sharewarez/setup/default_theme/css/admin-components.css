@@ -192,7 +192,7 @@
     color: var(--text-white);
     font-size: 2.5em;
     font-weight: bold;
-    text-shadow: 0 0 10px rgba(0, 150, 255, 0.5);
+    text-shadow: 0 0 10px rgba(var(--theme-accent-rgb, 98, 122, 239), 0.5);
 }
 
 .admin-section h3 {
@@ -241,9 +241,9 @@
     text-align: center;
     font-size: 24px;
     line-height: 60px;
-    background: rgba(0, 150, 255, 0.2);
+    background: rgba(var(--theme-accent-rgb, 98, 122, 239), 0.2);
     color: var(--text-white);
-    border: 1px solid rgba(0, 150, 255, 0.3);
+    border: 1px solid rgba(var(--theme-accent-rgb, 98, 122, 239), 0.3);
     transition: all var(--transition-normal);
     cursor: pointer;
 }
@@ -281,13 +281,13 @@
 }
 
 .btn-admin-primary {
-    background: linear-gradient(45deg, var(--btn-primary), #0056b3);
+    background: linear-gradient(45deg, var(--btn-primary), var(--btn-primary-hover));
     border-color: var(--btn-primary);
     color: var(--text-white);
 }
 
 .btn-admin-primary:hover {
-    background: linear-gradient(45deg, #0056b3, #004085);
+    background: linear-gradient(45deg, var(--btn-primary-hover), color-mix(in srgb, var(--btn-primary) 68%, black));
 }
 
 .btn-admin-danger {

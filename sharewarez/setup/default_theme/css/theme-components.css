@@ -612,7 +612,8 @@ body { color: var(--theme-text-primary, #f5f7ff); }
     box-shadow: 0 0 0 1px rgba(var(--theme-accent-soft-rgb, 154, 177, 255), .04), 0 20px 60px rgba(0, 0, 0, .52), 0 0 70px rgba(var(--theme-accent-rgb, 98, 122, 239), .09) !important;
 }
 
-/* Decorative icons follow the active palette; semantic status icons do not. */
+/* Decorative icons stay quiet until their control is active. Semantic status
+   icons retain their own colors. */
 .sidebar-link i,
 .sidebar-link.active i,
 .toggle-sidebar i,
@@ -632,6 +633,12 @@ body { color: var(--theme-text-primary, #f5f7ff); }
 .downloads-empty-state > i,
 .help-quick-links i,
 .help-topic summary i {
+    color: var(--theme-text-secondary, #c5ccdc) !important;
+}
+
+:is(.sidebar-link.active, .sidebar-link:hover, .sidebar-link:focus-visible) i,
+:is(.admin-tab-link.active, .admin-tab-link:hover, .admin-tab-link:focus-visible) > i,
+:is(.integrations-nav-link.active, .integrations-nav-link:hover, .integrations-nav-link:focus-visible) i {
     color: rgb(var(--theme-accent-soft-rgb, 154, 177, 255)) !important;
 }
 

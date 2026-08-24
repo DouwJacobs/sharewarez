@@ -77,7 +77,8 @@
 .admin-quick-actions a { display: inline-flex; align-items: center; padding: 7px 10px; gap: 7px; border: 1px solid var(--theme-border-color, var(--border-light)); border-radius: var(--border-radius-sm, 8px); color: var(--theme-text-secondary, var(--text-light)); font-size: .75rem; text-decoration: none; }
 .admin-quick-actions a:hover,
 .admin-quick-actions a:focus-visible { border-color: color-mix(in srgb, var(--theme-primary, var(--btn-primary)) 38%, transparent); color: var(--theme-text, var(--text-white)); outline: none; }
-.admin-quick-actions a i { color: var(--theme-primary, var(--btn-primary)); font-size: .7rem; }
+.admin-quick-actions a i { color: var(--theme-text-muted, var(--text-muted)); font-size: .7rem; }
+.admin-quick-actions a:is(:hover, :focus-visible) i { color: var(--theme-primary, var(--btn-primary)); }
 
 @media (max-width: 1040px) {
     .admin-overview-metrics { grid-template-columns: repeat(6, minmax(0, 1fr)); }

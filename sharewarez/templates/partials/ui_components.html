@@ -22,13 +22,13 @@
 
 {% macro status_badge(status) %}
 {% set normalized = status|lower|replace(' ', '-') %}
-<span class="download-status download-status--{{ normalized }}">
+<span class="ui-status download-status download-status--{{ normalized }}">
     <span class="download-status-dot" aria-hidden="true"></span>{{ status|replace('_', ' ')|title }}
 </span>
 {% endmacro %}
 
 {% macro empty_state(title, description, icon='fa-inbox', action_url=None, action_label=None) %}
-<div class="downloads-empty-state">
+<div class="app-empty-state downloads-empty-state">
     <i class="fas {{ icon }}" aria-hidden="true"></i>
     <h2>{{ title }}</h2>
     <p>{{ description }}</p>

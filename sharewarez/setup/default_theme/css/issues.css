@@ -41,11 +41,11 @@
 .issue-row-arrow { color: var(--issue-muted); font-size: .72rem; }
 
 .issue-status { display: inline-flex; align-items: center; justify-content: center; min-height: 28px; padding: 4px 10px; border: 1px solid transparent; border-radius: 999px; font-size: .72rem; font-weight: 800; line-height: 1.1; white-space: nowrap; }
-.issue-status.status-open { border-color: color-mix(in srgb, var(--theme-primary, #03b2f8) 40%, transparent); background: color-mix(in srgb, var(--theme-primary, #03b2f8) 13%, transparent); color: var(--theme-primary, #03b2f8); }
-.issue-status.status-in_progress { border-color: rgba(250, 204, 21, .35); background: rgba(250, 204, 21, .12); color: #fde047; }
-.issue-status.status-waiting_on_user { border-color: rgba(249, 115, 22, .38); background: rgba(249, 115, 22, .13); color: #fb923c; }
-.issue-status.status-resolved { border-color: rgba(34, 197, 94, .38); background: rgba(34, 197, 94, .13); color: #4ade80; }
-.issue-status.status-closed { border-color: var(--issue-border); background: color-mix(in srgb, var(--theme-text, #fff) 7%, transparent); color: var(--issue-muted); }
+.issue-status.status-open { border-color: color-mix(in srgb, var(--status-active-color) 34%, transparent); background: color-mix(in srgb, var(--status-active-color) 12%, transparent); color: var(--status-active-color); }
+.issue-status.status-in_progress,
+.issue-status.status-waiting_on_user { border-color: color-mix(in srgb, var(--status-warning-color) 34%, transparent); background: color-mix(in srgb, var(--status-warning-color) 12%, transparent); color: var(--status-warning-color); }
+.issue-status.status-resolved { border-color: color-mix(in srgb, var(--status-success-color) 34%, transparent); background: color-mix(in srgb, var(--status-success-color) 12%, transparent); color: var(--status-success-color); }
+.issue-status.status-closed { border-color: color-mix(in srgb, var(--status-neutral-color) 30%, transparent); background: color-mix(in srgb, var(--status-neutral-color) 10%, transparent); color: var(--status-neutral-color); }
 
 .issue-empty { display: grid; justify-items: center; gap: 8px; padding: 52px 20px; text-align: center; }
 .issue-empty > i { color: var(--theme-primary, #03b2f8); font-size: 2rem; }

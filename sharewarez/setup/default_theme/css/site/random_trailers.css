@@ -356,7 +356,7 @@
     box-shadow: var(--shadow-glass-strong),
                 0 12px 40px rgba(0, 0, 0, 0.4),
                 inset 0 1px 0 rgba(255, 255, 255, 0.1),
-                0 0 30px rgba(0, 150, 255, 0.2);
+                0 0 30px rgba(var(--theme-accent-rgb, 98, 122, 239), 0.2);
     transform: translateY(-2px);
 }
 
