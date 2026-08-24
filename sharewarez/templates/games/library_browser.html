@@ -29,6 +29,7 @@
                 <details class="library-saved-views">
                     <summary class="btn btn-secondary btn-sm"><i class="fas fa-bookmark" aria-hidden="true"></i> Views</summary>
                     <div class="library-saved-views-panel">
+                        <button type="button" class="library-saved-views-close" data-close-saved-views aria-label="Close saved views"><i class="fas fa-times" aria-hidden="true"></i></button>
                         <form data-save-library-view><label for="libraryViewName">Save current filters</label><div><input id="libraryViewName" class="form-control" maxlength="40" placeholder="e.g. Couch co-op"><button class="btn btn-primary btn-sm" type="submit">Save</button></div></form>
                         {% if saved_library_views %}<div class="library-saved-list">{% for saved_view in saved_library_views %}<div><a href="{{ url_for('library.library') }}{% if saved_view.query %}?{{ saved_view.query }}{% endif %}">{{ saved_view.name }}</a><button type="button" data-delete-library-view="{{ saved_view.name }}" aria-label="Delete saved view {{ saved_view.name }}"><i class="fas fa-times"></i></button></div>{% endfor %}</div>{% else %}<p>No saved views yet.</p>{% endif %}
                     </div>

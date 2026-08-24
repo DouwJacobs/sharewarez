@@ -1,5 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
     const container = document.getElementById('gamesContainer');
+    const savedViews = document.querySelector('.library-saved-views');
     const csrfToken = () => CSRFUtils.getToken();
     const save = async payload => {
         const response = await fetch('/api/preferences/library', {
@@ -44,4 +45,16 @@ document.addEventListener('DOMContentLoaded', () => {
         try { await save({action: 'delete_view', name: button.dataset.deleteLibraryView}); window.location.reload(); }
         catch (error) { button.disabled = false; console.error(error); }
     }));
+
+    const closeSavedViews = () => savedViews?.removeAttribute('open');
+    document.querySelector('[data-close-saved-views]')?.addEventListener('click', closeSavedViews);
+    document.addEventListener('click', event => {
+        if (savedViews?.open && !savedViews.contains(event.target)) closeSavedViews();
+    });
+    document.addEventListener('keydown', event => {
+        if (event.key === 'Escape' && savedViews?.open) {
+            closeSavedViews();
+            savedViews.querySelector('summary')?.focus();
+        }
+    });
 });
