@@ -56,14 +56,16 @@ def init_observability(app):
 
     @app.after_request
     def finish_request_diagnostics(response):
-        duration_ms = round((time.perf_counter() - g.request_started_at) * 1000, 2)
-        response.headers['X-Request-ID'] = g.request_id
+        started_at = getattr(g, 'request_started_at', None)
+        req_id = getattr(g, 'request_id', None) or _request_id()
+        duration_ms = round((time.perf_counter() - started_at) * 1000, 2) if started_at else 0.0
+        response.headers['X-Request-ID'] = req_id
         response.headers['Server-Timing'] = f'app;dur={duration_ms}'
         if request.endpoint not in {'health.live'}:
             request_logger.info(
                 'request completed',
                 extra={
-                    'request_id': g.request_id,
+                    'request_id': req_id,
                     'method': request.method,
                     'path': request.path,
                     'status': response.status_code,

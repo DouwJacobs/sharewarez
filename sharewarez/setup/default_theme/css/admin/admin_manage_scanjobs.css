@@ -669,7 +669,27 @@
 .radio-option {
     display: flex;
     align-items: center;
-    gap: 5px;
+    gap: 8px;
+    cursor: pointer;
+}
+
+.radio-option input[type="radio"] {
+    appearance: auto;
+    -webkit-appearance: radio;
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    cursor: pointer;
+    pointer-events: auto;
+    accent-color: rgb(var(--theme-accent-rgb, 98, 122, 239));
+}
+
+.radio-option label {
+    cursor: pointer;
+    pointer-events: auto;
+    color: var(--text-white, #ffffff);
+    font-size: 0.95rem;
+    user-select: none;
 }
 
 .options-row {
