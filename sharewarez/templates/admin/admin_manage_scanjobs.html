@@ -78,13 +78,12 @@
                                     <label class="config-label" data-toggle="tooltip" title="Choose how your games are organized on disk">{{ auto_form.scan_mode.label.text }}</label>
                                     <div class="radio-group">
                                         {% for subfield in auto_form.scan_mode %}
-                                            <div class="radio-option">
-                                                {{ subfield(class="form-check-input") }}
-                                                {% if subfield.data == 'folders' %}
-                                                {{ subfield.label(class="form-check-label", **{"data-toggle": "tooltip", "title": "Each game is in its own folder (e.g., /Games/Doom/, /Games/Quake/)"}) }}
-                                                {% else %}
-                                                {{ subfield.label(class="form-check-label", **{"data-toggle": "tooltip", "title": "Games are individual files in one folder (e.g., /Games/doom.zip, /Games/quake.exe)"}) }}
-                                                {% endif %}
+                                            {% set auto_id = 'auto_scan_mode_' ~ subfield.data %}
+                                            <div class="form-check radio-option">
+                                                {{ subfield(class="form-check-input", id=auto_id) }}
+                                                <label class="form-check-label" for="{{ auto_id }}" data-toggle="tooltip" title="{% if subfield.data == 'folders' %}Each game is in its own folder (e.g., /Games/Doom/, /Games/Quake/){% else %}Games are individual files in one folder (e.g., /Games/doom.zip, /Games/quake.exe){% endif %}">
+                                                    {{ subfield.label.text }}
+                                                </label>
                                             </div>
                                         {% endfor %}
                                     </div>
@@ -269,19 +268,19 @@
                             {% endfor %}
                         {% endif %}
                     </div>
-                    <!-- Scan Mode -->
                     <div class="admin_manage_scanjobs-scanmode form-group manual-field-card">
-                        {{ manual_form.scan_mode.label(**{"data-toggle": "tooltip", "title": "Choose how your games are organized on disk"}) }}
+                        <label class="config-label" data-toggle="tooltip" title="Choose how your games are organized on disk">{{ manual_form.scan_mode.label.text }}</label>
+                        <div class="radio-group">
                         {% for subfield in manual_form.scan_mode %}
-                            <div class="form-check">
-                                {{ subfield(class="form-check-input") }}
-                                {% if subfield.data == 'folders' %}
-                                {{ subfield.label(class="form-check-label", **{"data-toggle": "tooltip", "title": "Each game is in its own folder (e.g., /Games/Doom/, /Games/Quake/)"}) }}
-                                {% else %}
-                                {{ subfield.label(class="form-check-label", **{"data-toggle": "tooltip", "title": "Games are individual files in one folder (e.g., /Games/doom.zip, /Games/quake.exe)"}) }}
-                                {% endif %}
+                            {% set manual_id = 'manual_scan_mode_' ~ subfield.data %}
+                            <div class="form-check radio-option">
+                                {{ subfield(class="form-check-input", id=manual_id) }}
+                                <label class="form-check-label" for="{{ manual_id }}" data-toggle="tooltip" title="{% if subfield.data == 'folders' %}Each game is in its own folder (e.g., /Games/Doom/, /Games/Quake/){% else %}Games are individual files in one folder (e.g., /Games/doom.zip, /Games/quake.exe){% endif %}">
+                                    {{ subfield.label.text }}
+                                </label>
                             </div>
                         {% endfor %}
+                        </div>
                     </div>
                     <div class="form-group manual-location-field">
                         {{ manual_form.folder_path.label(**{"data-toggle": "tooltip", "title": "Browse or enter the path to scan for games"}) }}

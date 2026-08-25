@@ -524,7 +524,11 @@ class DatabaseManager:
             ) THEN
                 ALTER TABLE games DROP COLUMN library_name;
                 RAISE NOTICE 'Dropped unused library_name column from games table';
-            END IF;
+        -- Backfill missing completion_time for historic finished/available/expired download requests
+        UPDATE download_requests
+        SET completion_time = request_time
+        WHERE completion_time IS NULL
+          AND status IN ('available', 'completed', 'expired');
         END $$;
 
         """

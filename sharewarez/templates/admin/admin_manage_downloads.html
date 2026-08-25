@@ -93,7 +93,8 @@
                         </td>
                         <td class="admin_manage_downloads-td-data-5 file-name-cell" title="{{ request.zip_file_path or 'Not available yet' }}">{{ request.zip_file_path or 'Preparing file…' }}</td>
                         <td class="admin_manage_downloads-td-data-6">{{ request.request_time.strftime('%Y-%m-%d %H:%M') if request.request_time else 'N/A' }}</td>
-                        <td class="admin_manage_downloads-td-data-7">{{ request.completion_time.strftime('%Y-%m-%d %H:%M') if request.completion_time else 'N/A' }}</td>
+                        {% set effective_completion = request.completion_time or (request.request_time if request.status in ['available', 'completed', 'expired'] else None) %}
+                        <td class="admin_manage_downloads-td-data-7">{{ effective_completion.strftime('%Y-%m-%d %H:%M') if effective_completion else 'N/A' }}</td>
                         <td>
                             <button type="button" class="btn btn-danger btn-sm" onclick="showDeleteModal({{ request.id }})"><i class="fas fa-trash" aria-hidden="true"></i> Delete</button>
                         </td>

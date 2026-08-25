@@ -228,3 +228,37 @@ def retry_background_job(job_id):
         log_system_event(f'Background job retried: {job.id}', event_type='job')
         flash('Job queued for retry.', 'success')
     return redirect(url_for('admin2.background_jobs'))
+
+
+@admin2_bp.route('/admin/background-jobs/clear-failed', methods=['POST'])
+@login_required
+@admin_required
+def clear_failed_background_jobs():
+    form = CsrfProtectForm()
+    if not form.validate_on_submit():
+        abort(400)
+    failed_jobs = db.session.execute(
+        select(BackgroundJob).where(BackgroundJob.status == 'failed')
+    ).scalars().all()
+    count = len(failed_jobs)
+    for job in failed_jobs:
+        db.session.delete(job)
+    db.session.commit()
+    log_system_event(f'Cleared {count} failed background jobs', event_type='job')
+    flash(f'Cleared {count} failed background jobs.', 'success')
+    return redirect(url_for('admin2.background_jobs'))
+
+
+@admin2_bp.route('/admin/background-jobs/<job_id>/delete', methods=['POST'])
+@login_required
+@admin_required
+def delete_background_job(job_id):
+    form = CsrfProtectForm()
+    if not form.validate_on_submit():
+        abort(400)
+    job = _get_job_or_404(job_id)
+    db.session.delete(job)
+    db.session.commit()
+    log_system_event(f'Deleted background job {job.id}', event_type='job')
+    flash('Background job removed.', 'success')
+    return redirect(url_for('admin2.background_jobs'))

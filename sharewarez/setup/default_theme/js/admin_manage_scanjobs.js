@@ -778,20 +778,31 @@ function fetchFolders(path, folderContentsId, spinnerId, upButtonId, inputFieldI
                         item.name + 
                         '<span class="file-size">(' + sizeText + ')</span>'
                     );
+                    var fullFilePath = path + item.name;
                     $(itemElement)
                         .addClass('file-item')
+                        .attr('data-path', fullFilePath)
                         .attr('title', item.name + ' - ' + sizeText)
-                        .css('cursor', 'default');
+                        .css('cursor', 'pointer');
                 }
                 $(folderContentsId).append(itemElement);
             });
 
-            // Only attach click handlers to folders
-            $('.folder-item').click(function() {
+            // Attach click handlers to folders
+            $(folderContentsId).find('.folder-item').click(function() {
                 var newPath = $(this).data('path');
                 window[currentPathVar] = newPath; 
                 fetchFolders(newPath, folderContentsId, spinnerId, upButtonId, inputFieldId, currentPathVar);
                 $(inputFieldId).val(newPath); 
+            });
+
+            // Attach click handlers to files
+            $(folderContentsId).find('.file-item').click(function() {
+                var filePath = $(this).data('path');
+                window[currentPathVar] = filePath;
+                $(inputFieldId).val(filePath);
+                $(folderContentsId).find('.file-item, .folder-item').removeClass('active-selection');
+                $(this).addClass('active-selection');
             });
             if (path) {
                 $(upButtonId).show();

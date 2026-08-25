@@ -728,63 +728,94 @@ def handle_manual_scan(manual_form):
 
         # Validate folder path security
         allowed_bases = get_allowed_base_directories(current_app)
-        if not allowed_bases:
-            flash('Service configuration error: No allowed base directories configured.', 'error')
-            return redirect(url_for('main.admin_scan_management', active_tab='manual'))
-
-        base_dir = current_app.config.get('BASE_FOLDER_WINDOWS') if os.name == 'nt' else current_app.config.get('BASE_FOLDER_POSIX')
-        full_path = os.path.join(base_dir, folder_path)
-        print(f"Manual scan form submitted. Full path: {full_path}, Library UUID: {library_uuid}")
-        
-        # Security validation: ensure the constructed path is within allowed directories
-        is_safe, error_message = is_safe_path(full_path, allowed_bases)
-        if not is_safe:
-            print(f"Security error: Manual scan path validation failed for {full_path}: {error_message}")
-            flash(f"Access denied: {error_message}", 'error')
-            return redirect(url_for('main.admin_scan_management', active_tab='manual'))
-
-        # Check write permissions if local metadata writing is enabled
-        from sharewarez.utils.local_metadata import check_library_write_permissions
-        settings = db.session.execute(select(GlobalSettings)).scalar_one_or_none()
-
-        if settings and settings.write_local_metadata:
-            print(f"🔍 [PERMISSIONS] Checking write permissions for library path: {full_path}")
-            all_ok, failed_paths = check_library_write_permissions(full_path)
-
-            if not all_ok:
-                print(f"🚫 [PERMISSIONS] Write permission check failed for {len(failed_paths)} path(s)")
-                # Store permission errors in session to show in modal
-                session['permission_check_failed'] = True
-                session['permission_errors'] = failed_paths
-                session['permission_check_path'] = full_path
-                flash('Write permission check failed. Please review the permission errors.', 'error')
-                return redirect(url_for('main.admin_scan_management', active_tab='manual', show_permissions_modal='true'))
-
-        if os.path.exists(full_path) and os.access(full_path, os.R_OK):
-            print("Folder exists and can be accessed.")
-            insensitive_patterns, sensitive_patterns = load_scanning_filter_patterns()
-            if scan_mode == 'folders':
-                games_with_paths = get_game_names_from_folder(full_path, insensitive_patterns, sensitive_patterns)
-            else:  # files mode
-                # Load allowed file types from database
-                allowed_file_types = db.session.execute(select(AllowedFileType)).scalars().all()
-                supported_extensions = [file_type.value for file_type in allowed_file_types]
-                if not supported_extensions:
-                    flash("No allowed file types defined in the database.", "error")
-                    return redirect(url_for('main.admin_scan_management', active_tab='manual'))
-                
-                games_with_paths = get_game_names_from_files(full_path, supported_extensions, insensitive_patterns, sensitive_patterns)
-            session['game_paths'] = {game['name']: game['full_path'] for game in games_with_paths}
-            session['force_updates_extras_scan'] = force_updates_extras_scan
-            session['fetch_hltb'] = fetch_hltb
-            session['force_hltb_refetch'] = force_hltb_refetch
-            print(f"Found {len(session['game_paths'])} games in the folder.")
-            flash('Manual scan processed for folder: ' + full_path, 'info')
+def handle_manual_scan(manual_form):
+    session['active_tab'] = 'manual'
+    library_uuid = manual_form.library_uuid.data
+    try:
+        if manual_form.validate_on_submit():
+            # check job status
+            running_job = db.session.execute(select(ScanJob).filter_by(status='Running')).scalars().first()
+            if running_job:
+                flash('A scan is already in progress. Please wait until the current scan completes.', 'error')
+                session['active_tab'] = 'manual'
+                return redirect(url_for('main.admin_scan_management', active_tab='manual'))
             
+            folder_path = (manual_form.folder_path.data or '').strip()
+            scan_mode = manual_form.scan_mode.data or 'folders'
+            force_updates_extras_scan = manual_form.force_updates_extras_scan.data
+            fetch_hltb = manual_form.fetch_hltb.data
+            force_hltb_refetch = manual_form.force_hltb_refetch.data
+            
+            if not library_uuid:
+                flash('Please select a library.', 'error')
+                return redirect(url_for('main.admin_scan_management', active_tab='manual'))
+            
+            # Store library_uuid in session for use in identify page
+            session['selected_library_uuid'] = library_uuid
+            print(f"Manual scan: Selected library UUID: {library_uuid}")
+
+            # Validate folder path security
+            allowed_bases = get_allowed_base_directories(current_app)
+            if not allowed_bases:
+                flash('Service configuration error: No allowed base directories configured.', 'error')
+                return redirect(url_for('main.admin_scan_management', active_tab='manual'))
+
+            base_dir = current_app.config.get('BASE_FOLDER_WINDOWS') if os.name == 'nt' else current_app.config.get('BASE_FOLDER_POSIX')
+            full_path = os.path.abspath(os.path.join(base_dir or '', folder_path))
+            print(f"Manual scan form submitted. Full path: {full_path}, Library UUID: {library_uuid}")
+            
+            # Security validation: ensure the constructed path is within allowed directories
+            is_safe, error_message = is_safe_path(full_path, allowed_bases)
+            if not is_safe:
+                print(f"Security error: Manual scan path validation failed for {full_path}: {error_message}")
+                flash(f"Access denied: {error_message}", 'error')
+                return redirect(url_for('main.admin_scan_management', active_tab='manual'))
+
+            # Check write permissions if local metadata writing is enabled
+            from sharewarez.utils.local_metadata import check_library_write_permissions
+            settings = db.session.execute(select(GlobalSettings)).scalar_one_or_none()
+
+            if settings and settings.write_local_metadata:
+                print(f"🔍 [PERMISSIONS] Checking write permissions for library path: {full_path}")
+                all_ok, failed_paths = check_library_write_permissions(full_path)
+
+                if not all_ok:
+                    print(f"🚫 [PERMISSIONS] Write permission check failed for {len(failed_paths)} path(s)")
+                    # Store permission errors in session to show in modal
+                    session['permission_check_failed'] = True
+                    session['permission_errors'] = failed_paths
+                    session['permission_check_path'] = full_path
+                    flash('Write permission check failed. Please review the permission errors.', 'error')
+                    return redirect(url_for('main.admin_scan_management', active_tab='manual', show_permissions_modal='true'))
+
+            if os.path.exists(full_path) and os.access(full_path, os.R_OK):
+                print("Folder or file exists and can be accessed.")
+                insensitive_patterns, sensitive_patterns = load_scanning_filter_patterns()
+                if scan_mode == 'folders':
+                    games_with_paths = get_game_names_from_folder(full_path, insensitive_patterns, sensitive_patterns)
+                else:  # files mode
+                    # Load allowed file types from database
+                    allowed_file_types = db.session.execute(select(AllowedFileType)).scalars().all()
+                    supported_extensions = [file_type.value for file_type in allowed_file_types]
+                    if not supported_extensions:
+                        flash("No allowed file types defined in the database.", "error")
+                        return redirect(url_for('main.admin_scan_management', active_tab='manual'))
+                    
+                    games_with_paths = get_game_names_from_files(full_path, supported_extensions, insensitive_patterns, sensitive_patterns)
+                session['game_paths'] = {game['name']: game['full_path'] for game in games_with_paths}
+                session['force_updates_extras_scan'] = force_updates_extras_scan
+                session['fetch_hltb'] = fetch_hltb
+                session['force_hltb_refetch'] = force_hltb_refetch
+                print(f"Found {len(session['game_paths'])} games in the folder/file.")
+                flash('Manual scan processed for target: ' + full_path, 'info')
+                
+            else:
+                flash("Folder or file does not exist or cannot be accessed.", "error")
         else:
-            flash("Folder does not exist or cannot be accessed.", "error")
-    else:
-        flash('Manual scan form validation failed.', 'error')
+            flash('Manual scan form validation failed.', 'error')
+    except Exception as exc:
+        current_app.logger.exception("Unexpected error in handle_manual_scan: %s", exc)
+        flash(f'Manual scan failed: {str(exc)}', 'error')
         
     print("Game paths: ", session.get('game_paths', {}))
     return redirect(url_for('main.admin_scan_management', library_uuid=library_uuid, active_tab='manual'))

@@ -1,7 +1,8 @@
 import os
+import re
+from datetime import datetime, timezone
 from flask import redirect, url_for, flash, current_app, abort
 from flask_login import login_required, current_user
-import re
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import select
 from sharewarez.models import Game, DownloadRequest, GameUpdate, GameExtra, GlobalSettings
@@ -78,6 +79,27 @@ def download_game(game_uuid):
             else:
                 # Multiple files or empty - stream as ZIP on-the-fly
                 zip_file_path = game.full_disk_path
+            for f in os.listdir(game.full_disk_path):
+                full_path = os.path.join(game.full_disk_path, f)
+                # Skip updates and extras folders
+                if os.path.isdir(full_path) and (
+                    f.lower() == settings.update_folder_name.lower() or 
+                    f.lower() == settings.extras_folder_name.lower()):
+                    continue
+                if os.path.isfile(full_path):
+                    files_in_directory.append(f)
+            
+            # Filter out .nfo, .sfv, file_id.diz, sharewarez.json files - these don't count as significant
+            significant_files = [f for f in files_in_directory
+                               if not f.lower().endswith(('.nfo', '.sfv'))
+                               and not f.lower() in ('file_id.diz', 'sharewarez.json')]
+            
+            if len(significant_files) == 1:
+                # Single significant file - direct download (no zipping)
+                zip_file_path = os.path.join(game.full_disk_path, significant_files[0])
+            else:
+                # Multiple files or empty - stream as ZIP on-the-fly
+                zip_file_path = game.full_disk_path
         else:
             # Already a single file - direct download
             zip_file_path = game.full_disk_path
@@ -91,12 +113,12 @@ def download_game(game_uuid):
             content_type='game',
             content_title=game.name,
             status=status,  # Always 'available' for instant download
+            completion_time=datetime.now(timezone.utc),
             download_size=game.size,
             file_location=game.full_disk_path,
             zip_file_path=zip_file_path,
             expires_at=calculate_download_expiry(settings),
         )
-        db.session.add(new_request)
         game.times_downloaded += 1
         db.session.commit()
 
@@ -208,6 +230,7 @@ def download_other(file_type, game_uuid, file_id):
             game_update_id=file_record.id if file_type == 'update' else None,
             game_extra_id=file_record.id if file_type == 'extra' else None,
             status=status,
+            completion_time=datetime.now(timezone.utc),
             download_size=calculated_size,  # Use calculated size instead of 0
             file_location=file_path,
             zip_file_path=zip_file_path,

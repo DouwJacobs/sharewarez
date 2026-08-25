@@ -82,7 +82,7 @@ def get_admin_dashboard_context():
         {
             'label': 'Jobs', 'value': queued_jobs,
             'detail': 'queued', 'icon': 'fa-list-check',
-            'url': url_for('admin2.background_jobs', status='queued'),
+            'url': url_for('admin2.background_jobs', status='failed' if failed_jobs else 'queued'),
             'tone': 'danger' if failed_jobs else 'warning' if queued_jobs else 'success',
             'secondary': f'{failed_jobs} failed' if failed_jobs else None,
         },

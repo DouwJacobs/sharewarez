@@ -23,6 +23,14 @@ def get_game_names_from_files(folder_path, extensions, insensitive_patterns, sen
     if not os.path.exists(folder_path) or not os.access(folder_path, os.R_OK):
         print(f"Error: The path '{folder_path}' does not exist or is not readable.")
         return []
+    if os.path.isfile(folder_path):
+        file_name = os.path.basename(folder_path)
+        extension = file_name.split('.')[-1].lower() if '.' in file_name else ''
+        if extension in extensions:
+            game_name_without_extension = '.'.join(file_name.split('.')[:-1])
+            cleaned_game_name = clean_game_name(game_name_without_extension, insensitive_patterns, sensitive_patterns)
+            return [{'name': cleaned_game_name, 'full_path': folder_path, 'file_type': extension}]
+        return []
     file_contents = [f for f in os.listdir(folder_path) if os.path.isfile(os.path.join(folder_path, f))]
     # print(f"Files found in folder: {file_contents}")
     game_names_with_paths = []
