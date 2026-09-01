@@ -54,6 +54,15 @@
     backdrop-filter: var(--backdrop-blur);
 }
 
+/* The panel is the page's single high-level surface. */
+.downloads-panel > .table-responsive,
+.downloads-panel > .table-responsive > .downloads-table {
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
 .downloads-filter-bar {
     display: grid;
     grid-template-columns: minmax(180px, 1.2fr) repeat(3, minmax(150px, 1fr)) auto;

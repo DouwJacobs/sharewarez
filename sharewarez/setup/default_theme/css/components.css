@@ -672,3 +672,74 @@ img[loading="lazy"] { background: linear-gradient(100deg, var(--theme-input-bg) 
 @keyframes mediaSkeleton { to { background-position-x: -240%; } }
 @media (prefers-reduced-motion: reduce) { img[loading="lazy"] { animation: none; } }
 .context-help-link { display: inline-flex; align-items: center; gap: 5px; margin-left: 6px; color: var(--theme-accent-color); font-size: .78em; font-weight: 700; white-space: nowrap; }
+
+/* === SHARED CONTROL AND SURFACE CONTRACT ===
+   Text inputs, selects, and ordinary action buttons use one control height.
+   Purpose-built controls such as carousel dots, drag handles, icon toggles,
+   colour/range inputs, and multi-line navigation tabs retain their geometry. */
+:root {
+    --app-control-height: 42px;
+    --app-control-padding-inline: 12px;
+}
+
+:is(.app-page, .modal-content, .content-login) :is(
+    input:is([type="text"], [type="password"], [type="email"], [type="search"], [type="number"], [type="date"], [type="datetime-local"], [type="tel"], [type="url"], [type="time"]),
+    input.form-control:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]),
+    select,
+    .admin-input:not(textarea)
+) {
+    box-sizing: border-box;
+    width: 100%;
+    height: var(--app-control-height) !important;
+    min-height: var(--app-control-height) !important;
+    padding: 0 var(--app-control-padding-inline) !important;
+    border: 1px solid var(--theme-border-color, var(--form-border)) !important;
+    border-radius: var(--border-radius-sm, 10px) !important;
+    background: var(--theme-input-bg, var(--form-bg)) !important;
+    color: var(--theme-text-primary, var(--text-white)) !important;
+    line-height: 1.2;
+    text-align: left;
+}
+
+:is(.app-page, .modal-content, .content-login) .btn:not(.btn-lg):not(.btn-circle) {
+    box-sizing: border-box;
+    height: var(--app-control-height) !important;
+    min-height: var(--app-control-height) !important;
+    align-items: center;
+    justify-content: center;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    line-height: 1.2;
+    text-align: center;
+}
+
+/* An empty state is content within the page surface, not another card. */
+.app-surface > :is(
+    .app-empty-state,
+    .empty-state,
+    .downloads-empty-state,
+    .favorites-empty-state,
+    .notification-empty,
+    .logs-empty,
+    .game-grid-empty,
+    .scan-empty-state-panel
+) {
+    border: 0 !important;
+    border-radius: 0;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+/* Responsive wrappers own overflow only. When they live inside an existing
+   surface, the parent supplies the visual card treatment. */
+.app-surface .table-responsive,
+.app-surface .dataTables_wrapper {
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+@media (max-width: 768px) {
+    :root { --app-control-height: 44px; }
+}

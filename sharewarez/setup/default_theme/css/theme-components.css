@@ -537,7 +537,7 @@ body { color: var(--theme-text-primary, #f5f7ff); }
 
 /* Nested cards use a lighter accent surface instead of repeating the parent box. */
 :is(.admin-surface, .admin-panel, .glass-panel, .discovery-panel, .library-browser-panel)
-    :is(.card, .theme-card, .theme-operation-card, .stat-card, .info-block, .section-item, .game-card, .favorites-empty-state, .library-name),
+    :is(.card, .theme-card, .theme-operation-card, .stat-card, .info-block, .section-item, .game-card, .library-name),
 .discovery-panel .game-card,
 .library-browser-panel .game-card {
     background: linear-gradient(145deg, rgba(var(--theme-accent-rgb, 98, 122, 239), .12), color-mix(in srgb, var(--theme-card-bottom, rgba(5, 8, 16, .98)) 72%, transparent)) !important;
