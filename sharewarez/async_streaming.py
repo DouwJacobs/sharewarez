@@ -227,7 +227,6 @@ def async_generate_zipstream_response(source_path, filename, chunk_size=65536,
         headers = {
             'content-type': 'application/zip',
             'content-disposition': f'attachment; filename="{secure_name}"',
-            'transfer-encoding': 'chunked',
             'cache-control': 'no-cache'
         }
         

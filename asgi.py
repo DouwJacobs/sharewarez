@@ -187,6 +187,7 @@ class LazyASGIApp:
         
         download_id = int(download_id_match.group(1))
         
+        # Extract all needed data inside app_context, then exit before streaming
         with self._flask_app.app_context():
             # Get download request
             download_request = db.session.execute(
@@ -207,37 +208,47 @@ class LazyASGIApp:
                 await self._send_error(send, 400, "Download not ready")
                 return
             
+            # Extract scalar values before leaving app_context
             file_path = download_request.zip_file_path
-            
-            # Check if this is a streaming download (source path is a directory)
-            if os.path.isdir(file_path):
-                await self._handle_streaming_download(receive, send, download_request, file_path, user_id, bandwidth_limit)
-                return
-            
-            # Security validation for direct game files
-            allowed_bases = get_allowed_base_directories(self._flask_app)
-            if not allowed_bases:
-                await self._send_error(send, 500, "Server configuration error")
-                return
+            req_id = download_request.id
+            req_file_location = download_request.file_location
+            game_name = download_request.game.name if download_request.game else None
+            is_dir = os.path.isdir(file_path) if file_path else False
 
-            is_safe, error_message = is_safe_path(file_path, allowed_bases)
-            if not is_safe:
+        # Check if this is a streaming download (source path is a directory)
+        if is_dir:
+            await self._handle_streaming_download(
+                receive, send, req_id, req_file_location, game_name,
+                file_path, user_id, bandwidth_limit,
+            )
+            return
+        
+        # Security validation for direct game files
+        allowed_bases = get_allowed_base_directories(self._flask_app)
+        if not allowed_bases:
+            await self._send_error(send, 500, "Server configuration error")
+            return
+
+        is_safe, error_message = is_safe_path(file_path, allowed_bases)
+        if not is_safe:
+            with self._flask_app.app_context():
                 log_system_event(f"Security violation - game file outside allowed directories: {file_path[:100]}",
                                event_type='security', event_level='warning')
-                await self._send_error(send, 403, "Access denied")
-                return
-            
-            if not os.path.exists(file_path):
-                await self._send_error(send, 404, "File not found")
-                return
-            
-            # Stream the file
-            filename = os.path.basename(file_path)
+            await self._send_error(send, 403, "Access denied")
+            return
+        
+        if not os.path.exists(file_path):
+            await self._send_error(send, 404, "File not found")
+            return
+        
+        # Stream the file
+        filename = os.path.basename(file_path)
+        with self._flask_app.app_context():
             log_system_event(f"Async file download: {filename}", event_type='download', event_level='information')
-            await self._stream_file(
-                receive, send, file_path, filename, scope, user_id, bandwidth_limit,
-                download_request_id=download_request.id,
-            )
+        await self._stream_file(
+            receive, send, file_path, filename, scope, user_id, bandwidth_limit,
+            download_request_id=req_id,
+        )
     
     async def _handle_rom_download(self, scope, receive, send, path, user_id, bandwidth_limit):
         """Handle ROM file downloads for emulator"""
@@ -355,6 +366,21 @@ class LazyASGIApp:
                            event_type='security', event_level='warning')
             return None
     
+    def _sync_reserve_transfer(self, user_id, filename, length, download_request_id):
+        """Run reserve_transfer synchronously inside a Flask app context."""
+        with self._flask_app.app_context():
+            return reserve_transfer(user_id, filename, length, download_request_id=download_request_id)
+
+    def _sync_update_transfer_progress(self, transfer_id, bytes_sent):
+        """Run update_transfer_progress synchronously inside a Flask app context."""
+        with self._flask_app.app_context():
+            update_transfer_progress(transfer_id, bytes_sent)
+
+    def _sync_finish_transfer(self, transfer_id, bytes_sent, status):
+        """Run finish_transfer synchronously inside a Flask app context."""
+        with self._flask_app.app_context():
+            finish_transfer(transfer_id, bytes_sent, status)
+
     async def _watch_disconnect(self, receive, disconnected):
         while not disconnected.is_set():
             message = await receive()
@@ -392,10 +418,9 @@ class LazyASGIApp:
                 length = end - start + 1
                 status = 206
             if user_id is not None:
-                with self._flask_app.app_context():
-                    transfer_id, _used_bytes, _quota_bytes = reserve_transfer(
-                        user_id, filename, length, download_request_id=download_request_id
-                    )
+                transfer_id, _used_bytes, _quota_bytes = await asyncio.to_thread(
+                    self._sync_reserve_transfer, user_id, filename, length, download_request_id
+                )
                 if transfer_id is None:
                     await self._send_error(
                         send, 429, "Monthly download quota exceeded",
@@ -422,8 +447,7 @@ class LazyASGIApp:
                     break
                 bytes_sent += len(chunk)
                 if transfer_id is not None and time.monotonic() - progress_updated_at >= 1:
-                    with self._flask_app.app_context():
-                        update_transfer_progress(transfer_id, bytes_sent)
+                    await asyncio.to_thread(self._sync_update_transfer_progress, transfer_id, bytes_sent)
                     progress_updated_at = time.monotonic()
                 await send({
                     "type": "http.response.body",
@@ -442,9 +466,10 @@ class LazyASGIApp:
             completed = True
             
         except Exception as e:
-            with self._flask_app.app_context():
-                log_system_event(f"Error streaming file {filename}: {str(e)}", 
-                               event_type='download', event_level='error')
+            if self._flask_app is not None:
+                with self._flask_app.app_context():
+                    log_system_event(f"Error streaming file {filename}: {str(e)}", 
+                                   event_type='download', event_level='error')
             # If we haven't started the response yet, send an error
             await self._send_error(send, 500, "Error streaming file")
         finally:
@@ -452,10 +477,15 @@ class LazyASGIApp:
             with contextlib.suppress(asyncio.CancelledError):
                 await disconnect_task
             if transfer_id is not None:
-                with self._flask_app.app_context():
-                    finish_transfer(transfer_id, bytes_sent, 'completed' if completed else 'interrupted')
+                await asyncio.to_thread(
+                    self._sync_finish_transfer, transfer_id, bytes_sent,
+                    'completed' if completed else 'interrupted',
+                )
     
-    async def _handle_streaming_download(self, receive, send, download_request, source_path, user_id, bandwidth_limit=0):
+    async def _handle_streaming_download(
+        self, receive, send, download_request_id, file_location, game_name,
+        source_path, user_id, bandwidth_limit=0,
+    ):
         """Handle zipstream downloads for multi-file games"""
         transfer_id = None
         bytes_sent = 0
@@ -481,24 +511,21 @@ class LazyASGIApp:
                 return
             
             # Get configuration parameters
-            chunk_size = self._flask_app.config.get('ZIPSTREAM_CHUNK_SIZE', 65536)
-            compression_level = self._flask_app.config.get('ZIPSTREAM_COMPRESSION_LEVEL', 0)
-            enable_zip64 = self._flask_app.config.get('ZIPSTREAM_ENABLE_ZIP64', True)
+            chunk_size = self._flask_app.config.get('ZIPSTREAM_CHUNK_SIZE', 65536) if self._flask_app else 65536
+            compression_level = self._flask_app.config.get('ZIPSTREAM_COMPRESSION_LEVEL', 0) if self._flask_app else 0
+            enable_zip64 = self._flask_app.config.get('ZIPSTREAM_ENABLE_ZIP64', True) if self._flask_app else True
             
             # Generate filename from the original file/folder name
-            if download_request.file_location:
-                base_name = os.path.basename(download_request.file_location)
+            if file_location:
+                base_name = os.path.basename(file_location)
                 filename = f"{base_name}.zip" if not base_name.lower().endswith('.zip') else base_name
             else:
-                # Fallback to game name if file_location is not available
-                game = download_request.game
-                filename = f"{game.name}.zip" if game else "download.zip"
+                filename = f"{game_name}.zip" if game_name else "download.zip"
 
             expected_bytes = estimate_path_bytes(source_path)
-            with self._flask_app.app_context():
-                transfer_id, _used_bytes, _quota_bytes = reserve_transfer(
-                    user_id, filename, expected_bytes, download_request_id=download_request.id
-                )
+            transfer_id, _used_bytes, _quota_bytes = await asyncio.to_thread(
+                self._sync_reserve_transfer, user_id, filename, expected_bytes, download_request_id
+            )
             if transfer_id is None:
                 await self._send_error(
                     send, 429, "Monthly download quota exceeded",
@@ -527,8 +554,7 @@ class LazyASGIApp:
                     break
                 bytes_sent += len(chunk)
                 if transfer_id is not None and time.monotonic() - progress_updated_at >= 1:
-                    with self._flask_app.app_context():
-                        update_transfer_progress(transfer_id, bytes_sent)
+                    await asyncio.to_thread(self._sync_update_transfer_progress, transfer_id, bytes_sent)
                     progress_updated_at = time.monotonic()
                 await send({
                     "type": "http.response.body",
@@ -574,8 +600,10 @@ class LazyASGIApp:
             with contextlib.suppress(asyncio.CancelledError):
                 await disconnect_task
             if transfer_id is not None:
-                with self._flask_app.app_context():
-                    finish_transfer(transfer_id, bytes_sent, 'completed' if completed else 'interrupted')
+                await asyncio.to_thread(
+                    self._sync_finish_transfer, transfer_id, bytes_sent,
+                    'completed' if completed else 'interrupted',
+                )
     
     async def _send_error(self, send, status_code, message, extra_headers=None):
         """Send an HTTP error response"""

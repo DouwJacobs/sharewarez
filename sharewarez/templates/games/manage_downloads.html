@@ -41,7 +41,7 @@
                         <td data-label="Size">{{ download.formatted_size }}</td>
                         <td class="actions-cell text-end" data-label="Actions">
                             {% if download.active_transfer %}
-                            <span class="btn btn-secondary btn-sm disabled" aria-disabled="true"><i class="fas fa-circle-notch fa-spin" aria-hidden="true"></i> Downloading</span>
+                            <span class="btn btn-secondary btn-sm disabled btn-downloading" aria-disabled="true"><i class="fas fa-circle-notch fa-spin" aria-hidden="true"></i> Downloading</span>
                             {% elif download.status == 'available' %}
                             <a href="{{ url_for('download.download_zip', download_id=download.id) }}" class="btn btn-primary btn-sm"><i class="fas fa-download" aria-hidden="true"></i> Download</a>
                             {% endif %}
