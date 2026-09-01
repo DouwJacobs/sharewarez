@@ -88,3 +88,46 @@ def test_monthly_download_quota_validation():
     assert validate_monthly_download_quota(25.5) == (True, "")
     assert validate_monthly_download_quota(-1)[0] is False
     assert validate_monthly_download_quota(True)[0] is False
+
+
+def test_transfer_lifecycle_and_stale_transition(db_session):
+    from datetime import timedelta
+    from uuid import uuid4
+    from sharewarez.models import User, DownloadTransfer
+    from sharewarez.utils.download_limits import reserve_transfer, update_transfer_progress, finish_transfer, mark_stale_transfers
+
+    user = User(
+        user_id=str(uuid4()),
+        name='TransferUser',
+        email='transfer@test.com',
+        role='user',
+    )
+    user.set_password('pass')
+    db_session.add(user)
+    db_session.commit()
+
+    transfer_id, _, _ = reserve_transfer(user.id, 'game.zip', 1000)
+    assert transfer_id is not None
+
+    transfer = db_session.get(DownloadTransfer, transfer_id)
+    assert transfer.status == 'active'
+
+    # Updating progress updates bytes_sent and last_activity_at
+    update_transfer_progress(transfer_id, 500)
+    db_session.refresh(transfer)
+    assert transfer.bytes_sent == 500
+
+    # mark_stale_transfers should not mark a recently updated transfer as stale
+    stale_count = mark_stale_transfers(stale_seconds=60)
+    db_session.refresh(transfer)
+    assert stale_count == 0
+    assert transfer.status == 'active'
+
+    # If last_activity_at becomes older than cutoff, mark_stale_transfers marks it interrupted
+    transfer.last_activity_at = datetime.now(timezone.utc) - timedelta(seconds=120)
+    db_session.commit()
+    stale_count = mark_stale_transfers(stale_seconds=60)
+    db_session.refresh(transfer)
+    assert stale_count == 1
+    assert transfer.status == 'interrupted'
+

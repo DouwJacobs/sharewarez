@@ -381,9 +381,10 @@ class LazyASGIApp:
                 length = end - start + 1
                 status = 206
             if user_id is not None:
-                transfer_id, _used_bytes, _quota_bytes = reserve_transfer(
-                    user_id, filename, length, download_request_id=download_request_id
-                )
+                with self._flask_app.app_context():
+                    transfer_id, _used_bytes, _quota_bytes = reserve_transfer(
+                        user_id, filename, length, download_request_id=download_request_id
+                    )
                 if transfer_id is None:
                     await self._send_error(
                         send, 429, "Monthly download quota exceeded",
@@ -408,7 +409,8 @@ class LazyASGIApp:
             async for chunk in throttle_chunks(async_generator, bandwidth_limit):
                 bytes_sent += len(chunk)
                 if transfer_id is not None and time.monotonic() - progress_updated_at >= 1:
-                    update_transfer_progress(transfer_id, bytes_sent)
+                    with self._flask_app.app_context():
+                        update_transfer_progress(transfer_id, bytes_sent)
                     progress_updated_at = time.monotonic()
                 await send({
                     "type": "http.response.body",
@@ -425,13 +427,15 @@ class LazyASGIApp:
             completed = True
             
         except Exception as e:
-            log_system_event(f"Error streaming file {filename}: {str(e)}", 
-                           event_type='download', event_level='error')
+            with self._flask_app.app_context():
+                log_system_event(f"Error streaming file {filename}: {str(e)}", 
+                               event_type='download', event_level='error')
             # If we haven't started the response yet, send an error
             await self._send_error(send, 500, "Error streaming file")
         finally:
             if transfer_id is not None:
-                finish_transfer(transfer_id, bytes_sent, 'completed' if completed else 'interrupted')
+                with self._flask_app.app_context():
+                    finish_transfer(transfer_id, bytes_sent, 'completed' if completed else 'interrupted')
     
     async def _handle_streaming_download(self, send, download_request, source_path, user_id, bandwidth_limit=0):
         """Handle zipstream downloads for multi-file games"""
@@ -471,9 +475,10 @@ class LazyASGIApp:
                 filename = f"{game.name}.zip" if game else "download.zip"
 
             expected_bytes = estimate_path_bytes(source_path)
-            transfer_id, _used_bytes, _quota_bytes = reserve_transfer(
-                user_id, filename, expected_bytes, download_request_id=download_request.id
-            )
+            with self._flask_app.app_context():
+                transfer_id, _used_bytes, _quota_bytes = reserve_transfer(
+                    user_id, filename, expected_bytes, download_request_id=download_request.id
+                )
             if transfer_id is None:
                 await self._send_error(
                     send, 429, "Monthly download quota exceeded",
@@ -500,7 +505,8 @@ class LazyASGIApp:
             async for chunk in throttle_chunks(async_generator, bandwidth_limit):
                 bytes_sent += len(chunk)
                 if transfer_id is not None and time.monotonic() - progress_updated_at >= 1:
-                    update_transfer_progress(transfer_id, bytes_sent)
+                    with self._flask_app.app_context():
+                        update_transfer_progress(transfer_id, bytes_sent)
                     progress_updated_at = time.monotonic()
                 await send({
                     "type": "http.response.body",
@@ -541,7 +547,8 @@ class LazyASGIApp:
                     pass
         finally:
             if transfer_id is not None:
-                finish_transfer(transfer_id, bytes_sent, 'completed' if completed else 'interrupted')
+                with self._flask_app.app_context():
+                    finish_transfer(transfer_id, bytes_sent, 'completed' if completed else 'interrupted')
     
     async def _send_error(self, send, status_code, message, extra_headers=None):
         """Send an HTTP error response"""
