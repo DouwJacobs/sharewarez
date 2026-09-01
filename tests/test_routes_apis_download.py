@@ -9,7 +9,7 @@ import pytest
 from unittest.mock import patch
 from uuid import uuid4
 
-from sharewarez.models import User, DownloadRequest, Game, Library, LibraryPlatform
+from sharewarez.models import User, DownloadRequest, DownloadTransfer, Game, Library, LibraryPlatform
 
 
 def safe_cleanup_database(db_session):
@@ -18,6 +18,7 @@ def safe_cleanup_database(db_session):
     from sharewarez.models import SystemEvents
     
     # Clean up in order of dependencies
+    db_session.execute(delete(DownloadTransfer))
     db_session.execute(delete(DownloadRequest))
     db_session.execute(delete(SystemEvents))
     db_session.execute(delete(Game))
@@ -153,6 +154,28 @@ class TestDeleteDownloadRequest:
         
         response = client.delete('/api/delete_download/99999')
         assert response.status_code == 404
+
+    def test_delete_request_rejects_active_transfer(
+        self, client, admin_user, sample_download_request, db_session
+    ):
+        transfer = DownloadTransfer(
+            user_id=sample_download_request.user_id,
+            download_request_id=sample_download_request.id,
+            game_uuid=sample_download_request.game_uuid,
+            filename='active.zip',
+            status='active',
+        )
+        db_session.add(transfer)
+        db_session.commit()
+        with client.session_transaction() as sess:
+            sess['_user_id'] = str(admin_user.id)
+            sess['_fresh'] = True
+
+        response = client.delete(f'/api/delete_download/{sample_download_request.id}')
+
+        assert response.status_code == 409
+        assert response.get_json()['status'] == 'warning'
+        assert db_session.get(DownloadRequest, sample_download_request.id) is not None
     
     def test_delete_request_without_zip_file(self, client, admin_user, sample_download_request):
         """Test successful deletion of download request."""
@@ -217,6 +240,8 @@ class TestDeleteDownloadRequest:
     @patch('sharewarez.routes_apis.download.db')
     def test_delete_request_database_error(self, mock_db, client, admin_user, sample_download_request):
         """Test handling of database errors during deletion."""
+        mock_db.session.get.return_value = sample_download_request
+        mock_db.session.scalar.return_value = None
         mock_db.session.delete.side_effect = Exception("Database error")
         
         with client.session_transaction() as sess:
@@ -292,4 +317,46 @@ class TestDownloadStatusAndBulkActions:
         assert sample_download_request.status == 'cancelled'
         assert response.get_json()['changed'] == 1
         mock_log.assert_called_once()
+
+    @patch('sharewarez.routes_apis.download.log_system_event')
+    def test_admin_can_disable_an_available_link(self, mock_log, client, admin_user, sample_download_request, db_session):
+        sample_download_request.status = 'available'
+        db_session.commit()
+        with client.session_transaction() as sess:
+            sess['_user_id'] = str(admin_user.id)
+            sess['_fresh'] = True
+
+        response = client.post('/api/downloads/bulk', json={
+            'action': 'cancel', 'ids': [sample_download_request.id]
+        })
+
+        assert response.status_code == 200
+        db_session.refresh(sample_download_request)
+        assert sample_download_request.status == 'cancelled'
+        assert response.get_json()['changed'] == 1
+
+    @patch('sharewarez.routes_apis.download.log_system_event')
+    def test_bulk_delete_preserves_link_with_active_transfer(
+        self, mock_log, client, admin_user, regular_user, sample_download_request, db_session
+    ):
+        transfer = DownloadTransfer(
+            user_id=regular_user.id,
+            download_request_id=sample_download_request.id,
+            game_uuid=sample_download_request.game_uuid,
+            filename='active.zip',
+            status='active',
+        )
+        db_session.add(transfer)
+        db_session.commit()
+        with client.session_transaction() as sess:
+            sess['_user_id'] = str(admin_user.id)
+            sess['_fresh'] = True
+
+        response = client.post('/api/downloads/bulk', json={
+            'action': 'delete', 'ids': [sample_download_request.id]
+        })
+
+        assert response.status_code == 200
+        assert response.get_json()['changed'] == 0
+        assert db_session.get(DownloadRequest, sample_download_request.id) is not None
     

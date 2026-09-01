@@ -26,18 +26,25 @@ class TestGetDownloadStatistics:
             # Should return dict with all expected keys
             expected_keys = [
                 'users_with_invites', 'downloads_per_user', 'top_downloaders',
-                'top_collectors', 'top_games', 'download_trends'
+                'top_collectors', 'top_games', 'download_trends', 'transfer_summary'
             ]
             
             assert isinstance(result, dict)
             for key in expected_keys:
                 assert key in result
-                assert 'labels' in result[key]
-                assert 'data' in result[key]
-                assert isinstance(result[key]['labels'], list)
-                assert isinstance(result[key]['data'], list)
-                assert len(result[key]['labels']) == 0
-                assert len(result[key]['data']) == 0
+                if key == 'transfer_summary':
+                    assert result[key] == {
+                        'completed_bytes': 0,
+                        'interrupted_bytes': 0,
+                        'cancelled_bytes': 0,
+                    }
+                else:
+                    assert 'labels' in result[key]
+                    assert 'data' in result[key]
+                    assert isinstance(result[key]['labels'], list)
+                    assert isinstance(result[key]['data'], list)
+                    assert len(result[key]['labels']) == 0
+                    assert len(result[key]['data']) == 0
     
     def test_get_download_statistics_with_complete_data(self, app):
         """Test function with complete sample data returns correct statistics."""
@@ -60,6 +67,8 @@ class TestGetDownloadStatistics:
                 (date(2025, 8, 11), 1), (date(2025, 8, 6), 1), (date(2025, 8, 28), 1)
             ]
             
+            transfer_totals_data = [('completed', 42_000), ('interrupted', 512)]
+
             # Mock top_collectors query
             top_collectors_data = [('alice', 2), ('bob', 1)]
             
@@ -71,8 +80,9 @@ class TestGetDownloadStatistics:
                 downloads_per_user_data,       # First call: downloads_per_user
                 top_games_data,                # Second call: top_games
                 download_trends_data,          # Third call: download_trends
-                top_collectors_data,           # Fourth call: top_collectors
-                users_with_invites_data        # Fifth call: users_with_invites
+                transfer_totals_data,          # Fourth call: transfer byte totals
+                top_collectors_data,           # Fifth call: top_collectors
+                users_with_invites_data        # Sixth call: users_with_invites
             ]
             
             with patch('sharewarez.utils.statistics.db.session.execute', mock_execute):
@@ -116,6 +126,9 @@ class TestGetDownloadStatistics:
             # Test download_trends
             assert len(result['download_trends']['labels']) == 6
             assert sum(result['download_trends']['data']) == 6
+            assert result['transfer_summary']['completed_bytes'] == 42_000
+            assert result['transfer_summary']['interrupted_bytes'] == 512
+            assert result['transfer_summary']['cancelled_bytes'] == 0
             
             # Verify date format in download_trends labels
             for date_label in result['download_trends']['labels']:
@@ -133,6 +146,7 @@ class TestGetDownloadStatistics:
                 [],  # downloads_per_user - empty
                 [],  # top_games - empty
                 [],  # download_trends - empty
+                [],  # transfer byte totals - empty
                 [('alice', 2), ('bob', 1)],  # top_collectors - has data
                 []   # users_with_invites - empty
             ]
@@ -162,6 +176,7 @@ class TestGetDownloadStatistics:
                 [],  # downloads_per_user - empty
                 [],  # top_games - empty
                 [],  # download_trends - empty
+                [],  # transfer byte totals - empty
                 [],  # top_collectors - empty
                 [('alice', 3), ('bob', 1)]  # users_with_invites - has data
             ]
@@ -194,6 +209,7 @@ class TestGetDownloadStatistics:
                 [('alice', 6), ('bob', 3)],  # downloads_per_user (includes all downloads)
                 [('Game Alpha', 4), ('Game Beta', 3), ('Game Gamma', 2)],  # top_games (all)
                 [(date(2025, 8, 26), 1), (date(2025, 8, 21), 1), (date(2025, 8, 16), 1)],  # download_trends (only recent)
+                [],  # transfer byte totals - empty
                 [],  # top_collectors - empty
                 []   # users_with_invites - empty
             ]
@@ -226,6 +242,7 @@ class TestGetDownloadStatistics:
                 top_downloaders_data,     # downloads per user (also supplies top downloaders)
                 top_games_data,           # top_games - ordered by count desc, limited to 10
                 [],  # download_trends - empty
+                [],  # transfer byte totals - empty
                 [],  # top_collectors - empty
                 users_with_invites_data   # users_with_invites - ordered by count desc, limited to 10
             ]

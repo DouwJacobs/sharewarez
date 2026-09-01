@@ -1257,3 +1257,17 @@ def theme_asset_filter(_template_context, path):
         filename=relative_path,
         **version_kwargs,
     )
+
+
+@bp.app_template_filter('static_asset')
+def static_asset_filter(path):
+    """Resolve an application static asset with a content fingerprint."""
+    relative_path = str(path).lstrip('/\\')
+    full_path = os.path.join(current_app.static_folder, relative_path)
+    version_kwargs = {}
+    if os.path.isfile(full_path):
+        stat = os.stat(full_path)
+        version_kwargs['v'] = _theme_asset_fingerprint(
+            full_path, stat.st_mtime_ns, stat.st_size,
+        )
+    return url_for('static', filename=relative_path, **version_kwargs)

@@ -4,7 +4,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from uuid import uuid4
 
-from sqlalchemy import delete, func, insert, select, text, update
+from sqlalchemy import case, delete, func, insert, select, text, update
 
 
 class DownloadSlot:
@@ -135,10 +135,10 @@ def estimate_path_bytes(path):
     return sum(item.stat().st_size for item in target.rglob('*') if item.is_file())
 
 
-def reserve_transfer(user_id, filename, expected_bytes, download_request_id=None):
+def reserve_transfer(user_id, filename, expected_bytes, download_request_id=None, game_uuid=None):
     """Atomically reserve monthly quota and create an active transfer record."""
     from sharewarez import db
-    from sharewarez.models import DownloadTransfer, GlobalSettings, User
+    from sharewarez.models import DownloadRequest, DownloadTransfer, GlobalSettings, User
 
     user = db.session.execute(
         select(User).where(User.id == user_id).with_for_update()
@@ -162,9 +162,14 @@ def reserve_transfer(user_id, filename, expected_bytes, download_request_id=None
         db.session.rollback()
         return None, used_bytes, quota_bytes
 
+    if game_uuid is None and download_request_id is not None:
+        game_uuid = db.session.scalar(
+            select(DownloadRequest.game_uuid).where(DownloadRequest.id == download_request_id)
+        )
     transfer = DownloadTransfer(
         user_id=user_id,
         download_request_id=download_request_id,
+        game_uuid=game_uuid,
         filename=filename[:512],
         reserved_bytes=max(0, expected_bytes),
         status='active',
@@ -188,15 +193,40 @@ def finish_transfer(transfer_id, bytes_sent, status):
     from sharewarez import db
     from sharewarez.models import DownloadTransfer
 
-    transfer = db.session.get(DownloadTransfer, transfer_id)
-    if transfer is None:
-        return
-    transfer.bytes_sent = max(0, bytes_sent)
-    transfer.reserved_bytes = transfer.bytes_sent
-    transfer.status = status
-    transfer.last_activity_at = datetime.now(timezone.utc)
-    transfer.ended_at = transfer.last_activity_at
+    reported_bytes = max(0, bytes_sent)
+    now = datetime.now(timezone.utc)
+    result = db.session.execute(
+        update(DownloadTransfer)
+        .where(
+            DownloadTransfer.id == transfer_id,
+            DownloadTransfer.status == 'active',
+        )
+        .values(
+            bytes_sent=reported_bytes,
+            reserved_bytes=reported_bytes,
+            status=status,
+            last_activity_at=now,
+            ended_at=now,
+        )
+    )
+    if not result.rowcount:
+        # Cancellation or stale-transfer cleanup may win the terminal-state
+        # race. Preserve that state while reconciling bytes sent since the last
+        # heartbeat so quota and audit totals do not under-report the stream.
+        reconciled_bytes = case(
+            (DownloadTransfer.bytes_sent < reported_bytes, reported_bytes),
+            else_=DownloadTransfer.bytes_sent,
+        )
+        db.session.execute(
+            update(DownloadTransfer)
+            .where(
+                DownloadTransfer.id == transfer_id,
+                DownloadTransfer.status.in_(('cancelled', 'interrupted')),
+            )
+            .values(bytes_sent=reconciled_bytes, reserved_bytes=reconciled_bytes)
+        )
     db.session.commit()
+    return (result.rowcount or 0) > 0
 
 
 def update_transfer_progress(transfer_id, bytes_sent):
@@ -204,12 +234,13 @@ def update_transfer_progress(transfer_id, bytes_sent):
     from sharewarez import db
     from sharewarez.models import DownloadTransfer
 
-    db.session.execute(
+    result = db.session.execute(
         update(DownloadTransfer)
         .where(DownloadTransfer.id == transfer_id, DownloadTransfer.status == 'active')
         .values(bytes_sent=max(0, bytes_sent), last_activity_at=datetime.now(timezone.utc))
     )
     db.session.commit()
+    return result.rowcount > 0
 
 
 def mark_stale_transfers(stale_seconds=60):

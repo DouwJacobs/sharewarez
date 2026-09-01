@@ -10,6 +10,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const setText = (id, value) => { const node = document.getElementById(id); if (node) node.textContent = value; };
     const total = values => (values || []).reduce((sum, value) => sum + Number(value || 0), 0);
+    const formatBytes = value => {
+        let size = Number(value || 0);
+        if (!size) return '0 B';
+        const units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB'];
+        let unit = 0;
+        while (size >= 1024 && unit < units.length - 1) { size /= 1024; unit += 1; }
+        return `${size.toFixed(unit && size < 100 ? 2 : 0)} ${units[unit]}`;
+    };
     const showEmpty = canvasId => {
         const canvas = document.getElementById(canvasId);
         if (!canvas) return;
@@ -36,8 +44,8 @@ document.addEventListener('DOMContentLoaded', () => {
         .then(data => {
             setText('statTotalDownloads', total(data.downloads_per_user.data).toLocaleString());
             setText('statActiveUsers', data.downloads_per_user.labels.length.toLocaleString());
+            setText('statCompletedBytes', formatBytes(data.transfer_summary?.completed_bytes));
             setText('statTopGame', data.top_games.labels[0] || 'None yet');
-            setText('statTopCollector', data.top_collectors.labels[0] || 'None yet');
             renderChart('downloadTrendsChart', 'line', data.download_trends, { label: 'Downloads', fill: `rgba(${accentRgb}, .16)` });
             renderChart('topGamesChart', 'bar', data.top_games, { label: 'Downloads', horizontal: true });
             renderChart('topDownloadersChart', 'bar', data.top_downloaders, { label: 'Downloads', horizontal: true, fill: secondary });

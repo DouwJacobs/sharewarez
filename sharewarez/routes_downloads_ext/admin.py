@@ -1,8 +1,9 @@
 from flask import render_template, redirect, url_for, flash, request, jsonify
 from datetime import datetime, timezone
 from flask_login import login_required
+from sharewarez.forms import CsrfProtectForm
 from sharewarez.models import DownloadQueueEntry, DownloadRequest, DownloadTransfer, User
-from sqlalchemy import select, and_, update
+from sqlalchemy import and_, delete, select, update
 from sqlalchemy.orm import joinedload
 from sharewarez.utils.auth import admin_required
 from sharewarez.utils.event_logging import log_system_event
@@ -50,6 +51,7 @@ def manage_downloads():
         select(DownloadTransfer)
         .options(
             joinedload(DownloadTransfer.user),
+            joinedload(DownloadTransfer.game),
             joinedload(DownloadTransfer.download_request).joinedload(DownloadRequest.game),
         )
         .join(User, DownloadTransfer.user_id == User.id)
@@ -58,7 +60,7 @@ def manage_downloads():
     transfer_filters = []
     if user_filter:
         transfer_filters.append(User.name.ilike(f'%{user_filter}%'))
-    if transfer_status_filter in {'active', 'completed', 'interrupted'}:
+    if transfer_status_filter in {'active', 'completed', 'interrupted', 'cancelled'}:
         transfer_filters.append(DownloadTransfer.status == transfer_status_filter)
     if transfer_filters:
         transfer_query = transfer_query.where(and_(*transfer_filters))
@@ -74,6 +76,61 @@ def manage_downloads():
                            transfer_status_filter=transfer_status_filter,
                            transfer_pagination=transfer_pagination,
                            transfers=transfer_pagination.items)
+
+
+@download_bp.route('/admin/download-transfers/<int:transfer_id>/cancel', methods=['POST'])
+@login_required
+@admin_required
+def cancel_transfer(transfer_id):
+    form = CsrfProtectForm()
+    if not form.validate_on_submit():
+        return jsonify({'message': 'Invalid request'}), 400
+    now = datetime.now(timezone.utc)
+    result = db.session.execute(
+        update(DownloadTransfer)
+        .where(
+            DownloadTransfer.id == transfer_id,
+            DownloadTransfer.status == 'active',
+        )
+        .values(
+            status='cancelled',
+            reserved_bytes=DownloadTransfer.bytes_sent,
+            last_activity_at=now,
+            ended_at=now,
+        )
+    )
+    db.session.commit()
+    if result.rowcount:
+        log_system_event(
+            f'Administrator cancelled download transfer {transfer_id}',
+            event_type='download_api', event_level='warning',
+        )
+        flash('Transfer cancellation requested.', 'success')
+    elif db.session.get(DownloadTransfer, transfer_id) is None:
+        flash('Transfer attempt not found.', 'error')
+    else:
+        flash('Only active transfers can be cancelled.', 'warning')
+    return redirect(url_for('download.manage_downloads'))
+
+
+@download_bp.route('/admin/download-transfers/clear', methods=['POST'])
+@login_required
+@admin_required
+def clear_transfer_history():
+    form = CsrfProtectForm()
+    if not form.validate_on_submit():
+        return jsonify({'message': 'Invalid request'}), 400
+    result = db.session.execute(
+        delete(DownloadTransfer).where(DownloadTransfer.status != 'active')
+    )
+    count = max(result.rowcount or 0, 0)
+    db.session.commit()
+    log_system_event(
+        f'Administrator cleared {count} finished download transfer records',
+        event_type='download_api', event_level='information',
+    )
+    flash(f'Cleared {count} transfer attempt record(s).', 'success')
+    return redirect(url_for('download.manage_downloads'))
 
 
 @download_bp.route('/admin/active-transfers')
@@ -122,6 +179,16 @@ def delete_download_request(request_id):
     download_request = db.session.get(DownloadRequest, request_id)
     if not download_request:
         flash('Download request not found.', 'error')
+        return redirect(url_for('download.manage_downloads'))
+
+    active_transfer = db.session.scalar(
+        select(DownloadTransfer.id).where(
+            DownloadTransfer.download_request_id == request_id,
+            DownloadTransfer.status == 'active',
+        )
+    )
+    if active_transfer:
+        flash('Cancel the active transfer before deleting this download link.', 'warning')
         return redirect(url_for('download.manage_downloads'))
 
     # Delete the download request from database

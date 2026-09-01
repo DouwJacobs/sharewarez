@@ -45,6 +45,7 @@ def test_async_streaming_response_reads_only_requested_bytes(tmp_path):
     assert body == b"3456"
     assert headers["content-length"] == "4"
     assert headers["accept-ranges"] == "bytes"
+    assert headers["x-accel-buffering"] == "no"
 
 
 def test_stream_file_returns_partial_content(tmp_path):
@@ -76,6 +77,29 @@ def test_stream_file_returns_partial_content(tmp_path):
     assert headers[b"content-range"] == b"bytes 3-6/10"
     assert headers[b"content-length"] == b"4"
     assert body == b"3456"
+
+
+def test_stream_failure_after_headers_does_not_send_a_second_response(tmp_path):
+    source = tmp_path / "game.bin"
+    source.write_bytes(b"0123456789")
+    messages = []
+
+    async def send(message):
+        messages.append(message)
+        if message["type"] == "http.response.body":
+            raise ConnectionError("client disconnected")
+
+    async def receive():
+        await asyncio.Event().wait()
+
+    with patch("sharewarez.async_streaming.log_system_event"), patch("asgi.log_system_event"):
+        asyncio.run(
+            LazyASGIApp()._stream_file(
+                receive, send, str(source), source.name, {"headers": []}
+            )
+        )
+
+    assert [message["type"] for message in messages].count("http.response.start") == 1
 
 
 def test_stream_file_rejects_unsatisfiable_range(tmp_path):

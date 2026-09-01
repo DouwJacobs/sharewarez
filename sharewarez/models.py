@@ -571,6 +571,7 @@ class DownloadTransfer(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False, index=True)
     download_request_id = db.Column(db.Integer, db.ForeignKey('download_requests.id', ondelete='SET NULL'), nullable=True)
+    game_uuid = db.Column(db.String(36), db.ForeignKey('games.uuid', ondelete='SET NULL'), nullable=True, index=True)
     filename = db.Column(db.String(512), nullable=False)
     reserved_bytes = db.Column(db.BigInteger, nullable=False, default=0)
     bytes_sent = db.Column(db.BigInteger, nullable=False, default=0)
@@ -581,6 +582,7 @@ class DownloadTransfer(db.Model):
 
     user = db.relationship('User', foreign_keys=[user_id])
     download_request = db.relationship('DownloadRequest', foreign_keys=[download_request_id])
+    game = db.relationship('Game', foreign_keys=[game_uuid])
 
 
 class DownloadQueueEntry(db.Model):

@@ -45,16 +45,40 @@ expiration. Expired requests return `410 Gone`; users can retry an expired row
 to validate the source and create a fresh expiry window. Existing requests are
 assigned the default seven-day window during migration.
 
-Every active transfer persists its delivered-byte count and activity heartbeat
+Every active transfer persists its streamed-byte count and activity heartbeat
 approximately once per second. **Administration → Downloads** polls these rows
 to show the active user, filename, elapsed time, bytes sent, and progress.
 Transfers without a heartbeat for 60 seconds are marked interrupted and their
 unused quota reservation is released. This monitoring state is shared by all
-web workers. The same page also paginates completed and interrupted transfer
-attempts separately from download requests; requests describe available items,
-while transfers describe each actual delivery attempt.
+web workers. An administrator can cancel an active transfer; the stream notices
+that state on its next heartbeat and closes the response. The same page also
+paginates completed, interrupted, and cancelled transfer attempts separately
+from download links:
 
-Monthly quotas use calendar months and measure bytes actually sent, including
+- A **download link** (`DownloadRequest`) is the reusable access record shown on
+  the member's Downloads page. It owns the source, expiry, and admission-queue
+  priority. Priority matters only while a delivery is waiting for a free slot.
+- A **transfer attempt** (`DownloadTransfer`) is one HTTP response started from
+  that link. It owns the live heartbeat, streamed bytes, start/end times, and
+  final status. Administrators can clear finished attempt history without
+  deleting members' reusable links.
+
+Each transfer stores its own game identifier so history remains attributable
+after its reusable link is deleted. Older records whose links were already
+deleted before that field existed remain labelled as legacy records.
+
+The streamed-byte counter records bytes accepted by the application's ASGI
+connection. It is suitable for quota accounting and interruption diagnostics,
+but it is not proof that the browser wrote every byte to disk. A buffering
+reverse proxy can accept data faster than the public internet link, so elapsed
+time and streamed bytes must not be presented as the member's WAN speed.
+Download responses send `X-Accel-Buffering: no`; nginx-compatible proxies should
+honour it, and other reverse proxies should have response buffering disabled for
+the download routes.
+Statistics count only completed transfer attempts; creating or refreshing a
+download link is not counted as a download.
+
+Monthly quotas use calendar months and measure bytes streamed by the application, including
 resumed ranges. Administrators set an instance default in **Server Settings →
 Downloads** and may give an individual user an inherited, unlimited, or custom
 GB allowance from **Administration → Users**. Before a response starts, the

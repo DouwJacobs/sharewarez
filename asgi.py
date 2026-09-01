@@ -305,7 +305,10 @@ class LazyASGIApp:
             filename = os.path.basename(game.full_disk_path)
             log_system_event(f"ROM file downloaded for WebRetro: {game.name}", 
                            event_type='download', event_level='information')
-            await self._stream_file(receive, send, game.full_disk_path, filename, scope, user_id, bandwidth_limit)
+            await self._stream_file(
+                receive, send, game.full_disk_path, filename, scope, user_id,
+                bandwidth_limit, game_uuid=game.uuid,
+            )
     
     async def _get_user_from_session(self, scope):
         """Extract user ID from Flask session cookie"""
@@ -366,15 +369,18 @@ class LazyASGIApp:
                            event_type='security', event_level='warning')
             return None
     
-    def _sync_reserve_transfer(self, user_id, filename, length, download_request_id):
+    def _sync_reserve_transfer(self, user_id, filename, length, download_request_id, game_uuid=None):
         """Run reserve_transfer synchronously inside a Flask app context."""
         with self._flask_app.app_context():
-            return reserve_transfer(user_id, filename, length, download_request_id=download_request_id)
+            return reserve_transfer(
+                user_id, filename, length,
+                download_request_id=download_request_id, game_uuid=game_uuid,
+            )
 
     def _sync_update_transfer_progress(self, transfer_id, bytes_sent):
         """Run update_transfer_progress synchronously inside a Flask app context."""
         with self._flask_app.app_context():
-            update_transfer_progress(transfer_id, bytes_sent)
+            return update_transfer_progress(transfer_id, bytes_sent)
 
     def _sync_finish_transfer(self, transfer_id, bytes_sent, status):
         """Run finish_transfer synchronously inside a Flask app context."""
@@ -388,11 +394,13 @@ class LazyASGIApp:
                 disconnected.set()
                 return
 
-    async def _stream_file(self, receive, send, file_path, filename, scope, user_id=None, bandwidth_limit=0, download_request_id=None):
+    async def _stream_file(self, receive, send, file_path, filename, scope, user_id=None, bandwidth_limit=0, download_request_id=None, game_uuid=None):
         """Stream a file asynchronously"""
         transfer_id = None
         bytes_sent = 0
         completed = False
+        response_started = False
+        externally_stopped = False
         disconnected = asyncio.Event()
         disconnect_task = asyncio.create_task(self._watch_disconnect(receive, disconnected))
         try:
@@ -419,7 +427,8 @@ class LazyASGIApp:
                 status = 206
             if user_id is not None:
                 transfer_id, _used_bytes, _quota_bytes = await asyncio.to_thread(
-                    self._sync_reserve_transfer, user_id, filename, length, download_request_id
+                    self._sync_reserve_transfer, user_id, filename, length,
+                    download_request_id, game_uuid,
                 )
                 if transfer_id is None:
                     await self._send_error(
@@ -439,22 +448,28 @@ class LazyASGIApp:
                 "status": status,
                 "headers": [(k.encode(), v.encode()) for k, v in headers.items()]
             })
+            response_started = True
             
             # Stream file chunks
             progress_updated_at = time.monotonic()
             async for chunk in throttle_chunks(async_generator, bandwidth_limit):
                 if disconnected.is_set():
                     break
-                bytes_sent += len(chunk)
                 if transfer_id is not None and time.monotonic() - progress_updated_at >= 1:
-                    await asyncio.to_thread(self._sync_update_transfer_progress, transfer_id, bytes_sent)
+                    still_active = await asyncio.to_thread(
+                        self._sync_update_transfer_progress, transfer_id, bytes_sent
+                    )
+                    if not still_active:
+                        externally_stopped = True
+                        break
                     progress_updated_at = time.monotonic()
                 await send({
                     "type": "http.response.body",
                     "body": chunk,
                     "more_body": True
                 })
-            if disconnected.is_set():
+                bytes_sent += len(chunk)
+            if disconnected.is_set() or externally_stopped:
                 return
             
             # End response
@@ -470,8 +485,8 @@ class LazyASGIApp:
                 with self._flask_app.app_context():
                     log_system_event(f"Error streaming file {filename}: {str(e)}", 
                                    event_type='download', event_level='error')
-            # If we haven't started the response yet, send an error
-            await self._send_error(send, 500, "Error streaming file")
+            if not response_started:
+                await self._send_error(send, 500, "Error streaming file")
         finally:
             disconnect_task.cancel()
             with contextlib.suppress(asyncio.CancelledError):
@@ -490,6 +505,8 @@ class LazyASGIApp:
         transfer_id = None
         bytes_sent = 0
         completed = False
+        response_started = False
+        externally_stopped = False
         disconnected = asyncio.Event()
         disconnect_task = asyncio.create_task(self._watch_disconnect(receive, disconnected))
         try:
@@ -524,7 +541,8 @@ class LazyASGIApp:
 
             expected_bytes = estimate_path_bytes(source_path)
             transfer_id, _used_bytes, _quota_bytes = await asyncio.to_thread(
-                self._sync_reserve_transfer, user_id, filename, expected_bytes, download_request_id
+                self._sync_reserve_transfer, user_id, filename, expected_bytes,
+                download_request_id, None,
             )
             if transfer_id is None:
                 await self._send_error(
@@ -546,22 +564,28 @@ class LazyASGIApp:
                 "status": 200,
                 "headers": [(k.encode(), v.encode()) for k, v in headers.items()]
             })
+            response_started = True
             
             # Stream ZIP chunks
             progress_updated_at = time.monotonic()
             async for chunk in throttle_chunks(async_generator, bandwidth_limit):
                 if disconnected.is_set():
                     break
-                bytes_sent += len(chunk)
                 if transfer_id is not None and time.monotonic() - progress_updated_at >= 1:
-                    await asyncio.to_thread(self._sync_update_transfer_progress, transfer_id, bytes_sent)
+                    still_active = await asyncio.to_thread(
+                        self._sync_update_transfer_progress, transfer_id, bytes_sent
+                    )
+                    if not still_active:
+                        externally_stopped = True
+                        break
                     progress_updated_at = time.monotonic()
                 await send({
                     "type": "http.response.body",
                     "body": chunk,
                     "more_body": True
                 })
-            if disconnected.is_set():
+                bytes_sent += len(chunk)
+            if disconnected.is_set() or externally_stopped:
                 return
             
             # End response
@@ -579,22 +603,8 @@ class LazyASGIApp:
             error_filename = locals().get('filename', 'unknown')
             print(f"Error streaming ZIP {error_filename}: {str(e)}")
             
-            # Check if response has started - if so, we can only close the connection
-            # Cannot send error response after http.response.start has been sent
-            try:
-                # If we haven't sent the response start yet, send an error
+            if not response_started:
                 await self._send_error(send, 500, "Error streaming ZIP file")
-            except Exception:
-                # Response already started, just close the connection gracefully
-                try:
-                    await send({
-                        "type": "http.response.body",
-                        "body": b"",
-                        "more_body": False
-                    })
-                except Exception:
-                    # Connection already closed, nothing more we can do
-                    pass
         finally:
             disconnect_task.cancel()
             with contextlib.suppress(asyncio.CancelledError):

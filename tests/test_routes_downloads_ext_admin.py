@@ -190,6 +190,92 @@ class TestManageDownloadsRoute:
         assert b'Completed' in response.data
         assert b'Interrupted' in response.data
 
+    def test_transfer_keeps_game_attribution_after_request_is_deleted(
+        self, client, admin_user, db_session, regular_user, sample_download_request, test_game
+    ):
+        transfer = DownloadTransfer(
+            user_id=regular_user.id,
+            download_request_id=sample_download_request.id,
+            game_uuid=test_game.uuid,
+            filename='durable-game.zip',
+            reserved_bytes=1024,
+            bytes_sent=1024,
+            status='completed',
+            ended_at=datetime.now(timezone.utc),
+        )
+        db_session.add(transfer)
+        db_session.commit()
+        db_session.delete(sample_download_request)
+        db_session.commit()
+
+        with client.session_transaction() as session:
+            session['_user_id'] = str(admin_user.id)
+
+        response = client.get('/admin/manage-downloads')
+
+        assert response.status_code == 200
+        assert b'durable-game.zip' in response.data
+        assert b'Test Game' in response.data
+
+    @patch('sharewarez.routes_downloads_ext.admin.log_system_event')
+    def test_admin_can_cancel_an_active_transfer(
+        self, mock_log, client, admin_user, db_session, regular_user, sample_download_request
+    ):
+        transfer = DownloadTransfer(
+            user_id=regular_user.id,
+            download_request_id=sample_download_request.id,
+            game_uuid=sample_download_request.game_uuid,
+            filename='active-game.zip',
+            reserved_bytes=4096,
+            bytes_sent=1024,
+            status='active',
+        )
+        db_session.add(transfer)
+        db_session.commit()
+        transfer_id = transfer.id
+        with client.session_transaction() as session:
+            session['_user_id'] = str(admin_user.id)
+
+        response = client.post(f'/admin/download-transfers/{transfer_id}/cancel')
+
+        assert response.status_code == 302
+        db_session.refresh(transfer)
+        assert transfer.status == 'cancelled'
+        assert transfer.reserved_bytes == 1024
+        assert transfer.ended_at is not None
+        mock_log.assert_called_once()
+
+    @patch('sharewarez.routes_downloads_ext.admin.log_system_event')
+    def test_clear_transfer_history_preserves_active_transfers(
+        self, mock_log, client, admin_user, db_session, regular_user
+    ):
+        active = DownloadTransfer(
+            user_id=regular_user.id, filename='active.zip', status='active'
+        )
+        completed = DownloadTransfer(
+            user_id=regular_user.id, filename='completed.zip', status='completed',
+            ended_at=datetime.now(timezone.utc),
+        )
+        interrupted = DownloadTransfer(
+            user_id=regular_user.id, filename='interrupted.zip', status='interrupted',
+            ended_at=datetime.now(timezone.utc),
+        )
+        db_session.add_all([active, completed, interrupted])
+        db_session.commit()
+        active_id = active.id
+        completed_id = completed.id
+        interrupted_id = interrupted.id
+        with client.session_transaction() as session:
+            session['_user_id'] = str(admin_user.id)
+
+        response = client.post('/admin/download-transfers/clear')
+
+        assert response.status_code == 302
+        assert db_session.get(DownloadTransfer, active_id) is not None
+        assert db_session.get(DownloadTransfer, completed_id) is None
+        assert db_session.get(DownloadTransfer, interrupted_id) is None
+        mock_log.assert_called_once()
+
     def test_manage_downloads_unauthenticated(self, client):
         """Test that unauthenticated users are redirected."""
         response = client.get('/admin/manage-downloads')

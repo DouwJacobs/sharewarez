@@ -20,7 +20,7 @@
         '/admin/integrations': 'Integrations', '/admin/statistics': 'Statistics',
         '/admin/system_logs': 'System logs', '/admin/server-status': 'Server status', '/admin/new_server_info': 'Server status',
         '/admin/users': 'Users', '/admin/whitelist': 'Whitelist', '/admin/manage_invites': 'Invitations',
-        '/admin/branding': 'Branding', '/admin/manage-downloads': 'Download requests',
+        '/admin/branding': 'Branding', '/admin/manage-downloads': 'Download delivery',
         '/admin/themes': 'Themes', '/admin/newsletter': 'Newsletter', '/admin/email-templates': 'Email templates',
         '/admin/help': 'Administrator guide', '/admin/smtp_settings': 'SMTP settings',
         '/admin/image_queue': 'Image queue', '/admin/extensions': 'File extensions'
@@ -637,7 +637,7 @@ document.addEventListener('DOMContentLoaded', function () {
 <script src="{{ 'js/attract_mode_idle.js'|theme_asset }}"></script>
 <script src="{{ 'js/global-search.js'|theme_asset }}"></script>
 <script src="{{ 'js/responsive_admin_tabs.js'|theme_asset }}"></script>
-<script src="{{ url_for('static', filename='js/pwa.js') }}"></script>
+<script src="{{ 'js/pwa.js'|static_asset }}"></script>
 {% endif %}
 
 </body>

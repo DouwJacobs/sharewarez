@@ -1142,3 +1142,14 @@ class TestThemeAssetVersioning:
 
         assert '/library/themes/default/css/base.css?v=' in css_url
         assert '/library/themes/default/js/app.js?v=' in js_url
+
+    def test_non_theme_javascript_uses_content_fingerprint(self, tmp_path):
+        from sharewarez.routes import static_asset_filter
+
+        app = Flask(__name__, static_folder=str(tmp_path / 'static'))
+        (tmp_path / 'static' / 'js').mkdir(parents=True)
+        (tmp_path / 'static' / 'js' / 'pwa.js').write_text('console.log("pwa")')
+        with app.test_request_context('/'):
+            asset_url = static_asset_filter('js/pwa.js')
+
+        assert '/js/pwa.js?v=' in asset_url

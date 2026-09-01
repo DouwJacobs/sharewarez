@@ -6,8 +6,9 @@ from sqlalchemy import select
 from flask_login import login_required, current_user
 from sharewarez import db
 from sharewarez.utils.auth import admin_required
-from sharewarez.models import DownloadRequest
+from sharewarez.models import DownloadRequest, DownloadTransfer, GlobalSettings
 from sharewarez.utils.event_logging import log_system_event
+from sharewarez.utils.download_limits import calculate_download_expiry
 from . import apis_bp
 
 ALLOWED_BULK_ACTIONS = {'delete', 'cancel', 'retry'}
@@ -50,17 +51,25 @@ def bulk_download_actions():
     downloads = db.session.execute(
         select(DownloadRequest).where(DownloadRequest.id.in_(request_ids))
     ).scalars().all()
+    active_request_ids = set(db.session.execute(
+        select(DownloadTransfer.download_request_id).where(
+            DownloadTransfer.download_request_id.in_(request_ids),
+            DownloadTransfer.status == 'active',
+        )
+    ).scalars().all())
+    settings = db.session.execute(select(GlobalSettings)).scalars().first()
     changed = 0
     for download in downloads:
-        if action == 'delete':
+        if action == 'delete' and download.id not in active_request_ids:
             db.session.delete(download)
             changed += 1
-        elif action == 'cancel' and download.status in {'pending', 'processing'}:
+        elif action == 'cancel' and download.status != 'cancelled':
             download.status = 'cancelled'
             changed += 1
-        elif action == 'retry' and download.status in {'failed', 'cancelled'} and download.file_location and os.path.exists(download.file_location):
+        elif action == 'retry' and download.status in {'failed', 'cancelled', 'expired'} and download.file_location and os.path.exists(download.file_location):
             download.status = 'available'
             download.completion_time = None
+            download.expires_at = calculate_download_expiry(settings)
             changed += 1
     db.session.commit()
     log_system_event(
@@ -97,6 +106,18 @@ def api_delete_download_request(request_id: int) -> Tuple[dict, int]:
                 'status': 'error',
                 'message': 'Download request not found'
             }), 404
+
+        active_transfer = db.session.scalar(
+            select(DownloadTransfer.id).where(
+                DownloadTransfer.download_request_id == request_id,
+                DownloadTransfer.status == 'active',
+            )
+        )
+        if active_transfer is not None:
+            return jsonify({
+                'status': 'warning',
+                'message': 'Cancel the active transfer before deleting this download link.'
+            }), 409
 
         # Delete the download request from database
         log_system_event(

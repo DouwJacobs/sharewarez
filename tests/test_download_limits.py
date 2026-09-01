@@ -131,3 +131,30 @@ def test_transfer_lifecycle_and_stale_transition(db_session):
     assert stale_count == 1
     assert transfer.status == 'interrupted'
 
+
+def test_finish_transfer_does_not_overwrite_admin_cancellation(db_session):
+    from uuid import uuid4
+    from sharewarez.models import User, DownloadTransfer
+    from sharewarez.utils.download_limits import reserve_transfer, finish_transfer
+
+    user = User(
+        user_id=str(uuid4()),
+        name='CancelledTransferUser',
+        email='cancelled-transfer@test.com',
+        role='user',
+    )
+    user.set_password('pass')
+    db_session.add(user)
+    db_session.commit()
+
+    transfer_id, _, _ = reserve_transfer(user.id, 'game.zip', 1000)
+    transfer = db_session.get(DownloadTransfer, transfer_id)
+    transfer.status = 'cancelled'
+    db_session.commit()
+
+    finish_transfer(transfer_id, 1000, 'completed')
+    db_session.refresh(transfer)
+
+    assert transfer.status == 'cancelled'
+    assert transfer.bytes_sent == 1000
+    assert transfer.reserved_bytes == 1000

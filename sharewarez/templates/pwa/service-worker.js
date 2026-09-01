@@ -36,12 +36,8 @@ self.addEventListener('fetch', event => {
         return;
     }
 
-    const cacheableAsset = (
-        url.pathname.startsWith('/pwa/icon-')
-        || request.destination === 'style'
-        || request.destination === 'script'
-        || request.destination === 'font'
-    );
+    const versionedCode = request.destination === 'style' || request.destination === 'script';
+    const cacheableAsset = url.pathname.startsWith('/pwa/icon-') || versionedCode || request.destination === 'font';
     if (!cacheableAsset) return;
 
     event.respondWith((async () => {
@@ -53,6 +49,11 @@ self.addEventListener('fetch', event => {
             }
             return response;
         });
+        // Code is content/version fingerprinted. Prefer the network so a page
+        // never executes an older cached bundle after an application upgrade.
+        if (versionedCode) {
+            return update.catch(() => cached || Response.error());
+        }
         if (cached) {
             event.waitUntil(update.catch(() => undefined));
             return cached;

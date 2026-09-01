@@ -128,6 +128,9 @@
     color: var(--theme-text-primary, var(--text-white));
     font-size: 1.05rem;
 }
+.active-transfer-heading small { display: block; margin-top: 4px; color: var(--theme-text-secondary, var(--text-light)); font-size: .76rem; }
+.transfer-history-actions { display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
+.transfer-history-actions form, .transfer-history-table form { margin: 0; }
 
 .active-transfer-list {
     display: grid;

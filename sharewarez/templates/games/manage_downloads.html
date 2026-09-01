@@ -8,7 +8,7 @@
 
 {% block content %}
 <main class="app-page downloads-page" aria-labelledby="downloads-page-title">
-    {{ page_header('My downloads', 'Track your requested files and return to a game whenever you need more details.', 'Library activity', 'fa-download', pagination.total, 'request') }}
+    {{ page_header('My downloads', 'Use your reusable download links and return to a game whenever you need more details.', 'Library activity', 'fa-download', pagination.total, 'download') }}
     {% if state_counts %}<div class="download-state-summary" aria-label="Download status summary">{% for label, count in state_counts.items() %}<span><strong>{{ count }}</strong>{{ label }}</span>{% endfor %}<a href="{{ url_for('site.helpfaq') }}#downloads">How downloads work</a></div>{% endif %}
     <div class="app-surface downloads-panel">
         {% if download_requests %}

@@ -137,6 +137,27 @@ def test_active_download_progress_uses_scoped_bar_styles_and_labels():
     assert ".active-transfer-item div > span" not in css
 
 
+def test_download_delivery_ui_explains_records_and_exposes_admin_controls():
+    template = Path("sharewarez/templates/admin/admin_manage_downloads.html").read_text(encoding="utf-8")
+
+    assert "One row per HTTP delivery" in template
+    assert "Reusable access" in template
+    assert "Queue priority applies only while waiting for a transfer slot" in template
+    assert "download.cancel_transfer" in template
+    assert "download.clear_transfer_history" in template
+    assert "transfer.game or" in template
+
+
+def test_pwa_assets_are_versioned_and_code_uses_network_first_updates():
+    base_template = Path("sharewarez/templates/base.html").read_text(encoding="utf-8")
+    service_worker = Path("sharewarez/templates/pwa/service-worker.js").read_text(encoding="utf-8")
+
+    assert "'js/pwa.js'|static_asset" in base_template
+    assert "versionedCode" in service_worker
+    assert "const update = fetch(request)" in service_worker
+    assert "if (versionedCode)" in service_worker
+
+
 def test_final_page_shell_audit_uses_shared_headers_and_main_landmarks():
     library_editor = Path("sharewarez/templates/admin/admin_manage_library_create.html").read_text(encoding="utf-8")
     collections = Path("sharewarez/templates/admin/admin_manage_collections.html").read_text(encoding="utf-8")

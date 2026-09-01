@@ -179,7 +179,8 @@ async def create_async_streaming_response(
             'content-disposition': f'attachment; filename="{secure_name}"',
             'content-length': str(response_length),
             'accept-ranges': 'bytes',
-            'cache-control': 'no-cache'
+            'cache-control': 'no-cache',
+            'x-accel-buffering': 'no',
         }
         
         # Return the async generator and headers
@@ -227,7 +228,8 @@ def async_generate_zipstream_response(source_path, filename, chunk_size=65536,
         headers = {
             'content-type': 'application/zip',
             'content-disposition': f'attachment; filename="{secure_name}"',
-            'cache-control': 'no-cache'
+            'cache-control': 'no-cache',
+            'x-accel-buffering': 'no',
         }
         
         # Return the async generator and headers
