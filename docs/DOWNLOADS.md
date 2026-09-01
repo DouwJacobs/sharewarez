@@ -1,5 +1,12 @@
 # Download delivery
 
+The Download button on a game detail page creates or refreshes the user's
+reusable download request and immediately redirects to the ASGI delivery URL.
+There is no background ZIP preparation step: a single file is served directly,
+while a multi-file game is converted to a ZIP as it streams. The user's
+**Downloads** page remains the history/retry surface and can start the same
+delivery again.
+
 Direct file downloads support HTTP single-byte range requests. Clients can
 resume an interrupted transfer by sending `Range: bytes=<offset>-`; successful
 partial responses return `206 Partial Content`, `Accept-Ranges: bytes`, an
@@ -43,7 +50,9 @@ approximately once per second. **Administration → Downloads** polls these rows
 to show the active user, filename, elapsed time, bytes sent, and progress.
 Transfers without a heartbeat for 60 seconds are marked interrupted and their
 unused quota reservation is released. This monitoring state is shared by all
-web workers.
+web workers. The same page also paginates completed and interrupted transfer
+attempts separately from download requests; requests describe available items,
+while transfers describe each actual delivery attempt.
 
 Monthly quotas use calendar months and measure bytes actually sent, including
 resumed ranges. Administrators set an instance default in **Server Settings →

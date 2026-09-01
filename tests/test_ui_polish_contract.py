@@ -120,7 +120,10 @@ def test_final_theme_and_vendor_audit_removes_legacy_leaks():
     assert "cdn.datatables.net" not in base_template
     assert "cropperjs/1.6.1" not in base_template
     assert "notify/0.4.2" not in base_template
-    assert "cdn.datatables.net" in admin_downloads
+    assert "cdn.datatables.net" not in admin_downloads
+    assert admin_downloads.count("Apply filters") == 1
+    assert "Zip File Path" not in admin_downloads
+    assert "Completion Time" not in admin_downloads
     assert "cdn.ckeditor.com" in newsletter
     assert 'class="app-surface newsletter-compose-panel"' in newsletter
     assert 'class="app-surface newsletter-history"' in newsletter

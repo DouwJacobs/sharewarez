@@ -215,8 +215,8 @@ class TestDownloadGameRoute:
             app.config['DATA_FOLDER_WAREZ'] = os.path.dirname(test_game.full_disk_path)
 
             response = client.get(f'/download_game/{test_game.uuid}')
-            assert response.status_code == 302  # Redirect to downloads
-            assert '/downloads' in response.location
+            assert response.status_code == 302
+            assert '/download_zip/' in response.location
 
             # Verify download request was created
             download_request = db_session.query(DownloadRequest).filter_by(
@@ -286,7 +286,7 @@ class TestDownloadOtherRoute:
 
             response = client.get(f'/download_other/update/{test_game_update.game_uuid}/{test_game_update.id}')
             assert response.status_code == 302
-            assert '/downloads' in response.location
+            assert '/download_zip/' in response.location
 
             # Verify download request was created
             download_request = db_session.query(DownloadRequest).filter_by(
@@ -383,7 +383,7 @@ class TestIntegration:
             # Make download request
             response = client.get(f'/download_game/{test_game.uuid}')
             assert response.status_code == 302
-            assert '/downloads' in response.location
+            assert '/download_zip/' in response.location
 
             # Verify download request was created
             final_count = db_session.query(DownloadRequest).filter_by(

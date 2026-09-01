@@ -15,11 +15,14 @@ from . import download_bp
 @admin_required
 def manage_downloads():
     expire_download_requests()
+    mark_stale_transfers()
     page = max(1, request.args.get('page', 1, type=int))
+    transfer_page = max(1, request.args.get('transfer_page', 1, type=int))
     per_page = min(max(10, request.args.get('per_page', 25, type=int)), 100)
     status_filter = request.args.get('status', '').strip().lower()
     user_filter = request.args.get('user', '').strip()
     content_type_filter = request.args.get('content_type', '').strip().lower()
+    transfer_status_filter = request.args.get('transfer_status', '').strip().lower()
     filters = []
     if status_filter:
         filters.append(DownloadRequest.status == status_filter)
@@ -42,9 +45,32 @@ def manage_downloads():
         query = query.where(and_(*filters))
     pagination = db.paginate(query, page=page, per_page=per_page, error_out=False)
 
+    transfer_query = (
+        select(DownloadTransfer)
+        .options(
+            joinedload(DownloadTransfer.user),
+            joinedload(DownloadTransfer.download_request).joinedload(DownloadRequest.game),
+        )
+        .join(User, DownloadTransfer.user_id == User.id)
+        .order_by(DownloadTransfer.started_at.desc(), DownloadTransfer.id.desc())
+    )
+    transfer_filters = []
+    if user_filter:
+        transfer_filters.append(User.name.ilike(f'%{user_filter}%'))
+    if transfer_status_filter in {'active', 'completed', 'interrupted'}:
+        transfer_filters.append(DownloadTransfer.status == transfer_status_filter)
+    if transfer_filters:
+        transfer_query = transfer_query.where(and_(*transfer_filters))
+    transfer_pagination = db.paginate(
+        transfer_query, page=transfer_page, per_page=per_page, error_out=False
+    )
+
     return render_template('admin/admin_manage_downloads.html', download_requests=pagination.items,
                            pagination=pagination, status_filter=status_filter, user_filter=user_filter,
-                           content_type_filter=content_type_filter)
+                           content_type_filter=content_type_filter,
+                           transfer_status_filter=transfer_status_filter,
+                           transfer_pagination=transfer_pagination,
+                           transfers=transfer_pagination.items)
 
 
 @download_bp.route('/admin/active-transfers')

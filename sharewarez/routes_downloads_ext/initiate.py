@@ -9,7 +9,7 @@ from sharewarez.models import Game, DownloadRequest, GameUpdate, GameExtra, Glob
 from sharewarez.utils.game_core import get_game_by_uuid
 from sharewarez.utils.security import is_safe_path, get_allowed_base_directories
 from sharewarez.utils.filename import sanitize_filename
-from sharewarez.utils.download_limits import calculate_download_expiry
+from sharewarez.utils.download_limits import calculate_download_expiry, expire_download_requests
 from sharewarez import db
 from sharewarez.utils.event_logging import log_system_event
 from sharewarez.routes_games_ext.details import get_path_size
@@ -18,6 +18,7 @@ from . import download_bp
 @download_bp.route('/download_game/<game_uuid>', methods=['GET'])
 @login_required
 def download_game(game_uuid):
+    expire_download_requests(current_user.id)
     # Validate UUID format
     if not re.match(r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$', game_uuid, re.IGNORECASE):
         log_system_event(f"Invalid game UUID format attempted: {game_uuid[:50]}", event_type='security', event_level='warning')
@@ -50,7 +51,15 @@ def download_game(game_uuid):
             f"User {current_user.name} reopened existing download request {existing_request.id} for {game.name}",
             event_type='audit', event_level='information',
         )
-        flash("You already have a download request for this game in your basket. Please check your downloads page.", "info")
+        if existing_request.status == 'available':
+            return redirect(url_for('download.download_zip', download_id=existing_request.id))
+        if existing_request.status in {'failed', 'cancelled', 'expired'} and os.path.exists(existing_request.file_location):
+            settings = db.session.execute(select(GlobalSettings)).scalars().first()
+            existing_request.status = 'available'
+            existing_request.expires_at = calculate_download_expiry(settings)
+            db.session.commit()
+            return redirect(url_for('download.download_zip', download_id=existing_request.id))
+        flash("You already have a download request for this game. Manage it from your downloads page.", "info")
         return redirect(url_for('download.downloads'))
 
     try:
@@ -58,27 +67,6 @@ def download_game(game_uuid):
         # Determine how to handle the game for instant streaming download
         if os.path.isdir(game.full_disk_path):
             files_in_directory = []
-            for f in os.listdir(game.full_disk_path):
-                full_path = os.path.join(game.full_disk_path, f)
-                # Skip updates and extras folders
-                if os.path.isdir(full_path) and (
-                    f.lower() == settings.update_folder_name.lower() or 
-                    f.lower() == settings.extras_folder_name.lower()):
-                    continue
-                if os.path.isfile(full_path):
-                    files_in_directory.append(f)
-            
-            # Filter out .nfo, .sfv, file_id.diz, sharewarez.json files - these don't count as significant
-            significant_files = [f for f in files_in_directory
-                               if not f.lower().endswith(('.nfo', '.sfv'))
-                               and not f.lower() in ('file_id.diz', 'sharewarez.json')]
-            
-            if len(significant_files) == 1:
-                # Single significant file - direct download (no zipping)
-                zip_file_path = os.path.join(game.full_disk_path, significant_files[0])
-            else:
-                # Multiple files or empty - stream as ZIP on-the-fly
-                zip_file_path = game.full_disk_path
             for f in os.listdir(game.full_disk_path):
                 full_path = os.path.join(game.full_disk_path, f)
                 # Skip updates and extras folders
@@ -119,6 +107,7 @@ def download_game(game_uuid):
             zip_file_path=zip_file_path,
             expires_at=calculate_download_expiry(settings),
         )
+        db.session.add(new_request)
         game.times_downloaded += 1
         db.session.commit()
 
@@ -127,8 +116,8 @@ def download_game(game_uuid):
             event_type='audit', event_level='information',
         )
         
-        # No background processing needed - ASGI handler manages streaming
-        return redirect(url_for('download.downloads'))
+        # Start delivery immediately. ASGI records the actual transfer attempt.
+        return redirect(url_for('download.download_zip', download_id=new_request.id))
         
     except Exception as e:
         db.session.rollback()
@@ -143,6 +132,7 @@ def download_game(game_uuid):
 @login_required
 def download_other(file_type, game_uuid, file_id):
     """Handle downloads for update and extra files"""
+    expire_download_requests(current_user.id)
     
     # Validate inputs
     if file_type not in ['update', 'extra']:
@@ -199,7 +189,15 @@ def download_other(file_type, game_uuid, file_id):
             f"User {current_user.name} reopened existing download request {existing_request.id} for {file_type} {file_record.id}",
             event_type='audit', event_level='information',
         )
-        flash("You already have a download request for this file", "info")
+        if existing_request.status == 'available':
+            return redirect(url_for('download.download_zip', download_id=existing_request.id))
+        if existing_request.status in {'failed', 'cancelled', 'expired'} and os.path.exists(existing_request.file_location):
+            settings = db.session.execute(select(GlobalSettings)).scalars().first()
+            existing_request.status = 'available'
+            existing_request.expires_at = calculate_download_expiry(settings)
+            db.session.commit()
+            return redirect(url_for('download.download_zip', download_id=existing_request.id))
+        flash("You already have a download request for this file. Manage it from your downloads page.", "info")
         return redirect(url_for('download.downloads'))
     
     try:
@@ -248,8 +246,8 @@ def download_other(file_type, game_uuid, file_id):
             event_type='audit', event_level='information',
         )
         
-        # No background thread needed - ASGI handler will manage the streaming
-        return redirect(url_for('download.downloads'))
+        # Start delivery immediately. ASGI records the actual transfer attempt.
+        return redirect(url_for('download.download_zip', download_id=new_request.id))
         
     except SQLAlchemyError as e:
         db.session.rollback()

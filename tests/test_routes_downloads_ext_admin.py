@@ -2,7 +2,7 @@ import pytest
 import json
 from flask import url_for
 from unittest.mock import patch, MagicMock
-from sharewarez.models import User, DownloadRequest, Game, GameUpdate, Library
+from sharewarez.models import User, DownloadRequest, DownloadTransfer, Game, GameUpdate, Library
 from sharewarez.platform import LibraryPlatform
 from sharewarez import db
 from uuid import uuid4
@@ -154,6 +154,41 @@ class TestManageDownloadsRoute:
         assert b'Update' in response.data
         assert b'Test Game' in response.data
         assert f'/game_details/{test_game.uuid}'.encode() in response.data
+
+    def test_manage_downloads_displays_completed_and_interrupted_transfer_activity(
+        self, client, admin_user, db_session, regular_user, sample_download_request
+    ):
+        completed = DownloadTransfer(
+            user_id=regular_user.id,
+            download_request_id=sample_download_request.id,
+            filename='test-game.zip',
+            reserved_bytes=2048,
+            bytes_sent=2048,
+            status='completed',
+            ended_at=datetime.now(timezone.utc),
+        )
+        interrupted = DownloadTransfer(
+            user_id=regular_user.id,
+            download_request_id=sample_download_request.id,
+            filename='partial-test-game.zip',
+            reserved_bytes=512,
+            bytes_sent=512,
+            status='interrupted',
+            ended_at=datetime.now(timezone.utc),
+        )
+        db_session.add_all([completed, interrupted])
+        db_session.commit()
+        with client.session_transaction() as session:
+            session['_user_id'] = str(admin_user.id)
+
+        response = client.get('/admin/manage-downloads')
+
+        assert response.status_code == 200
+        assert b'Transfer attempts' in response.data
+        assert b'test-game.zip' in response.data
+        assert b'partial-test-game.zip' in response.data
+        assert b'Completed' in response.data
+        assert b'Interrupted' in response.data
 
     def test_manage_downloads_unauthenticated(self, client):
         """Test that unauthenticated users are redirected."""
