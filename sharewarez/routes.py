@@ -403,8 +403,7 @@ def cancel_scan_job(job_id):
 @login_required
 @admin_required
 def restart_scan_job(job_id):
-    print(f"Request to restart scan job: {job_id}")
-    job = db.session.get(ScanJob, job_id) or abort(404)    
+    job = db.session.get(ScanJob, job_id) or abort(404)
     if job.status == 'Running':
         flash('Cannot restart a running scan.', 'error')
         return redirect(url_for('main.admin_scan_management'))
@@ -420,29 +419,39 @@ def restart_scan_job(job_id):
     job.is_enabled = True
     db.session.commit()
 
-    # Start scan using the existing job
-    @copy_current_request_context
-    def start_scan():
-        base_dir = current_app.config.get('BASE_FOLDER_WINDOWS') if os.name == 'nt' else current_app.config.get('BASE_FOLDER_POSIX')
-        full_path = os.path.join(base_dir, job.scan_folder)
-        
-        if not os.path.exists(full_path) or not os.access(full_path, os.R_OK):
-            job.status = 'Failed'
-            job.error_message = f"Cannot access folder: {full_path}"
-            db.session.commit()
-            return
+    # The response can tear down its request context while the scan is still
+    # starting. Give the worker its own application context and DB-bound job.
+    app = current_app._get_current_object()
 
-        scan_mode = 'files' if job.setting_filefolder else 'folders'
-        download_missing_images = getattr(job, 'setting_download_missing_images', False)
-        scan_and_add_games(
-            full_path,
-            scan_mode=scan_mode,
-            library_uuid=job.library_uuid,
-            remove_missing=job.setting_remove,
-            existing_job=job,
-            download_missing_images=download_missing_images,
-            force_updates_extras_scan=getattr(job, 'setting_force_updates_extras', False)
-        )
+    def start_scan():
+        with app.app_context():
+            worker_job = db.session.get(ScanJob, job_id)
+            if worker_job is None:
+                return
+            base_dir = current_app.config.get(
+                'BASE_FOLDER_WINDOWS' if os.name == 'nt' else 'BASE_FOLDER_POSIX'
+            )
+            full_path = os.path.join(base_dir, worker_job.scan_folder)
+
+            if not os.path.exists(full_path) or not os.access(full_path, os.R_OK):
+                worker_job.status = 'Failed'
+                worker_job.error_message = f"Cannot access folder: {full_path}"
+                db.session.commit()
+                return
+
+            scan_and_add_games(
+                full_path,
+                scan_mode='files' if worker_job.setting_filefolder else 'folders',
+                library_uuid=worker_job.library_uuid,
+                remove_missing=worker_job.setting_remove,
+                existing_job=worker_job,
+                download_missing_images=getattr(
+                    worker_job, 'setting_download_missing_images', False
+                ),
+                force_updates_extras_scan=getattr(
+                    worker_job, 'setting_force_updates_extras', False
+                ),
+            )
 
     thread = Thread(target=start_scan, daemon=True)
     thread.start()

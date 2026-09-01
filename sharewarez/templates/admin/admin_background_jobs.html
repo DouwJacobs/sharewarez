@@ -23,13 +23,15 @@
                 <button class="btn btn-primary" type="submit">Apply filters</button>
                 {% if search or status_filter %}<a class="btn btn-secondary" href="{{ url_for('admin2.background_jobs') }}">Clear filters</a>{% endif %}
                 {% if counts.get('failed', 0) > 0 %}
-                <form method="post" action="{{ url_for('admin2.clear_failed_background_jobs') }}" style="display:inline;" onsubmit="return confirm('Clear all failed background jobs?');">
-                    {{ csrf_form.hidden_tag() }}
-                    <button class="btn btn-danger" type="submit">Clear Failed Jobs</button>
-                </form>
+                <button class="btn btn-danger" type="submit" form="clearFailedJobsForm">Clear failed jobs</button>
                 {% endif %}
             </div>
         </form>
+        {% if counts.get('failed', 0) > 0 %}
+        <form id="clearFailedJobsForm" class="job-bulk-action-form" method="post" action="{{ url_for('admin2.clear_failed_background_jobs') }}" onsubmit="return confirm('Delete all failed background job records?');">
+            {{ csrf_form.hidden_tag() }}
+        </form>
+        {% endif %}
     </section>
     <section class="app-surface job-list" aria-live="polite" aria-label="Background jobs">
         {% for job in pagination.items %}
@@ -39,7 +41,7 @@
                 <dl><div><dt>Queue</dt><dd>{{ job.queue }}</dd></div><div><dt>Attempts</dt><dd>{{ job.attempts }} / {{ job.max_attempts }}</dd></div><div><dt>Worker</dt><dd>{{ job.locked_by or '—' }}</dd></div><div><dt>Started</dt><dd>{{ job.started_at|friendly_datetime if job.started_at else '—' }}</dd></div><div><dt>Completed</dt><dd>{{ job.completed_at|friendly_datetime if job.completed_at else '—' }}</dd></div><div><dt>Heartbeat</dt><dd>{{ job.heartbeat_at|friendly_datetime if job.heartbeat_at else '—' }}</dd></div></dl>
                 {% if job.progress_message %}<p class="job-message"><strong>Progress:</strong> {{ job.progress_message }}</p>{% endif %}{% if job.error_message %}<pre class="job-error">{{ job.error_message }}</pre>{% endif %}
                 <div class="job-data"><details data-job-section="payload"><summary>Payload</summary><pre>{{ job.payload|tojson(indent=2) }}</pre></details>{% if job.result is not none %}<details data-job-section="result"><summary>Result</summary><pre>{{ job.result|tojson(indent=2) }}</pre></details>{% endif %}</div>
-                <div class="job-actions">{% if job.status in ('queued', 'running') %}<form method="post" action="{{ url_for('admin2.cancel_background_job', job_id=job.id) }}" onsubmit="return confirm('Cancel this job?');">{{ csrf_form.hidden_tag() }}<button class="btn btn-danger" type="submit">Cancel</button></form>{% elif job.status in ('failed', 'cancelled') %}<form method="post" action="{{ url_for('admin2.retry_background_job', job_id=job.id) }}">{{ csrf_form.hidden_tag() }}<button class="btn btn-primary" type="submit">Retry</button></form>{% endif %}<form method="post" action="{{ url_for('admin2.delete_background_job', job_id=job.id) }}" style="display:inline;" onsubmit="return confirm('Remove job record?');">{{ csrf_form.hidden_tag() }}<button class="btn btn-secondary btn-sm" type="submit">Delete</button></form></div>
+                <div class="job-actions">{% if job.status in ('queued', 'running') %}<form method="post" action="{{ url_for('admin2.cancel_background_job', job_id=job.id) }}" onsubmit="return confirm('Cancel this job?');">{{ csrf_form.hidden_tag() }}<button class="btn btn-danger" type="submit">Cancel</button></form>{% elif job.status in ('failed', 'cancelled') %}<form method="post" action="{{ url_for('admin2.retry_background_job', job_id=job.id) }}">{{ csrf_form.hidden_tag() }}<button class="btn btn-primary" type="submit">Retry</button></form>{% endif %}<form method="post" action="{{ url_for('admin2.delete_background_job', job_id=job.id) }}" onsubmit="return confirm('Remove job record?');">{{ csrf_form.hidden_tag() }}<button class="btn btn-secondary" type="submit">Delete</button></form></div>
             </div>
         </details>
         {% else %}<div class="job-empty app-empty-state"><i class="fas fa-check-circle" aria-hidden="true"></i><h2>No jobs found</h2><p>There are no background jobs matching these filters.</p></div>{% endfor %}

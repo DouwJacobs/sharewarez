@@ -5,3 +5,22 @@
 .job-list{display:grid;gap:0}.job-card{border-bottom:1px solid var(--border-color);border-left:3px solid transparent}.job-card:last-child{border-bottom:0}.job-card.status-running{border-left-color:var(--status-info,var(--accent-color))}.job-card.status-completed{border-left-color:var(--status-success,#39c275)}.job-card.status-failed{border-left-color:var(--status-danger,#ef5b5b)}.job-card.status-cancelled{border-left-color:var(--status-warning,#d18a3d)}.job-card summary{display:grid;grid-template-columns:6.5rem minmax(12rem,1fr) minmax(8rem,13rem) 10rem;align-items:center;gap:1rem;padding:.9rem 1rem;cursor:pointer;list-style:none}.job-card summary::-webkit-details-marker{display:none}.job-card summary:hover{background:var(--surface-subtle,rgba(255,255,255,.025))}.job-state{font-size:.72rem;font-weight:700;text-transform:uppercase}.job-main{display:grid;min-width:0}.job-main small{overflow:hidden;text-overflow:ellipsis;color:var(--text-muted)}.job-progress{display:flex;align-items:center;gap:.5rem}.job-progress-track{display:block;width:100%;height:.4rem;overflow:hidden;border-radius:1rem;background:var(--border-color)}.job-progress-fill{display:block;width:var(--job-progress);height:100%;border-radius:inherit;background:var(--accent-color,var(--primary-color));transition:width .2s ease}.job-card time{color:var(--text-muted);font-size:.8rem;text-align:right}.job-details{padding:0 1rem 1rem;border-top:1px solid var(--border-color)}.job-details dl{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.75rem;margin:1rem 0}.job-details dt{font-size:.7rem;text-transform:uppercase;color:var(--text-muted)}.job-details dd{margin:.2rem 0;overflow-wrap:anywhere}.job-error,.job-data pre{max-height:18rem;overflow:auto;padding:.75rem;white-space:pre-wrap;border-radius:.4rem;background:color-mix(in srgb,var(--status-danger,#ef5b5b) 12%,transparent);color:var(--text-color)}.job-data pre{background:var(--input-background)}.job-data{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.75rem}.job-actions{display:flex;justify-content:flex-end;margin-top:1rem}.job-empty{text-align:center}.job-empty i{font-size:2rem;color:var(--status-success,#39c275)}
 @media(max-width:800px){.jobs-header{display:block}.jobs-header-actions{justify-content:space-between;margin-top:.75rem}.job-summary{grid-template-columns:repeat(2,minmax(0,1fr))}.job-summary-card:last-child:nth-child(odd){grid-column:1/-1}.job-filters{grid-template-columns:1fr 1fr}.job-filters label:first-child,.job-filter-actions{grid-column:1/-1}.job-filter-actions .btn{flex:1}.job-card summary{grid-template-columns:6rem 1fr}.job-progress,.job-card time{grid-column:2}.job-card time{text-align:left}.job-details dl,.job-data{grid-template-columns:1fr}}
 @media(max-width:520px){.jobs-admin-shell{width:100%;margin-top:.75rem}.schedule-summary{align-items:stretch;flex-direction:column}.schedule-summary .btn{width:100%}.job-summary{grid-template-columns:1fr 1fr}.job-filters{grid-template-columns:1fr}.job-filters label:first-child,.job-filter-actions{grid-column:auto}.job-card summary{grid-template-columns:1fr;gap:.45rem;padding:.85rem .75rem}.job-progress,.job-card time{grid-column:1}.job-details{padding-inline:.75rem}}
+
+.job-actions { align-items: center; gap: .5rem; }
+.job-actions form { display: flex; margin: 0; }
+.job-actions .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    width: 5.5rem;
+    height: 2.5rem;
+    padding: 0 .875rem;
+    font-size: .875rem;
+    line-height: 1;
+}
+.job-bulk-action-form { display: none; }
+
+/* Match the Logs page content grid and header control sizing. */
+.jobs-admin-shell { width: min(1440px, calc(100% - 2rem)); }
+.jobs-header-actions .btn { min-height: 42px; white-space: nowrap; }

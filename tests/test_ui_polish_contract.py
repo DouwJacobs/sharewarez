@@ -84,6 +84,47 @@ def test_operations_pages_use_compact_theme_aware_components():
     assert statistics_template.count("<canvas") == 5
 
 
+def test_operations_alignment_and_notification_badge_contracts():
+    base_template = Path("sharewarez/templates/base.html").read_text(encoding="utf-8")
+    logs_template = Path("sharewarez/templates/admin/admin_server_logs.html").read_text(encoding="utf-8")
+    logs_css = (THEME / "css/admin/admin_system_logs.css").read_text(encoding="utf-8")
+    jobs_css = (THEME / "css/admin/admin_background_jobs.css").read_text(encoding="utf-8")
+
+    activity_links = [
+        line for line in base_template.splitlines()
+        if "url_for('site.activity')" in line
+    ]
+    assert activity_links
+    assert all("unread_notification_count" not in line for line in activity_links)
+    assert 'class="btn btn-danger" id="clearLogsBtn"' in logs_template
+    assert "width: min(1440px, calc(100% - 2rem))" in logs_css
+    assert "width: min(1440px, calc(100% - 2rem))" in jobs_css
+
+
+def test_background_job_actions_are_aligned_and_bulk_delete_form_is_valid():
+    jobs_template = Path("sharewarez/templates/admin/admin_background_jobs.html").read_text(encoding="utf-8")
+    jobs_css = (THEME / "css/admin/admin_background_jobs.css").read_text(encoding="utf-8")
+
+    filter_form_end = jobs_template.index("</form>", jobs_template.index('class="job-filters"'))
+    bulk_form_start = jobs_template.index('id="clearFailedJobsForm"')
+    assert bulk_form_start > filter_form_end
+    assert 'form="clearFailedJobsForm"' in jobs_template
+    assert 'btn btn-secondary btn-sm' not in jobs_template
+    assert ".job-actions .btn" in jobs_css
+    assert "width: 5.5rem" in jobs_css
+    assert "height: 2.5rem" in jobs_css
+
+
+def test_scan_restart_worker_does_not_reuse_request_context():
+    routes = Path("sharewarez/routes.py").read_text(encoding="utf-8")
+    restart_route = routes[routes.index("def restart_scan_job"):routes.index("@bp.route('/edit_game_images")]
+
+    assert "app = current_app._get_current_object()" in restart_route
+    assert "with app.app_context():" in restart_route
+    assert "worker_job = db.session.get(ScanJob, job_id)" in restart_route
+    assert "@copy_current_request_context" not in restart_route
+
+
 def test_final_page_shell_audit_uses_shared_headers_and_main_landmarks():
     library_editor = Path("sharewarez/templates/admin/admin_manage_library_create.html").read_text(encoding="utf-8")
     collections = Path("sharewarez/templates/admin/admin_manage_collections.html").read_text(encoding="utf-8")

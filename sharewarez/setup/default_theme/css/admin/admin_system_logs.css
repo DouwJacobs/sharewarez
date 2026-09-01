@@ -48,3 +48,16 @@
 .log-copy { color: rgb(var(--theme-accent-soft-rgb,143,160,255)); }
 .logs-summary-info { border-color: rgba(var(--theme-accent-soft-rgb,92,164,255),.3)!important; }
 #clearLogsModal .modal-content { background: var(--theme-panel-bg, #111422); }
+
+/* Keep Operations pages on the same content grid and align header actions. */
+.logs-page {
+    width: min(1440px, calc(100% - 2rem));
+    max-width: none;
+    margin: clamp(1rem, 3vw, 2rem) auto 4rem;
+    padding: 0;
+}
+.logs-page > .app-page-header { align-items: flex-start; }
+.logs-page > .app-page-header .btn { min-height: 42px; white-space: nowrap; }
+@media (max-width: 760px) {
+    .logs-page { width: 100%; margin-top: .75rem; }
+}
