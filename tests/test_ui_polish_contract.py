@@ -106,9 +106,10 @@ def test_background_job_actions_are_aligned_and_bulk_delete_form_is_valid():
     jobs_css = (THEME / "css/admin/admin_background_jobs.css").read_text(encoding="utf-8")
 
     filter_form_end = jobs_template.index("</form>", jobs_template.index('class="job-filters"'))
-    bulk_form_start = jobs_template.index('id="clearFailedJobsForm"')
+    bulk_form_start = jobs_template.index('class="job-bulk-actions"')
     assert bulk_form_start > filter_form_end
-    assert 'form="clearFailedJobsForm"' in jobs_template
+    assert 'action="{{ url_for(\'admin2.clear_failed_background_jobs\') }}"' in jobs_template
+    assert 'Clear {{ counts.get(\'failed\', 0) }} failed job' in jobs_template
     assert 'btn btn-secondary btn-sm' not in jobs_template
     assert ".job-actions .btn" in jobs_css
     assert "width: 5.5rem" in jobs_css
@@ -123,6 +124,17 @@ def test_scan_restart_worker_does_not_reuse_request_context():
     assert "with app.app_context():" in restart_route
     assert "worker_job = db.session.get(ScanJob, job_id)" in restart_route
     assert "@copy_current_request_context" not in restart_route
+
+
+def test_active_download_progress_uses_scoped_bar_styles_and_labels():
+    template = Path("sharewarez/templates/admin/admin_manage_downloads.html").read_text(encoding="utf-8")
+    css = (THEME / "css/admin/admin_manage_downloads.css").read_text(encoding="utf-8")
+
+    assert "active-transfer-progress-label" in template
+    assert "expected_bytes_label" in template
+    assert "active-transfer-details" in template
+    assert ".active-transfer-details > span" in css
+    assert ".active-transfer-item div > span" not in css
 
 
 def test_final_page_shell_audit_uses_shared_headers_and_main_landmarks():

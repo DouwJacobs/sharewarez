@@ -4,6 +4,8 @@ This file wraps the Flask app to be compatible with ASGI servers like uvicorn
 and provides async file streaming for downloads.
 """
 
+import asyncio
+import contextlib
 import os
 import re
 import json
@@ -209,7 +211,7 @@ class LazyASGIApp:
             
             # Check if this is a streaming download (source path is a directory)
             if os.path.isdir(file_path):
-                await self._handle_streaming_download(send, download_request, file_path, user_id, bandwidth_limit)
+                await self._handle_streaming_download(receive, send, download_request, file_path, user_id, bandwidth_limit)
                 return
             
             # Security validation for direct game files
@@ -233,7 +235,7 @@ class LazyASGIApp:
             filename = os.path.basename(file_path)
             log_system_event(f"Async file download: {filename}", event_type='download', event_level='information')
             await self._stream_file(
-                send, file_path, filename, scope, user_id, bandwidth_limit,
+                receive, send, file_path, filename, scope, user_id, bandwidth_limit,
                 download_request_id=download_request.id,
             )
     
@@ -292,7 +294,7 @@ class LazyASGIApp:
             filename = os.path.basename(game.full_disk_path)
             log_system_event(f"ROM file downloaded for WebRetro: {game.name}", 
                            event_type='download', event_level='information')
-            await self._stream_file(send, game.full_disk_path, filename, scope, user_id, bandwidth_limit)
+            await self._stream_file(receive, send, game.full_disk_path, filename, scope, user_id, bandwidth_limit)
     
     async def _get_user_from_session(self, scope):
         """Extract user ID from Flask session cookie"""
@@ -353,11 +355,20 @@ class LazyASGIApp:
                            event_type='security', event_level='warning')
             return None
     
-    async def _stream_file(self, send, file_path, filename, scope, user_id=None, bandwidth_limit=0, download_request_id=None):
+    async def _watch_disconnect(self, receive, disconnected):
+        while not disconnected.is_set():
+            message = await receive()
+            if message.get('type') == 'http.disconnect':
+                disconnected.set()
+                return
+
+    async def _stream_file(self, receive, send, file_path, filename, scope, user_id=None, bandwidth_limit=0, download_request_id=None):
         """Stream a file asynchronously"""
         transfer_id = None
         bytes_sent = 0
         completed = False
+        disconnected = asyncio.Event()
+        disconnect_task = asyncio.create_task(self._watch_disconnect(receive, disconnected))
         try:
             file_size = os.path.getsize(file_path)
             request_headers = dict(scope.get("headers", []))
@@ -407,6 +418,8 @@ class LazyASGIApp:
             # Stream file chunks
             progress_updated_at = time.monotonic()
             async for chunk in throttle_chunks(async_generator, bandwidth_limit):
+                if disconnected.is_set():
+                    break
                 bytes_sent += len(chunk)
                 if transfer_id is not None and time.monotonic() - progress_updated_at >= 1:
                     with self._flask_app.app_context():
@@ -417,6 +430,8 @@ class LazyASGIApp:
                     "body": chunk,
                     "more_body": True
                 })
+            if disconnected.is_set():
+                return
             
             # End response
             await send({
@@ -433,15 +448,20 @@ class LazyASGIApp:
             # If we haven't started the response yet, send an error
             await self._send_error(send, 500, "Error streaming file")
         finally:
+            disconnect_task.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await disconnect_task
             if transfer_id is not None:
                 with self._flask_app.app_context():
                     finish_transfer(transfer_id, bytes_sent, 'completed' if completed else 'interrupted')
     
-    async def _handle_streaming_download(self, send, download_request, source_path, user_id, bandwidth_limit=0):
+    async def _handle_streaming_download(self, receive, send, download_request, source_path, user_id, bandwidth_limit=0):
         """Handle zipstream downloads for multi-file games"""
         transfer_id = None
         bytes_sent = 0
         completed = False
+        disconnected = asyncio.Event()
+        disconnect_task = asyncio.create_task(self._watch_disconnect(receive, disconnected))
         try:
             # Validate source path is within allowed directories
             allowed_bases = get_allowed_base_directories(self._flask_app)
@@ -503,6 +523,8 @@ class LazyASGIApp:
             # Stream ZIP chunks
             progress_updated_at = time.monotonic()
             async for chunk in throttle_chunks(async_generator, bandwidth_limit):
+                if disconnected.is_set():
+                    break
                 bytes_sent += len(chunk)
                 if transfer_id is not None and time.monotonic() - progress_updated_at >= 1:
                     with self._flask_app.app_context():
@@ -513,6 +535,8 @@ class LazyASGIApp:
                     "body": chunk,
                     "more_body": True
                 })
+            if disconnected.is_set():
+                return
             
             # End response
             await send({
@@ -546,6 +570,9 @@ class LazyASGIApp:
                     # Connection already closed, nothing more we can do
                     pass
         finally:
+            disconnect_task.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await disconnect_task
             if transfer_id is not None:
                 with self._flask_app.app_context():
                     finish_transfer(transfer_id, bytes_sent, 'completed' if completed else 'interrupted')

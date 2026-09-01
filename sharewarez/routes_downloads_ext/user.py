@@ -4,14 +4,16 @@ from flask import render_template, redirect, url_for, flash, jsonify, current_ap
 import os
 from flask_login import login_required, current_user
 from sharewarez.forms import CsrfProtectForm
-from sharewarez.models import DownloadRequest, GlobalSettings
+from sharewarez.models import DownloadRequest, DownloadTransfer, GlobalSettings
 from sqlalchemy import select
 from sqlalchemy.orm import joinedload
 from sharewarez.utils.functions import format_size
 from sharewarez.utils.event_logging import log_system_event
 from . import download_bp
 from sharewarez import db
-from sharewarez.utils.download_limits import calculate_download_expiry, expire_download_requests
+from sharewarez.utils.download_limits import (
+    calculate_download_expiry, expire_download_requests, mark_stale_transfers,
+)
 from sharewarez.utils.download_notifications import notify_admin_download_cancelled
 
 @download_bp.route('/downloads')
@@ -19,6 +21,7 @@ from sharewarez.utils.download_notifications import notify_admin_download_cancel
 def downloads():
     user_id = current_user.id
     expire_download_requests(user_id)
+    mark_stale_transfers()
     page = max(1, request.args.get('page', 1, type=int))
     per_page = min(max(10, request.args.get('per_page', 25, type=int)), 100)
     query = (
@@ -28,6 +31,17 @@ def downloads():
         .order_by(DownloadRequest.request_time.desc(), DownloadRequest.id.desc())
     )
     pagination = db.paginate(query, page=page, per_page=per_page, error_out=False)
+    request_ids = [item.id for item in pagination.items]
+    active_by_request = {
+        transfer.download_request_id: transfer
+        for transfer in db.session.execute(
+            select(DownloadTransfer).where(
+                DownloadTransfer.user_id == user_id,
+                DownloadTransfer.status == 'active',
+                DownloadTransfer.download_request_id.in_(request_ids),
+            )
+        ).scalars()
+    } if request_ids else {}
     now = datetime.now(timezone.utc)
     status_labels = {
         'pending': 'Queued', 'processing': 'Preparing', 'available': 'Ready',
@@ -35,8 +49,16 @@ def downloads():
     }
     state_counts = {}
     for download_request in pagination.items:
+        download_request.active_transfer = active_by_request.get(download_request.id)
+        if download_request.active_transfer:
+            transfer = download_request.active_transfer
+            transfer.formatted_bytes_sent = format_size(transfer.bytes_sent) if transfer.bytes_sent else '0 B'
+            transfer.formatted_expected_bytes = format_size(transfer.reserved_bytes) if transfer.reserved_bytes else None
         download_request.formatted_size = format_size(download_request.download_size)
-        download_request.display_status = status_labels.get(download_request.status, download_request.status.replace('_', ' ').title())
+        download_request.display_status = (
+            'Downloading' if download_request.active_transfer else
+            status_labels.get(download_request.status, download_request.status.replace('_', ' ').title())
+        )
         expiry = download_request.expires_at
         if expiry and expiry.tzinfo is None:
             expiry = expiry.replace(tzinfo=timezone.utc)
@@ -49,6 +71,30 @@ def downloads():
         'games/manage_downloads.html', download_requests=pagination.items,
         pagination=pagination, form=form, state_counts=state_counts,
     )
+
+
+@download_bp.route('/downloads/active-transfers')
+@login_required
+def user_active_transfers():
+    mark_stale_transfers()
+    transfers = db.session.execute(
+        select(DownloadTransfer).where(
+            DownloadTransfer.user_id == current_user.id,
+            DownloadTransfer.status == 'active',
+            DownloadTransfer.download_request_id.is_not(None),
+        )
+    ).scalars().all()
+    return jsonify({'transfers': [{
+        'download_request_id': transfer.download_request_id,
+        'bytes_sent': transfer.bytes_sent,
+        'expected_bytes': transfer.reserved_bytes,
+        'bytes_sent_label': format_size(transfer.bytes_sent) if transfer.bytes_sent else '0 B',
+        'expected_bytes_label': format_size(transfer.reserved_bytes) if transfer.reserved_bytes else None,
+        'progress': (
+            min(100, round(transfer.bytes_sent / transfer.reserved_bytes * 100, 1))
+            if transfer.reserved_bytes else None
+        ),
+    } for transfer in transfers]})
 
 @download_bp.route('/downloads/<int:download_id>/cancel', methods=['POST'])
 @login_required
@@ -113,6 +159,16 @@ def delete_download(download_id):
         log_system_event(f"Unauthorized download deletion attempt: user {current_user.id} tried to delete download {download_id}", 
                         event_type='security', event_level='warning')
         abort(404)
+
+    active_transfer = db.session.execute(
+        select(DownloadTransfer).where(
+            DownloadTransfer.download_request_id == download_request.id,
+            DownloadTransfer.status == 'active',
+        )
+    ).scalars().first()
+    if active_transfer:
+        flash('This request cannot be deleted while its download is active.', 'warning')
+        return redirect(url_for('download.downloads'))
     
     # Delete download request (no physical files to clean up with new streaming approach)
     flash('Download request removed.', 'info')

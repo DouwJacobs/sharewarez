@@ -35,9 +35,30 @@ document.addEventListener('DOMContentLoaded', () => {
         timer = window.setTimeout(refresh, delay);
     };
 
+    const refreshTransfers = async () => {
+        try {
+            const response = await fetch('/downloads/active-transfers', {
+                credentials: 'same-origin', cache: 'no-store',
+            });
+            if (!response.ok) return;
+            const data = await response.json();
+            const activeIds = new Set(
+                (data.transfers || []).map(item => String(item.download_request_id))
+            );
+            const changed = rows.some(row =>
+                (row.dataset.transferActive === 'true') !== activeIds.has(row.dataset.downloadId)
+            );
+            if (changed) window.location.reload();
+        } catch (_error) {
+            // A transient polling failure should not interrupt the page.
+        }
+    };
+
     document.addEventListener('visibilitychange', () => {
         if (document.hidden && timer) window.clearTimeout(timer);
         else if (!document.hidden) refresh();
     });
     refresh();
+    refreshTransfers();
+    window.setInterval(refreshTransfers, 3000);
 });

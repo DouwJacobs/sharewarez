@@ -160,7 +160,7 @@
     white-space: nowrap;
 }
 
-.active-transfer-item div > span {
+.active-transfer-details > span {
     margin-top: 3px;
     color: var(--theme-text-secondary, var(--text-light));
     font-size: .78rem;
@@ -171,6 +171,24 @@
     overflow: hidden;
     border-radius: 999px;
     background: rgba(var(--theme-accent-soft-rgb, 154, 177, 255), .12);
+}
+
+.active-transfer-progress-group { min-width: 0; }
+.active-transfer-progress-label {
+    display: block;
+    margin-bottom: 6px;
+    color: var(--theme-text-secondary, var(--text-light));
+    font-size: .75rem;
+    font-weight: 700;
+    text-align: right;
+}
+.active-transfer-progress.is-indeterminate span {
+    width: 35%;
+    animation: active-transfer-indeterminate 1.4s ease-in-out infinite;
+}
+@keyframes active-transfer-indeterminate {
+    from { transform: translateX(-110%); }
+    to { transform: translateX(300%); }
 }
 
 .active-transfer-progress span {
@@ -184,6 +202,7 @@
     margin-top: .35rem;
     color: var(--theme-text-secondary, var(--text-light));
 }
+.download-transfer-detail { display: block; margin-top: .35rem; color: var(--theme-text-secondary, var(--text-light)); }
 .download-expiry.is-urgent { color: #fde68a; font-weight: 700; }
 .download-state-summary { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 14px; }
 .download-state-summary > span { display: inline-flex; align-items: center; gap: 6px; padding: 6px 9px; border: 1px solid var(--theme-border-color); border-radius: 999px; background: var(--theme-input-bg); color: var(--theme-text-secondary); font-size: .72rem; }

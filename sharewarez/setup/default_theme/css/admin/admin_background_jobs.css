@@ -19,7 +19,7 @@
     font-size: .875rem;
     line-height: 1;
 }
-.job-bulk-action-form { display: none; }
+.job-bulk-actions { display: flex; justify-content: flex-end; margin-top: .75rem; }
 
 /* Match the Logs page content grid and header control sizing. */
 .jobs-admin-shell { width: min(1440px, calc(100% - 2rem)); }

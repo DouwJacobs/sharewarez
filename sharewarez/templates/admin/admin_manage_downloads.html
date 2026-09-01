@@ -33,7 +33,7 @@
             {% if transfers %}
             <div class="table-responsive">
                 <table class="table table-dark table-striped table-hover transfer-history-table">
-                    <thead><tr><th>Started</th><th>User</th><th>File</th><th>Game</th><th>Status</th><th>Delivered</th><th>Ended</th></tr></thead>
+                    <thead><tr><th>Started</th><th>User</th><th>File</th><th>Game</th><th>Status</th><th>Streamed</th><th>Ended</th></tr></thead>
                     <tbody>
                     {% for transfer in transfers %}
                     <tr>
@@ -42,7 +42,7 @@
                         <td class="file-name-cell" title="{{ transfer.filename }}">{{ transfer.filename }}</td>
                         <td>{% if transfer.download_request and transfer.download_request.game %}<a class="downloads-game-link" href="{{ url_for('games.game_details', game_uuid=transfer.download_request.game_uuid) }}">{{ transfer.download_request.game.name }}</a>{% else %}<span class="text-muted">Unavailable</span>{% endif %}</td>
                         <td>{{ status_badge(transfer.status) }}</td>
-                        <td>{{ transfer.bytes_sent|filesizeformat }}</td>
+                        <td>{{ transfer.formatted_bytes_sent }}</td>
                         <td>{{ transfer.ended_at|friendly_datetime if transfer.ended_at else 'In progress' }}</td>
                     </tr>
                     {% endfor %}
@@ -175,16 +175,6 @@ document.querySelectorAll('.download-priority-select').forEach(select => {
     select.dataset.savedValue = select.value;
 });
 
-const formatTransferBytes = value => {
-    const bytes = Number(value || 0);
-    if (bytes < 1024) return `${bytes} B`;
-    const units = ['KB', 'MB', 'GB', 'TB'];
-    let size = bytes / 1024;
-    let unit = 0;
-    while (size >= 1024 && unit < units.length - 1) { size /= 1024; unit += 1; }
-    return `${size.toFixed(size >= 10 ? 1 : 2)} ${units[unit]}`;
-};
-
 const renderActiveTransfers = transfers => {
     const list = document.getElementById('activeTransferList');
     const count = document.getElementById('activeTransferCount');
@@ -201,17 +191,26 @@ const renderActiveTransfers = transfers => {
         const item = document.createElement('article');
         item.className = 'active-transfer-item';
         const details = document.createElement('div');
+        details.className = 'active-transfer-details';
         const title = document.createElement('strong');
         title.textContent = transfer.filename;
         const meta = document.createElement('span');
-        meta.textContent = `${transfer.username} · ${formatTransferBytes(transfer.bytes_sent)} sent · ${transfer.elapsed_seconds}s`;
+        const expected = transfer.expected_bytes_label ? ` of ${transfer.expected_bytes_label}` : '';
+        meta.textContent = `${transfer.username} · ${transfer.bytes_sent_label}${expected} streamed · ${transfer.elapsed_seconds}s`;
         details.append(title, meta);
         const progress = document.createElement('div');
         progress.className = 'active-transfer-progress';
         const bar = document.createElement('span');
-        bar.style.width = `${transfer.progress ?? 100}%`;
+        if (transfer.progress == null) progress.classList.add('is-indeterminate');
+        else bar.style.width = `${transfer.progress}%`;
         progress.appendChild(bar);
-        item.append(details, progress);
+        const progressGroup = document.createElement('div');
+        progressGroup.className = 'active-transfer-progress-group';
+        const progressLabel = document.createElement('span');
+        progressLabel.className = 'active-transfer-progress-label';
+        progressLabel.textContent = transfer.progress == null ? 'Streaming' : `${transfer.progress.toFixed(1)}%`;
+        progressGroup.append(progressLabel, progress);
+        item.append(details, progressGroup);
         list.appendChild(item);
     });
 };

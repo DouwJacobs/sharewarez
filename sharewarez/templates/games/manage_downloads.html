@@ -24,7 +24,7 @@
                 </thead>
                 <tbody>
                     {% for download in download_requests %}
-                    <tr data-download-id="{{ download.id }}" data-download-status="{{ download.status }}">
+                    <tr data-download-id="{{ download.id }}" data-download-status="{{ download.status }}" data-transfer-active="{{ 'true' if download.active_transfer else 'false' }}">
                         <td data-label="Game">
                             <a class="downloads-game-link" href="{{ url_for('games.game_details', game_uuid=download.game_uuid) }}">
                                 <i class="fas fa-gamepad" aria-hidden="true"></i>
@@ -36,11 +36,13 @@
                             {{ status_badge(download.display_status) }}
                             {% if download.status == 'failed' %}<small class="download-failure-reason">{% if not download.file_location %}The source location is unavailable.{% else %}The previous request could not be completed. Retry to validate the source.{% endif %}</small>{% endif %}
                             {% if download.status == 'expired' %}<small class="download-failure-reason">This download link expired. Retry to create a fresh link.</small>{% endif %}
-                            {% if download.status == 'available' and download.expires_at %}<small class="download-expiry{% if download.expiring_soon %} is-urgent{% endif %}">{{ 'Expires soon · ' if download.expiring_soon else 'Available until ' }}{{ download.expires_at|friendly_datetime }}</small>{% endif %}
+                            {% if download.active_transfer %}<small class="download-transfer-detail">{{ download.active_transfer.formatted_bytes_sent }} streamed{% if download.active_transfer.formatted_expected_bytes %} of {{ download.active_transfer.formatted_expected_bytes }}{% endif %}</small>{% elif download.status == 'available' and download.expires_at %}<small class="download-expiry{% if download.expiring_soon %} is-urgent{% endif %}">{{ 'Expires soon · ' if download.expiring_soon else 'Available until ' }}{{ download.expires_at|friendly_datetime }}</small>{% endif %}
                         </td>
                         <td data-label="Size">{{ download.formatted_size }}</td>
                         <td class="actions-cell text-end" data-label="Actions">
-                            {% if download.status == 'available' %}
+                            {% if download.active_transfer %}
+                            <span class="btn btn-secondary btn-sm disabled" aria-disabled="true"><i class="fas fa-circle-notch fa-spin" aria-hidden="true"></i> Downloading</span>
+                            {% elif download.status == 'available' %}
                             <a href="{{ url_for('download.download_zip', download_id=download.id) }}" class="btn btn-primary btn-sm"><i class="fas fa-download" aria-hidden="true"></i> Download</a>
                             {% endif %}
                             {% if download.status in ['pending', 'processing'] %}
@@ -52,10 +54,10 @@
                                 {{ form.csrf_token }}<button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-rotate-right" aria-hidden="true"></i> Retry</button>
                             </form>
                             {% endif %}
-                            <form action="{{ url_for('download.delete_download', download_id=download.id) }}" method="post" class="inline-form">
+                            {% if not download.active_transfer %}<form action="{{ url_for('download.delete_download', download_id=download.id) }}" method="post" class="inline-form">
                                 {{ form.csrf_token }}
                                 <button type="submit" class="btn btn-danger btn-sm"><i class="fas fa-trash" aria-hidden="true"></i> Delete</button>
-                            </form>
+                            </form>{% endif %}
                         </td>
                     </tr>
                     {% endfor %}

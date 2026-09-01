@@ -3,6 +3,13 @@
 {% block styles %}
 {{ super() }}
 <link rel="stylesheet" href="{{ 'css/admin/admin_background_jobs.css'|theme_asset }}">
+<style>
+/* Workflow controls must remain aligned even when an installed theme carries
+   an older page stylesheet. */
+.jobs-admin-shell .job-actions { display:flex;align-items:center;justify-content:flex-end;gap:.5rem }
+.jobs-admin-shell .job-actions form { display:flex;margin:0 }
+.jobs-admin-shell .job-actions .btn { box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;width:5.5rem;height:2.5rem;padding:0 .875rem;font-size:.875rem;line-height:1 }
+</style>
 {% endblock %}
 {% block content %}
 <main class="app-page jobs-admin-shell" data-live-refresh-url="{{ url_for('apis.background_jobs', limit=per_page, status=status_filter, q=search) }}">
@@ -22,14 +29,12 @@
             <div class="job-filter-actions">
                 <button class="btn btn-primary" type="submit">Apply filters</button>
                 {% if search or status_filter %}<a class="btn btn-secondary" href="{{ url_for('admin2.background_jobs') }}">Clear filters</a>{% endif %}
-                {% if counts.get('failed', 0) > 0 %}
-                <button class="btn btn-danger" type="submit" form="clearFailedJobsForm">Clear failed jobs</button>
-                {% endif %}
             </div>
         </form>
         {% if counts.get('failed', 0) > 0 %}
-        <form id="clearFailedJobsForm" class="job-bulk-action-form" method="post" action="{{ url_for('admin2.clear_failed_background_jobs') }}" onsubmit="return confirm('Delete all failed background job records?');">
+        <form class="job-bulk-actions" method="post" action="{{ url_for('admin2.clear_failed_background_jobs') }}" onsubmit="return confirm('Delete all failed background job records?');">
             {{ csrf_form.hidden_tag() }}
+            <button class="btn btn-danger" type="submit"><i class="fas fa-trash" aria-hidden="true"></i> Clear {{ counts.get('failed', 0) }} failed job{{ '' if counts.get('failed', 0) == 1 else 's' }}</button>
         </form>
         {% endif %}
     </section>

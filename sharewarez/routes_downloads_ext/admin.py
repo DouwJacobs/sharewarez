@@ -6,6 +6,7 @@ from sqlalchemy import select, and_, update
 from sqlalchemy.orm import joinedload
 from sharewarez.utils.auth import admin_required
 from sharewarez.utils.event_logging import log_system_event
+from sharewarez.utils.functions import format_size
 from sharewarez import db
 from sharewarez.utils.download_limits import expire_download_requests, mark_stale_transfers
 from . import download_bp
@@ -64,6 +65,8 @@ def manage_downloads():
     transfer_pagination = db.paginate(
         transfer_query, page=transfer_page, per_page=per_page, error_out=False
     )
+    for transfer in transfer_pagination.items:
+        transfer.formatted_bytes_sent = format_size(transfer.bytes_sent) if transfer.bytes_sent else '0 B'
 
     return render_template('admin/admin_manage_downloads.html', download_requests=pagination.items,
                            pagination=pagination, status_filter=status_filter, user_filter=user_filter,
@@ -96,6 +99,8 @@ def active_transfers():
                 'filename': transfer.filename,
                 'bytes_sent': transfer.bytes_sent,
                 'expected_bytes': transfer.reserved_bytes,
+                'bytes_sent_label': format_size(transfer.bytes_sent) if transfer.bytes_sent else '0 B',
+                'expected_bytes_label': format_size(transfer.reserved_bytes) if transfer.reserved_bytes else None,
                 'progress': (
                     min(100, round(transfer.bytes_sent / transfer.reserved_bytes * 100, 1))
                     if transfer.reserved_bytes else None

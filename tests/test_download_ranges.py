@@ -55,9 +55,13 @@ def test_stream_file_returns_partial_content(tmp_path):
     async def send(message):
         messages.append(message)
 
+    async def receive():
+        await asyncio.Event().wait()
+
     with patch("sharewarez.async_streaming.log_system_event"), patch("asgi.log_system_event"):
         asyncio.run(
             LazyASGIApp()._stream_file(
+                receive,
                 send,
                 str(source),
                 source.name,
@@ -82,8 +86,12 @@ def test_stream_file_rejects_unsatisfiable_range(tmp_path):
     async def send(message):
         messages.append(message)
 
+    async def receive():
+        await asyncio.Event().wait()
+
     asyncio.run(
         LazyASGIApp()._stream_file(
+            receive,
             send,
             str(source),
             source.name,

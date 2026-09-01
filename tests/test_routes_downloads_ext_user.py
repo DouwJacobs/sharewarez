@@ -8,7 +8,7 @@ from uuid import uuid4
 
 from sqlalchemy import select
 from sharewarez import db
-from sharewarez.models import DownloadRequest, Game, User, GlobalSettings, Library, SystemEvents
+from sharewarez.models import DownloadRequest, DownloadTransfer, Game, User, GlobalSettings, Library, SystemEvents
 from sharewarez.platform import LibraryPlatform
 
 
@@ -130,6 +130,49 @@ class TestDownloadsRoute:
         assert len(downloads) == 1
         assert downloads[0].id == sample_download_request.id
 
+    def test_active_transfer_is_rendered_as_downloading(self, client, authenticated_user, sample_download_request, db_session):
+        sample_download_request.status = 'available'
+        transfer = DownloadTransfer(
+            user_id=authenticated_user.id,
+            download_request_id=sample_download_request.id,
+            filename='test.zip', reserved_bytes=1000, bytes_sent=250,
+            status='active',
+        )
+        db_session.add(transfer)
+        db_session.commit()
+        with client.session_transaction() as sess:
+            sess['_user_id'] = str(authenticated_user.id)
+            sess['_fresh'] = True
+
+        response = client.get('/downloads')
+
+        assert response.status_code == 200
+        assert b'Downloading' in response.data
+        assert b'>Download</a>' not in response.data
+        assert b'> Delete</button>' not in response.data
+
+    def test_user_active_transfers_are_isolated(self, client, authenticated_user, admin_user, sample_download_request, db_session):
+        db_session.add(DownloadTransfer(
+            user_id=authenticated_user.id, download_request_id=sample_download_request.id,
+            filename='mine.zip', reserved_bytes=1000, bytes_sent=250, status='active',
+        ))
+        db_session.add(DownloadTransfer(
+            user_id=admin_user.id, filename='other.zip', reserved_bytes=1000,
+            bytes_sent=500, status='active',
+        ))
+        db_session.commit()
+        with client.session_transaction() as sess:
+            sess['_user_id'] = str(authenticated_user.id)
+            sess['_fresh'] = True
+
+        response = client.get('/downloads/active-transfers')
+
+        assert response.status_code == 200
+        transfers = response.get_json()['transfers']
+        assert len(transfers) == 1
+        assert transfers[0]['download_request_id'] == sample_download_request.id
+        assert transfers[0]['progress'] == 25.0
+
 
 class TestDeleteDownloadRoute:
     """Test the /delete_download route."""
@@ -200,6 +243,21 @@ class TestDeleteDownloadRoute:
                 f'User {authenticated_user.name} deleted download request' in log.event_text
                 for log in audit_logs
             )
+
+    def test_delete_download_rejects_active_transfer(self, client, authenticated_user, sample_download_request, db_session):
+        db_session.add(DownloadTransfer(
+            user_id=authenticated_user.id, download_request_id=sample_download_request.id,
+            filename='active.zip', reserved_bytes=1000, bytes_sent=100, status='active',
+        ))
+        db_session.commit()
+        with client.session_transaction() as sess:
+            sess['_user_id'] = str(authenticated_user.id)
+            sess['_fresh'] = True
+
+        response = client.post(f'/delete_download/{sample_download_request.id}')
+
+        assert response.status_code == 302
+        assert db_session.get(DownloadRequest, sample_download_request.id) is not None
     
     def test_delete_download_path_traversal_blocked(self, client, authenticated_user, sample_download_request, app, db_session):
         """Test deletion works regardless of zip file paths (no file validation needed)."""

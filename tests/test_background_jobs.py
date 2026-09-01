@@ -147,6 +147,30 @@ def test_admin_job_page_can_cancel_and_retry(client, app, db_session, jobs_admin
         assert job.progress_message == 'Retry queued'
 
 
+def test_admin_job_page_can_clear_all_failed_jobs(client, app, db_session, jobs_admin):
+    with app.app_context():
+        failed_ids = []
+        for index in range(2):
+            job = BackgroundJob(task_name='system.noop', status='failed', error_message=f'failure {index}')
+            db.session.add(job)
+            db.session.flush()
+            failed_ids.append(job.id)
+        completed = BackgroundJob(task_name='system.noop', status='completed')
+        db.session.add(completed)
+        db.session.commit()
+        completed_id = completed.id
+    login(client, jobs_admin)
+
+    page = client.get('/admin/background-jobs')
+    assert b'Clear 2 failed jobs' in page.data
+    response = client.post('/admin/background-jobs/clear-failed')
+    assert response.status_code == 302
+
+    with app.app_context():
+        assert all(db.session.get(BackgroundJob, job_id) is None for job_id in failed_ids)
+        assert db.session.get(BackgroundJob, completed_id) is not None
+
+
 def test_admin_job_page_creates_and_manages_scan_schedule(
     client, app, db_session, jobs_admin, tmp_path,
 ):
