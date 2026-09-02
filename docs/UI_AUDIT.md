@@ -1,7 +1,8 @@
 # UI audit
 
-> Follow-up: the active open-items checklist from the 2026-08-13 desktop,
-> mobile, and theme-consistency sweep is in `docs/UI_AUDIT_2026-08-13.md`.
+This is the durable record of the application's UI contracts and dated audit
+passes. Completed follow-up findings are folded into this document so there is
+one source of truth for current layout and visual guidance.
 
 Audit date: 2026-08-09  
 Branch: `audit/ui-consistency-fixes`  
