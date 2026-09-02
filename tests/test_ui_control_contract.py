@@ -16,8 +16,11 @@ def test_shared_control_contract_is_present_and_synchronized():
     assert "display: inline-flex !important" in source
     assert "justify-content: center" in source
     assert "text-align: left" in source
-    assert "appearance: auto !important" in source
-    assert "background-image: none !important" in source
+    assert "box-shadow: inset 0 1px 2px rgba(0, 0, 0, .24) !important" in source
+    assert "appearance: none !important" in source
+    assert "padding-right: 44px !important" in source
+    assert "background-position: calc(100% - 26px) 50%" in source
+    assert "select:not([multiple]):not([size])" in source
 
 
 def test_nested_empty_and_table_surfaces_are_flattened():

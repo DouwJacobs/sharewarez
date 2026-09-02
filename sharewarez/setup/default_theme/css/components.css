@@ -685,7 +685,7 @@ img[loading="lazy"] { background: linear-gradient(100deg, var(--theme-input-bg) 
 :is(.app-page, .modal-content, .content-login) :is(
     input:is([type="text"], [type="password"], [type="email"], [type="search"], [type="number"], [type="date"], [type="datetime-local"], [type="tel"], [type="url"], [type="time"]),
     input.form-control:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]),
-    select,
+    select:not([multiple]):not([size]),
     .admin-input:not(textarea)
 ) {
     box-sizing: border-box;
@@ -696,15 +696,21 @@ img[loading="lazy"] { background: linear-gradient(100deg, var(--theme-input-bg) 
     border: 1px solid var(--theme-border-color, var(--form-border)) !important;
     border-radius: var(--border-radius-sm, 10px) !important;
     background: var(--theme-input-bg, var(--form-bg)) !important;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, .24) !important;
     color: var(--theme-text-primary, var(--text-white)) !important;
     line-height: 1.2;
     text-align: left;
 }
 
-:is(.app-page, .modal-content, .content-login) select {
-    appearance: auto !important;
-    padding-right: var(--app-control-padding-inline) !important;
-    background-image: none !important;
+#content :is(.app-page, .modal-content, .content-login) select:not([multiple]):not([size]) {
+    appearance: none !important;
+    padding-right: 44px !important;
+    background-image:
+        linear-gradient(45deg, transparent 50%, #9ab1ff 50%),
+        linear-gradient(135deg, #9ab1ff 50%, transparent 50%) !important;
+    background-repeat: no-repeat !important;
+    background-position: calc(100% - 26px) 50%, calc(100% - 21px) 50% !important;
+    background-size: 5px 5px, 5px 5px !important;
 }
 
 :is(.app-page, .modal-content, .content-login) .btn:not(.btn-lg):not(.btn-circle) {
