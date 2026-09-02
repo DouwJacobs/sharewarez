@@ -7,8 +7,10 @@ from flask_login import login_required, current_user
 from sharewarez import db
 from sharewarez.utils.auth import admin_required
 from sharewarez.models import DownloadRequest, DownloadTransfer, GlobalSettings
+from sqlalchemy.orm import joinedload
 from sharewarez.utils.event_logging import log_system_event
 from sharewarez.utils.download_limits import calculate_download_expiry
+from sharewarez.utils.download_cache import request_resumable_archive
 from . import apis_bp
 
 ALLOWED_BULK_ACTIONS = {'delete', 'cancel', 'retry'}
@@ -23,12 +25,22 @@ def download_statuses():
         return jsonify({'status': 'error', 'message': 'Invalid request IDs'}), 400
     if not request_ids or len(request_ids) > 100:
         return jsonify({'status': 'error', 'message': 'Request between 1 and 100 statuses'}), 400
-    query = select(DownloadRequest).where(DownloadRequest.id.in_(request_ids))
+    query = select(DownloadRequest).options(joinedload(DownloadRequest.archive)).where(
+        DownloadRequest.id.in_(request_ids)
+    )
     if current_user.role != 'admin':
         query = query.where(DownloadRequest.user_id == current_user.id)
     downloads = db.session.execute(query).scalars().all()
     return jsonify({'downloads': [
-        {'id': item.id, 'status': item.status, 'available': item.status == 'available'}
+        {
+            'id': item.id, 'status': item.status, 'available': item.status == 'available',
+            'archive': ({
+                'state': item.archive.state,
+                'progress': min(99, round(item.archive.bytes_written / item.archive.source_bytes * 100))
+                if item.archive.source_bytes and item.archive.state in {'queued', 'building'} else None,
+                'failure_message': item.archive.failure_message,
+            } if item.archive else None),
+        }
         for item in downloads
     ]})
 
@@ -67,7 +79,12 @@ def bulk_download_actions():
             download.status = 'cancelled'
             changed += 1
         elif action == 'retry' and download.status in {'failed', 'cancelled', 'expired'} and download.file_location and os.path.exists(download.file_location):
-            download.status = 'available'
+            if os.path.isdir(download.file_location):
+                download.archive_id = None
+                request_resumable_archive(download)
+            else:
+                download.status = 'available'
+                download.delivery_kind = 'direct'
             download.completion_time = None
             download.expires_at = calculate_download_expiry(settings)
             changed += 1

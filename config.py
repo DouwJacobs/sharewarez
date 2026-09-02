@@ -77,6 +77,10 @@ class Config(object):
     ZIPSTREAM_CHUNK_SIZE = int(os.getenv('ZIPSTREAM_CHUNK_SIZE', 65536))  # 64KB chunks for memory efficiency
     ZIPSTREAM_COMPRESSION_LEVEL = int(os.getenv('ZIPSTREAM_COMPRESSION_LEVEL', 0))  # ZIP_STORED for compatibility
     ZIPSTREAM_ENABLE_ZIP64 = os.getenv('ZIPSTREAM_ENABLE_ZIP64', 'True').lower() == 'true'  # Support large games
+    DOWNLOAD_CACHE_DIR = os.getenv(
+        'DOWNLOAD_CACHE_DIR',
+        os.path.join(os.path.dirname(__file__), 'instance/download-cache'),
+    )
 
     # Development mode - forces theme files to be recopied on startup (helpful for theme development)
     DEV_MODE = os.getenv('DEV_MODE', 'false').lower() == 'true'

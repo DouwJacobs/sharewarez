@@ -216,7 +216,7 @@ class TestDownloadGameRoute:
 
             response = client.get(f'/download_game/{test_game.uuid}')
             assert response.status_code == 302
-            assert '/download_zip/' in response.location
+            assert response.location.endswith('/downloads')
 
             # Verify download request was created
             download_request = db_session.query(DownloadRequest).filter_by(
@@ -227,7 +227,9 @@ class TestDownloadGameRoute:
             assert download_request.content_type == 'game'
             assert download_request.content_title == test_game.name
             assert download_request.game_update_id is None
-            assert download_request.status == 'available'  # Now instant streaming
+            assert download_request.status == 'processing'
+            assert download_request.delivery_kind == 'cached_archive'
+            assert download_request.archive_id is not None
 
             # Verify game download count increased
             updated_game = db_session.execute(select(Game).filter_by(uuid=test_game.uuid)).scalars().first()
@@ -383,7 +385,7 @@ class TestIntegration:
             # Make download request
             response = client.get(f'/download_game/{test_game.uuid}')
             assert response.status_code == 302
-            assert '/download_zip/' in response.location
+            assert response.location.endswith('/downloads')
 
             # Verify download request was created
             final_count = db_session.query(DownloadRequest).filter_by(
@@ -396,4 +398,4 @@ class TestIntegration:
             updated_game = db_session.execute(select(Game).filter_by(uuid=test_game.uuid)).scalars().first()
             assert updated_game.times_downloaded >= 1  # May be incremented by other tests
             
-            # No cleanup needed - streaming downloads don't create temp files
+            # Archive preparation is owned by the managed cache worker.

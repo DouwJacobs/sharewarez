@@ -15,6 +15,7 @@ from sharewarez.utils.download_limits import (
     calculate_download_expiry, expire_download_requests, mark_stale_transfers,
 )
 from sharewarez.utils.download_notifications import notify_admin_download_cancelled
+from sharewarez.utils.download_cache import archive_policy, request_resumable_archive
 
 @download_bp.route('/downloads')
 @login_required
@@ -26,7 +27,7 @@ def downloads():
     per_page = min(max(10, request.args.get('per_page', 25, type=int)), 100)
     query = (
         select(DownloadRequest)
-        .options(joinedload(DownloadRequest.game))
+        .options(joinedload(DownloadRequest.game), joinedload(DownloadRequest.archive))
         .filter_by(user_id=user_id)
         .order_by(DownloadRequest.request_time.desc(), DownloadRequest.id.desc())
     )
@@ -43,6 +44,7 @@ def downloads():
         ).scalars()
     } if request_ids else {}
     now = datetime.now(timezone.utc)
+    cache_policy = archive_policy()
     status_labels = {
         'pending': 'Queued', 'processing': 'Preparing', 'available': 'Ready',
         'failed': 'Failed', 'cancelled': 'Cancelled', 'expired': 'Expired',
@@ -55,6 +57,29 @@ def downloads():
             transfer.formatted_bytes_sent = format_size(transfer.bytes_sent) if transfer.bytes_sent else '0 B'
             transfer.formatted_expected_bytes = format_size(transfer.reserved_bytes) if transfer.reserved_bytes else None
         download_request.formatted_size = format_size(download_request.download_size)
+        archive = download_request.archive
+        download_request.archive_progress = (
+            min(99, round(archive.bytes_written / archive.source_bytes * 100))
+            if archive and archive.source_bytes and archive.state in {'queued', 'building'} else None
+        )
+        is_direct_file = bool(
+            download_request.delivery_kind == 'direct'
+            and download_request.file_location
+            and os.path.isfile(download_request.file_location)
+        )
+        download_request.delivery_label = (
+            'Preparing' if archive and archive.state in {'queued', 'building'}
+            else 'Resumable' if is_direct_file or (
+                download_request.delivery_kind == 'cached_archive'
+                and archive and archive.state == 'ready'
+            )
+            else 'Streaming · restart required'
+        )
+        download_request.fallback_available = bool(
+            download_request.archive
+            and cache_policy['archiveCacheMode'] == 'prefer'
+            and cache_policy['archiveCacheFallbackEnabled']
+        )
         download_request.display_status = (
             'Downloading' if download_request.active_transfer else
             status_labels.get(download_request.status, download_request.status.replace('_', ' ').title())
@@ -133,14 +158,52 @@ def retry_download(download_id):
     elif not download_request.file_location or not os.path.exists(download_request.file_location):
         flash('The source file is no longer available.', 'error')
     else:
-        download_request.status = 'available'
+        if os.path.isdir(download_request.file_location):
+            download_request.archive_id = None
+            request_resumable_archive(download_request)
+        else:
+            download_request.status = 'available'
+            download_request.delivery_kind = 'direct'
         download_request.completion_time = None
         settings = db.session.execute(select(GlobalSettings)).scalars().first()
         download_request.expires_at = calculate_download_expiry(settings)
         db.session.commit()
         log_system_event(f"User {current_user.name} retried download request {download_id}", event_type='audit', event_level='information')
-        flash('Download request is available again.', 'success')
+        flash(
+            'Resumable download preparation queued.'
+            if download_request.status == 'processing'
+            else 'Download request is available again.',
+            'success',
+        )
     return redirect(url_for('download.downloads'))
+
+
+@download_bp.route('/downloads/<int:download_id>/stream-without-resume', methods=['POST'])
+@login_required
+def stream_without_resume(download_id):
+    download_request = db.session.execute(
+        select(DownloadRequest).filter_by(id=download_id, user_id=current_user.id)
+    ).scalar_one_or_none()
+    if not download_request:
+        abort(404)
+    policy = archive_policy()
+    if (
+        policy['archiveCacheMode'] != 'prefer'
+        or not policy['archiveCacheFallbackEnabled']
+        or not download_request.file_location
+        or not os.path.isdir(download_request.file_location)
+    ):
+        flash('Streaming fallback is not available for this download.', 'warning')
+        return redirect(url_for('download.downloads'))
+    download_request.delivery_kind = 'live_archive'
+    download_request.archive_id = None
+    download_request.status = 'available'
+    db.session.commit()
+    log_system_event(
+        f'User {current_user.name} selected non-resumable fallback for request {download_id}',
+        event_type='audit', event_level='information',
+    )
+    return redirect(url_for('download.download_zip', download_id=download_request.id))
 
 @download_bp.route('/delete_download/<int:download_id>', methods=['POST'])
 @login_required

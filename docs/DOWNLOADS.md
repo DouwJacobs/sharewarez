@@ -1,11 +1,10 @@
 # Download delivery
 
 The Download button on a game detail page creates or refreshes the user's
-reusable download request and immediately redirects to the ASGI delivery URL.
-There is no background ZIP preparation step: a single file is served directly,
-while a multi-file game is converted to a ZIP as it streams. The user's
-**Downloads** page remains the history/retry surface and can start the same
-delivery again.
+reusable download request. A single file is served immediately. A multi-file
+directory is prepared once as an immutable ZIP in Sharewarez's private managed
+cache, then delivered through the same ASGI file path. The user's **Downloads**
+page shows preparation progress, readiness, failures, and retry controls.
 
 Direct file downloads support HTTP single-byte range requests. Clients can
 resume an interrupted transfer by sending `Range: bytes=<offset>-`; successful
@@ -14,11 +13,20 @@ exact `Content-Range`, and the partial `Content-Length`. Invalid,
 unsatisfiable, and multi-range requests return `416` with
 `Content-Range: bytes */<file-size>`.
 
-On-demand ZIP streams do not advertise byte-range support. Their output is
-generated during each request and therefore has no stable random-access byte
-offset. A game represented by one stable file is delivered directly and is
-resumable; a multi-file directory is delivered as an on-demand ZIP and must be
-restarted if interrupted.
+Ready managed archives support the same single-byte range behavior, plus stable
+`ETag` and `Last-Modified` validators for `If-Range`. Browsers and download
+managers can therefore resume by requesting only the missing bytes. Users do
+not select a server-side percentage; they resume from their browser's Downloads
+panel or a download manager, which knows the verified local offset.
+
+The default `prefer` policy retains on-demand ZIP streaming as an explicit
+fallback. Those live ZIP streams do not advertise byte ranges and must restart
+after interruption because each request generates a new byte stream. Operators
+can disable caching or require resumable preparation from **Administration →
+Download cache**. That page also controls capacity, minimum free space,
+retention, build concurrency, fallback availability, pinning, retries, and
+eviction. See [`DOWNLOAD_ARCHIVE_CACHE_SPEC.md`](DOWNLOAD_ARCHIVE_CACHE_SPEC.md)
+for the full lifecycle and safety contract.
 
 Administrators can configure a per-user concurrent-transfer cap and a
 per-transfer bandwidth ceiling in **Server Settings → Download delivery**.

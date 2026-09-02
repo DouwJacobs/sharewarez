@@ -20,7 +20,10 @@ docker compose ps
 ```
 
 Substitute the configured `LIBRARY_HOST_PATH` and `BACKUP_HOST_PATH` when they
-do not use the defaults. The game directory configured by `DATA_FOLDER_WAREZ`
+do not use the defaults. The default `DOWNLOAD_CACHE_VOLUME` is a Docker named
+volume initialized with the image's ownership. When it is overridden with a
+bind mount, create that exact directory and grant it to `10001:10001` too. The
+game directory configured by `DATA_FOLDER_WAREZ`
 does not need to be owned by this identity, but UID 10001 must have directory
 traverse and file read permission.
 
@@ -30,6 +33,7 @@ Confirm the runtime identity and writable boundaries after migration:
 docker compose exec app id
 docker compose exec app test -w /app/sharewarez/static/library
 docker compose exec app test -w /backups
+docker compose exec app test -w /cache/downloads
 docker compose exec app sh -c 'test ! -w /app'
 ```
 

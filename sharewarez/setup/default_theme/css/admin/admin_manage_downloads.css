@@ -215,6 +215,13 @@
     color: var(--theme-text-secondary, var(--text-light));
 }
 .download-transfer-detail { display: block; margin-top: .35rem; color: var(--theme-text-secondary, var(--text-light)); }
+.download-delivery-badge { display:inline-flex;align-items:center;gap:6px;margin:6px 0 0 8px;color:var(--theme-text-secondary,var(--text-light));font-size:.72rem;font-weight:700 }
+.download-delivery-badge--resumable { color:var(--semantic-success) }
+.download-delivery-badge--preparing { color:var(--semantic-warning) }
+.download-delivery-badge--streaming { color:var(--theme-text-secondary,var(--text-light)) }
+.download-archive-progress { display:grid;grid-template-columns:minmax(80px,140px) auto;align-items:center;gap:8px;margin-top:7px;color:var(--theme-text-secondary,var(--text-light));font-size:.72rem }
+.download-archive-progress>span { height:6px;overflow:hidden;border-radius:999px;background:color-mix(in srgb,var(--theme-accent-color) 14%,transparent) }
+.download-archive-progress>span>span { display:block;height:100%;border-radius:inherit;background:var(--theme-accent-color) }
 .download-expiry.is-urgent { color: #fde68a; font-weight: 700; }
 .download-state-summary { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 14px; }
 .download-state-summary > span { display: inline-flex; align-items: center; gap: 6px; padding: 6px 9px; border: 1px solid var(--theme-border-color); border-radius: 999px; background: var(--theme-input-bg); color: var(--theme-text-secondary); font-size: .72rem; }
@@ -367,6 +374,7 @@
     .downloads-table tr { padding: 14px; border: 1px solid var(--theme-border-color); border-radius: 13px; background: var(--theme-card-background) !important; }
     .downloads-table td { display: grid; grid-template-columns: 72px minmax(0, 1fr); align-items: start; gap: 10px; padding: 8px 0 !important; border: 0 !important; white-space: normal; }
     .downloads-table td::before { color: var(--theme-text-secondary); font-size: .68rem; font-weight: 750; letter-spacing: .05em; text-transform: uppercase; content: attr(data-label); }
+    .downloads-table :is(.status-cell, .actions-cell) > * { grid-column: 2; }
     .downloads-table .actions-cell { text-align: left !important; }
     .downloads-table .actions-cell .inline-form { margin: 0 5px 5px 0; }
     .downloads-filter-bar { align-items: stretch; flex-direction: column; }

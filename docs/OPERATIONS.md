@@ -48,6 +48,24 @@ stop is forwarded to both processes. If either process exits unexpectedly, its
 sibling is stopped and the container exits so `restart: unless-stopped` recovers
 the full application unit. Use `docker compose logs -f app` for both streams.
 
+## Resumable download cache
+
+Directory downloads are prepared by the background-job process in the private
+`/cache/downloads` mount. Compose uses the `download_cache` named volume by
+default; set `DOWNLOAD_CACHE_VOLUME` to another named volume or an absolute bind
+mount when cache storage belongs on a larger filesystem. The application owns
+this disposable cache and never modifies source game files.
+
+Use **Administration → Download cache** to check mount health, set the maximum
+cache size and free-space reserve, change retention, pin entries, retry failed
+builds, or evict unused archives. Cleanup runs when the worker starts, every 15
+minutes, and before a build that needs capacity. Builder concurrency is read
+when the job process starts, so restart the app container after changing it.
+
+The cache does not need backup. After loss or eviction, members can retry their
+download to prepare it again from source. A missing ready archive is invalidated
+at worker startup instead of being served as a broken link.
+
 ## Scheduled library scans
 
 Administrators manage recurring auto scans from the Auto Scan tab in

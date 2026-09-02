@@ -28,9 +28,9 @@ RUN test -n "${APP_VERSION}" \
 RUN sed -i 's/\r$//' /app/entrypoint.sh
 RUN sed -i 's/\r$//' /app/startweb-docker.sh
 RUN chmod a+x /app/entrypoint.sh /app/startweb-docker.sh \
-    && mkdir -p /backups /app/sharewarez/static/library \
+    && mkdir -p /backups /cache/downloads /app/sharewarez/static/library \
     && chown -R gamelibrary:gamelibrary \
-        /app /backups /home/gamelibrary
+        /app /backups /cache /home/gamelibrary
 
 EXPOSE 5006
 USER 10001:10001

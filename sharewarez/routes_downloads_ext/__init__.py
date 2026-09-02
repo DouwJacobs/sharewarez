@@ -11,4 +11,4 @@ def inject_settings():
     return get_global_settings()
 
 # Import routes to register them with the blueprint
-from . import user, initiate, serve, admin, statistics, play
+from . import user, initiate, serve, admin, cache_admin, statistics, play

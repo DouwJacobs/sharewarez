@@ -24,7 +24,7 @@
                 </thead>
                 <tbody>
                     {% for download in download_requests %}
-                    <tr data-download-id="{{ download.id }}" data-download-status="{{ download.status }}" data-transfer-active="{{ 'true' if download.active_transfer else 'false' }}">
+                    <tr data-download-id="{{ download.id }}" data-download-status="{{ download.status }}" data-transfer-active="{{ 'true' if download.active_transfer else 'false' }}" data-delivery-kind="{{ download.delivery_kind }}">
                         <td data-label="Game">
                             <a class="downloads-game-link" href="{{ url_for('games.game_details', game_uuid=download.game_uuid) }}">
                                 <i class="fas fa-gamepad" aria-hidden="true"></i>
@@ -34,6 +34,13 @@
                         </td>
                         <td class="status-cell" data-label="Status">
                             {{ status_badge(download.display_status) }}
+                            <span class="download-delivery-badge download-delivery-badge--{{ 'resumable' if download.delivery_label == 'Resumable' else 'preparing' if download.delivery_label == 'Preparing' else 'streaming' }}"><i class="fas {{ 'fa-rotate' if download.delivery_label == 'Resumable' else 'fa-box-open' if download.delivery_label == 'Preparing' else 'fa-triangle-exclamation' }}" aria-hidden="true"></i>{{ download.delivery_label }}</span>
+                            {% if download.archive and download.archive.state in ['queued', 'building'] %}
+                            <span class="download-archive-progress" role="status" aria-live="polite">
+                                <span><span style="width: {{ download.archive_progress or 2 }}%"></span></span>
+                                {{ download.archive_progress or 0 }}% prepared
+                            </span>
+                            {% elif download.archive and download.archive.state == 'failed' %}<small class="download-failure-reason">{{ download.archive.failure_message or 'The resumable archive could not be prepared.' }}</small>{% endif %}
                             {% if download.status == 'failed' %}<small class="download-failure-reason">{% if not download.file_location %}The source location is unavailable.{% else %}The previous request could not be completed. Retry to validate the source.{% endif %}</small>{% endif %}
                             {% if download.status == 'expired' %}<small class="download-failure-reason">This download link expired. Retry to create a fresh link.</small>{% endif %}
                             {% if download.active_transfer %}<small class="download-transfer-detail">{{ download.active_transfer.formatted_bytes_sent }} streamed{% if download.active_transfer.formatted_expected_bytes %} of {{ download.active_transfer.formatted_expected_bytes }}{% endif %}</small>{% elif download.status == 'available' and download.expires_at %}<small class="download-expiry{% if download.expiring_soon %} is-urgent{% endif %}">{{ 'Expires soon · ' if download.expiring_soon else 'Available until ' }}{{ download.expires_at|friendly_datetime }}</small>{% endif %}
@@ -49,10 +56,16 @@
                             <form action="{{ url_for('download.cancel_download', download_id=download.id) }}" method="post" class="inline-form">
                                 {{ form.csrf_token }}<button type="submit" class="btn btn-secondary btn-sm"><i class="fas fa-ban" aria-hidden="true"></i> Cancel</button>
                             </form>
+                            {% if download.fallback_available %}<form action="{{ url_for('download.stream_without_resume', download_id=download.id) }}" method="post" class="inline-form">
+                                {{ form.csrf_token }}<button type="submit" class="btn btn-secondary btn-sm"><i class="fas fa-bolt" aria-hidden="true"></i> Stream now</button>
+                            </form>{% endif %}
                             {% elif download.status in ['failed', 'cancelled', 'expired'] %}
                             <form action="{{ url_for('download.retry_download', download_id=download.id) }}" method="post" class="inline-form">
                                 {{ form.csrf_token }}<button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-rotate-right" aria-hidden="true"></i> Retry</button>
                             </form>
+                            {% if download.fallback_available %}<form action="{{ url_for('download.stream_without_resume', download_id=download.id) }}" method="post" class="inline-form">
+                                {{ form.csrf_token }}<button type="submit" class="btn btn-secondary btn-sm"><i class="fas fa-bolt" aria-hidden="true"></i> Stream without resume</button>
+                            </form>{% endif %}
                             {% endif %}
                             {% if not download.active_transfer %}<form action="{{ url_for('download.delete_download', download_id=download.id) }}" method="post" class="inline-form">
                                 {{ form.csrf_token }}

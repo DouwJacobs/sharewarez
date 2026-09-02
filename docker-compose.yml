@@ -39,6 +39,7 @@ services:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - POSTGRES_DB=${POSTGRES_DB}
       - BACKUP_DIR=/backups
+      - DOWNLOAD_CACHE_DIR=/cache/downloads
       - BACKUP_BEFORE_UPGRADE=${BACKUP_BEFORE_UPGRADE:-true}
       - BACKUP_RETENTION_COUNT=${BACKUP_RETENTION_COUNT:-10}
       - TRUST_PROXY_COUNT=${TRUST_PROXY_COUNT:-0}
@@ -53,6 +54,7 @@ services:
       - "${DATA_FOLDER_WAREZ}:/storage:ro"
       - "${LIBRARY_HOST_PATH:-./data/library}:/app/sharewarez/static/library"
       - "${BACKUP_HOST_PATH:-./data/backups}:/backups"
+      - "${DOWNLOAD_CACHE_VOLUME:-download_cache}:/cache/downloads"
     depends_on:
       db:
         condition: service_healthy
@@ -86,4 +88,6 @@ services:
 
 volumes:
   db_data:
+    driver: local
+  download_cache:
     driver: local

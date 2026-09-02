@@ -135,7 +135,10 @@ def estimate_path_bytes(path):
     return sum(item.stat().st_size for item in target.rglob('*') if item.is_file())
 
 
-def reserve_transfer(user_id, filename, expected_bytes, download_request_id=None, game_uuid=None):
+def reserve_transfer(
+    user_id, filename, expected_bytes, download_request_id=None, game_uuid=None,
+    *, archive_id=None, range_start=None, range_end=None, http_status=None,
+):
     """Atomically reserve monthly quota and create an active transfer record."""
     from sharewarez import db
     from sharewarez.models import DownloadRequest, DownloadTransfer, GlobalSettings, User
@@ -174,6 +177,11 @@ def reserve_transfer(user_id, filename, expected_bytes, download_request_id=None
         reserved_bytes=max(0, expected_bytes),
         status='active',
         last_activity_at=now,
+        archive_id=archive_id,
+        range_start=range_start,
+        range_end=range_end,
+        http_status=http_status,
+        is_resumed=bool(range_start),
     )
     db.session.add(transfer)
     db.session.commit()

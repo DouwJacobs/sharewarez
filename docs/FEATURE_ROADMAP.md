@@ -47,6 +47,7 @@ desktop sidebar remains the full navigation surface.
 ## Downloads and delivery
 
 - [x] HTTP range and resumable downloads
+- [x] Managed resumable archive cache for directory and multipart downloads ([specification](DOWNLOAD_ARCHIVE_CACHE_SPEC.md))
 - [x] Per-user quotas and concurrency limits
 - [x] Bandwidth limits and queue priorities
 - [x] Cross-worker per-user concurrent download limits

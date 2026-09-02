@@ -10,7 +10,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const cell = row.querySelector('.status-cell');
         if (!cell) return;
         const normalized = status.toLowerCase().replaceAll(' ', '-');
-        cell.innerHTML = `<span class="download-status download-status--${normalized}"><span class="download-status-dot" aria-hidden="true"></span>${status.replaceAll('_', ' ').replace(/\b\w/g, char => char.toUpperCase())}</span>`;
+        let badge = cell.querySelector('.download-status');
+        if (!badge) {
+            badge = document.createElement('span');
+            cell.prepend(badge);
+        }
+        badge.className = `download-status download-status--${normalized}`;
+        badge.innerHTML = `<span class="download-status-dot" aria-hidden="true"></span>${status.replaceAll('_', ' ').replace(/\b\w/g, char => char.toUpperCase())}`;
         row.dataset.downloadStatus = status;
         
         const actionsCell = row.querySelector('.actions-cell');
@@ -40,7 +46,17 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await response.json();
             data.downloads.forEach(item => {
                 const row = document.querySelector(`tr[data-download-id="${item.id}"]`);
-                if (row) renderStatus(row, item.status);
+                if (!row) return;
+                if (item.status !== row.dataset.downloadStatus) {
+                    window.location.reload();
+                    return;
+                }
+                const progress = row.querySelector('.download-archive-progress');
+                if (progress && item.archive?.progress != null) {
+                    const bar = progress.querySelector('span > span');
+                    if (bar) bar.style.width = `${item.archive.progress}%`;
+                    progress.lastChild.textContent = ` ${item.archive.progress}% prepared`;
+                }
             });
             delay = 3000;
         } catch (error) {

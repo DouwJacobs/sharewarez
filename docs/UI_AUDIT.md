@@ -306,3 +306,21 @@ The authenticated UI was re-audited across 38 current user and administrator des
 - The setup-theme source and installed default-theme assets remain synchronized.
 
 Post-change computed-style verification found no contract failures or document-level horizontal overflow on the 38 audited destinations at either viewport. Visual checks covered Favorites, user Downloads, Add Library, and administrator Download Delivery.
+
+## Resumable download cache UI (2026-09-02)
+
+The dedicated `/admin/download-cache` Operations page uses four sibling
+`.app-surface` sections for storage health, policy, archive inventory, and resume
+guidance. It reuses shared controls and semantic status pills; no source path is
+shown outside the administrator surface. The member Downloads page now labels
+stable files and ready cached archives as resumable, shows archive preparation
+progress, and keeps the live-stream fallback explicit about restart behavior.
+
+The authenticated page was visually checked at 1440 × 900 and 390 × 844 in the
+installed default dark theme. The desktop inventory owns its one horizontal
+table surface. At 390 px entries become compact record cards, low-priority size
+columns are omitted, and Pin, Retry, and Evict remain reachable without
+document-level horizontal overflow. The single mobile gutter and bottom-nav
+clearance remain intact. No light theme is installed in this workspace, so a
+light-theme visual pass was not available; all route styles use shared theme
+tokens rather than dark palette literals.

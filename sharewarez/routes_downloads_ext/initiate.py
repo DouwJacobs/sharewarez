@@ -10,6 +10,7 @@ from sharewarez.utils.game_core import get_game_by_uuid
 from sharewarez.utils.security import is_safe_path, get_allowed_base_directories
 from sharewarez.utils.filename import sanitize_filename
 from sharewarez.utils.download_limits import calculate_download_expiry, expire_download_requests
+from sharewarez.utils.download_cache import request_resumable_archive
 from sharewarez import db
 from sharewarez.utils.event_logging import log_system_event
 from sharewarez.routes_games_ext.details import get_path_size
@@ -55,10 +56,18 @@ def download_game(game_uuid):
             return redirect(url_for('download.download_zip', download_id=existing_request.id))
         if existing_request.status in {'failed', 'cancelled', 'expired'} and os.path.exists(existing_request.file_location):
             settings = db.session.execute(select(GlobalSettings)).scalars().first()
-            existing_request.status = 'available'
+            if os.path.isdir(existing_request.file_location):
+                existing_request.archive_id = None
+                request_resumable_archive(existing_request, f'{sanitize_filename(game.name)}.zip')
+            else:
+                existing_request.status = 'available'
+                existing_request.delivery_kind = 'direct'
             existing_request.expires_at = calculate_download_expiry(settings)
             db.session.commit()
-            return redirect(url_for('download.download_zip', download_id=existing_request.id))
+            return redirect(
+                url_for('download.downloads') if existing_request.status == 'processing'
+                else url_for('download.download_zip', download_id=existing_request.id)
+            )
         flash("You already have a download request for this game. Manage it from your downloads page.", "info")
         return redirect(url_for('download.downloads'))
 
@@ -106,17 +115,24 @@ def download_game(game_uuid):
             file_location=game.full_disk_path,
             zip_file_path=zip_file_path,
             expires_at=calculate_download_expiry(settings),
+            delivery_kind='direct' if os.path.isfile(zip_file_path) else 'live_archive',
         )
         db.session.add(new_request)
         game.times_downloaded += 1
+        if os.path.isdir(zip_file_path):
+            request_resumable_archive(new_request, f'{sanitize_filename(game.name)}.zip')
         db.session.commit()
 
         log_system_event(
-            f"User {current_user.name} created download request {new_request.id} for {game.name} (ready to stream)",
+            f"User {current_user.name} created download request {new_request.id} for {game.name} ({new_request.status})",
             event_type='audit', event_level='information',
         )
         
-        # Start delivery immediately. ASGI records the actual transfer attempt.
+        # Direct and already-cached files start immediately; new archives prepare in
+        # the background and become available from the user's Downloads page.
+        if new_request.status == 'processing':
+            flash('Preparing a resumable download. You can leave this page and return later.', 'info')
+            return redirect(url_for('download.downloads'))
         return redirect(url_for('download.download_zip', download_id=new_request.id))
         
     except Exception as e:
@@ -193,10 +209,18 @@ def download_other(file_type, game_uuid, file_id):
             return redirect(url_for('download.download_zip', download_id=existing_request.id))
         if existing_request.status in {'failed', 'cancelled', 'expired'} and os.path.exists(existing_request.file_location):
             settings = db.session.execute(select(GlobalSettings)).scalars().first()
-            existing_request.status = 'available'
+            if os.path.isdir(existing_request.file_location):
+                existing_request.archive_id = None
+                request_resumable_archive(existing_request, f'{sanitize_filename(os.path.basename(existing_request.file_location))}.zip')
+            else:
+                existing_request.status = 'available'
+                existing_request.delivery_kind = 'direct'
             existing_request.expires_at = calculate_download_expiry(settings)
             db.session.commit()
-            return redirect(url_for('download.download_zip', download_id=existing_request.id))
+            return redirect(
+                url_for('download.downloads') if existing_request.status == 'processing'
+                else url_for('download.download_zip', download_id=existing_request.id)
+            )
         flash("You already have a download request for this file. Manage it from your downloads page.", "info")
         return redirect(url_for('download.downloads'))
     
@@ -235,18 +259,23 @@ def download_other(file_type, game_uuid, file_id):
             expires_at=calculate_download_expiry(
                 db.session.execute(select(GlobalSettings)).scalars().first()
             ),
+            delivery_kind='direct' if os.path.isfile(zip_file_path) else 'live_archive',
         )
         
         db.session.add(new_request)
         file_record.times_downloaded += 1
+        if os.path.isdir(zip_file_path):
+            request_resumable_archive(new_request, f'{sanitize_filename(base_name)}.zip')
         db.session.commit()
 
         log_system_event(
-            f"User {current_user.name} created download request {new_request.id} for {file_type} {base_name} (ready to stream)",
+            f"User {current_user.name} created download request {new_request.id} for {file_type} {base_name} ({new_request.status})",
             event_type='audit', event_level='information',
         )
         
-        # Start delivery immediately. ASGI records the actual transfer attempt.
+        if new_request.status == 'processing':
+            flash('Preparing a resumable download. You can leave this page and return later.', 'info')
+            return redirect(url_for('download.downloads'))
         return redirect(url_for('download.download_zip', download_id=new_request.id))
         
     except SQLAlchemyError as e:

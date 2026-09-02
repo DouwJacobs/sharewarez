@@ -13,6 +13,9 @@ def test_compose_uses_single_application_container():
     assert compose['services']['app']['init'] is True
     assert compose['services']['app']['read_only'] is True
     assert 'JOB_POLL_SECONDS=${JOB_POLL_SECONDS:-1}' in compose['services']['app']['environment']
+    assert 'DOWNLOAD_CACHE_DIR=/cache/downloads' in compose['services']['app']['environment']
+    assert '${DOWNLOAD_CACHE_VOLUME:-download_cache}:/cache/downloads' in compose['services']['app']['volumes']
+    assert 'download_cache' in compose['volumes']
 
 
 def test_application_startup_supervises_web_and_job_processes():

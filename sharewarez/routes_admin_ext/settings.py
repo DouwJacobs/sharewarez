@@ -69,6 +69,12 @@ DEFAULT_SETTINGS = {
     'downloadQueueWaitSeconds': 10,
     'downloadRequestExpirationHours': 168,
     'defaultMonthlyDownloadQuotaGb': 0,
+    'archiveCacheMode': 'prefer',
+    'archiveCacheMaxGb': 100,
+    'archiveCacheMinFreeGb': 10,
+    'archiveCacheRetentionDays': 7,
+    'archiveCacheBuildConcurrency': 1,
+    'archiveCacheFallbackEnabled': True,
     'scanThreadCount': 1,
     'enableHltbIntegration': True,
     'hltbRateLimitDelay': 2.0,
@@ -182,6 +188,24 @@ def validate_settings_data(settings_data):
         not isinstance(quota_gb, (int, float)) or not 0 <= quota_gb <= 100000
     ):
         errors.append("Default monthly download quota must be between 0 and 100000 GB")
+
+    cache_mode = settings_data.get('archiveCacheMode')
+    if cache_mode is not None and cache_mode not in {'off', 'prefer', 'require'}:
+        errors.append("Archive cache mode must be off, prefer, or require")
+    for field, lower, upper, label in (
+        ('archiveCacheMaxGb', 1, 100000, 'Archive cache maximum'),
+        ('archiveCacheMinFreeGb', 1, 10000, 'Archive cache minimum free space'),
+        ('archiveCacheRetentionDays', 1, 365, 'Archive cache retention'),
+        ('archiveCacheBuildConcurrency', 1, 4, 'Archive build concurrency'),
+    ):
+        value = settings_data.get(field)
+        if value is not None and (
+            isinstance(value, bool) or not isinstance(value, (int, float)) or not lower <= value <= upper
+        ):
+            errors.append(f"{label} must be between {lower} and {upper}")
+    fallback = settings_data.get('archiveCacheFallbackEnabled')
+    if fallback is not None and not isinstance(fallback, bool):
+        errors.append("Archive cache fallback must be enabled or disabled")
 
     # Validate local metadata filename
     metadata_filename = settings_data.get('localMetadataFilename')

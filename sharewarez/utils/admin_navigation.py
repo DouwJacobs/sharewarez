@@ -108,6 +108,12 @@ ADMIN_NAVIGATION = (
         'icon': 'fa-server',
         'items': (
             {
+                'key': 'download-cache', 'label': 'Download cache',
+                'description': 'Manage resumable archive preparation and storage.',
+                'icon': 'fa-box-archive', 'endpoint': 'download.manage_download_cache',
+                'keywords': 'downloads cache archives resume storage builds',
+            },
+            {
                 'key': 'jobs', 'label': 'Background jobs',
                 'description': 'Monitor queued work, progress, and failures.',
                 'icon': 'fa-list-check', 'endpoint': 'admin2.background_jobs',

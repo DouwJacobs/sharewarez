@@ -21,6 +21,7 @@ JOB_DISPLAY_NAMES = {
     'library.bulk_metadata_refresh': 'Bulk metadata refresh',
     'library.bulk_image_refresh': 'Bulk image refresh',
     'notifications.send_email': 'Send notification email',
+    'download.archive.build': 'Prepare resumable download',
 }
 
 
@@ -41,7 +42,10 @@ def register_task(name: str):
     return decorator
 
 
-def enqueue(task_name, payload=None, *, queue='default', max_attempts=3, created_by_id=None):
+def enqueue(
+    task_name, payload=None, *, queue='default', max_attempts=3, created_by_id=None,
+    commit=True,
+):
     if task_name not in _handlers:
         raise ValueError(f"Unknown background task: {task_name}")
     if not 1 <= max_attempts <= 10:
@@ -54,7 +58,10 @@ def enqueue(task_name, payload=None, *, queue='default', max_attempts=3, created
         created_by_id=created_by_id,
     )
     db.session.add(job)
-    db.session.commit()
+    if commit:
+        db.session.commit()
+    else:
+        db.session.flush()
     return job
 
 
@@ -165,6 +172,7 @@ def execute(job: BackgroundJob, worker_id: str):
             current.error_message = str(exc)
             current.completed_at = datetime.now(timezone.utc)
             current.locked_by = None
+            _mark_archive_job_terminal(current)
             db.session.commit()
     except Exception as exc:
         current_app.logger.exception("Background job %s failed", job.id)
@@ -183,10 +191,44 @@ def _fail_or_retry(job_id, worker_id, message, *, retry):
         job.status = 'queued'
         job.available_at = now + timedelta(seconds=min(300, 2 ** job.attempts))
         job.progress_message = f"Retry {job.attempts + 1} of {job.max_attempts} scheduled"
+        _mark_archive_job_retrying(job)
     else:
         job.status = 'cancelled' if job.cancel_requested else 'failed'
         job.completed_at = now
+        _mark_archive_job_terminal(job)
     db.session.commit()
+
+
+def _mark_archive_job_terminal(job):
+    if job.task_name != 'download.archive.build':
+        return
+    from sharewarez.models import DownloadArchive, DownloadRequest
+
+    archive_id = str((job.payload or {}).get('archive_id') or '')
+    archive = db.session.get(DownloadArchive, archive_id) if archive_id else None
+    if archive is None:
+        return
+    archive.state = 'failed'
+    archive.build_job_id = None
+    if not archive.failure_code:
+        archive.failure_code = 'build_cancelled' if job.status == 'cancelled' else 'build_failed'
+        archive.failure_message = job.error_message or 'Archive preparation did not complete.'
+    db.session.query(DownloadRequest).filter(
+        DownloadRequest.archive_id == archive.id,
+        DownloadRequest.status == 'processing',
+    ).update({'status': 'failed'}, synchronize_session=False)
+
+
+def _mark_archive_job_retrying(job):
+    if job.task_name != 'download.archive.build':
+        return
+    from sharewarez.models import DownloadArchive
+
+    archive_id = str((job.payload or {}).get('archive_id') or '')
+    archive = db.session.get(DownloadArchive, archive_id) if archive_id else None
+    if archive is not None:
+        archive.state = 'queued'
+        archive.build_job_id = job.id
 
 
 def recover_stale_jobs(stale_after_seconds=120):
@@ -206,10 +248,12 @@ def recover_stale_jobs(stale_after_seconds=120):
             job.status = 'queued'
             job.available_at = datetime.now(timezone.utc)
             job.progress_message = 'Recovered after worker interruption'
+            _mark_archive_job_retrying(job)
         else:
             job.status = 'failed'
             job.error_message = 'Worker stopped before the job completed'
             job.completed_at = datetime.now(timezone.utc)
+            _mark_archive_job_terminal(job)
     db.session.commit()
     return len(jobs)
 
@@ -238,6 +282,16 @@ def send_notification_email_task(context, payload):
     sent = send_email(recipient, subject, html, show_feedback=False)
     context.heartbeat(100, 'Email sent' if sent else 'Email delivery skipped')
     return {'sent': bool(sent)}
+
+
+@register_task('download.archive.build')
+def build_download_archive_task(context, payload):
+    from sharewarez.utils.download_cache import build_archive
+
+    archive_id = str(payload.get('archive_id') or '')
+    if not archive_id:
+        raise ValueError('Archive job payload is incomplete.')
+    return build_archive(context, archive_id)
 
 
 @register_task('library.scan')

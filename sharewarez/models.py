@@ -563,6 +563,12 @@ class DownloadRequest(db.Model):
     game_extra = db.relationship('GameExtra', foreign_keys=[game_extra_id])
     priority = db.Column(db.SmallInteger, nullable=False, default=0)
     expires_at = db.Column(db.DateTime(timezone=True), nullable=True, index=True)
+    archive_id = db.Column(
+        db.String(36), db.ForeignKey('download_archives.id', ondelete='SET NULL'),
+        nullable=True, index=True,
+    )
+    delivery_kind = db.Column(db.String(24), nullable=False, default='direct')
+    archive = db.relationship('DownloadArchive', foreign_keys=[archive_id])
 
 
 class DownloadTransfer(db.Model):
@@ -579,10 +585,60 @@ class DownloadTransfer(db.Model):
     started_at = db.Column(db.DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc), index=True)
     last_activity_at = db.Column(db.DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc), index=True)
     ended_at = db.Column(db.DateTime(timezone=True), nullable=True)
+    archive_id = db.Column(
+        db.String(36), db.ForeignKey('download_archives.id', ondelete='SET NULL'),
+        nullable=True, index=True,
+    )
+    range_start = db.Column(db.BigInteger, nullable=True)
+    range_end = db.Column(db.BigInteger, nullable=True)
+    http_status = db.Column(db.SmallInteger, nullable=True)
+    is_resumed = db.Column(db.Boolean, nullable=False, default=False)
 
     user = db.relationship('User', foreign_keys=[user_id])
     download_request = db.relationship('DownloadRequest', foreign_keys=[download_request_id])
     game = db.relationship('Game', foreign_keys=[game_uuid])
+    archive = db.relationship('DownloadArchive', foreign_keys=[archive_id])
+
+
+class DownloadArchive(db.Model):
+    """Immutable, application-managed ZIP used for resumable directory delivery."""
+
+    __tablename__ = 'download_archives'
+    __table_args__ = (
+        db.CheckConstraint('source_bytes >= 0', name='ck_download_archives_source_bytes'),
+        db.CheckConstraint('archive_bytes >= 0', name='ck_download_archives_archive_bytes'),
+        db.CheckConstraint('bytes_written >= 0', name='ck_download_archives_bytes_written'),
+        db.CheckConstraint('file_count >= 0', name='ck_download_archives_file_count'),
+    )
+
+    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    cache_key = db.Column(db.String(64), nullable=False, unique=True, index=True)
+    source_path = db.Column(db.Text, nullable=False)
+    display_name = db.Column(db.String(512), nullable=False)
+    state = db.Column(db.String(24), nullable=False, default='queued', index=True)
+    relative_path = db.Column(db.Text, nullable=True)
+    source_bytes = db.Column(db.BigInteger, nullable=False, default=0)
+    archive_bytes = db.Column(db.BigInteger, nullable=False, default=0)
+    file_count = db.Column(db.Integer, nullable=False, default=0)
+    bytes_written = db.Column(db.BigInteger, nullable=False, default=0)
+    sha256 = db.Column(db.String(64), nullable=True)
+    format_version = db.Column(db.Integer, nullable=False, default=1)
+    build_job_id = db.Column(
+        db.String(36), db.ForeignKey('background_jobs.id', ondelete='SET NULL'), nullable=True,
+    )
+    failure_code = db.Column(db.String(64), nullable=True)
+    failure_message = db.Column(db.String(512), nullable=True)
+    created_at = db.Column(
+        db.DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc),
+    )
+    updated_at = db.Column(
+        db.DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc),
+    )
+    ready_at = db.Column(db.DateTime(timezone=True), nullable=True)
+    last_accessed_at = db.Column(db.DateTime(timezone=True), nullable=True, index=True)
+    pinned = db.Column(db.Boolean, nullable=False, default=False)
+
+    build_job = db.relationship('BackgroundJob', foreign_keys=[build_job_id])
 
 
 class DownloadQueueEntry(db.Model):

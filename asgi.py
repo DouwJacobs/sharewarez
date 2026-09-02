@@ -15,7 +15,7 @@ from datetime import datetime, timezone
 from asgiref.wsgi import WsgiToAsgi
 
 from sharewarez import create_app, db
-from sharewarez.models import DownloadRequest, Game, GlobalSettings
+from sharewarez.models import DownloadArchive, DownloadRequest, Game, GlobalSettings
 from sharewarez.async_streaming import create_async_streaming_response, async_generate_zipstream_response
 from sharewarez.utils.security import is_safe_path, get_allowed_base_directories
 from sharewarez.utils.event_logging import log_system_event
@@ -26,6 +26,9 @@ from sharewarez.utils.download_limits import (
     reserve_transfer,
     throttle_chunks,
     update_transfer_progress,
+)
+from sharewarez.utils.download_cache import (
+    ArchiveCacheError, acquire_archive_lease, resolved_archive_path,
 )
 from sqlalchemy import select
 
@@ -97,8 +100,8 @@ class LazyASGIApp:
         path = scope["path"]
         method = scope["method"]
         
-        # Only handle GET requests
-        if method != "GET":
+        # Download managers commonly probe with HEAD before issuing a ranged GET.
+        if method not in {"GET", "HEAD"}:
             await self._send_error(send, 405, "Method Not Allowed")
             return
         
@@ -134,6 +137,12 @@ class LazyASGIApp:
                         if queued_request is not None:
                             queue_priority = queued_request.priority
                 engine = db.engine
+            if method == 'HEAD':
+                if path.startswith('/download_zip/'):
+                    await self._handle_zip_download(scope, receive, send, path, user_id, bandwidth_limit)
+                elif path.startswith('/api/downloadrom/'):
+                    await self._handle_rom_download(scope, receive, send, path, user_id, bandwidth_limit)
+                return
             slot = await acquire_queued_download_slot(
                 engine,
                 user_id,
@@ -213,42 +222,92 @@ class LazyASGIApp:
             req_id = download_request.id
             req_file_location = download_request.file_location
             game_name = download_request.game.name if download_request.game else None
+            archive_id = download_request.archive_id
+            archive_etag = None
+            archive_modified = None
+            archive_filename = None
+            archive_lease = None
+            if archive_id:
+                archive_lease = acquire_archive_lease(archive_id)
+                if archive_lease is None:
+                    await self._send_error(
+                        send, 409, 'Cached download is being maintained',
+                        extra_headers=[(b'retry-after', b'2')],
+                    )
+                    return
+                archive = db.session.get(DownloadArchive, archive_id)
+                if archive is None or archive.state != 'ready':
+                    archive_lease.release()
+                    await self._send_error(
+                        send, 409, 'Resumable download is still being prepared',
+                        extra_headers=[(b'retry-after', b'3')],
+                    )
+                    return
+                try:
+                    file_path = str(resolved_archive_path(archive))
+                except ArchiveCacheError:
+                    archive_lease.release()
+                    archive.state = 'failed'
+                    archive.failure_code = 'archive_missing'
+                    archive.failure_message = 'The cached file is missing and must be rebuilt.'
+                    download_request.status = 'failed'
+                    db.session.commit()
+                    await self._send_error(send, 500, 'Cached download is unavailable')
+                    return
+                archive.last_accessed_at = datetime.now(timezone.utc)
+                try:
+                    db.session.commit()
+                except Exception:
+                    archive_lease.release()
+                    raise
+                archive_etag = f'"{archive.sha256}"'
+                archive_modified = archive.ready_at
+                archive_filename = archive.display_name
             is_dir = os.path.isdir(file_path) if file_path else False
 
         # Check if this is a streaming download (source path is a directory)
         if is_dir:
             await self._handle_streaming_download(
                 receive, send, req_id, req_file_location, game_name,
-                file_path, user_id, bandwidth_limit,
+                file_path, user_id, bandwidth_limit, method=scope.get('method', 'GET'),
             )
             return
         
-        # Security validation for direct game files
-        allowed_bases = get_allowed_base_directories(self._flask_app)
-        if not allowed_bases:
-            await self._send_error(send, 500, "Server configuration error")
-            return
+        # Direct files remain constrained to game storage. Cached archives were
+        # independently resolved beneath the private cache root above.
+        if not archive_id:
+            allowed_bases = get_allowed_base_directories(self._flask_app)
+            if not allowed_bases:
+                await self._send_error(send, 500, "Server configuration error")
+                return
 
-        is_safe, error_message = is_safe_path(file_path, allowed_bases)
-        if not is_safe:
-            with self._flask_app.app_context():
-                log_system_event(f"Security violation - game file outside allowed directories: {file_path[:100]}",
-                               event_type='security', event_level='warning')
-            await self._send_error(send, 403, "Access denied")
-            return
+            is_safe, error_message = is_safe_path(file_path, allowed_bases)
+            if not is_safe:
+                with self._flask_app.app_context():
+                    log_system_event(f"Security violation - game file outside allowed directories: {file_path[:100]}",
+                                   event_type='security', event_level='warning')
+                await self._send_error(send, 403, "Access denied")
+                return
         
         if not os.path.exists(file_path):
+            if archive_lease is not None:
+                archive_lease.release()
             await self._send_error(send, 404, "File not found")
             return
         
         # Stream the file
-        filename = os.path.basename(file_path)
+        filename = archive_filename or os.path.basename(file_path)
         with self._flask_app.app_context():
             log_system_event(f"Async file download: {filename}", event_type='download', event_level='information')
-        await self._stream_file(
-            receive, send, file_path, filename, scope, user_id, bandwidth_limit,
-            download_request_id=req_id,
-        )
+        try:
+            await self._stream_file(
+                receive, send, file_path, filename, scope, user_id, bandwidth_limit,
+                download_request_id=req_id,
+                archive_id=archive_id, etag=archive_etag, last_modified=archive_modified,
+            )
+        finally:
+            if archive_lease is not None:
+                archive_lease.release()
     
     async def _handle_rom_download(self, scope, receive, send, path, user_id, bandwidth_limit):
         """Handle ROM file downloads for emulator"""
@@ -369,12 +428,17 @@ class LazyASGIApp:
                            event_type='security', event_level='warning')
             return None
     
-    def _sync_reserve_transfer(self, user_id, filename, length, download_request_id, game_uuid=None):
+    def _sync_reserve_transfer(
+        self, user_id, filename, length, download_request_id, game_uuid=None,
+        archive_id=None, range_start=None, range_end=None, http_status=None,
+    ):
         """Run reserve_transfer synchronously inside a Flask app context."""
         with self._flask_app.app_context():
             return reserve_transfer(
                 user_id, filename, length,
                 download_request_id=download_request_id, game_uuid=game_uuid,
+                archive_id=archive_id, range_start=range_start, range_end=range_end,
+                http_status=http_status,
             )
 
     def _sync_update_transfer_progress(self, transfer_id, bytes_sent):
@@ -394,7 +458,11 @@ class LazyASGIApp:
                 disconnected.set()
                 return
 
-    async def _stream_file(self, receive, send, file_path, filename, scope, user_id=None, bandwidth_limit=0, download_request_id=None, game_uuid=None):
+    async def _stream_file(
+        self, receive, send, file_path, filename, scope, user_id=None,
+        bandwidth_limit=0, download_request_id=None, game_uuid=None,
+        archive_id=None, etag=None, last_modified=None,
+    ):
         """Stream a file asynchronously"""
         transfer_id = None
         bytes_sent = 0
@@ -407,6 +475,13 @@ class LazyASGIApp:
             file_size = os.path.getsize(file_path)
             request_headers = dict(scope.get("headers", []))
             range_header = request_headers.get(b"range", b"").decode("ascii", "ignore")
+            stat = os.stat(file_path)
+            etag = etag or f'"{file_size:x}-{stat.st_mtime_ns:x}"'
+            modified_dt = last_modified or datetime.fromtimestamp(stat.st_mtime, timezone.utc)
+            modified_http = modified_dt.strftime('%a, %d %b %Y %H:%M:%S GMT')
+            if_range = request_headers.get(b"if-range", b"").decode("ascii", "ignore").strip()
+            if range_header and if_range and if_range not in {etag, modified_http}:
+                range_header = ''
             try:
                 byte_range = parse_single_byte_range(range_header, file_size)
             except ValueError:
@@ -425,10 +500,11 @@ class LazyASGIApp:
                 start, end = byte_range
                 length = end - start + 1
                 status = 206
-            if user_id is not None:
+            if user_id is not None and scope.get('method') != 'HEAD':
                 transfer_id, _used_bytes, _quota_bytes = await asyncio.to_thread(
                     self._sync_reserve_transfer, user_id, filename, length,
-                    download_request_id, game_uuid,
+                    download_request_id, game_uuid, archive_id, start,
+                    (start + length - 1), status,
                 )
                 if transfer_id is None:
                     await self._send_error(
@@ -441,6 +517,8 @@ class LazyASGIApp:
             )
             if byte_range:
                 headers["content-range"] = f"bytes {start}-{end}/{file_size}"
+            headers['etag'] = etag
+            headers['last-modified'] = modified_http
             
             # Send HTTP response start
             await send({
@@ -449,6 +527,10 @@ class LazyASGIApp:
                 "headers": [(k.encode(), v.encode()) for k, v in headers.items()]
             })
             response_started = True
+            if scope.get('method') == 'HEAD':
+                await send({"type": "http.response.body", "body": b"", "more_body": False})
+                completed = True
+                return
             
             # Stream file chunks
             progress_updated_at = time.monotonic()
@@ -499,7 +581,7 @@ class LazyASGIApp:
     
     async def _handle_streaming_download(
         self, receive, send, download_request_id, file_location, game_name,
-        source_path, user_id, bandwidth_limit=0,
+        source_path, user_id, bandwidth_limit=0, method='GET',
     ):
         """Handle zipstream downloads for multi-file games"""
         transfer_id = None
@@ -538,6 +620,19 @@ class LazyASGIApp:
                 filename = f"{base_name}.zip" if not base_name.lower().endswith('.zip') else base_name
             else:
                 filename = f"{game_name}.zip" if game_name else "download.zip"
+
+            if method == 'HEAD':
+                _generator, headers = async_generate_zipstream_response(
+                    source_path, filename, chunk_size, compression_level, enable_zip64
+                )
+                await send({
+                    "type": "http.response.start", "status": 200,
+                    "headers": [(key.encode(), value.encode()) for key, value in headers.items()],
+                })
+                response_started = True
+                await send({"type": "http.response.body", "body": b"", "more_body": False})
+                completed = True
+                return
 
             expected_bytes = estimate_path_bytes(source_path)
             transfer_id, _used_bytes, _quota_bytes = await asyncio.to_thread(

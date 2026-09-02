@@ -125,3 +125,75 @@ def test_stream_file_rejects_unsatisfiable_range(tmp_path):
 
     assert messages[0]["status"] == 416
     assert dict(messages[0]["headers"])[b"content-range"] == b"bytes */10"
+
+
+def test_stream_file_head_advertises_resume_without_body(tmp_path):
+    source = tmp_path / "game.bin"
+    source.write_bytes(b"0123456789")
+    messages = []
+
+    async def send(message):
+        messages.append(message)
+
+    async def receive():
+        await asyncio.Event().wait()
+
+    asyncio.run(LazyASGIApp()._stream_file(
+        receive, send, str(source), source.name,
+        {"method": "HEAD", "headers": []},
+        etag='"stable-archive"',
+    ))
+
+    headers = dict(messages[0]["headers"])
+    assert messages[0]["status"] == 200
+    assert headers[b"accept-ranges"] == b"bytes"
+    assert headers[b"content-length"] == b"10"
+    assert headers[b"etag"] == b'"stable-archive"'
+    assert b"".join(message.get("body", b"") for message in messages[1:]) == b""
+
+
+def test_if_range_mismatch_safely_returns_full_representation(tmp_path):
+    source = tmp_path / "game.bin"
+    source.write_bytes(b"0123456789")
+    messages = []
+
+    async def send(message):
+        messages.append(message)
+
+    async def receive():
+        await asyncio.Event().wait()
+
+    with patch("sharewarez.async_streaming.log_system_event"), patch("asgi.log_system_event"):
+        asyncio.run(LazyASGIApp()._stream_file(
+            receive, send, str(source), source.name,
+            {"method": "GET", "headers": [
+                (b"range", b"bytes=5-"), (b"if-range", b'"old-archive"'),
+            ]}, etag='"current-archive"',
+        ))
+
+    assert messages[0]["status"] == 200
+    assert b"content-range" not in dict(messages[0]["headers"])
+    assert b"".join(message.get("body", b"") for message in messages[1:]) == b"0123456789"
+
+
+def test_if_range_match_returns_partial_representation(tmp_path):
+    source = tmp_path / "game.bin"
+    source.write_bytes(b"0123456789")
+    messages = []
+
+    async def send(message):
+        messages.append(message)
+
+    async def receive():
+        await asyncio.Event().wait()
+
+    with patch("sharewarez.async_streaming.log_system_event"), patch("asgi.log_system_event"):
+        asyncio.run(LazyASGIApp()._stream_file(
+            receive, send, str(source), source.name,
+            {"method": "GET", "headers": [
+                (b"range", b"bytes=5-"), (b"if-range", b'"current-archive"'),
+            ]}, etag='"current-archive"',
+        ))
+
+    assert messages[0]["status"] == 206
+    assert b"".join(message.get("body", b"") for message in messages[1:]) == b"56789"

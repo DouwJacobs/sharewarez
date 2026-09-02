@@ -373,6 +373,28 @@ class TestDownloadPriorityRoute:
         assert response.status_code == 400
 
 
+class TestDownloadCacheAdminRoute:
+    def test_download_cache_requires_admin(self, client, regular_user):
+        with client.session_transaction() as session:
+            session['_user_id'] = str(regular_user.id)
+
+        response = client.get('/admin/download-cache')
+
+        assert response.status_code in {302, 403}
+
+    def test_download_cache_admin_page(self, client, admin_user, app, tmp_path):
+        app.config['DOWNLOAD_CACHE_DIR'] = str(tmp_path / 'download-cache')
+        with client.session_transaction() as session:
+            session['_user_id'] = str(admin_user.id)
+
+        response = client.get('/admin/download-cache')
+
+        assert response.status_code == 200
+        assert b'Download cache' in response.data
+        assert b'Cache policy' in response.data
+        assert b'Archive inventory' in response.data
+
+
 class TestIntegration:
     """Integration tests for admin download management."""
 
