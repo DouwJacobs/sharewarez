@@ -5,6 +5,8 @@ THEME_SOURCE = Path("sharewarez/setup/default_theme/css/components.css")
 THEME_INSTALLED = Path("sharewarez/static/library/themes/default/css/components.css")
 REQUESTS_SOURCE = Path("sharewarez/setup/default_theme/css/requests.css")
 REQUESTS_INSTALLED = Path("sharewarez/static/library/themes/default/css/requests.css")
+CACHE_ADMIN_SOURCE = Path("sharewarez/setup/default_theme/css/admin/admin_download_cache.css")
+CACHE_ADMIN_INSTALLED = Path("sharewarez/static/library/themes/default/css/admin/admin_download_cache.css")
 
 
 def test_shared_control_contract_is_present_and_synchronized():
@@ -47,3 +49,12 @@ def test_request_search_shell_owns_its_inner_input_styling():
     assert "border: 0 !important" in source
     assert "background: transparent !important" in source
     assert "box-shadow: none !important" in source
+
+
+def test_download_cache_policy_action_spans_the_form_grid():
+    source = CACHE_ADMIN_SOURCE.read_text(encoding="utf-8")
+    installed = CACHE_ADMIN_INSTALLED.read_text(encoding="utf-8")
+
+    assert source == installed
+    assert ".cache-policy-actions { display:flex;grid-column:1/-1;" in source
+    assert ".cache-policy-actions,.cache-policy-actions .btn{width:100%}" in source
