@@ -258,18 +258,6 @@ Shared interaction details verified in this pass:
 
 ## Default-theme accent normalization (2026-08-24)
 
-## Shared control and single-surface audit (2026-09-01)
-
-The authenticated UI was re-audited across 38 current user and administrator destinations at 1440 × 1000 and 390 × 844. The pass focused on control height, alignment, input padding and presentation, nested surface hierarchy, and document-level horizontal overflow.
-
-- Ordinary text inputs, native selects, and action buttons now use `--app-control-height`: 42 px on desktop and 44 px on mobile. Purpose-built geometry such as carousel dots, drag handles, compact icon toggles, colour/range controls, and multi-line workspace navigation remains intentionally distinct.
-- Text and select controls share the themed input border, background, radius, foreground, 12 px inline padding, and left text alignment. Action buttons use centered flex alignment in both axes.
-- Empty states placed directly inside `.app-surface` are now content rather than another bordered, filled, shadowed card. This removes the nested empty card previously visible on Favorites and applies the same hierarchy to Downloads and other shared empty-state variants.
-- Table and DataTables overflow wrappers inside `.app-surface` retain their scrolling responsibility but no longer repeat the parent surface's border, background, radius, or shadow. The Downloads page therefore presents one high-level panel instead of a panel containing a second table card.
-- The setup-theme source and installed default-theme assets remain synchronized.
-
-Post-change computed-style verification found no contract failures or document-level horizontal overflow on the 38 audited destinations at either viewport. Visual checks covered Favorites, user Downloads, Add Library, and administrator Download Delivery. A brief initial Add Library screenshot was captured during the shared page-entry animation; a settled DOM recheck confirmed the complete form was present.
-
 The default theme has one canonical indigo accent: `--theme-accent-rgb: 98, 122, 239`, with
 `--theme-accent-soft-rgb: 154, 177, 255` for lighter emphasis. Legacy `--theme-primary`,
 `--btn-primary`, form-focus, brand-surface, and brand-shadow variables resolve through those
@@ -303,3 +291,16 @@ Responsive verification covers the 390 px contracts in automated tests, includin
 filter wrapping, bottom-navigation clearance, single-instance game actions, and reduced-motion
 rules. Live authenticated desktop checks cover Discover, Library, Game Details, Requests,
 Issues, Admin Overview, and Scan Management without document-level horizontal overflow.
+
+## Shared control and single-surface audit (2026-09-02)
+
+The authenticated UI was re-audited across 38 current user and administrator destinations at 1440 × 1000 and 390 × 844. The pass focused on control height, alignment, input padding and presentation, nested surface hierarchy, and document-level horizontal overflow.
+
+- Ordinary text inputs, native selects, and action buttons now use `--app-control-height`: 42 px on desktop and 44 px on mobile. Purpose-built geometry such as carousel dots, drag handles, compact icon toggles, colour/range controls, and multi-line workspace navigation remains intentionally distinct.
+- Text and select controls share the themed input border, background, radius, foreground, and 12 px inline padding. Their text is left aligned; action-button content is centered on both axes.
+- Native selects retain the platform dropdown indicator. This makes their purpose clear without giving them a different fill, border, radius, size, or type treatment from adjacent text inputs. The Username and Transfer Status controls on administrator Download Delivery were used as the reference pair.
+- Empty states placed directly inside `.app-surface` are now content rather than another bordered, filled, shadowed card. This removes the nested empty card previously visible on Favorites and applies the same hierarchy to Downloads and other shared empty-state variants.
+- Table and DataTables overflow wrappers inside `.app-surface` retain their scrolling responsibility but no longer repeat the parent surface's border, background, radius, or shadow. The Downloads page therefore presents one high-level panel instead of a panel containing a second table card.
+- The setup-theme source and installed default-theme assets remain synchronized.
+
+Post-change computed-style verification found no contract failures or document-level horizontal overflow on the 38 audited destinations at either viewport. Visual checks covered Favorites, user Downloads, Add Library, and administrator Download Delivery.

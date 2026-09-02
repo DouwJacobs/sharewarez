@@ -701,8 +701,15 @@ img[loading="lazy"] { background: linear-gradient(100deg, var(--theme-input-bg) 
     text-align: left;
 }
 
+:is(.app-page, .modal-content, .content-login) select {
+    appearance: auto !important;
+    padding-right: var(--app-control-padding-inline) !important;
+    background-image: none !important;
+}
+
 :is(.app-page, .modal-content, .content-login) .btn:not(.btn-lg):not(.btn-circle) {
     box-sizing: border-box;
+    display: inline-flex !important;
     height: var(--app-control-height) !important;
     min-height: var(--app-control-height) !important;
     align-items: center;

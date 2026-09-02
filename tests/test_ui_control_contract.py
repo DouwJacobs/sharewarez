@@ -13,8 +13,11 @@ def test_shared_control_contract_is_present_and_synchronized():
     assert "--app-control-height: 42px" in source
     assert "--app-control-padding-inline: 12px" in source
     assert "height: var(--app-control-height) !important" in source
+    assert "display: inline-flex !important" in source
     assert "justify-content: center" in source
     assert "text-align: left" in source
+    assert "appearance: auto !important" in source
+    assert "background-image: none !important" in source
 
 
 def test_nested_empty_and_table_surfaces_are_flattened():
