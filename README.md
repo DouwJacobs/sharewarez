@@ -4,7 +4,27 @@ GameLibrary is a self-hosted interface for organizing and sharing a game collect
 
 > GameLibrary is intended for legally owned software. It does not condone unauthorized distribution of copyrighted material.
 
-![GameLibrary library](docs/screenshots/library.png)
+## Screenshots
+
+### Discover
+
+Browse featured titles, recent activity, and collection highlights from the
+personalized discovery page.
+
+![GameLibrary Discover page](docs/screenshots/discover.jpg)
+
+### Library
+
+Search, sort, filter, and switch views across the complete game collection.
+
+![GameLibrary Library page](docs/screenshots/library.jpg)
+
+### Game details
+
+Review metadata, editions, collections, play-time estimates, downloads, updates,
+and issue reporting from a focused storefront view.
+
+![GameLibrary game details page](docs/screenshots/game-details.jpg)
 
 ## Features
 
