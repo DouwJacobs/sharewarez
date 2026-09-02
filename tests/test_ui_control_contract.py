@@ -3,6 +3,8 @@ from pathlib import Path
 
 THEME_SOURCE = Path("sharewarez/setup/default_theme/css/components.css")
 THEME_INSTALLED = Path("sharewarez/static/library/themes/default/css/components.css")
+REQUESTS_SOURCE = Path("sharewarez/setup/default_theme/css/requests.css")
+REQUESTS_INSTALLED = Path("sharewarez/static/library/themes/default/css/requests.css")
 
 
 def test_shared_control_contract_is_present_and_synchronized():
@@ -32,3 +34,16 @@ def test_nested_empty_and_table_surfaces_are_flattened():
     assert ".app-surface .table-responsive" in css
     assert "background: transparent !important" in css
     assert "box-shadow: none !important" in css
+
+
+def test_request_search_shell_owns_its_inner_input_styling():
+    source = REQUESTS_SOURCE.read_text(encoding="utf-8")
+    installed = REQUESTS_INSTALLED.read_text(encoding="utf-8")
+
+    assert source == installed
+    assert "#content .requests-page .request-search-wrap input" in source
+    assert "height: 100% !important" in source
+    assert "min-height: 0 !important" in source
+    assert "border: 0 !important" in source
+    assert "background: transparent !important" in source
+    assert "box-shadow: none !important" in source
