@@ -309,10 +309,10 @@ Post-change computed-style verification found no contract failures or document-l
 
 ## Resumable download cache UI (2026-09-02)
 
-The dedicated `/admin/download-cache` Operations page uses four sibling
-`.app-surface` sections for storage health, policy, archive inventory, and resume
-guidance. It reuses shared controls and semantic status pills; no source path is
-shown outside the administrator surface. The member Downloads page now labels
+The dedicated `/admin/download-cache` Operations page uses three sibling
+`.app-surface` sections for storage health, policy, and archive inventory. It
+reuses shared controls and semantic status pills; no source path is shown
+outside the administrator surface. The member Downloads page now labels
 stable files and ready cached archives as resumable, shows archive preparation
 progress, and keeps the live-stream fallback explicit about restart behavior.
 

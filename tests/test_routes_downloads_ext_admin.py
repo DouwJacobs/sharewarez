@@ -393,6 +393,7 @@ class TestDownloadCacheAdminRoute:
         assert b'Download cache' in response.data
         assert b'Cache policy' in response.data
         assert b'Archive inventory' in response.data
+        assert b'What users should expect' not in response.data
 
 
 class TestIntegration:

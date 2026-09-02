@@ -58,3 +58,4 @@ def test_download_cache_policy_action_spans_the_form_grid():
     assert source == installed
     assert ".cache-policy-actions { display:flex;grid-column:1/-1;" in source
     assert ".cache-policy-actions,.cache-policy-actions .btn{width:100%}" in source
+    assert ".cache-help" not in source
