@@ -1,8 +1,9 @@
 """Persistent background-job queue primitives."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 import socket
+import time
 from typing import Callable
 
 from flask import current_app
@@ -70,9 +71,12 @@ def cancel_job(job: BackgroundJob):
     if job.status not in {'queued', 'running'}:
         raise ValueError('Job is not cancellable')
     job.cancel_requested = True
+    job.progress_message = 'Cancellation requested'
     if job.status == 'queued':
         job.status = 'cancelled'
         job.completed_at = datetime.now(timezone.utc)
+        job.error_message = 'Cancellation requested'
+        _mark_archive_job_terminal(job)
     db.session.commit()
     return job
 
@@ -125,15 +129,18 @@ def claim_next(worker_id: str, queue='default'):
 class JobContext:
     job_id: str
     worker_id: str
+    _last_cancel_check: float = field(default=0.0, init=False, repr=False)
 
-    def _job(self):
+    def _job(self, *, refresh=False):
         job = db.session.get(BackgroundJob, self.job_id)
+        if job is not None and refresh:
+            db.session.refresh(job)
         if job is None or job.locked_by != self.worker_id:
             raise JobCancelled("Job ownership was lost")
         return job
 
     def heartbeat(self, progress=None, message=None):
-        job = self._job()
+        job = self._job(refresh=True)
         if job.cancel_requested:
             raise JobCancelled("Cancellation requested")
         if progress is not None:
@@ -143,8 +150,12 @@ class JobContext:
         job.heartbeat_at = datetime.now(timezone.utc)
         db.session.commit()
 
-    def check_cancelled(self):
-        job = self._job()
+    def check_cancelled(self, *, force=False):
+        now = time.monotonic()
+        if not force and now - self._last_cancel_check < 1:
+            return
+        self._last_cancel_check = now
+        job = self._job(refresh=True)
         if job.cancel_requested:
             raise JobCancelled("Cancellation requested")
 
@@ -157,7 +168,7 @@ def execute(job: BackgroundJob, worker_id: str):
     context = JobContext(job.id, worker_id)
     try:
         result = handler(context, job.payload or {})
-        current = context._job()
+        current = context._job(refresh=True)
         current.status = 'completed'
         current.result = result or {}
         current.progress = 100
@@ -244,6 +255,8 @@ def recover_stale_jobs(stale_after_seconds=120):
         if job.cancel_requested:
             job.status = 'cancelled'
             job.completed_at = datetime.now(timezone.utc)
+            job.error_message = 'Cancellation requested'
+            _mark_archive_job_terminal(job)
         elif job.attempts < job.max_attempts:
             job.status = 'queued'
             job.available_at = datetime.now(timezone.utc)

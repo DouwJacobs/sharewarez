@@ -3,11 +3,15 @@ from uuid import uuid4
 from unittest.mock import patch
 
 import pytest
-from sqlalchemy import delete, func, select
+from sqlalchemy import delete, func, select, update
 
 from sharewarez import db
-from sharewarez.models import BackgroundJob, LibraryScanSchedule, LibraryScanState, User
+from sharewarez.models import (
+    BackgroundJob, DownloadArchive, LibraryScanSchedule, LibraryScanState, User,
+)
 from sharewarez.utils.background_jobs import (
+    JobCancelled,
+    JobContext,
     claim_next,
     enqueue,
     execute,
@@ -64,21 +68,68 @@ def test_job_is_claimed_and_completed(app, db_session):
         assert completed.locked_by is None
 
 
-def test_stale_job_is_requeued(app, db_session):
+def test_running_job_observes_external_cancellation(app, db_session):
+    with app.app_context():
+        job = enqueue('system.noop')
+        claimed = claim_next('test-worker')
+        context = JobContext(claimed.id, 'test-worker')
+        context.check_cancelled(force=True)
+        with db.engine.begin() as connection:
+            connection.execute(
+                update(BackgroundJob).where(BackgroundJob.id == job.id).values(
+                    cancel_requested=True,
+                )
+            )
+
+        with pytest.raises(JobCancelled, match='Cancellation requested'):
+            context.check_cancelled(force=True)
+
+
+def test_startup_requeues_running_job_immediately(app, db_session):
     with app.app_context():
         job = BackgroundJob(
             task_name='system.noop', status='running', attempts=1,
             max_attempts=3, locked_by='dead-worker',
-            heartbeat_at=datetime.now(timezone.utc) - timedelta(minutes=10),
+            heartbeat_at=datetime.now(timezone.utc),
         )
         db.session.add(job)
         db.session.commit()
 
-        assert recover_stale_jobs(stale_after_seconds=60) == 1
+        assert recover_stale_jobs(stale_after_seconds=0) == 1
         db.session.refresh(job)
         assert job.status == 'queued'
         assert job.locked_by is None
         assert job.progress_message == 'Recovered after worker interruption'
+
+
+def test_startup_does_not_requeue_cancelled_archive_job(app, db_session):
+    with app.app_context():
+        archive = DownloadArchive(
+            cache_key=uuid4().hex + uuid4().hex, source_path='/games/example',
+            display_name='example.zip',
+            state='building', source_bytes=100, file_count=1,
+        )
+        db.session.add(archive)
+        db.session.flush()
+        job = BackgroundJob(
+            task_name='download.archive.build', status='running', attempts=1,
+            max_attempts=3, locked_by='dead-worker', cancel_requested=True,
+            heartbeat_at=datetime.now(timezone.utc),
+            payload={'archive_id': archive.id},
+        )
+        db.session.add(job)
+        db.session.flush()
+        archive.build_job_id = job.id
+        db.session.commit()
+
+        assert recover_stale_jobs(stale_after_seconds=0) == 1
+        db.session.refresh(job)
+        db.session.refresh(archive)
+        assert job.status == 'cancelled'
+        assert job.locked_by is None
+        assert archive.state == 'failed'
+        assert archive.failure_code == 'build_cancelled'
+        assert archive.build_job_id is None
 
 
 def test_admin_can_list_cancel_and_retry_jobs(client, app, db_session, jobs_admin):

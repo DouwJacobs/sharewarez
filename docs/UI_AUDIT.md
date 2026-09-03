@@ -315,6 +315,9 @@ reuses shared controls and semantic status pills; no source path is shown
 outside the administrator surface. The member Downloads page now labels
 stable files and ready cached archives as resumable, shows archive preparation
 progress, and keeps the live-stream fallback explicit about restart behavior.
+Queued and running inventory rows expose a destructive Cancel action; while a
+running worker winds down, the disabled label changes to **Cancelling…** and
+the progress text continues to report its current stage.
 
 The authenticated page was visually checked at 1440 × 900 and 390 × 844 in the
 installed default dark theme. The desktop inventory owns its one horizontal

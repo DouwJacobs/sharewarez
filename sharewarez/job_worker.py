@@ -26,7 +26,10 @@ def run_worker():
     signal.signal(signal.SIGINT, stop)
 
     with app.app_context():
-        recovered = recover_stale_jobs()
+        # This deployment owns exactly one job-worker process. Any job still marked
+        # running at process startup belonged to the previous process and is recoverable
+        # immediately, including a cancellation requested just before restart.
+        recovered = recover_stale_jobs(stale_after_seconds=0)
         from sharewarez.utils.download_cache import reconcile_cache
         reconciliation = reconcile_cache()
         app.logger.info("Background worker %s started; recovered %s job(s)", worker_id, recovered)

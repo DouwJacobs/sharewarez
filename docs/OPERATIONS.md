@@ -58,13 +58,28 @@ this disposable cache and never modifies source game files.
 
 Use **Administration → Download cache** to check mount health, set the maximum
 cache size and free-space reserve, change retention, pin entries, retry failed
-builds, or evict unused archives. Cleanup runs when the worker starts, every 15
-minutes, and before a build that needs capacity. Builder concurrency is read
-when the job process starts, so restart the app container after changing it.
+builds, cancel queued/running builds, or evict unused archives. Cancellation is
+cooperative and normally takes effect within one second of active file copying;
+the worker removes the partial file and never modifies source data. A persisted
+cancellation remains cancelled across an app restart. Cleanup runs when the
+worker starts, every 15 minutes, and before a build that needs capacity. Builder
+concurrency is read when the job process starts, so restart the app container
+after changing it.
+
+Because the supported topology has one job-worker process, worker startup
+immediately recovers every job left in `running` by the previous process. Jobs
+with a persisted cancellation request become cancelled; other interrupted jobs
+return to their queue according to the normal retry policy.
 
 The cache does not need backup. After loss or eviction, members can retry their
 download to prepare it again from source. A missing ready archive is invalidated
 at worker startup instead of being served as a broken link.
+
+Archive creation uses no compression and calculates the archive SHA-256 and
+per-file CRC values during the single source-to-cache write. Finalization checks
+the ZIP index and publishes the file atomically; it does not reread every cached
+byte. Do not manually delete a `.partial` file while its build is running. Use
+the administrator Cancel action so the worker closes and removes it safely.
 
 ## Scheduled library scans
 

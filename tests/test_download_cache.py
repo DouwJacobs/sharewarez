@@ -1,4 +1,6 @@
+import hashlib
 from types import SimpleNamespace
+from unittest.mock import patch
 from uuid import uuid4
 import zipfile
 
@@ -103,6 +105,7 @@ def test_directory_request_queues_one_deduplicated_archive(db_session, app, tmp_
     db_session.commit()
 
     assert first_archive.id == second_archive.id
+    assert first_archive.format_version == 2
     assert first_request.status == second_request.status == 'processing'
     assert first_request.delivery_kind == second_request.delivery_kind == 'cached_archive'
     assert db_session.scalar(
@@ -130,7 +133,10 @@ def test_archive_build_publishes_valid_zip_and_marks_request_ready(db_session, a
         check_cancelled=lambda: None,
     )
 
-    result = build_archive(context, archive.id)
+    with patch.object(
+        zipfile.ZipFile, 'testzip', side_effect=AssertionError('full archive reread'),
+    ):
+        result = build_archive(context, archive.id)
     db_session.refresh(archive)
     db_session.refresh(download_request)
     published = tmp_path / 'cache' / archive.relative_path
@@ -140,7 +146,37 @@ def test_archive_build_publishes_valid_zip_and_marks_request_ready(db_session, a
     assert archive.sha256 and len(archive.sha256) == 64
     assert download_request.status == 'available'
     assert published.is_file()
+    with published.open('rb') as completed:
+        assert hashlib.file_digest(completed, 'sha256').hexdigest() == archive.sha256
     with zipfile.ZipFile(published) as prepared:
         assert prepared.namelist() == ['part01.bin', 'part02.bin']
         assert prepared.read('part01.bin') == (source / 'part01.bin').read_bytes()
     assert heartbeats[-1][0] == 100
+
+
+def test_admin_can_cancel_queued_archive_build(client, db_session, app, tmp_path):
+    _source, user, _game, download_request = _cache_download_fixture(
+        db_session, app, tmp_path, suffix='cancel',
+    )
+    user.role = 'admin'
+    archive = request_resumable_archive(download_request, 'cache-cancel.zip')
+    db_session.commit()
+    job_id = archive.build_job_id
+    with client.session_transaction() as session:
+        session['_user_id'] = str(user.id)
+        session['_fresh'] = True
+
+    page = client.get('/admin/download-cache')
+    assert page.status_code == 200
+    assert b'>Cancel</button>' in page.data
+    response = client.post(f'/admin/download-cache/entries/{archive.id}/cancel')
+
+    assert response.status_code == 302
+    db_session.refresh(archive)
+    db_session.refresh(download_request)
+    job = db_session.get(BackgroundJob, job_id)
+    assert job.status == 'cancelled'
+    assert archive.state == 'failed'
+    assert archive.failure_code == 'build_cancelled'
+    assert archive.build_job_id is None
+    assert download_request.status == 'failed'

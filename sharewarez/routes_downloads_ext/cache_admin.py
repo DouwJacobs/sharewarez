@@ -7,12 +7,14 @@ from sqlalchemy import func, select
 
 from sharewarez import cache, db
 from sharewarez.forms import CsrfProtectForm
-from sharewarez.models import DownloadArchive, DownloadRequest, DownloadTransfer, GlobalSettings
+from sharewarez.models import (
+    BackgroundJob, DownloadArchive, DownloadRequest, DownloadTransfer, GlobalSettings,
+)
 from sharewarez.routes_admin_ext.settings import (
     update_settings_fields, validate_settings_data,
 )
 from sharewarez.utils.auth import admin_required
-from sharewarez.utils.background_jobs import enqueue
+from sharewarez.utils.background_jobs import cancel_job, enqueue
 from sharewarez.utils.download_cache import (
     acquire_archive_lease, archive_policy, archive_summary, cleanup_cache,
     resolved_archive_path,
@@ -61,10 +63,13 @@ def manage_download_cache():
         archive.formatted_archive_bytes = format_size(archive.archive_bytes)
         archive.formatted_bytes_written = format_size(archive.bytes_written)
         archive.active_leases = active_counts.get(archive.id, 0)
+        build_job = archive.build_job
+        archive.cancel_requested = bool(build_job and build_job.cancel_requested)
         archive.progress = (
-            min(99, round(archive.bytes_written / archive.source_bytes * 100))
-            if archive.source_bytes and archive.state in {'queued', 'building'} else None
+            min(99, max(0, build_job.progress))
+            if build_job and archive.state in {'queued', 'building'} else None
         )
+        archive.progress_message = build_job.progress_message if build_job else None
     summary = archive_summary()
     for key in ('used_bytes', 'ready_bytes', 'reclaimable_bytes'):
         summary[f'formatted_{key}'] = format_size(summary[key])
@@ -182,6 +187,46 @@ def retry_download_archive(archive_id):
     ).update({'status': 'processing'}, synchronize_session=False)
     db.session.commit()
     flash('Archive preparation queued again.', 'success')
+    return redirect(url_for('download.manage_download_cache'))
+
+
+@download_bp.route('/admin/download-cache/entries/<archive_id>/cancel', methods=['POST'])
+@login_required
+@admin_required
+def cancel_download_archive(archive_id):
+    form = CsrfProtectForm()
+    if not form.validate_on_submit():
+        abort(400)
+    archive = _archive_or_404(archive_id)
+    if archive.state not in {'queued', 'building'}:
+        flash('This cache build is no longer running.', 'warning')
+        return redirect(url_for('download.manage_download_cache'))
+
+    job = db.session.get(BackgroundJob, archive.build_job_id) if archive.build_job_id else None
+    if job is None or job.status not in {'queued', 'running'}:
+        archive.state = 'failed'
+        archive.build_job_id = None
+        archive.failure_code = 'build_cancelled'
+        archive.failure_message = 'Archive preparation was cancelled by an administrator.'
+        archive.updated_at = datetime.now(timezone.utc)
+        db.session.query(DownloadRequest).filter(
+            DownloadRequest.archive_id == archive.id,
+            DownloadRequest.status == 'processing',
+        ).update({'status': 'failed'}, synchronize_session=False)
+        db.session.commit()
+        message = 'Archive preparation cancelled.'
+    else:
+        was_running = job.status == 'running'
+        cancel_job(job)
+        message = (
+            'Cancellation requested. The partial file will be removed safely.'
+            if was_running else 'Archive preparation cancelled.'
+        )
+    log_system_event(
+        f'Administrator {current_user.name} cancelled archive cache build {archive_id}',
+        event_type='audit', event_level='information',
+    )
+    flash(message, 'success')
     return redirect(url_for('download.manage_download_cache'))
 
 

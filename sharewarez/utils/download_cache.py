@@ -10,6 +10,7 @@ import shutil
 from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
 import zipfile
+import zlib
 
 from flask import current_app
 from sqlalchemy import func, select, text, update
@@ -21,7 +22,7 @@ from sharewarez.models import DownloadArchive, DownloadRequest, DownloadTransfer
 from sharewarez.utils.security import get_allowed_base_directories, is_safe_path
 
 
-ARCHIVE_FORMAT_VERSION = 1
+ARCHIVE_FORMAT_VERSION = 2
 ARCHIVE_STATES = {'queued', 'building', 'ready', 'failed', 'deleting'}
 DEFAULT_POLICY = {
     'archiveCacheMode': 'prefer',
@@ -37,6 +38,54 @@ class ArchiveCacheError(RuntimeError):
     def __init__(self, message, code='cache_error'):
         super().__init__(message)
         self.code = code
+
+
+class _HashingArchiveWriter:
+    """Hash the exact ZIP bytes as they are written without a second disk pass."""
+
+    def __init__(self, raw_file):
+        self.raw_file = raw_file
+        self.digest = hashlib.sha256()
+        self.offset = 0
+
+    def write(self, data):
+        written = self.raw_file.write(data)
+        if written:
+            self.digest.update(memoryview(data)[:written])
+            self.offset += written
+        return written
+
+    def tell(self):
+        return self.offset
+
+    def flush(self):
+        return self.raw_file.flush()
+
+    def seekable(self):
+        return False
+
+
+def _validate_archive_index(path: Path, expected_entries: list[dict]):
+    """Validate the ZIP index and per-entry metadata without rereading file bodies."""
+    try:
+        with zipfile.ZipFile(path, 'r') as candidate:
+            actual_entries = candidate.infolist()
+    except (OSError, zipfile.BadZipFile) as exc:
+        raise ArchiveCacheError('The completed archive index is invalid.', 'validation_failed') from exc
+    if len(actual_entries) != len(expected_entries):
+        raise ArchiveCacheError('The completed archive has an unexpected file count.', 'validation_failed')
+    for actual, expected in zip(actual_entries, expected_entries, strict=True):
+        if (
+            actual.filename != expected['relative_path']
+            or actual.file_size != expected['size']
+            or actual.compress_size != expected['size']
+            or actual.compress_type != zipfile.ZIP_STORED
+            or actual.CRC != expected['crc32']
+        ):
+            raise ArchiveCacheError(
+                f'Archive validation failed at {expected["relative_path"]}.',
+                'validation_failed',
+            )
 
 
 class ArchiveLease:
@@ -217,6 +266,7 @@ def request_resumable_archive(download_request: DownloadRequest, display_name=No
                     source_path=str(Path(download_request.file_location).resolve()),
                     display_name=safe_name,
                     state='queued', source_bytes=source_bytes, file_count=len(entries),
+                    format_version=ARCHIVE_FORMAT_VERSION,
                 )
                 db.session.add(archive)
                 db.session.flush()
@@ -325,44 +375,60 @@ def build_archive(context, archive_id: str) -> dict:
         final = root / f'{archive.cache_key}.zip'
         written_source = 0
         last_heartbeat = 0
-        with zipfile.ZipFile(partial, 'w', compression=zipfile.ZIP_STORED, allowZip64=True) as output:
-            for index, entry in enumerate(entries, start=1):
-                context.check_cancelled()
-                current = Path(entry['path']).stat()
-                if current.st_size != entry['size'] or current.st_mtime_ns != entry['mtime_ns']:
-                    raise ArchiveCacheError('Source files changed during preparation.', 'source_changed')
-                archive_info = zipfile.ZipInfo.from_file(
-                    entry['path'], arcname=entry['relative_path'], strict_timestamps=False,
-                )
-                archive_info.compress_type = zipfile.ZIP_STORED
-                with Path(entry['path']).open('rb') as source_file:
-                    with output.open(archive_info, 'w', force_zip64=True) as archive_file:
-                        for chunk in iter(lambda: source_file.read(2 * 1024 * 1024), b''):
-                            context.check_cancelled()
-                            archive_file.write(chunk)
-                            written_source += len(chunk)
-                            progress = min(
-                                94, max(1, round(written_source / max(1, source_bytes) * 94)),
-                            )
-                            if progress != last_heartbeat:
-                                archive.bytes_written = partial.stat().st_size
-                                archive.updated_at = datetime.now(timezone.utc)
-                                context.heartbeat(progress, f'Adding file {index} of {len(entries)}')
-                                last_heartbeat = progress
-                after = Path(entry['path']).stat()
-                if after.st_size != entry['size'] or after.st_mtime_ns != entry['mtime_ns']:
-                    raise ArchiveCacheError('Source files changed during preparation.', 'source_changed')
-        context.heartbeat(95, 'Validating archive')
-        with zipfile.ZipFile(partial, 'r') as candidate:
-            bad_entry = candidate.testzip()
-            if bad_entry:
-                raise ArchiveCacheError(f'Archive validation failed at {bad_entry}.', 'validation_failed')
-        digest = hashlib.sha256()
-        with partial.open('rb') as completed:
-            for chunk in iter(lambda: completed.read(2 * 1024 * 1024), b''):
-                digest.update(chunk)
-        with partial.open('rb+') as completed:
+        expected_entries = []
+        with partial.open('wb') as completed:
+            writer = _HashingArchiveWriter(completed)
+            with zipfile.ZipFile(
+                writer, 'w', compression=zipfile.ZIP_STORED, allowZip64=True,
+            ) as output:
+                for index, entry in enumerate(entries, start=1):
+                    context.check_cancelled()
+                    current = Path(entry['path']).stat()
+                    if current.st_size != entry['size'] or current.st_mtime_ns != entry['mtime_ns']:
+                        raise ArchiveCacheError('Source files changed during preparation.', 'source_changed')
+                    archive_info = zipfile.ZipInfo.from_file(
+                        entry['path'], arcname=entry['relative_path'], strict_timestamps=False,
+                    )
+                    archive_info.compress_type = zipfile.ZIP_STORED
+                    entry_crc = 0
+                    with Path(entry['path']).open('rb') as source_file:
+                        with output.open(archive_info, 'w', force_zip64=True) as archive_file:
+                            for chunk in iter(lambda: source_file.read(2 * 1024 * 1024), b''):
+                                context.check_cancelled()
+                                archive_file.write(chunk)
+                                entry_crc = zlib.crc32(chunk, entry_crc)
+                                written_source += len(chunk)
+                                progress = min(
+                                    97, max(1, round(written_source / max(1, source_bytes) * 97)),
+                                )
+                                if progress != last_heartbeat:
+                                    archive.bytes_written = writer.tell()
+                                    archive.updated_at = datetime.now(timezone.utc)
+                                    context.heartbeat(
+                                        progress, f'Adding file {index} of {len(entries)}',
+                                    )
+                                    last_heartbeat = progress
+                    expected_crc = entry_crc & 0xffffffff
+                    if archive_info.file_size != entry['size'] or archive_info.CRC != expected_crc:
+                        raise ArchiveCacheError(
+                            f'Archive write verification failed at {entry["relative_path"]}.',
+                            'validation_failed',
+                        )
+                    expected_entries.append({
+                        'relative_path': entry['relative_path'],
+                        'size': entry['size'],
+                        'crc32': expected_crc,
+                    })
+                    after = Path(entry['path']).stat()
+                    if after.st_size != entry['size'] or after.st_mtime_ns != entry['mtime_ns']:
+                        raise ArchiveCacheError('Source files changed during preparation.', 'source_changed')
+            completed.flush()
             os.fsync(completed.fileno())
+            archive_digest = writer.digest.hexdigest()
+            archive_size = writer.tell()
+        context.heartbeat(98, 'Checking archive index')
+        _validate_archive_index(partial, expected_entries)
+        context.heartbeat(99, 'Publishing resumable archive')
         os.replace(partial, final)
         directory_fd = os.open(root, os.O_RDONLY)
         try:
@@ -372,9 +438,9 @@ def build_archive(context, archive_id: str) -> dict:
         now = datetime.now(timezone.utc)
         archive.state = 'ready'
         archive.relative_path = final.name
-        archive.archive_bytes = final.stat().st_size
+        archive.archive_bytes = archive_size
         archive.bytes_written = archive.archive_bytes
-        archive.sha256 = digest.hexdigest()
+        archive.sha256 = archive_digest
         archive.ready_at = archive.updated_at = archive.last_accessed_at = now
         archive.build_job_id = None
         requests = db.session.execute(
@@ -400,6 +466,9 @@ def build_archive(context, archive_id: str) -> dict:
         if partial is not None:
             partial.unlink(missing_ok=True)
         db.session.rollback()
+        from sharewarez.utils.background_jobs import JobCancelled
+        if isinstance(exc, JobCancelled):
+            raise
         archive = db.session.get(DownloadArchive, archive_id)
         if archive is not None:
             archive.state = 'failed'

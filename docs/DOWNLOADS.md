@@ -24,8 +24,10 @@ fallback. Those live ZIP streams do not advertise byte ranges and must restart
 after interruption because each request generates a new byte stream. Operators
 can disable caching or require resumable preparation from **Administration →
 Download cache**. That page also controls capacity, minimum free space,
-retention, build concurrency, fallback availability, pinning, retries, and
-eviction. See [`DOWNLOAD_ARCHIVE_CACHE_SPEC.md`](DOWNLOAD_ARCHIVE_CACHE_SPEC.md)
+retention, build concurrency, fallback availability, build cancellation,
+pinning, retries, and eviction. Cache builds use ZIP `STORED` (no compression)
+and calculate integrity metadata while writing, so finalization does not reread
+the full archive. See [`DOWNLOAD_ARCHIVE_CACHE_SPEC.md`](DOWNLOAD_ARCHIVE_CACHE_SPEC.md)
 for the full lifecycle and safety contract.
 
 Administrators can configure a per-user concurrent-transfer cap and a

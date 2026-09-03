@@ -124,7 +124,10 @@ Additional settings:
 | `archiveCacheBuildConcurrency` | 1 | 1–4 | Maximum simultaneous archive builds |
 | `archiveCacheFallbackEnabled` | true | boolean | Show non-resumable fallback in `prefer` mode |
 
-The first release always uses ZIP `STORED` entries with ZIP64 enabled. Game releases are
+Archive format version 2 uses sequential ZIP `STORED` entries with ZIP64 enabled and
+calculates its strong digest during the write. Existing version 1 archives remain valid
+and reusable; the versioned manifest ensures a newly requested or rebuilt source cannot
+silently substitute different bytes under an older cache identity. Game releases are
 usually already compressed; recompression wastes CPU, increases preparation time, and
 makes capacity estimates less predictable. Compression controls should not be exposed in
 the first administration page.
@@ -230,8 +233,9 @@ Build algorithm:
    with cancellation.
 8. Re-stat source entries. If changed, delete the partial and retry once with a new
    manifest.
-9. Close and test the central directory, reopen the ZIP, validate every entry header and
-   CRC, flush, and fsync.
+9. Calculate each entry CRC and the final archive SHA-256 during the write, close and
+   reopen the ZIP index, compare every entry's name, size, storage method, and CRC, then
+   flush and fsync. Do not reread every file body during finalization.
 10. Atomically rename to `<cache-key>.zip`, fsync the directory, and commit `ready`, size,
     digest, and timestamps in one database transaction.
 11. Wake polling user pages through their normal status request. Create one deduplicated
@@ -336,6 +340,7 @@ Initial route/API contract:
 | `POST /admin/download-cache/cleanup` | Enqueue one deduplicated cleanup job |
 | `POST /admin/download-cache/entries/<id>/verify` | Enqueue integrity verification |
 | `POST /admin/download-cache/entries/<id>/retry` | Retry a failed or missing build |
+| `POST /admin/download-cache/entries/<id>/cancel` | Cooperatively cancel a queued or running build |
 | `POST /admin/download-cache/entries/<id>/pin` | Set the explicit pin state |
 | `DELETE /admin/download-cache/entries/<id>` | Evict one eligible entry |
 | `DELETE /admin/download-cache/unused` | Evict eligible unpinned entries only |
