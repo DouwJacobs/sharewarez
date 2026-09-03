@@ -57,7 +57,11 @@ assigned the default seven-day window during migration.
 
 Every active transfer persists its streamed-byte count and activity heartbeat
 approximately once per second. **Administration → Downloads** polls these rows
-to show the active user, filename, elapsed time, bytes sent, and progress.
+with one non-overlapping request every two seconds to show the active user,
+filename, readable elapsed time, bytes sent, and progress. The elapsed clock
+advances in the browser between responses, so it remains smooth without adding
+database writes. Polling pauses while the page is hidden and resumes as soon as
+the administrator returns.
 Transfers without a heartbeat for 60 seconds are marked interrupted and their
 unused quota reservation is released. This monitoring state is shared by all
 web workers. An administrator can cancel an active transfer; the stream notices

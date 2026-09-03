@@ -327,3 +327,13 @@ document-level horizontal overflow. The single mobile gutter and bottom-nav
 clearance remain intact. No light theme is installed in this workspace, so a
 light-theme visual pass was not available; all route styles use shared theme
 tokens rather than dark palette literals.
+
+## Active transfer monitor refresh (2026-09-03)
+
+The administrator Download Delivery monitor uses one non-overlapping refresh
+loop, pauses network requests while its tab is hidden, and refreshes immediately
+when the administrator returns. Transfer data is explicitly non-cacheable. The
+elapsed clock advances locally once per second between server responses and uses
+compact durations such as **17m 16s** or **2h 14m** instead of an ever-growing
+raw seconds value. Existing transfer rows remain visible during a transient
+refresh failure.

@@ -6,7 +6,7 @@ from sharewarez.models import User, DownloadRequest, DownloadTransfer, Game, Gam
 from sharewarez.platform import LibraryPlatform
 from sharewarez import db
 from uuid import uuid4
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 
 @pytest.fixture
@@ -189,6 +189,47 @@ class TestManageDownloadsRoute:
         assert b'partial-test-game.zip' in response.data
         assert b'Completed' in response.data
         assert b'Interrupted' in response.data
+
+    def test_active_transfer_feed_is_fresh_and_uses_readable_elapsed_time(
+        self, client, admin_user, db_session, regular_user, sample_download_request
+    ):
+        transfer = DownloadTransfer(
+            user_id=regular_user.id,
+            download_request_id=sample_download_request.id,
+            filename='large-game.zip',
+            reserved_bytes=4096,
+            bytes_sent=1024,
+            status='active',
+            started_at=datetime.now(timezone.utc) - timedelta(seconds=1036),
+            last_activity_at=datetime.now(timezone.utc),
+        )
+        db_session.add(transfer)
+        db_session.commit()
+        with client.session_transaction() as session:
+            session['_user_id'] = str(admin_user.id)
+
+        response = client.get('/admin/active-transfers')
+
+        assert response.status_code == 200
+        assert response.cache_control.no_store is True
+        payload = response.get_json()['transfers']
+        item = next(entry for entry in payload if entry['id'] == transfer.id)
+        assert item['filename'] == 'large-game.zip'
+        assert item['elapsed_label'] in {'17m 16s', '17m 17s'}
+        assert 1036 <= item['elapsed_seconds'] <= 1037
+
+    def test_active_transfer_monitor_uses_non_overlapping_live_refresh(self, client, admin_user):
+        with client.session_transaction() as session:
+            session['_user_id'] = str(admin_user.id)
+
+        response = client.get('/admin/manage-downloads')
+
+        assert response.status_code == 200
+        assert b"cache: 'no-store'" in response.data
+        assert b'activeTransferRefreshRunning' in response.data
+        assert b'setTimeout(refreshActiveTransfers' in response.data
+        assert b'formatTransferDuration' in response.data
+        assert b'${transfer.elapsed_seconds}s' not in response.data
 
     def test_transfer_keeps_game_attribution_after_request_is_deleted(
         self, client, admin_user, db_session, regular_user, sample_download_request, test_game

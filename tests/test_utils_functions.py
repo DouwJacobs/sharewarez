@@ -12,7 +12,7 @@ from wtforms.validators import ValidationError
 from sharewarez import create_app, db
 from sharewarez.models import ReleaseGroup, Library, Game, GlobalSettings, User
 from sharewarez.utils.functions import (
-    format_size, square_image, get_folder_size_in_bytes, get_folder_size_in_bytes_updates,
+    format_duration, format_size, square_image, get_folder_size_in_bytes, get_folder_size_in_bytes_updates,
     read_first_nfo_content, download_image, comma_separated_urls, website_category_to_string,
     PLATFORM_IDS, load_scanning_filter_patterns, get_library_count, get_games_count,
     delete_associations_for_game, sanitize_string_input, validate_discord_webhook_url,
@@ -97,6 +97,23 @@ def sample_global_settings(db_session):
     db_session.add(settings)
     db_session.commit()
     return settings
+
+
+class TestFormatDuration:
+    def test_formats_seconds_and_minutes(self):
+        assert format_duration(0) == '0s'
+        assert format_duration(59) == '59s'
+        assert format_duration(60) == '1m'
+        assert format_duration(1036) == '17m 16s'
+
+    def test_keeps_long_durations_compact(self):
+        assert format_duration(3600) == '1h'
+        assert format_duration(7265) == '2h 1m'
+        assert format_duration(90000) == '1d 1h'
+
+    def test_handles_invalid_or_negative_values(self):
+        assert format_duration(-5) == '0s'
+        assert format_duration(None) == '0s'
 
 
 class TestFormatSize:

@@ -31,6 +31,25 @@ def format_size(size_in_bytes):
         return 'Unknown size'
 
 
+def format_duration(total_seconds):
+    """Format an elapsed duration for compact status displays."""
+    try:
+        seconds = max(0, int(total_seconds))
+    except (TypeError, ValueError, OverflowError):
+        seconds = 0
+
+    days, remainder = divmod(seconds, 86400)
+    hours, remainder = divmod(remainder, 3600)
+    minutes, seconds = divmod(remainder, 60)
+    if days:
+        return f"{days}d {hours}h" if hours else f"{days}d"
+    if hours:
+        return f"{hours}h {minutes}m" if minutes else f"{hours}h"
+    if minutes:
+        return f"{minutes}m {seconds}s" if seconds else f"{minutes}m"
+    return f"{seconds}s"
+
+
 def square_image(image, size):
     """Create a square image with the given size."""
     image.thumbnail((size, size))

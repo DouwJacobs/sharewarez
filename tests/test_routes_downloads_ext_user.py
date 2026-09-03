@@ -168,6 +168,7 @@ class TestDownloadsRoute:
         response = client.get('/downloads/active-transfers')
 
         assert response.status_code == 200
+        assert response.cache_control.no_store is True
         transfers = response.get_json()['transfers']
         assert len(transfers) == 1
         assert transfers[0]['download_request_id'] == sample_download_request.id

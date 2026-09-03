@@ -109,7 +109,7 @@ def user_active_transfers():
             DownloadTransfer.download_request_id.is_not(None),
         )
     ).scalars().all()
-    return jsonify({'transfers': [{
+    response = jsonify({'transfers': [{
         'download_request_id': transfer.download_request_id,
         'bytes_sent': transfer.bytes_sent,
         'expected_bytes': transfer.reserved_bytes,
@@ -120,6 +120,8 @@ def user_active_transfers():
             if transfer.reserved_bytes else None
         ),
     } for transfer in transfers]})
+    response.headers['Cache-Control'] = 'no-store'
+    return response
 
 @download_bp.route('/downloads/<int:download_id>/cancel', methods=['POST'])
 @login_required

@@ -7,7 +7,7 @@ from sqlalchemy import and_, delete, select, update
 from sqlalchemy.orm import joinedload
 from sharewarez.utils.auth import admin_required
 from sharewarez.utils.event_logging import log_system_event
-from sharewarez.utils.functions import format_size
+from sharewarez.utils.functions import format_duration, format_size
 from sharewarez import db
 from sharewarez.utils.download_limits import expire_download_requests, mark_stale_transfers
 from . import download_bp
@@ -148,26 +148,28 @@ def active_transfers():
         .order_by(DownloadTransfer.started_at.asc(), DownloadTransfer.id.asc())
     ).scalars().all()
     now = datetime.now(timezone.utc)
-    return jsonify({
-        'transfers': [
-            {
-                'id': transfer.id,
-                'username': transfer.user.name,
-                'filename': transfer.filename,
-                'bytes_sent': transfer.bytes_sent,
-                'expected_bytes': transfer.reserved_bytes,
-                'bytes_sent_label': format_size(transfer.bytes_sent) if transfer.bytes_sent else '0 B',
-                'expected_bytes_label': format_size(transfer.reserved_bytes) if transfer.reserved_bytes else None,
-                'progress': (
-                    min(100, round(transfer.bytes_sent / transfer.reserved_bytes * 100, 1))
-                    if transfer.reserved_bytes else None
-                ),
-                'elapsed_seconds': max(0, int((now - transfer.started_at).total_seconds())),
-                'last_activity_at': transfer.last_activity_at.isoformat(),
-            }
-            for transfer in transfers
-        ]
-    })
+    payload = []
+    for transfer in transfers:
+        elapsed_seconds = max(0, int((now - transfer.started_at).total_seconds()))
+        payload.append({
+            'id': transfer.id,
+            'username': transfer.user.name,
+            'filename': transfer.filename,
+            'bytes_sent': transfer.bytes_sent,
+            'expected_bytes': transfer.reserved_bytes,
+            'bytes_sent_label': format_size(transfer.bytes_sent) if transfer.bytes_sent else '0 B',
+            'expected_bytes_label': format_size(transfer.reserved_bytes) if transfer.reserved_bytes else None,
+            'progress': (
+                min(100, round(transfer.bytes_sent / transfer.reserved_bytes * 100, 1))
+                if transfer.reserved_bytes else None
+            ),
+            'elapsed_seconds': elapsed_seconds,
+            'elapsed_label': format_duration(elapsed_seconds),
+            'last_activity_at': transfer.last_activity_at.isoformat(),
+        })
+    response = jsonify({'transfers': payload})
+    response.headers['Cache-Control'] = 'no-store'
+    return response
 
 @download_bp.route('/delete_download_request/<int:request_id>', methods=['POST'])
 @login_required
