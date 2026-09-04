@@ -91,7 +91,7 @@ python3 -m sharewarez.job_worker &
 job_pid=$!
 
 echo "Starting ${WEB_WORKERS} web worker(s)..."
-uvicorn asgi:asgi_app --host 0.0.0.0 --port 5006 --workers "$WEB_WORKERS" &
+uvicorn asgi:asgi_app --host 0.0.0.0 --port 5006 --workers "$WEB_WORKERS" --timeout-graceful-shutdown 30 &
 web_pid=$!
 
 # The two processes form one application unit. If either exits unexpectedly,

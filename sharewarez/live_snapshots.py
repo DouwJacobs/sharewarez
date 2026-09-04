@@ -106,28 +106,38 @@ def transfer_payload(transfer, now, *, admin=False):
     return result
 
 
-def snapshot(app, scope, view, ids):
-    """Own session per background-thread invocation; no session held while streaming."""
+def snapshot(app, scope, view, ids, *, cache=None):
+    """Reauthorize every call; share only short-lived, correctly scoped data."""
     with app.app_context():
         user = authenticate(app, scope, view)
-        now = datetime.now(timezone.utc)
-        result = {"user_id": user.id, "view": view, "server_time": now.isoformat()}
-        if view in {"downloads", "activity"}:
-            query = select(DownloadTransfer).where(DownloadTransfer.status == "active")
-            if view == "downloads":
-                query = query.where(DownloadTransfer.user_id == user.id)
-            else:
-                query = query.options(joinedload(DownloadTransfer.user))
-            transfers = db.session.execute(query.order_by(DownloadTransfer.id).limit(1001)).scalars().all()
-            result["transfers_truncated"] = len(transfers) > 1000
-            result["transfers"] = [transfer_payload(item, now, admin=view == "activity") for item in transfers[:1000]]
+        user_id = user.id
+        # Release the authentication transaction before waiting for the cache lock.
+        db.session.remove()
+        key = (view, user_id if view == "downloads" else None, tuple(sorted(ids)))
+        loader = lambda: snapshot_data(view, ids, user_id)
+        data = cache.get(key, loader) if cache is not None else loader()
+        return {**data, "user_id": user_id}
+
+
+def snapshot_data(view, ids, user_id):
+    now = datetime.now(timezone.utc)
+    result = {"view": view, "server_time": now.isoformat()}
+    if view in {"downloads", "activity"}:
+        query = select(DownloadTransfer).where(DownloadTransfer.status == "active")
         if view == "downloads":
-            from sharewarez.utils.download_cache import archive_policy
-            downloads = db.session.execute(select(DownloadRequest).options(joinedload(DownloadRequest.archive)).where(
-                DownloadRequest.user_id == user.id, DownloadRequest.id.in_(ids),
-            )).scalars().all()
-            policy = archive_policy()
-            result["downloads"] = [download_payload(item, policy) for item in downloads]
-        if view == "cache":
-            result.update(cache_payload(ids))
-        return result
+            query = query.where(DownloadTransfer.user_id == user_id)
+        else:
+            query = query.options(joinedload(DownloadTransfer.user))
+        transfers = db.session.execute(query.order_by(DownloadTransfer.id).limit(1001)).scalars().all()
+        result["transfers_truncated"] = len(transfers) > 1000
+        result["transfers"] = [transfer_payload(item, now, admin=view == "activity") for item in transfers[:1000]]
+    if view == "downloads":
+        from sharewarez.utils.download_cache import archive_policy
+        downloads = db.session.execute(select(DownloadRequest).options(joinedload(DownloadRequest.archive)).where(
+            DownloadRequest.user_id == user_id, DownloadRequest.id.in_(ids),
+        )).scalars().all()
+        policy = archive_policy()
+        result["downloads"] = [download_payload(item, policy) for item in downloads]
+    if view == "cache":
+        result.update(cache_payload(ids))
+    return result

@@ -101,4 +101,4 @@ if __name__ == "__main__":
     threading.Thread(target=simulate, daemon=True).start()
     application = LazyASGIApp()
     application._flask_app = app
-    uvicorn.run(application, host="0.0.0.0", port=5007, access_log=False)
+    uvicorn.run(application, host="0.0.0.0", port=5007, access_log=False, timeout_graceful_shutdown=3)

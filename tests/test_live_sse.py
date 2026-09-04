@@ -79,6 +79,60 @@ def test_slow_client_times_out_and_releases_connection():
     asyncio.run(run())
 
 
+def test_sse_central_security_headers_and_correlation():
+    async def run():
+        messages = []
+        async def send(message):
+            messages.append(message)
+        service = stream(lambda *args: {'user_id':1})
+        await service(scope(method='POST', scheme='https', headers=[(b'x-request-id',b'live-test-123')]), None, send)
+        headers = dict(messages[0]['headers'])
+        assert headers[b'x-request-id'] == b'live-test-123'
+        assert b'server-timing' in headers
+        assert headers[b'x-content-type-options'] == b'nosniff'
+        assert b'content-security-policy' in headers and b'strict-transport-security' in headers
+    asyncio.run(run())
+
+
+def test_close_wakes_idle_stream_and_completes_response():
+    async def run():
+        service = stream(lambda *args: {'user_id':1})
+        service.heartbeat = 100
+        started = asyncio.Event()
+        messages = []
+        async def send(message):
+            messages.append(message)
+            if message['type'] == 'http.response.body': started.set()
+        async def receive():
+            await asyncio.Future()
+        task = asyncio.create_task(service(scope(), receive, send))
+        await asyncio.wait_for(started.wait(),1)
+        await service.close()
+        await asyncio.wait_for(task,1)
+        assert messages[-1].get('more_body') is False
+        assert not service.hub._subscriptions
+    asyncio.run(run())
+
+
+def test_asgi_lifespan_does_not_replace_server_signal_handlers(monkeypatch):
+    from unittest.mock import AsyncMock, Mock
+    from asgi import LazyASGIApp
+    import signal
+    monkeypatch.setattr('sharewarez.utils.shutdown.request_shutdown', Mock())
+    async def run():
+        before = signal.getsignal(signal.SIGINT)
+        app = LazyASGIApp()
+        app._download_events = Mock(close=AsyncMock())
+        messages = iter([{'type':'lifespan.startup'},{'type':'lifespan.shutdown'}])
+        async def receive(): return next(messages)
+        send = AsyncMock()
+        await app({'type':'lifespan'}, receive, send)
+        assert [call.args[0]['type'] for call in send.call_args_list] == ['lifespan.startup.complete','lifespan.shutdown.complete']
+        app._download_events.close.assert_awaited_once()
+        assert signal.getsignal(signal.SIGINT) is before
+    asyncio.run(run())
+
+
 def test_disconnect_during_idle_does_not_wait_for_heartbeat():
     async def run():
         service = stream(lambda *args: {"user_id": 1})
@@ -173,3 +227,20 @@ def test_cache_snapshot_stage_leases_and_admin_only_polling(app, db_session, cli
     user.role = 'user'; db_session.commit()
     denied = client.get('/admin/download-cache/status?ids=' + archive.id)
     assert denied.status_code == 302 and denied.json is None
+
+
+def test_shared_snapshot_cache_never_caches_authorization(app, db_session):
+    from sharewarez.live_snapshot_cache import SnapshotCache
+    suffix = uuid4().hex
+    user = User(name=f'cached-admin-{suffix}', email=f'{suffix}@example.test', role='admin',
+                state=True, password_hash='test')
+    db_session.add(user); db_session.commit()
+    user_id = user.id
+    token = app.session_interface.get_signing_serializer(app).dumps({'_user_id': str(user_id)})
+    request_scope = scope(headers=[(b'cookie', f'session={token}'.encode())])
+    cache = SnapshotCache(ttl=60)
+    snapshot(app, request_scope, 'activity', (), cache=cache)
+    db_session.get(User, user_id).role = 'user'
+    db_session.commit()
+    with pytest.raises(LiveAccessDenied):
+        snapshot(app, request_scope, 'activity', (), cache=cache)

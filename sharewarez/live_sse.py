@@ -3,6 +3,8 @@
 import asyncio
 import contextlib
 import json
+import logging
+import time
 from urllib.parse import parse_qs, urlsplit
 
 from sqlalchemy.engine import make_url
@@ -10,26 +12,57 @@ from werkzeug.sansio.utils import host_is_trusted
 
 from sharewarez.live_events import ConnectionLimitError, LiveEventHub, PostgresEventListener
 from sharewarez.live_snapshots import LiveAccessDenied, snapshot
+from sharewarez.live_snapshot_cache import SnapshotCache
+from sharewarez.security import security_headers
+from sharewarez.observability import normalize_request_id
 
 
 class DownloadEventStream:
     def __init__(self, app, *, snapshotter=snapshot, interval=1.0, heartbeat=15.0, send_timeout=10.0):
         self.app = app
-        self.snapshotter = snapshotter
+        self.cache = SnapshotCache()
+        self.snapshotter = (lambda *args: snapshot(*args, cache=self.cache)) if snapshotter is snapshot else snapshotter
         self.interval = interval
         self.heartbeat = heartbeat
         self.send_timeout = send_timeout
         self.hub = LiveEventHub()
+        self._initializing = 0
+        self._closing = False
         url = make_url(app.config["SQLALCHEMY_DATABASE_URI"]).set(drivername="postgresql")
         self.listener = PostgresEventListener(url.render_as_string(hide_password=False), self.hub)
 
     async def close(self):
+        self._closing = True
+        self.hub.signal()
         await asyncio.to_thread(self.listener.stop)
 
     async def _send(self, send, message):
         await asyncio.wait_for(send(message), self.send_timeout)
 
     async def __call__(self, scope, receive, send):
+        started = time.perf_counter()
+        request_id = normalize_request_id(dict(scope.get('headers', [])).get(b'x-request-id', b'').decode('latin1'))
+        response_status = 500
+        async def traced_send(message):
+            nonlocal response_status
+            if message['type'] == 'http.response.start':
+                response_status = message['status']
+                headers = dict(message.get('headers', []))
+                for name, value in security_headers(self.app, secure=scope.get('scheme') == 'https').items():
+                    headers.setdefault(name.lower().encode(), value.encode())
+                headers[b'x-request-id'] = request_id.encode()
+                headers[b'server-timing'] = f'app;dur={(time.perf_counter() - started) * 1000:.2f}'.encode()
+                message = {**message, 'headers': list(headers.items())}
+            await send(message)
+        try:
+            await self._serve(scope, receive, traced_send)
+        finally:
+            logging.getLogger('gamelibrary.request').info('live stream closed', extra={
+                'request_id': request_id, 'method': scope['method'], 'path': '/api/live/downloads',
+                'status': response_status, 'duration_ms': round((time.perf_counter() - started) * 1000, 2),
+            })
+
+    async def _serve(self, scope, receive, send):
         headers = dict(scope.get("headers", []))
         host = headers.get(b"host", b"").decode("latin1")
         origin = headers.get(b"origin", b"").decode("latin1")
@@ -63,6 +96,11 @@ class DownloadEventStream:
         if status:
             await self._error(send, status)
             return
+        # Admission preparation itself must be bounded, before launching DB work.
+        if self._closing or self._initializing >= 16:
+            await self._error(send, 429)
+            return
+        self._initializing += 1
         try:
             initial = await asyncio.to_thread(self.snapshotter, self.app, scope, view, ids)
         except LiveAccessDenied as error:
@@ -72,6 +110,8 @@ class DownloadEventStream:
             self.app.logger.warning("Live download snapshot unavailable")
             await self._error(send, 503)
             return
+        finally:
+            self._initializing -= 1
         topics = {"transfers", "downloads", "archives"} if view == "downloads" else (
             {"transfers"} if view == "activity" else {"archives", "transfers"}
         )
@@ -93,13 +133,13 @@ class DownloadEventStream:
                 (b"x-content-type-options", b"nosniff"),
             ]})
             data = initial
-            while not disconnect.done():
+            while not disconnect.done() and not self._closing:
                 await self._send(send, {"type": "http.response.body", "more_body": True,
                     "body": b"retry: 3000\nevent: snapshot\ndata: " + json.dumps(data, separators=(",", ":")).encode() + b"\n\n"})
                 # Clear before fetching the NEXT snapshot, not afterwards: changes
                 # during the query must remain dirty for a subsequent refresh.
                 await asyncio.wait({disconnect}, timeout=self.interval)
-                if disconnect.done():
+                if disconnect.done() or self._closing:
                     break
                 changed = asyncio.create_task(subscription.changed.wait())
                 try:
@@ -108,11 +148,13 @@ class DownloadEventStream:
                     changed.cancel()
                     with contextlib.suppress(asyncio.CancelledError):
                         await changed
-                if disconnect.done():
+                if disconnect.done() or self._closing:
                     break
                 subscription.changed.clear()
                 # Timed snapshots act as heartbeats, reauthorize, and recover lost signals.
                 data = await asyncio.to_thread(self.snapshotter, self.app, scope, view, ids)
+            if not disconnect.done():
+                await self._send(send, {"type": "http.response.body", "body": b"", "more_body": False})
         except LiveAccessDenied:
             await self._send(send, {"type": "http.response.body", "body": b"event: access-revoked\ndata: {}\n\n", "more_body": False})
         except (TimeoutError, ConnectionError):

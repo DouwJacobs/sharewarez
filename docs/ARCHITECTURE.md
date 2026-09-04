@@ -21,6 +21,9 @@ authentication, accessibility, offline, deployment, and migration design.
 
 ## Download live updates (implementation in progress)
 
+Operator settings, measured costs and current verification status are recorded in
+`docs/LIVE_DOWNLOAD_UPDATES.md`.
+
 SSE will run directly under ASGI rather than occupying the serialized Flask WSGI
 adapter for the lifetime of each connection. PostgreSQL remains the source of
 truth; no Redis or additional container is required.

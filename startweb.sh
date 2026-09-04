@@ -105,6 +105,7 @@ if [[ "$RELOAD_MODE" == "true" || "$RELOAD_MODE" == "1" || "$RELOAD_MODE" == "ye
     uvicorn asgi:asgi_app \
         --host 0.0.0.0 \
         --port "$PORT" \
+        --timeout-graceful-shutdown 30 \
         --reload \
         --reload-dir . \
         --reload-include '*.py' \
@@ -114,5 +115,5 @@ if [[ "$RELOAD_MODE" == "true" || "$RELOAD_MODE" == "1" || "$RELOAD_MODE" == "ye
         --reload-include '*.json'
 else
     echo "🚀 Hot reload disabled (${WEB_WORKERS:-4} workers)"
-    uvicorn asgi:asgi_app --host 0.0.0.0 --port "$PORT" --workers "${WEB_WORKERS:-4}"
+    uvicorn asgi:asgi_app --host 0.0.0.0 --port "$PORT" --workers "${WEB_WORKERS:-4}" --timeout-graceful-shutdown 30
 fi

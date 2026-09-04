@@ -25,3 +25,4 @@ def test_application_startup_supervises_web_and_job_processes():
     assert 'uvicorn asgi:asgi_app' in startup
     assert 'wait -n "$web_pid" "$job_pid"' in startup
     assert 'stop_children' in startup
+    assert '--timeout-graceful-shutdown 30' in startup

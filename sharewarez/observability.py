@@ -31,11 +31,14 @@ class JsonFormatter(logging.Formatter):
         return json.dumps(payload, ensure_ascii=False)
 
 
-def _request_id():
-    supplied = request.headers.get('X-Request-ID', '')
+def normalize_request_id(supplied):
     if _REQUEST_ID_PATTERN.fullmatch(supplied):
         return supplied
     return uuid4().hex
+
+
+def _request_id():
+    return normalize_request_id(request.headers.get('X-Request-ID', ''))
 
 
 def init_observability(app):

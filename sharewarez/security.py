@@ -9,6 +9,20 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 limiter = Limiter(key_func=get_remote_address)
 
 
+def security_headers(app, *, secure=False):
+    """One response-header policy for Flask and direct ASGI responses."""
+    headers = {
+        'X-Content-Type-Options': 'nosniff', 'X-Frame-Options': 'SAMEORIGIN',
+        'Referrer-Policy': 'strict-origin-when-cross-origin',
+        'Permissions-Policy': 'camera=(), microphone=(), geolocation=(), payment=(), usb=()',
+        'Cross-Origin-Opener-Policy': 'same-origin',
+        'Content-Security-Policy': app.config.get('SECURITY_CSP', "default-src 'self'"),
+    }
+    if secure and app.config.get('SECURITY_HSTS_ENABLED', True):
+        headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
+    return headers
+
+
 def init_http_security(app):
     """Install proxy handling, request limits, and response security headers."""
     proxy_count = app.config.get('TRUST_PROXY_COUNT', 0)
@@ -25,17 +39,6 @@ def init_http_security(app):
 
     @app.after_request
     def add_security_headers(response):
-        response.headers.setdefault('X-Content-Type-Options', 'nosniff')
-        response.headers.setdefault('X-Frame-Options', 'SAMEORIGIN')
-        response.headers.setdefault('Referrer-Policy', 'strict-origin-when-cross-origin')
-        response.headers.setdefault(
-            'Permissions-Policy',
-            'camera=(), microphone=(), geolocation=(), payment=(), usb=()',
-        )
-        response.headers.setdefault('Cross-Origin-Opener-Policy', 'same-origin')
-        response.headers.setdefault('Content-Security-Policy', app.config['SECURITY_CSP'])
-        if request.is_secure and app.config.get('SECURITY_HSTS_ENABLED', True):
-            response.headers.setdefault(
-                'Strict-Transport-Security', 'max-age=31536000; includeSubDomains'
-            )
+        for name, value in security_headers(app, secure=request.is_secure).items():
+            response.headers.setdefault(name, value)
         return response

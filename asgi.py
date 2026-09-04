@@ -742,34 +742,21 @@ class LazyASGIApp:
         })
     
     async def _handle_lifespan(self, receive, send):
-        """Handle ASGI lifespan events (startup/shutdown)"""
-        message = await receive()
-        
-        if message["type"] == "lifespan.startup":
-            # Application is starting up
-            try:
-                # Register graceful shutdown handlers
-                from sharewarez.utils.shutdown import register_shutdown_handlers
-                register_shutdown_handlers()
+        """Let Uvicorn own OS signals and honor the complete ASGI lifecycle."""
+        while True:
+            message = await receive()
+            if message["type"] == "lifespan.startup":
                 await send({"type": "lifespan.startup.complete"})
-                await self._handle_lifespan(receive, send)
-            except Exception as e:
-                print(f"Startup failed: {e}")
-                await send({"type": "lifespan.startup.failed", "message": "Startup failed"})
-        
-        elif message["type"] == "lifespan.shutdown":
-            # Application is shutting down
-            try:
-                if self._download_events is not None:
-                    await self._download_events.close()
-                # Request graceful shutdown
-                from sharewarez.utils.shutdown import request_shutdown
-                request_shutdown()
-                print("🛑 ASGI lifespan shutdown initiated")
-                await send({"type": "lifespan.shutdown.complete"})
-            except Exception as e:
-                print(f"Shutdown failed: {e}")
-                await send({"type": "lifespan.shutdown.failed", "message": "Shutdown failed"})
+            elif message["type"] == "lifespan.shutdown":
+                try:
+                    if self._download_events is not None:
+                        await self._download_events.close()
+                    from sharewarez.utils.shutdown import request_shutdown
+                    request_shutdown()
+                    await send({"type": "lifespan.shutdown.complete"})
+                except Exception:
+                    await send({"type": "lifespan.shutdown.failed", "message": "Shutdown failed"})
+                return
 
 # Create lazy ASGI app (won't call create_app() until first HTTP request)
 asgi_app = LazyASGIApp()
