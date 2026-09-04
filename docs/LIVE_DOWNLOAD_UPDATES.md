@@ -104,3 +104,26 @@ one worker, and checks a replacement worker's initial snapshot against current
 database state. Fresh-install notification DDL has its own bootstrap test.
 Broad regression and operational completion checks are still in progress; this
 document is not a production-release approval.
+
+### Acceptance evidence map
+
+| Requirement | Implementation | Verification |
+| --- | --- | --- |
+| Owner-only member data, admin views, account revocation | `live_snapshots.py`, `live_sse.py` | `test_live_sse.py`: boundary, owner/admin, revocation and uncached authorization tests |
+| Nonblocking connections, bounded work, slow-client cleanup | `live_sse.py`, `live_events.py` | SSE timeout/disconnect tests, event burst/limit tests, independent-process HTTP test |
+| Cross-process changes and restart recovery | PostgreSQL revision `20260904_24`, LISTEN thread | `test_live_events.py` commit/rollback and reconnect tests; `test_live_workers.py` two live web processes and replacement |
+| Fresh-install and upgrade support | `bootstrap_schema_extras`, initialization manager | `test_live_bootstrap.py`, migration up/down/up test, quality-gate fresh schema initialization |
+| Current/average rate, readable time, conditional ETA | `transfer_rates.py`, shared transfer payload, frontend formatters | `test_transfer_rates.py`, `download_live.test.cjs`, admin rendered preview |
+| Worker-owned cleanup without monitor writes | `job_worker.py` maintenance thread | `test_download_maintenance.py`, download route regressions |
+| Stable rows, form/focus preservation, live ready/actions | Three download screen clients and shared SSE client | Desktop/mobile previews recorded in `UI_AUDIT.md`; member form/no-reload test and snapshot route tests |
+| Reconnect, hidden tabs and polling fallback | `download_live.js` | `download_live.test.cjs` fake transport/timer tests |
+| Resume, limits, cancellation and cache safety preserved | Existing delivery/cache implementation | `test_download_ranges.py`, `test_download_limits.py`, `test_download_cache.py` and delivery route tests |
+| Representative performance comparison | Shared snapshot cache and SQL summary | `test_live_performance.py`; measurements and limitations above |
+
+Run the Python suite through `scripts/quality-gate.sh` with the documented project
+Python environment. Run the supplementary browser-client tests with
+`node tests/download_live.test.cjs`; they do not require a running browser or DB.
+The browser previews use synthetic transfer metadata, not a 50 GB download.
+Real WAN interruptions, the production reverse proxy and custom/light themes
+still require staging checks before deployment. No image publication or remote
+source push is part of this implementation verification.

@@ -19,12 +19,12 @@ usable server-rendered fallbacks where practical.
 A full SPA is a future major-version decision requiring an explicit API,
 authentication, accessibility, offline, deployment, and migration design.
 
-## Download live updates (implementation in progress)
+## Download live updates
 
 Operator settings, measured costs and current verification status are recorded in
 `docs/LIVE_DOWNLOAD_UPDATES.md`.
 
-SSE will run directly under ASGI rather than occupying the serialized Flask WSGI
+SSE runs directly under ASGI rather than occupying the serialized Flask WSGI
 adapter for the lifetime of each connection. PostgreSQL remains the source of
 truth; no Redis or additional container is required.
 
