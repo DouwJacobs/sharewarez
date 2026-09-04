@@ -18,6 +18,7 @@
 </div>
 
 <main class="app-page image-editor-page">
+    <a class="image-editor-back" href="{{ url_for('games.game_details', game_uuid=game.uuid) }}" aria-label="Back to game details"><i class="fas fa-arrow-left" aria-hidden="true"></i> Game details</a>
     <header class="app-page-header image-editor-header">
         <div>
             <p class="image-editor-eyebrow">Game media</p>
@@ -25,7 +26,7 @@
             <p class="image-editor-game-name">{{ game.name }}</p>
             <p id="image-refresh-status" role="status"></p>
         </div>
-        <div class="app-page-actions"><a class="btn btn-secondary" href="{{ url_for('games.game_details', game_uuid=game.uuid) }}"><i class="fas fa-arrow-left" aria-hidden="true"></i> Back to game</a>{% if game.igdb_id %}<button class="btn btn-secondary" type="button" id="refresh-editor-images">Refresh from IGDB</button>{% endif %}</div>
+        <div class="app-page-actions">{% if game.igdb_id %}<button class="btn btn-secondary" type="button" id="refresh-editor-images">Refresh from IGDB</button>{% endif %}</div>
     </header>
 
     <div class="image-editor-layout">

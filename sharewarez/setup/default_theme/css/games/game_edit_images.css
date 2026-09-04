@@ -235,3 +235,34 @@
 .image-editor-page .image-editor-media-upload label { display: block; margin-bottom: 6px; color: var(--theme-text-secondary); }
 .image-editor-page .image-editor-media-upload input,
 .image-editor-page .image-editor-media-upload select { width: 100%; }
+
+/* Match the compact pill navigation used by the game storefront. */
+.image-editor-page .image-editor-back {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    min-height: 40px;
+    margin-bottom: 18px;
+    padding: 9px 13px;
+    border: 1px solid var(--theme-border-color);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--theme-card-background) 76%, transparent);
+    color: var(--theme-text-secondary);
+    font-size: .85rem;
+    font-weight: 600;
+    text-decoration: none;
+    backdrop-filter: blur(14px);
+}
+.image-editor-page .image-editor-back:hover {
+    color: var(--theme-text-primary);
+    background: rgba(var(--theme-accent-rgb), .18);
+    border-color: rgba(var(--theme-accent-soft-rgb), .42);
+}
+.image-editor-page .image-editor-back:focus-visible {
+    outline: 2px solid rgb(var(--theme-accent-rgb));
+    outline-offset: 3px;
+}
+@media (max-width: 700px) {
+    .image-editor-page .image-editor-back { min-height: 44px; }
+}
