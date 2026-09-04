@@ -107,6 +107,9 @@ all isolated PostgreSQL test modules, the migration and Compose checks, and the
 release-equivalent `gamelibrary:quality-gate` container build. The separate
 browser-client transport suite also passed. This is implementation verification,
 not production deployment approval; perform the staging checks listed below.
+The subsequent version-only bump to 1.13.0 passed all nine version tests and a
+fresh container build/compilation check; the full gate had run at 1.12.0 with the
+same application code.
 
 ### Acceptance evidence map
 
