@@ -28,6 +28,23 @@ def stamp_database(database_uri, revision='head'):
     command.stamp(alembic_config(database_uri), revision)
 
 
+def bootstrap_schema_extras(engine):
+    """Install non-model DDL on a fresh metadata-created schema before stamping.
+
+    Keep this registry explicit: historical column/table migrations must NOT run
+    after create_all. These immutable revisions contain only non-model objects.
+    """
+    from alembic.migration import MigrationContext
+    from alembic.operations import Operations
+    from alembic.script import ScriptDirectory
+
+    scripts = ScriptDirectory.from_config(alembic_config('postgresql://unused/unused'))
+    with engine.begin() as connection:
+        context = MigrationContext.configure(connection)
+        with Operations.context(context):
+            scripts.get_revision('20260904_24').module.upgrade()
+
+
 def current_revision(database_uri):
     """Return the database revision, or None before the baseline is applied."""
     from sqlalchemy import create_engine, inspect, text

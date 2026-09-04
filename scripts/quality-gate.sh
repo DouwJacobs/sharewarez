@@ -59,7 +59,7 @@ echo "==> Smoke-testing the application factory"
 "$PYTHON_BIN" -c "from sharewarez import create_app; app = create_app(); assert app.name == 'sharewarez'"
 
 echo "==> Applying migrations to a freshly initialized PostgreSQL schema"
-"$PYTHON_BIN" -c "from sharewarez import create_app, db; app = create_app(); app.app_context().push(); db.create_all()"
+"$PYTHON_BIN" -c "from sharewarez import create_app, db; from sharewarez.utils.migrations import bootstrap_schema_extras; app = create_app(); app.app_context().push(); db.create_all(); bootstrap_schema_extras(db.engine)"
 # The baseline migration intentionally contains no DDL: new installations are
 # created from current model metadata. Stamp the current schema at the active
 # head before verifying that upgrade is clean and repeatable.

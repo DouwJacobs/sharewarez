@@ -13,7 +13,7 @@ from werkzeug.sansio.utils import host_is_trusted
 from sharewarez.live_events import ConnectionLimitError, LiveEventHub, PostgresEventListener
 from sharewarez.live_snapshots import LiveAccessDenied, snapshot
 from sharewarez.live_snapshot_cache import SnapshotCache
-from sharewarez.security import security_headers
+from sharewarez.security import asgi_origin, security_headers
 from sharewarez.observability import normalize_request_id
 
 
@@ -48,7 +48,7 @@ class DownloadEventStream:
             if message['type'] == 'http.response.start':
                 response_status = message['status']
                 headers = dict(message.get('headers', []))
-                for name, value in security_headers(self.app, secure=scope.get('scheme') == 'https').items():
+                for name, value in security_headers(self.app, secure=asgi_origin(self.app, scope)[1] == 'https').items():
                     headers.setdefault(name.lower().encode(), value.encode())
                 headers[b'x-request-id'] = request_id.encode()
                 headers[b'server-timing'] = f'app;dur={(time.perf_counter() - started) * 1000:.2f}'.encode()
@@ -64,7 +64,7 @@ class DownloadEventStream:
 
     async def _serve(self, scope, receive, send):
         headers = dict(scope.get("headers", []))
-        host = headers.get(b"host", b"").decode("latin1")
+        host, scheme = asgi_origin(self.app, scope)
         origin = headers.get(b"origin", b"").decode("latin1")
         trusted = self.app.config.get("TRUSTED_HOSTS")
         status = None
@@ -75,7 +75,7 @@ class DownloadEventStream:
         elif origin:
             try:
                 parsed_origin = urlsplit(origin)
-                if parsed_origin.netloc != host or parsed_origin.scheme not in {"http", "https"}:
+                if parsed_origin.netloc.lower() != host.lower() or parsed_origin.scheme != scheme:
                     status = 403
             except ValueError:
                 status = 403

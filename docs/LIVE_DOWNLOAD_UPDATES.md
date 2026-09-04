@@ -10,12 +10,17 @@ server or additional service container.
 - Apply migration `20260904_24` through the normal startup migration workflow.
   It signals committed changes to download requests, transfers, archives and
   archive-build jobs. Rollbacks and unrelated jobs do not notify.
+  Fresh metadata-created databases install the same non-model trigger objects
+  through `bootstrap_schema_extras()` before being stamped at the current head.
 - Budget one additional PostgreSQL connection per web process for LISTEN.
   Notifications are topic-only hints; snapshots are read from PostgreSQL.
 - Disable proxy response buffering/caching for `/api/live/downloads`, and allow
   idle connections for longer than the 16-second heartbeat interval (60 seconds
   is a reasonable minimum). The endpoint sends `X-Accel-Buffering: no` and
   `Cache-Control: no-store`. Do not enable wildcard credentialed CORS.
+  Forwarded host/protocol values are trusted only according to the existing
+  `TRUST_PROXY_COUNT` setting, matching Flask's proxy policy. The default remains
+  zero; do not increase it unless all traffic passes through those trusted hops.
 - The browser falls back to polling if the initial SSE snapshot fails to arrive
   within five seconds, the stream fails, or no snapshot arrives for 25 seconds.
   It attempts SSE again after 30 seconds. Hidden tabs stop network work and return
@@ -92,5 +97,10 @@ Focused tests cover database notification commit/rollback, multiple listeners,
 listener reconnect, bounded bursts, authentication and ownership, slow clients,
 session revocation, snapshot sharing, lifecycle cleanup and fallback behavior.
 Synthetic authenticated desktop/mobile previews have verified the three screens.
+`tests/test_live_workers.py` additionally starts two independent Uvicorn processes,
+opens authenticated HTTP streams, commits a progress update and observes it in
+both processes. It verifies ordinary HTTP requests remain responsive, terminates
+one worker, and checks a replacement worker's initial snapshot against current
+database state. Fresh-install notification DDL has its own bootstrap test.
 Broad regression and operational completion checks are still in progress; this
 document is not a production-release approval.

@@ -4,9 +4,26 @@ from flask import request
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from werkzeug.middleware.proxy_fix import ProxyFix
+from werkzeug.http import parse_list_header
 
 
 limiter = Limiter(key_func=get_remote_address)
+
+
+def asgi_origin(app, scope):
+    """Match the explicitly configured Flask ProxyFix host/proto trust boundary."""
+    headers = dict(scope.get('headers', []))
+    host = headers.get(b'host', b'').decode('latin1')
+    scheme = scope.get('scheme', 'http')
+    count = app.config.get('TRUST_PROXY_COUNT', 0)
+    if count:
+        hosts = parse_list_header(headers.get(b'x-forwarded-host', b'').decode('latin1'))
+        protocols = parse_list_header(headers.get(b'x-forwarded-proto', b'').decode('latin1'))
+        if len(hosts) >= count:
+            host = hosts[-count]
+        if len(protocols) >= count:
+            scheme = protocols[-count]
+    return host, scheme
 
 
 def security_headers(app, *, secure=False):

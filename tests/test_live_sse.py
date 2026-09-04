@@ -94,6 +94,16 @@ def test_sse_central_security_headers_and_correlation():
     asyncio.run(run())
 
 
+def test_sse_proxy_origin_respects_explicit_trust():
+    from sharewarez.security import asgi_origin
+    app = Flask(__name__)
+    request_scope = scope(headers=[(b'host',b'internal:5006'), (b'x-forwarded-host',b'public.example'),
+                                   (b'x-forwarded-proto',b'https')])
+    assert asgi_origin(app, request_scope) == ('internal:5006','http')
+    app.config['TRUST_PROXY_COUNT'] = 1
+    assert asgi_origin(app, request_scope) == ('public.example','https')
+
+
 def test_close_wakes_idle_stream_and_completes_response():
     async def run():
         service = stream(lambda *args: {'user_id':1})

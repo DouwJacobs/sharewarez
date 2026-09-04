@@ -127,7 +127,8 @@ class InitializationManager:
                     # ``create_all`` builds the schema represented by the current
                     # models. Running the historical migrations afterwards would
                     # try to add those columns a second time on a fresh install.
-                    from sharewarez.utils.migrations import stamp_database
+                    from sharewarez.utils.migrations import bootstrap_schema_extras, stamp_database
+                    bootstrap_schema_extras(engine)
                     stamp_database(Config.SQLALCHEMY_DATABASE_URI)
                     print("✅ Fresh database stamped at the current revision")
 
