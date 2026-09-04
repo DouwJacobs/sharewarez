@@ -19,9 +19,13 @@
 
 <main class="app-page image-editor-page">
     <header class="app-page-header image-editor-header">
-        <p class="image-editor-eyebrow">Game media</p>
-        <h1>Edit images</h1>
-        <p class="image-editor-game-name">{{ game.name }}</p>
+        <div>
+            <p class="image-editor-eyebrow">Game media</p>
+            <h1>Edit images</h1>
+            <p class="image-editor-game-name">{{ game.name }}</p>
+            <p id="image-refresh-status" role="status"></p>
+        </div>
+        <div class="app-page-actions"><a class="btn btn-secondary" href="{{ url_for('games.game_details', game_uuid=game.uuid) }}"><i class="fas fa-arrow-left" aria-hidden="true"></i> Back to game</a>{% if game.igdb_id %}<button class="btn btn-secondary" type="button" id="refresh-editor-images">Refresh from IGDB</button>{% endif %}</div>
     </header>
 
     <div class="image-editor-layout">
@@ -70,6 +74,11 @@
 
     <section class="glass-panel image-editor-gallery-card">
         <div class="image-editor-card-header"><div><h2>Key art</h2><p>Select the preferred image within its style. The Featured collection still decides whether the hero uses art with or without a logo.</p></div></div>
+        <form class="image-editor-media-upload" data-media-upload>
+            <div><label for="key-art-type">Key art style</label><select id="key-art-type" name="image_type" class="form-select"><option value="key_art">Without logo</option><option value="key_art_logo">With logo</option></select></div>
+            <div><label for="key-art-file">Choose key art</label><input id="key-art-file" name="file" type="file" accept="image/png,image/jpeg,image/gif,image/webp" class="form-control" required></div>
+            <button class="btn btn-secondary" type="submit">Upload key art</button>
+        </form>
         <div class="image-editor-list image-editor-key-art-list" data-default-group="key-art">
             {% for image in key_art %}
                 <figure class="image-editor-image{% if image.is_default %} is-default{% endif %}" id="image-{{ image.id }}" data-default-item>
@@ -81,13 +90,18 @@
                     </div>
                 </figure>
             {% else %}
-                <p class="image-editor-empty">No key art is available. Refresh the game images to check IGDB again.</p>
+                <p class="image-editor-empty">No key art is available. Upload an image or refresh the game images to check IGDB again.</p>
             {% endfor %}
         </div>
     </section>
 
     <section class="glass-panel image-editor-gallery-card">
         <div class="image-editor-card-header"><div><h2>Logos</h2><p>Select the standalone logo displayed over the hero when available.</p></div></div>
+        <form class="image-editor-media-upload" data-media-upload>
+            <div><label for="logo-type">Logo style</label><select id="logo-type" name="image_type" class="form-select"><option value="game_logo_color">Color</option><option value="game_logo_white">White</option><option value="game_logo_black">Black</option></select></div>
+            <div><label for="logo-file">Choose logo</label><input id="logo-file" name="file" type="file" accept="image/png,image/jpeg,image/gif,image/webp" class="form-control" required></div>
+            <button class="btn btn-secondary" type="submit">Upload logo</button>
+        </form>
         <div class="image-editor-list image-editor-logo-list" data-default-group="logo">
             {% for image in logos %}
                 <figure class="image-editor-image image-editor-logo{% if image.is_default %} is-default{% endif %}" id="image-{{ image.id }}" data-default-item>
@@ -99,7 +113,7 @@
                     </div>
                 </figure>
             {% else %}
-                <p class="image-editor-empty">No standalone logos are available. Refresh the game images to check IGDB again.</p>
+                <p class="image-editor-empty">No standalone logos are available. Upload a logo or refresh the game images to check IGDB again.</p>
             {% endfor %}
         </div>
     </section>

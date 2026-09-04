@@ -529,19 +529,23 @@ def upload_image(game_uuid):
     if 'file' not in request.files:
         return jsonify({'error': 'No file part'}), 400
 
+    db.session.execute(select(Game).filter_by(uuid=game_uuid)).scalar_one_or_none() or abort(404)
     file = request.files['file']
     image_type = request.form.get('image_type', 'screenshot')  # Default to 'screenshot'
+
+    if image_type not in {'cover', 'screenshot', 'key_art', 'key_art_logo', 'game_logo_color', 'game_logo_white', 'game_logo_black'}:
+        return jsonify({'error': 'Unsupported image type'}), 400
 
     if file.filename == '':
         return jsonify({'error': 'No selected file'}), 400
 
     # Validate file extension and content type
-    allowed_extensions = {'jpg', 'jpeg', 'png', 'gif'}
+    allowed_extensions = {'jpg', 'jpeg', 'png', 'gif', 'webp'}
     filename = secure_filename(file.filename)
     file_extension = filename.rsplit('.', 1)[1].lower() if '.' in filename else ''
 
     if file_extension not in allowed_extensions:
-        return jsonify({'error': 'Only JPG, PNG and GIF files are allowed'}), 400
+        return jsonify({'error': 'Only JPG, PNG, GIF and WebP files are allowed'}), 400
 
     # Further validate the file's data to ensure it's a valid image
     try:
@@ -558,7 +562,10 @@ def upload_image(game_uuid):
             img.thumbnail((max_width, max_height), PILImage.LANCZOS)
     file.seek(0) 
     # Efficient file size check
-    if file.content_length > 3 * 1024 * 1024:  # 3MB in bytes
+    file.seek(0, os.SEEK_END)
+    file_size = file.tell()
+    file.seek(0)
+    if file_size > 3 * 1024 * 1024:  # 3MB in bytes
         return jsonify({'error': 'File size exceeds the 3MB limit'}), 400
 
     # Handle cover image logic
@@ -583,7 +590,7 @@ def upload_image(game_uuid):
     save_path = os.path.join(current_app.config['IMAGE_SAVE_PATH'], filename)
     file.save(save_path)
     print(f"File saved to: {save_path}")
-    new_image = Image(game_uuid=game_uuid, image_type=image_type, url=filename)
+    new_image = Image(game_uuid=game_uuid, image_type=image_type, url=filename, is_downloaded=True)
     db.session.add(new_image)
     db.session.commit()
     print(f"File saved to DB with ID: {new_image.id}")
@@ -592,7 +599,8 @@ def upload_image(game_uuid):
         'message': 'File uploaded successfully',
         'url': url_for('static', filename=f'library/images/{filename}'),
         'flash': 'Image uploaded successfully!',
-        'image_id': new_image.id
+        'image_id': new_image.id,
+        'image_type': new_image.image_type
     })
 
 @bp.route('/delete_image', methods=['POST'])

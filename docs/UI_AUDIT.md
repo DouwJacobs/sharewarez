@@ -413,3 +413,24 @@ The mobile page has its single 12 px gutter and no document-level overflow. An
 unsaved retention value of 14 survived live updates. Desktop inventory and policy
 layout were also checked in the default theme. No real cache files were built,
 cancelled or evicted by the synthetic UI fixture.
+
+## Game image editor fixes (2026-09-04)
+
+The editor now links back to its game and offers an explicit IGDB refresh with
+progress and failure feedback. Key art and standalone logos have labelled file
+and style controls, using the existing default-selection actions. Uploads accept
+PNG, JPEG, GIF and WebP, preserve transparency, validate categories and actual
+file size, and mark local files downloaded.
+
+New imports query the direct IGDB artwork collection, merging it with the game's
+artwork references; refreshes also merge both sources. Existing libraries can use
+Refresh from IGDB to retrieve logos added since their original import. A live
+Hogwarts Legacy refresh recovered its missing color logo successfully.
+
+The authenticated default-theme editor was inspected at the default desktop
+viewport and 390 × 844. Upload controls wrap, mobile selects and action buttons
+measure 44 px, the single mobile gutter remains, and there is no horizontal
+overflow. Back to game navigation was exercised. The viewport was reset.
+Other theme variants were not visually re-audited. Python regressions cover all
+five curated upload types, transparency, default selection, invalid categories,
+and discovery of logos absent from the nested game artwork list.

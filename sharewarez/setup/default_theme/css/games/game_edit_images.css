@@ -229,3 +229,9 @@
     .image-editor-layout { grid-template-columns: 1fr; }
     .image-editor-card, .image-editor-gallery-card { padding: 18px; }
 }
+
+.image-editor-page .image-editor-media-upload { display: flex; flex-wrap: wrap; align-items: end; gap: 12px; margin-bottom: 18px; }
+.image-editor-page .image-editor-media-upload > div { flex: 1 1 220px; min-width: 0; }
+.image-editor-page .image-editor-media-upload label { display: block; margin-bottom: 6px; color: var(--theme-text-secondary); }
+.image-editor-page .image-editor-media-upload input,
+.image-editor-page .image-editor-media-upload select { width: 100%; }

@@ -953,3 +953,17 @@ class TestGetOrCreateEntity:
                         db.session.commit()
                     except Exception:
                         db.session.rollback()
+
+@patch('sharewarez.utils.game_core.download_images_for_game', return_value=1)
+@patch('sharewarez.utils.game_core.make_igdb_api_request')
+def test_import_discovers_logo_missing_from_game_artworks(mock_api, mock_download, app, db_session, sample_game, sample_global_settings):
+    sample_global_settings.use_turbo_image_downloads = False
+    db_session.commit()
+    mock_api.return_value = [{'id': 274319, 'url': '//images.igdb.com/igdb/image/upload/t_thumb/logo.png', 'image_type': {'name': 'Game logo (color)'}}]
+    result = smart_process_images_for_game(sample_game.uuid, artworks_data=[], app=app)
+    assert result == 1
+    logo = db_session.query(Image).filter_by(game_uuid=sample_game.uuid, image_type='game_logo_color').one()
+    assert logo.igdb_image_id == '274319'
+    assert logo.download_url.endswith('/t_original/logo.png')
+    assert mock_api.call_count == 1
+    assert f'where game = {sample_game.igdb_id}' in mock_api.call_args.args[1]

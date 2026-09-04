@@ -519,8 +519,13 @@ def refresh_images_in_background(
                 f'fields id, url, image_type.name, artwork_type.name; '
                 f'where game = {game.igdb_id}; limit 500;',
             )
-            if direct_artworks and 'error' not in direct_artworks:
-                artworks_data = direct_artworks
+            if isinstance(direct_artworks, list):
+                artwork_map = {
+                    str(item.get('id') if isinstance(item, dict) else item): item
+                    for item in artworks_data
+                }
+                artwork_map.update({str(item['id']): item for item in direct_artworks if isinstance(item, dict) and 'id' in item})
+                artworks_data = list(artwork_map.values())
             current_app.logger.debug(
                 'IGDB media discovered game_uuid=%s igdb_id=%s cover=%s '
                 'screenshots=%s artworks=%s existing_images=%s',

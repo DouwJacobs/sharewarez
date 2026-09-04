@@ -1153,3 +1153,38 @@ class TestThemeAssetVersioning:
             asset_url = static_asset_filter('js/pwa.js')
 
         assert '/js/pwa.js?v=' in asset_url
+
+@pytest.mark.parametrize('image_type', ['key_art', 'key_art_logo', 'game_logo_color', 'game_logo_white', 'game_logo_black'])
+def test_upload_curated_media(client, app, db_session, admin_user, test_game, tmp_path, image_type):
+    from PIL import Image as PILImage
+    app.config['IMAGE_SAVE_PATH'] = str(tmp_path)
+    with client.session_transaction() as sess:
+        sess['_user_id'] = str(admin_user.id)
+    buffer = BytesIO()
+    PILImage.new('RGBA', (16, 16), (255, 0, 0, 64)).save(buffer, format='PNG')
+    buffer.seek(0)
+    with patch('sharewarez.routes.is_scan_job_running', return_value=False):
+        response = client.post(f'/upload_image/{test_game.uuid}', data={'file': (buffer, 'logo.png'), 'image_type': image_type})
+    assert response.status_code == 200
+    image = db_session.get(Image, response.json['image_id'])
+    assert image.image_type == image_type
+    assert image.is_downloaded is True
+    assert image.igdb_image_id is None
+    with PILImage.open(tmp_path / image.url) as saved:
+        assert saved.getpixel((0, 0))[3] == 64
+    editor = client.get(f'/edit_game_images/{test_game.uuid}')
+    assert f'/game_details/{test_game.uuid}'.encode() in editor.data
+    assert b'Upload logo' in editor.data
+    assert b'Upload key art' in editor.data
+    selected = client.post(f'/set_default_game_image/{test_game.uuid}', json={'image_id': image.id})
+    assert selected.status_code == 200
+    db_session.refresh(image)
+    assert image.is_default
+
+
+def test_upload_rejects_unknown_media_type(client, app, db_session, admin_user, test_game):
+    with client.session_transaction() as sess:
+        sess['_user_id'] = str(admin_user.id)
+    response = client.post(f'/upload_image/{test_game.uuid}', data={'file': (BytesIO(b'fake'), 'image.png'), 'image_type': 'unexpected'})
+    assert response.status_code == 400
+    assert response.json['error'] == 'Unsupported image type'

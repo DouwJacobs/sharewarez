@@ -27,7 +27,7 @@ function uploadFile(file, gameUuid, csrfToken, imageType = 'screenshot') {
     formData.append('image_type', imageType);
 
     console.log('Form data:', formData, url);
-    fetch(url, {
+    return fetch(url, {
         method: 'POST',
         body: formData,
         headers: CSRFUtils.getHeaders(),
@@ -46,8 +46,10 @@ function uploadFile(file, gameUuid, csrfToken, imageType = 'screenshot') {
             if (imageType === 'cover') {
                 displayCoverImage(data);
                 document.getElementById('coverSpinner').style.display = 'none';
-            } else {
+            } else if (imageType === 'screenshot') {
                 displayImage(data);
+            } else {
+                window.location.reload();
             }
             if (data.flash) {
                 // Create and display flash message
@@ -99,6 +101,7 @@ function uploadFile(file, gameUuid, csrfToken, imageType = 'screenshot') {
 
 function displayImage(data) {
     let imageList = document.getElementById('image-editor-list');
+    imageList.querySelector('.image-editor-empty')?.remove();
     let newImgDiv = document.createElement('div');
 
     newImgDiv.id = `image-${data.image_id}`;
@@ -237,6 +240,22 @@ function setDefaultImage(imageId, group) {
 document.addEventListener('DOMContentLoaded', function() {
     
     var gameUuid = document.getElementById('upload-area').getAttribute('data-game-uuid');
+    document.querySelectorAll('[data-media-upload]').forEach(form => {
+        form.addEventListener('submit', async event => {
+            event.preventDefault();
+            const file = form.elements.file.files[0];
+            if (!file) return;
+            const button = form.querySelector('button');
+            button.disabled = true;
+            button.textContent = 'Uploading…';
+            try {
+                await uploadFile(file, gameUuid, CSRFUtils.getToken(), form.elements.image_type.value);
+            } finally {
+                button.disabled = false;
+                button.textContent = form.elements.image_type.value.startsWith('game_logo') ? 'Upload logo' : 'Upload key art';
+            }
+        });
+    });
     let selectedFiles = [];
     const uploadArea = document.getElementById('upload-area');
 
@@ -296,4 +315,32 @@ document.addEventListener('DOMContentLoaded', function() {
             uploadFile(files[i], gameUuid, csrfToken, 'screenshot');
         }
     }
+});
+
+
+document.getElementById('refresh-editor-images')?.addEventListener('click', async function () {
+    const button = this;
+    const status = document.getElementById('image-refresh-status');
+    button.disabled = true;
+    status.textContent = 'Checking IGDB for images…';
+    try {
+        const response = await fetch(`/refresh_game_images/${gameUuid}`, {
+            method: 'POST', headers: CSRFUtils.getHeaders({'X-Requested-With': 'XMLHttpRequest'}),
+        });
+        if (!response.ok) throw new Error('Could not start the image refresh. Please try again.');
+        const started = Date.now();
+        async function checkProgress() {
+            try {
+                const response = await fetch(`/check_image_refresh_progress/${gameUuid}`);
+                if (!response.ok) throw new Error('Could not check image refresh progress. Reload the page to see downloaded images.');
+                const data = await response.json();
+                if (data.status === 'complete') { window.location.reload(); return; }
+                if (data.status === 'error') throw new Error('IGDB image refresh failed. Please try again.');
+                if (Date.now() - started > 180000) throw new Error('Images are still refreshing. Reload this page shortly.');
+                status.textContent = `Refreshing images… ${data.progress || 0}%`;
+                setTimeout(checkProgress, 1500);
+            } catch (error) { status.textContent = error.message; button.disabled = false; }
+        }
+        setTimeout(checkProgress, 1500);
+    } catch (error) { status.textContent = error.message; button.disabled = false; }
 });
