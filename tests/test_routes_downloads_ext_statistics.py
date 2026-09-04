@@ -2,7 +2,7 @@ import pytest
 import json
 from flask import url_for
 from unittest.mock import patch, MagicMock
-from sharewarez.models import User, DownloadRequest, Game, Library, InviteToken, user_favorites
+from sharewarez.models import User, DownloadRequest, DownloadTransfer, Game, Library, InviteToken, user_favorites
 from sharewarez.platform import LibraryPlatform
 from sharewarez import db
 from uuid import uuid4
@@ -234,6 +234,19 @@ class TestStatisticsIntegration:
         
         db_session.add(download1)
         db_session.add(download2)
+        db_session.flush()
+        # Statistics count completed deliveries, not reusable link creation.
+        for request in (download1, download2):
+            db_session.add(DownloadTransfer(
+                user_id=request.user_id,
+                download_request_id=request.id,
+                game_uuid=request.game_uuid,
+                filename='test.zip',
+                status='completed',
+                bytes_sent=1024,
+                started_at=request.request_time,
+                ended_at=request.request_time,
+            ))
         
         # Create sample invite token
         invite = InviteToken(
@@ -268,7 +281,10 @@ class TestStatisticsIntegration:
         assert len(data['top_collectors']['labels']) > 0
         
         # Verify data consistency
-        for section in data.values():
+        assert data['transfer_summary']['completed_bytes'] == 2048
+        for name, section in data.items():
+            if name == 'transfer_summary':
+                continue
             assert len(section['labels']) == len(section['data'])
 
     @patch('sharewarez.routes_downloads_ext.statistics.get_download_statistics')
