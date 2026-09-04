@@ -52,7 +52,8 @@ Every reconnect starts fresh rather than replaying historical events. Transfer
 payloads are bounded to 1,000 rows and explicitly flag truncation. Archive summary
 totals are SQL aggregates rather than loading the entire inventory into Python.
 
-Frontend integration remains a subsequent stage. Both SSE activity snapshots and
+The admin active-transfer frontend now consumes SSE with polling fallback;
+user Downloads and archive inventory integration remain subsequent stages. Both SSE activity snapshots and
 the existing admin polling endpoint now supply current speed (an eight-second
 window), per-attempt average speed, and ETA when remaining size and current rate
 are meaningful. A bounded process-local sample store avoids multiplying samples

@@ -204,6 +204,7 @@
 }
 
 .active-transfer-progress span {
+    transition: width 850ms linear;
     height: 100%;
     border-radius: inherit;
     background: var(--theme-button-gradient, linear-gradient(90deg, #6074e8, #7c64df));
@@ -383,6 +384,7 @@
 
 @media (prefers-reduced-motion: reduce) {
     .download-status-dot, .downloads-game-link-icon { animation: none; transition: none; }
+    .active-transfer-progress span { animation: none; transition: none; }
 }
 
 /* Active-theme bridge; status pills retain their semantic colors. */

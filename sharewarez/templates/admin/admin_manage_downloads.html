@@ -14,7 +14,9 @@
                 <div><p class="downloads-section-eyebrow">Live delivery</p><h2 id="active-transfer-title">Active transfers</h2></div>
                 <span id="activeTransferCount" class="downloads-count">0 active</span>
             </div>
-            <div id="activeTransferList" class="active-transfer-list" aria-live="polite">
+            <p id="activeTransferConnection" class="active-transfer-empty" role="status">Connecting live updates…</p>
+            <p class="active-transfer-empty">Speeds measure server-sent data, not confirmed browser disk writes.</p>
+            <div id="activeTransferList" class="active-transfer-list">
                 <p class="active-transfer-empty">No transfers are active.</p>
             </div>
         </section>
@@ -122,6 +124,8 @@
         </section>
     </div>
 
+<script src="{{ 'js/download_live.js'|theme_asset }}"></script>
+<script src="{{ 'js/admin_transfer_live.js'|theme_asset }}"></script>
 <script>
 const rowCheckboxes = () => Array.from(document.querySelectorAll('.download-row-select'));
 const updateBulkSelection = () => {
@@ -176,109 +180,6 @@ document.querySelectorAll('.download-priority-select').forEach(select => {
     select.dataset.savedValue = select.value;
 });
 
-const formatTransferDuration = totalSeconds => {
-    const elapsed = Math.max(0, Math.floor(Number(totalSeconds) || 0));
-    const days = Math.floor(elapsed / 86400);
-    const hours = Math.floor((elapsed % 86400) / 3600);
-    const minutes = Math.floor((elapsed % 3600) / 60);
-    const seconds = elapsed % 60;
-    if (days) return hours ? `${days}d ${hours}h` : `${days}d`;
-    if (hours) return minutes ? `${hours}h ${minutes}m` : `${hours}h`;
-    if (minutes) return seconds ? `${minutes}m ${seconds}s` : `${minutes}m`;
-    return `${seconds}s`;
-};
-
-const updateActiveTransferClocks = () => {
-    const now = Date.now();
-    document.querySelectorAll('.active-transfer-item[data-elapsed-seconds]').forEach(item => {
-        const meta = item.querySelector('.active-transfer-meta');
-        if (!meta) return;
-        const elapsed = Number(item.dataset.elapsedSeconds || 0)
-            + Math.max(0, Math.floor((now - Number(item.dataset.receivedAt || now)) / 1000));
-        meta.textContent = `${item.dataset.transferSummary} · ${formatTransferDuration(elapsed)}`;
-    });
-};
-
-const renderActiveTransfers = transfers => {
-    const list = document.getElementById('activeTransferList');
-    const count = document.getElementById('activeTransferCount');
-    count.textContent = `${transfers.length} active`;
-    list.replaceChildren();
-    if (!transfers.length) {
-        const empty = document.createElement('p');
-        empty.className = 'active-transfer-empty';
-        empty.textContent = 'No transfers are active.';
-        list.appendChild(empty);
-        return;
-    }
-    transfers.forEach(transfer => {
-        const item = document.createElement('article');
-        item.className = 'active-transfer-item';
-        item.dataset.elapsedSeconds = String(transfer.elapsed_seconds || 0);
-        item.dataset.receivedAt = String(Date.now());
-        const details = document.createElement('div');
-        details.className = 'active-transfer-details';
-        const title = document.createElement('strong');
-        title.textContent = transfer.filename;
-        const meta = document.createElement('span');
-        meta.className = 'active-transfer-meta';
-        const expected = transfer.expected_bytes_label ? ` of ${transfer.expected_bytes_label}` : '';
-        item.dataset.transferSummary = `${transfer.username} · ${transfer.bytes_sent_label}${expected} streamed`;
-        meta.textContent = `${item.dataset.transferSummary} · ${transfer.elapsed_label || formatTransferDuration(transfer.elapsed_seconds)}`;
-        details.append(title, meta);
-        const progress = document.createElement('div');
-        progress.className = 'active-transfer-progress';
-        const bar = document.createElement('span');
-        if (transfer.progress == null) progress.classList.add('is-indeterminate');
-        else bar.style.width = `${transfer.progress}%`;
-        progress.appendChild(bar);
-        const progressGroup = document.createElement('div');
-        progressGroup.className = 'active-transfer-progress-group';
-        const progressLabel = document.createElement('span');
-        progressLabel.className = 'active-transfer-progress-label';
-        progressLabel.textContent = transfer.progress == null ? 'Streaming' : `${transfer.progress.toFixed(1)}%`;
-        progressGroup.append(progressLabel, progress);
-        item.append(details, progressGroup);
-        list.appendChild(item);
-    });
-};
-
-const ACTIVE_TRANSFER_REFRESH_MS = 2000;
-let activeTransferRefreshTimer = null;
-let activeTransferRefreshRunning = false;
-
-const scheduleActiveTransferRefresh = () => {
-    window.clearTimeout(activeTransferRefreshTimer);
-    if (!document.hidden) {
-        activeTransferRefreshTimer = window.setTimeout(refreshActiveTransfers, ACTIVE_TRANSFER_REFRESH_MS);
-    }
-};
-
-const refreshActiveTransfers = async () => {
-    if (activeTransferRefreshRunning || document.hidden) return;
-    activeTransferRefreshRunning = true;
-    try {
-        const response = await fetch('/admin/active-transfers', {
-            credentials: 'same-origin',
-            cache: 'no-store',
-            headers: {'Accept': 'application/json'},
-        });
-        if (!response.ok) return;
-        const data = await response.json();
-        renderActiveTransfers(data.transfers || []);
-    } catch (_) {
-        /* Keep the last known state during a transient refresh failure. */
-    } finally {
-        activeTransferRefreshRunning = false;
-        scheduleActiveTransferRefresh();
-    }
-};
-document.addEventListener('visibilitychange', () => {
-    if (document.hidden) window.clearTimeout(activeTransferRefreshTimer);
-    else refreshActiveTransfers();
-});
-refreshActiveTransfers();
-window.setInterval(updateActiveTransferClocks, 1000);
 
 let currentDeleteId = null;
 

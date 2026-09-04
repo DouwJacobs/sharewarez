@@ -225,10 +225,10 @@ class TestManageDownloadsRoute:
         response = client.get('/admin/manage-downloads')
 
         assert response.status_code == 200
-        assert b"cache: 'no-store'" in response.data
-        assert b'activeTransferRefreshRunning' in response.data
-        assert b'setTimeout(refreshActiveTransfers' in response.data
-        assert b'formatTransferDuration' in response.data
+        assert b'download_live.js' in response.data
+        assert b'admin_transfer_live.js' in response.data
+        assert b'id="activeTransferConnection"' in response.data
+        assert b'list.replaceChildren()' not in response.data
         assert b'${transfer.elapsed_seconds}s' not in response.data
 
     def test_transfer_keeps_game_attribution_after_request_is_deleted(

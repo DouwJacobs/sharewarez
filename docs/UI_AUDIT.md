@@ -342,3 +342,30 @@ Member transfer polling is also non-overlapping and visibility-aware. It uses a
 two-second interval while a transfer is active and a ten-second idle interval.
 The Download Cache summary uses a three-second active interval and a thirty-second
 idle interval, reducing background work without making running builds feel stale.
+
+## SSE administrator monitor (2026-09-04)
+
+The active-transfer monitor now uses stable transfer-ID nodes, updates changed
+text in place, and leaves selected text untouched until selection ends. It shows
+eight-second current speed, per-attempt average speed, and meaningful ETA alongside
+the elapsed clock. A small status line announces connection changes; rapidly
+changing transfer counters are not an ARIA live region. Progress transitions and
+indeterminate animation explicitly honor reduced motion.
+
+`download_live.js` owns SSE, reconnect/watchdog handling, non-overlapping polling
+fallback, visibility pause/resume and back-forward-cache restoration. The admin
+monitor is its first consumer; user Downloads and archive inventory integration
+remain pending. The setup-theme and installed default-theme copies are synchronized.
+
+A disposable PostgreSQL-backed preview (`python -m tests.preview_download_live`,
+with an empty `TEST_DATABASE_URL`) simulated an 8 MiB/s transfer through real
+database notifications and the authenticated ASGI endpoint. Screenshots were
+inspected at the default desktop viewport, 1440 × 1000 and 390 × 844. Mobile
+computed bounds confirmed the single 12 px gutter and no document-level overflow.
+An entered Username filter and focus survived updates. No browser console errors
+were observed. The temporary viewport was reset. Other themes, actual WAN rates,
+user Downloads and cache inventory are not covered by this stage's visual check.
+
+Transport behavior is tested with `node tests/download_live.test.cjs`; Python
+route tests verify script wiring. On Windows, invoke the test file directly rather
+than `node --test` when using a UNC repository path.
