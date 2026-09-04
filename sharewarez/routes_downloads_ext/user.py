@@ -12,7 +12,7 @@ from sharewarez.utils.event_logging import log_system_event
 from . import download_bp
 from sharewarez import db
 from sharewarez.utils.download_limits import (
-    calculate_download_expiry, expire_download_requests, mark_stale_transfers,
+    calculate_download_expiry,
 )
 from sharewarez.utils.download_notifications import notify_admin_download_cancelled
 from sharewarez.utils.download_cache import archive_policy, request_resumable_archive
@@ -21,8 +21,6 @@ from sharewarez.utils.download_cache import archive_policy, request_resumable_ar
 @login_required
 def downloads():
     user_id = current_user.id
-    expire_download_requests(user_id)
-    mark_stale_transfers()
     page = max(1, request.args.get('page', 1, type=int))
     per_page = min(max(10, request.args.get('per_page', 25, type=int)), 100)
     query = (
@@ -101,7 +99,6 @@ def downloads():
 @download_bp.route('/downloads/active-transfers')
 @login_required
 def user_active_transfers():
-    mark_stale_transfers()
     transfers = db.session.execute(
         select(DownloadTransfer).where(
             DownloadTransfer.user_id == current_user.id,

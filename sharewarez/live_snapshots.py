@@ -9,6 +9,7 @@ from sqlalchemy.orm import joinedload
 from sharewarez import db
 from sharewarez.models import DownloadArchive, DownloadRequest, DownloadTransfer, User
 from sharewarez.utils.functions import format_duration, format_size
+from sharewarez.transfer_rates import transfer_rates
 
 
 class LiveAccessDenied(Exception):
@@ -40,6 +41,7 @@ def authenticate(app, scope, view):
 def transfer_payload(transfer, now, *, admin=False):
     elapsed = max(0, (now - transfer.started_at).total_seconds())
     sent, expected = transfer.bytes_sent, transfer.reserved_bytes
+    current_speed = transfer_rates.observe(transfer.id, sent, now.timestamp(), transfer.last_activity_at.timestamp())
     result = {
         "id": transfer.id, "download_request_id": transfer.download_request_id,
         "bytes_sent": sent, "expected_bytes": expected,
@@ -48,6 +50,9 @@ def transfer_payload(transfer, now, *, admin=False):
         "progress": min(100, round(sent / expected * 100, 1)) if expected else None,
         "elapsed_seconds": int(elapsed), "elapsed_label": format_duration(elapsed),
         "average_speed": sent / elapsed if elapsed > 0 else None,
+        "current_speed": current_speed,
+        "eta_seconds": (expected - sent) / current_speed
+        if expected > sent and current_speed and current_speed > 0 else None,
         "last_activity_at": transfer.last_activity_at.isoformat(),
     }
     if admin:

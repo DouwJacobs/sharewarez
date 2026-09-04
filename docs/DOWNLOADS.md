@@ -96,6 +96,20 @@ the download routes.
 Statistics count only completed transfer attempts; creating or refreshing a
 download link is not counted as a download.
 
+Live monitoring reports **current** server-send speed over roughly eight seconds
+and **average** speed since the current HTTP attempt started. A resumed range is a
+new attempt: its average does not include bytes downloaded previously. Current
+speed is unknown while samples warm up; after eight seconds without activity it
+becomes zero. ETA is omitted when size or rate is unknown or the transfer has
+stalled. These measurements retain the server-send/proxy limitations above.
+
+Stale attempts are closed by a maintenance thread in the existing job process,
+not by opening or refreshing an admin page. It runs every 15 seconds using the
+existing 60-second inactivity cutoff. The same thread expires elapsed links.
+For local testing, run `python -m sharewarez.job_worker` alongside `./startweb.sh`;
+the production app container already supervises both processes. Do not run a
+second job process against the same database: startup recovery assumes one owner.
+
 Monthly quotas use calendar months and measure bytes streamed by the application, including
 resumed ranges. Administrators set an instance default in **Server Settings →
 Downloads** and may give an individual user an inherited, unlimited, or custom

@@ -52,6 +52,15 @@ Every reconnect starts fresh rather than replaying historical events. Transfer
 payloads are bounded to 1,000 rows and explicitly flag truncation. Archive summary
 totals are SQL aggregates rather than loading the entire inventory into Python.
 
-Frontend integration, current-speed smoothing and worker maintenance are subsequent
-stages; the existing polling screens remain unchanged until those land. The endpoint
-currently supplies per-attempt average speed but no smoothed current speed yet.
+Frontend integration remains a subsequent stage. Both SSE activity snapshots and
+the existing admin polling endpoint now supply current speed (an eight-second
+window), per-attempt average speed, and ETA when remaining size and current rate
+are meaningful. A bounded process-local sample store avoids multiplying samples
+for multiple viewers. Reconnecting to another web worker warms its own window;
+an unknown initial rate is null, not invented as zero.
+
+An independent maintenance thread in the existing job process retires stale
+transfers and expires links every 15 seconds, including while scans and archive
+builds run. Monitoring GET endpoints no longer perform cleanup writes. The
+existing 60-second stale threshold remains unchanged. Run the job process in
+development as well as the web server when testing this behavior.

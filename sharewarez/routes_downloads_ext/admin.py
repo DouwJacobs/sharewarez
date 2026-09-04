@@ -9,15 +9,13 @@ from sharewarez.utils.auth import admin_required
 from sharewarez.utils.event_logging import log_system_event
 from sharewarez.utils.functions import format_duration, format_size
 from sharewarez import db
-from sharewarez.utils.download_limits import expire_download_requests, mark_stale_transfers
+from sharewarez.live_snapshots import transfer_payload
 from . import download_bp
 
 @download_bp.route('/admin/manage-downloads', methods=['GET', 'POST'])
 @login_required
 @admin_required
 def manage_downloads():
-    expire_download_requests()
-    mark_stale_transfers()
     page = max(1, request.args.get('page', 1, type=int))
     transfer_page = max(1, request.args.get('transfer_page', 1, type=int))
     per_page = min(max(10, request.args.get('per_page', 25, type=int)), 100)
@@ -137,7 +135,6 @@ def clear_transfer_history():
 @login_required
 @admin_required
 def active_transfers():
-    mark_stale_transfers()
     transfers = db.session.execute(
         select(DownloadTransfer)
         .options(
@@ -148,25 +145,7 @@ def active_transfers():
         .order_by(DownloadTransfer.started_at.asc(), DownloadTransfer.id.asc())
     ).scalars().all()
     now = datetime.now(timezone.utc)
-    payload = []
-    for transfer in transfers:
-        elapsed_seconds = max(0, int((now - transfer.started_at).total_seconds()))
-        payload.append({
-            'id': transfer.id,
-            'username': transfer.user.name,
-            'filename': transfer.filename,
-            'bytes_sent': transfer.bytes_sent,
-            'expected_bytes': transfer.reserved_bytes,
-            'bytes_sent_label': format_size(transfer.bytes_sent) if transfer.bytes_sent else '0 B',
-            'expected_bytes_label': format_size(transfer.reserved_bytes) if transfer.reserved_bytes else None,
-            'progress': (
-                min(100, round(transfer.bytes_sent / transfer.reserved_bytes * 100, 1))
-                if transfer.reserved_bytes else None
-            ),
-            'elapsed_seconds': elapsed_seconds,
-            'elapsed_label': format_duration(elapsed_seconds),
-            'last_activity_at': transfer.last_activity_at.isoformat(),
-        })
+    payload = [transfer_payload(transfer, now, admin=True) for transfer in transfers]
     response = jsonify({'transfers': payload})
     response.headers['Cache-Control'] = 'no-store'
     return response

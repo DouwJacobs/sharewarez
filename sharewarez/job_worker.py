@@ -12,6 +12,22 @@ from sharewarez.models import GlobalSettings
 from sharewarez.utils.background_jobs import claim_next, execute, recover_stale_jobs, worker_identity
 
 
+def maintain_downloads(app, stopping, interval=15):
+    """Independent maintenance cannot be delayed by a long scan or cache build."""
+    from sharewarez.utils.download_limits import expire_download_requests, mark_stale_transfers
+    while not stopping.is_set():
+        with app.app_context():
+            try:
+                mark_stale_transfers()
+                expire_download_requests()
+            except Exception:
+                db.session.rollback()
+                app.logger.exception("Download transfer maintenance failed")
+            finally:
+                db.session.remove()
+        stopping.wait(interval)
+
+
 def run_worker():
     app = create_app()
     worker_id = worker_identity()
@@ -67,6 +83,10 @@ def run_worker():
         ]
         for thread in archive_threads:
             thread.start()
+        maintenance_thread = threading.Thread(
+            target=maintain_downloads, args=(app, stopping), name='download-maintenance', daemon=True,
+        )
+        maintenance_thread.start()
 
         while not stopping.is_set():
             monotonic_now = time.monotonic()
@@ -85,6 +105,7 @@ def run_worker():
             db.session.remove()
         for thread in archive_threads:
             thread.join(timeout=5)
+        maintenance_thread.join(timeout=5)
         app.logger.info("Background worker %s stopped", worker_id)
 
 
