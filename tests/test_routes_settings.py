@@ -579,6 +579,7 @@ class TestSettingsPanel:
     ):
         """The compact profile form saves display settings without clearing notification choices."""
         from sharewarez.utils.user_preferences import get_experience_settings
+        from sharewarez.utils.themes import SITE_DEFAULT_THEME_VALUE
 
         test_user_preference.items_per_page = 20
         test_user_preference.experience_settings = {
@@ -602,7 +603,7 @@ class TestSettingsPanel:
             'default_sort': 'rating',
             'default_sort_order': 'asc',
             'library_view': 'compact',
-            'theme': 'default',
+            'theme': SITE_DEFAULT_THEME_VALUE,
         })
 
         assert response.status_code == 200

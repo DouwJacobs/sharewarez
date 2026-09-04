@@ -1,17 +1,25 @@
 from pathlib import Path
+import pytest
+
+from sharewarez import _sync_changed_theme_files
 
 
 THEME_SOURCE = Path("sharewarez/setup/default_theme/css/components.css")
-THEME_INSTALLED = Path("sharewarez/static/library/themes/default/css/components.css")
 REQUESTS_SOURCE = Path("sharewarez/setup/default_theme/css/requests.css")
-REQUESTS_INSTALLED = Path("sharewarez/static/library/themes/default/css/requests.css")
 CACHE_ADMIN_SOURCE = Path("sharewarez/setup/default_theme/css/admin/admin_download_cache.css")
-CACHE_ADMIN_INSTALLED = Path("sharewarez/static/library/themes/default/css/admin/admin_download_cache.css")
 
 
-def test_shared_control_contract_is_present_and_synchronized():
+@pytest.fixture
+def installed_theme(tmp_path):
+    """Exercise installation without depending on ignored local runtime assets."""
+    target = tmp_path / 'default'
+    _sync_changed_theme_files(Path('sharewarez/setup/default_theme'), target)
+    return target
+
+
+def test_shared_control_contract_is_present_and_synchronized(installed_theme):
     source = THEME_SOURCE.read_text(encoding="utf-8")
-    installed = THEME_INSTALLED.read_text(encoding="utf-8")
+    installed = (installed_theme / 'css/components.css').read_text(encoding="utf-8")
 
     assert source == installed
     assert "--app-control-height: 42px" in source
@@ -38,9 +46,9 @@ def test_nested_empty_and_table_surfaces_are_flattened():
     assert "box-shadow: none !important" in css
 
 
-def test_request_search_shell_owns_its_inner_input_styling():
+def test_request_search_shell_owns_its_inner_input_styling(installed_theme):
     source = REQUESTS_SOURCE.read_text(encoding="utf-8")
-    installed = REQUESTS_INSTALLED.read_text(encoding="utf-8")
+    installed = (installed_theme / 'css/requests.css').read_text(encoding="utf-8")
 
     assert source == installed
     assert "#content .requests-page .request-search-wrap input" in source
@@ -51,9 +59,9 @@ def test_request_search_shell_owns_its_inner_input_styling():
     assert "box-shadow: none !important" in source
 
 
-def test_download_cache_policy_action_spans_the_form_grid():
+def test_download_cache_policy_action_spans_the_form_grid(installed_theme):
     source = CACHE_ADMIN_SOURCE.read_text(encoding="utf-8")
-    installed = CACHE_ADMIN_INSTALLED.read_text(encoding="utf-8")
+    installed = (installed_theme / 'css/admin/admin_download_cache.css').read_text(encoding="utf-8")
 
     assert source == installed
     assert ".cache-policy-actions { display:flex;grid-column:1/-1;" in source

@@ -128,11 +128,13 @@ def test_scan_restart_worker_does_not_reuse_request_context():
 
 def test_active_download_progress_uses_scoped_bar_styles_and_labels():
     template = Path("sharewarez/templates/admin/admin_manage_downloads.html").read_text(encoding="utf-8")
+    javascript = (THEME / "js/admin_transfer_live.js").read_text(encoding="utf-8")
     css = (THEME / "css/admin/admin_manage_downloads.css").read_text(encoding="utf-8")
 
-    assert "active-transfer-progress-label" in template
-    assert "expected_bytes_label" in template
-    assert "active-transfer-details" in template
+    assert "admin_transfer_live.js" in template
+    assert "active-transfer-progress-label" in javascript
+    assert "expected_bytes_label" in javascript
+    assert "active-transfer-details" in javascript
     assert ".active-transfer-details > span" in css
     assert ".active-transfer-item div > span" not in css
 
