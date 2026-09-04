@@ -1,7 +1,14 @@
 document.addEventListener('DOMContentLoaded', () => {
     let delay = 3000;
+    let timer = null;
+    let refreshRunning = false;
+    const schedule = () => {
+        window.clearTimeout(timer);
+        if (!document.hidden) timer = window.setTimeout(refresh, delay);
+    };
     const refresh = async () => {
-        if (document.hidden) { window.setTimeout(refresh, delay); return; }
+        if (refreshRunning || document.hidden) return;
+        refreshRunning = true;
         try {
             const response = await fetch('/admin/download-cache/status', {cache: 'no-store'});
             if (!response.ok) throw new Error('Cache status unavailable');
@@ -14,9 +21,17 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('cacheReady').textContent = `${data.counts.ready} archive${data.counts.ready === 1 ? '' : 's'}`;
             document.getElementById('cacheBuilding').textContent = data.counts.queued + data.counts.building;
             document.getElementById('cacheFailed').textContent = data.counts.failed;
-            delay = 3000;
-        } catch (_error) { delay = Math.min(delay * 2, 30000); }
-        window.setTimeout(refresh, delay);
+            delay = data.counts.queued + data.counts.building > 0 ? 3000 : 30000;
+        } catch (_error) {
+            delay = Math.min(delay * 2, 30000);
+        } finally {
+            refreshRunning = false;
+            schedule();
+        }
     };
-    window.setTimeout(refresh, delay);
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden) window.clearTimeout(timer);
+        else refresh();
+    });
+    schedule();
 });

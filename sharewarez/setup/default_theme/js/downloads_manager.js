@@ -5,6 +5,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const activeStatuses = new Set(['pending', 'processing']);
     let delay = 3000;
     let timer = null;
+    let transferDelay = 2000;
+    let transferTimer = null;
+    let transferRefreshRunning = false;
 
     const renderStatus = (row, status) => {
         const cell = row.querySelector('.status-cell');
@@ -132,30 +135,45 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const refreshTransfers = async () => {
+        if (transferRefreshRunning || document.hidden) return;
+        transferRefreshRunning = true;
         try {
             const response = await fetch('/downloads/active-transfers', {
                 credentials: 'same-origin', cache: 'no-store',
             });
-            if (!response.ok) return;
+            if (!response.ok) throw new Error('Transfer refresh failed');
             const data = await response.json();
+            const transfers = data.transfers || [];
             const activeMap = new Map(
-                (data.transfers || []).map(item => [String(item.download_request_id), item])
+                transfers.map(item => [String(item.download_request_id), item])
             );
             rows.forEach(row => {
                 const id = row.dataset.downloadId;
                 const transfer = activeMap.get(id);
                 updateTransferUI(row, transfer);
             });
+            transferDelay = transfers.length ? 2000 : 10000;
         } catch (_error) {
             // A transient polling failure should not interrupt the page.
+            transferDelay = Math.min(transferDelay * 2, 30000);
+        } finally {
+            transferRefreshRunning = false;
+            window.clearTimeout(transferTimer);
+            if (!document.hidden) {
+                transferTimer = window.setTimeout(refreshTransfers, transferDelay);
+            }
         }
     };
 
     document.addEventListener('visibilitychange', () => {
-        if (document.hidden && timer) window.clearTimeout(timer);
-        else if (!document.hidden) refresh();
+        if (document.hidden) {
+            window.clearTimeout(timer);
+            window.clearTimeout(transferTimer);
+        } else {
+            refresh();
+            refreshTransfers();
+        }
     });
     refresh();
     refreshTransfers();
-    window.setInterval(refreshTransfers, 3000);
 });

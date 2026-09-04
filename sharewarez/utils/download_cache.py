@@ -10,7 +10,6 @@ import shutil
 from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
 import zipfile
-import zlib
 
 from flask import current_app
 from sqlalchemy import func, select, text, update
@@ -390,13 +389,11 @@ def build_archive(context, archive_id: str) -> dict:
                         entry['path'], arcname=entry['relative_path'], strict_timestamps=False,
                     )
                     archive_info.compress_type = zipfile.ZIP_STORED
-                    entry_crc = 0
                     with Path(entry['path']).open('rb') as source_file:
                         with output.open(archive_info, 'w', force_zip64=True) as archive_file:
                             for chunk in iter(lambda: source_file.read(2 * 1024 * 1024), b''):
                                 context.check_cancelled()
                                 archive_file.write(chunk)
-                                entry_crc = zlib.crc32(chunk, entry_crc)
                                 written_source += len(chunk)
                                 progress = min(
                                     97, max(1, round(written_source / max(1, source_bytes) * 97)),
@@ -408,8 +405,7 @@ def build_archive(context, archive_id: str) -> dict:
                                         progress, f'Adding file {index} of {len(entries)}',
                                     )
                                     last_heartbeat = progress
-                    expected_crc = entry_crc & 0xffffffff
-                    if archive_info.file_size != entry['size'] or archive_info.CRC != expected_crc:
+                    if archive_info.file_size != entry['size']:
                         raise ArchiveCacheError(
                             f'Archive write verification failed at {entry["relative_path"]}.',
                             'validation_failed',
@@ -417,7 +413,7 @@ def build_archive(context, archive_id: str) -> dict:
                     expected_entries.append({
                         'relative_path': entry['relative_path'],
                         'size': entry['size'],
-                        'crc32': expected_crc,
+                        'crc32': archive_info.CRC,
                     })
                     after = Path(entry['path']).stat()
                     if after.st_size != entry['size'] or after.st_mtime_ns != entry['mtime_ns']:
@@ -527,10 +523,11 @@ def _cleanup_cache_locked(*, required_bytes=0, clear_unused=False) -> dict:
             DownloadArchive.state == 'ready'
         )
     ) or 0
+    free = shutil.disk_usage(root).free
     removed = removed_bytes = 0
     for archive in candidates:
         expired = archive.state == 'failed' or not archive.last_accessed_at or archive.last_accessed_at < cutoff
-        pressure = used + required_bytes > maximum or shutil.disk_usage(root).free - required_bytes < minimum_free
+        pressure = used + required_bytes > maximum or free - required_bytes < minimum_free
         if archive.id in active_ids or not (clear_unused or expired or pressure):
             continue
         lease = acquire_archive_lease(archive.id)
@@ -538,6 +535,7 @@ def _cleanup_cache_locked(*, required_bytes=0, clear_unused=False) -> dict:
             continue
         try:
             path = resolved_archive_path(archive, require_ready=False) if archive.relative_path else None
+            freed_disk_bytes = path.stat().st_size if path and path.is_file() else 0
             archive.state = 'deleting'
             db.session.commit()
             if path:
@@ -545,6 +543,7 @@ def _cleanup_cache_locked(*, required_bytes=0, clear_unused=False) -> dict:
             removed += 1
             removed_bytes += archive.archive_bytes
             used -= archive.archive_bytes
+            free += freed_disk_bytes
             fallback = policy['archiveCacheMode'] != 'require' and policy['archiveCacheFallbackEnabled']
             db.session.execute(
                 update(DownloadRequest).where(DownloadRequest.archive_id == archive.id).values(

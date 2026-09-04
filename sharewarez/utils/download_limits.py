@@ -270,7 +270,10 @@ def mark_stale_transfers(stale_seconds=60):
             ended_at=now,
         )
     )
-    db.session.commit()
+    if result.rowcount:
+        db.session.commit()
+    else:
+        db.session.rollback()
     return result.rowcount
 
 

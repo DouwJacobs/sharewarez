@@ -62,6 +62,10 @@ filename, readable elapsed time, bytes sent, and progress. The elapsed clock
 advances in the browser between responses, so it remains smooth without adding
 database writes. Polling pauses while the page is hidden and resumes as soon as
 the administrator returns.
+The member Downloads page follows the same non-overlapping pattern: active
+transfers refresh every two seconds, idle transfer checks slow to ten seconds,
+and polling pauses while the tab is hidden. The Download Cache summary refreshes
+every three seconds during builds and every thirty seconds while idle.
 Transfers without a heartbeat for 60 seconds are marked interrupted and their
 unused quota reservation is released. This monitoring state is shared by all
 web workers. An administrator can cancel an active transfer; the stream notices

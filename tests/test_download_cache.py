@@ -1,4 +1,5 @@
 import hashlib
+import inspect
 from types import SimpleNamespace
 from unittest.mock import patch
 from uuid import uuid4
@@ -15,6 +16,7 @@ from sharewarez.platform import LibraryPlatform
 from sharewarez.utils.download_cache import (
     build_archive, build_source_manifest, ensure_cache_root, request_resumable_archive,
 )
+import sharewarez.utils.download_cache as download_cache_module
 
 
 def cache_app(source, cache_dir):
@@ -152,6 +154,13 @@ def test_archive_build_publishes_valid_zip_and_marks_request_ready(db_session, a
         assert prepared.namelist() == ['part01.bin', 'part02.bin']
         assert prepared.read('part01.bin') == (source / 'part01.bin').read_bytes()
     assert heartbeats[-1][0] == 100
+
+
+def test_archive_builder_does_not_recalculate_zip_crc():
+    source = inspect.getsource(download_cache_module.build_archive)
+
+    assert 'zlib.crc32' not in source
+    assert "'crc32': archive_info.CRC" in source
 
 
 def test_admin_can_cancel_queued_archive_build(client, db_session, app, tmp_path):

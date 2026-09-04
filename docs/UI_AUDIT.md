@@ -337,3 +337,8 @@ elapsed clock advances locally once per second between server responses and uses
 compact durations such as **17m 16s** or **2h 14m** instead of an ever-growing
 raw seconds value. Existing transfer rows remain visible during a transient
 refresh failure.
+
+Member transfer polling is also non-overlapping and visibility-aware. It uses a
+two-second interval while a transfer is active and a ten-second idle interval.
+The Download Cache summary uses a three-second active interval and a thirty-second
+idle interval, reducing background work without making running builds feel stale.
