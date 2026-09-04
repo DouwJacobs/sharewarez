@@ -18,3 +18,26 @@ usable server-rendered fallbacks where practical.
 
 A full SPA is a future major-version decision requiring an explicit API,
 authentication, accessibility, offline, deployment, and migration design.
+
+## Download live updates (implementation in progress)
+
+SSE will run directly under ASGI rather than occupying the serialized Flask WSGI
+adapter for the lifetime of each connection. PostgreSQL remains the source of
+truth; no Redis or additional container is required.
+
+Revision `20260904_24` installs transaction-bound change triggers on transfers,
+download requests, archives, and archive-build jobs. Signals contain only a topic
+name, never filenames, filesystem paths, user IDs, or credentials. Unchanged rows
+and unrelated jobs do not signal. Rollbacks do not produce notifications.
+
+`sharewarez.live_events` supplies one dedicated autocommit LISTEN connection per
+web process, isolated from request-pool connections. It reconnects after failure
+and requests a fresh snapshot. A bounded notification ring, three-topic set,
+single scheduled event-loop callback, and one dirty flag per client prevent
+unbounded queues under load. Initial subscriptions always request a snapshot.
+Default admission limits are 100 connections per process and four per user per
+process (multiply by the number of web workers for the deployment ceiling).
+
+This foundation does not yet expose a browser endpoint. Authorization, snapshot
+queries, send timeouts, worker maintenance, and frontend integration are subsequent
+stages; the existing polling screens remain unchanged until those land.
