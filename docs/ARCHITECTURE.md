@@ -38,6 +38,20 @@ unbounded queues under load. Initial subscriptions always request a snapshot.
 Default admission limits are 100 connections per process and four per user per
 process (multiply by the number of web workers for the deployment ceiling).
 
-This foundation does not yet expose a browser endpoint. Authorization, snapshot
-queries, send timeouts, worker maintenance, and frontend integration are subsequent
-stages; the existing polling screens remain unchanged until those land.
+The `/api/live/downloads` ASGI endpoint accepts `view=downloads|activity|cache`
+and up to 100 visible row `ids`. The downloads view is always owner-only, including
+for administrators; activity and cache require an administrator. Each snapshot
+revalidates the signed session and account state/role. Cookie credentials are not
+accepted in the URL. Cross-site origins and untrusted hosts are rejected.
+
+Snapshots run in background threads with short-lived Flask contexts/database
+sessions. Sends have a ten-second timeout; disconnects release admission slots.
+Updates are coalesced to at most once per second, with a fresh authorized snapshot
+at least every 16 seconds as heartbeat and recovery from missed notifications.
+Every reconnect starts fresh rather than replaying historical events. Transfer
+payloads are bounded to 1,000 rows and explicitly flag truncation. Archive summary
+totals are SQL aggregates rather than loading the entire inventory into Python.
+
+Frontend integration, current-speed smoothing and worker maintenance are subsequent
+stages; the existing polling screens remain unchanged until those land. The endpoint
+currently supplies per-attempt average speed but no smoothed current speed yet.

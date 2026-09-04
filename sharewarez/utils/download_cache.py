@@ -570,16 +570,20 @@ def _cleanup_cache_locked(*, required_bytes=0, clear_unused=False) -> dict:
 def archive_summary() -> dict:
     policy = archive_policy()
     health = cache_health()
-    archives = db.session.execute(select(DownloadArchive)).scalars().all()
+    counts = dict(db.session.execute(select(
+        DownloadArchive.state, func.count(DownloadArchive.id),
+    ).group_by(DownloadArchive.state)).all())
+    ready_bytes, reclaimable_bytes = db.session.execute(select(
+        func.coalesce(func.sum(DownloadArchive.archive_bytes), 0),
+        func.coalesce(func.sum(DownloadArchive.archive_bytes).filter(DownloadArchive.pinned.is_(False)), 0),
+    ).where(DownloadArchive.state == 'ready')).one()
     return {
         'policy': policy,
         'health': health,
-        'used_bytes': sum(item.archive_bytes for item in archives if item.state == 'ready'),
-        'ready_bytes': sum(item.archive_bytes for item in archives if item.state == 'ready'),
-        'reclaimable_bytes': sum(
-            item.archive_bytes for item in archives if item.state == 'ready' and not item.pinned
-        ),
-        'counts': {state: sum(item.state == state for item in archives) for state in ARCHIVE_STATES},
+        'used_bytes': ready_bytes,
+        'ready_bytes': ready_bytes,
+        'reclaimable_bytes': reclaimable_bytes,
+        'counts': {state: counts.get(state, 0) for state in ARCHIVE_STATES},
     }
 
 

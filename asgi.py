@@ -69,6 +69,7 @@ class LazyASGIApp:
     def __init__(self):
         self._app = None
         self._flask_app = None
+        self._download_events = None
     
     async def __call__(self, scope, receive, send):
         if scope["type"] == "lifespan":
@@ -77,6 +78,14 @@ class LazyASGIApp:
         elif scope["type"] == "http":
             # Handle HTTP requests - check for download routes first
             path = scope["path"]
+            if path == '/api/live/downloads':
+                if self._flask_app is None:
+                    self._flask_app = create_app()
+                if self._download_events is None:
+                    from sharewarez.live_sse import DownloadEventStream
+                    self._download_events = DownloadEventStream(self._flask_app)
+                await self._download_events(scope, receive, send)
+                return
             
             # Check if this is a download route
             if (path.startswith('/download_zip/') or 
@@ -88,7 +97,8 @@ class LazyASGIApp:
             if self._app is None:
                 # Create Flask app only on first HTTP request, not during module import
                 # Database initialization is handled by InitializationManager before workers start
-                self._flask_app = create_app()
+                if self._flask_app is None:
+                    self._flask_app = create_app()
 
                 # Wrap with ASGI adapter
                 self._app = WsgiToAsgi(self._flask_app)
@@ -742,6 +752,7 @@ class LazyASGIApp:
                 from sharewarez.utils.shutdown import register_shutdown_handlers
                 register_shutdown_handlers()
                 await send({"type": "lifespan.startup.complete"})
+                await self._handle_lifespan(receive, send)
             except Exception as e:
                 print(f"Startup failed: {e}")
                 await send({"type": "lifespan.startup.failed", "message": "Startup failed"})
@@ -749,6 +760,8 @@ class LazyASGIApp:
         elif message["type"] == "lifespan.shutdown":
             # Application is shutting down
             try:
+                if self._download_events is not None:
+                    await self._download_events.close()
                 # Request graceful shutdown
                 from sharewarez.utils.shutdown import request_shutdown
                 request_shutdown()
