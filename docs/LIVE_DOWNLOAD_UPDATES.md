@@ -102,8 +102,11 @@ opens authenticated HTTP streams, commits a progress update and observes it in
 both processes. It verifies ordinary HTTP requests remain responsive, terminates
 one worker, and checks a replacement worker's initial snapshot against current
 database state. Fresh-install notification DDL has its own bootstrap test.
-Broad regression and operational completion checks are still in progress; this
-document is not a production-release approval.
+The complete local quality gate passed on 2026-09-04 using Python 3.12, including
+all isolated PostgreSQL test modules, the migration and Compose checks, and the
+release-equivalent `gamelibrary:quality-gate` container build. The separate
+browser-client transport suite also passed. This is implementation verification,
+not production deployment approval; perform the staging checks listed below.
 
 ### Acceptance evidence map
 
