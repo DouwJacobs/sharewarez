@@ -140,3 +140,36 @@ def test_download_payload_preparing_ready_and_fallback_policy():
     assert ready["archive"]["progress"] is None
     policy["archiveCacheFallbackEnabled"] = False
     assert not download_payload(item, policy)["fallback_available"]
+
+
+def test_cache_snapshot_stage_leases_and_admin_only_polling(app, db_session, client, tmp_path):
+    from sharewarez.models import DownloadArchive, BackgroundJob
+    from sharewarez.live_snapshots import cache_payload
+    app.config['DOWNLOAD_CACHE_DIR'] = str(tmp_path / 'cache')
+    suffix = uuid4().hex
+    user = User(name=f'cache-live-{suffix}', email=f'{suffix}@example.test', role='admin',
+                state=True, password_hash='test')
+    job = BackgroundJob(task_name='download.archive.build', queue='archive', status='running',
+                        progress=97, progress_message='Flushing archive', cancel_requested=True)
+    db_session.add_all([user, job]); db_session.flush()
+    archive = DownloadArchive(id=str(uuid4()), cache_key=uuid4().hex * 2, source_path='/not-exposed',
+                              display_name='Test archive', state='building', source_bytes=100,
+                              bytes_written=99, build_job_id=job.id)
+    db_session.add(archive); db_session.flush()
+    transfer = DownloadTransfer(user_id=user.id, archive_id=archive.id, filename='test.zip')
+    db_session.add(transfer); db_session.commit()
+    import json
+    cache_data = cache_payload([archive.id])
+    json.dumps(cache_data)  # ASGI SSE uses the standard encoder, not Flask's Decimal conversion.
+    result = cache_data['archives'][0]
+    assert result['progress'] == 97 and result['progress_message'] == 'Flushing archive'
+    assert result['active_leases'] == 1 and result['cancel_requested']
+    assert 'source_path' not in result
+    with client.session_transaction() as session:
+        session['_user_id'] = str(user.id)
+    response = client.get('/admin/download-cache/status?ids=' + archive.id)
+    assert response.status_code == 200 and response.cache_control.no_store
+    assert response.json['archives'][0]['id'] == archive.id
+    user.role = 'user'; db_session.commit()
+    denied = client.get('/admin/download-cache/status?ids=' + archive.id)
+    assert denied.status_code == 302 and denied.json is None

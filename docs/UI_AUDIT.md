@@ -392,3 +392,24 @@ within 390 px, with the shared 12 px gutter. No browser console errors were foun
 The fixture contains synthetic metadata only; it does not claim to validate the
 contents of a delivered archive. Other-theme and real-interruption testing remain
 part of the full implementation verification.
+
+## SSE cache inventory (2026-09-04)
+
+The inventory now updates the visible archive rows' state, build-job stage,
+percentage, bytes, failure message, pin state, last-used time and active-transfer
+count. Cancel/Retry visibility and Evict availability change in place. Server
+forms retain their CSRF tokens and confirmation prompts. Policy and filter fields
+are not refreshed, and a changed inventory count offers an explicit refresh link
+instead of reordering the current page beneath the administrator.
+
+The preview exposed a PostgreSQL aggregate Decimal serialization issue: the SSE
+stream failed while polling remained usable. Totals are now converted to integers
+and tested with the same JSON encoder as ASGI. After restart, the rendered status
+confirmed **Live updates connected** and stage/progress updates continued.
+
+Mobile 390 × 844 inspection caught progress subtext occupying the narrow label
+column; the scoped rule now keeps archive metadata and stage text in column two.
+The mobile page has its single 12 px gutter and no document-level overflow. An
+unsaved retention value of 14 survived live updates. Desktop inventory and policy
+layout were also checked in the default theme. No real cache files were built,
+cancelled or evicted by the synthetic UI fixture.

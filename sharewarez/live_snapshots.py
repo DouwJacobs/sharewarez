@@ -3,7 +3,7 @@
 from datetime import datetime, timezone
 
 from flask import Request
-from sqlalchemy import select
+from sqlalchemy import select, func
 from sqlalchemy.orm import joinedload
 
 from sharewarez import db
@@ -31,6 +31,35 @@ def download_payload(item, policy):
             if archive.source_bytes and archive.state in {"queued", "building"} else None,
             "failure_message": archive.failure_message,
         } if archive else None),
+    }
+
+
+def cache_payload(ids):
+    from sharewarez.utils.download_cache import archive_summary
+    summary = archive_summary()
+    archives = db.session.execute(select(DownloadArchive).options(joinedload(DownloadArchive.build_job)).where(
+        DownloadArchive.id.in_(ids),
+    )).scalars().all()
+    leases = dict(db.session.execute(select(DownloadTransfer.archive_id, func.count()).where(
+        DownloadTransfer.archive_id.in_(ids), DownloadTransfer.status == "active",
+    ).group_by(DownloadTransfer.archive_id)).all())
+    return {
+        "summary": {
+            "healthy": summary["health"]["healthy"], "message": summary["health"]["message"],
+            "used_bytes": summary["used_bytes"], "free_bytes": summary["health"]["free_bytes"],
+            "reclaimable_bytes": summary["reclaimable_bytes"], "counts": summary["counts"],
+        },
+        "archives": [{
+            "id": item.id, "state": item.state, "pinned": item.pinned, "file_count": item.file_count,
+            "source_bytes": item.source_bytes, "archive_bytes": item.archive_bytes,
+            "bytes_written": item.bytes_written, "failure_message": item.failure_message,
+            "active_leases": leases.get(item.id, 0),
+            "last_accessed_at": item.last_accessed_at.isoformat() if item.last_accessed_at else None,
+            "cancel_requested": bool(item.build_job and item.build_job.cancel_requested),
+            "progress": min(99, max(0, item.build_job.progress or 0)) if item.build_job
+            else min(99, round(item.bytes_written / item.source_bytes * 100)) if item.source_bytes else 0,
+            "progress_message": item.build_job.progress_message if item.build_job else None,
+        } for item in archives],
     }
 
 
@@ -100,23 +129,5 @@ def snapshot(app, scope, view, ids):
             policy = archive_policy()
             result["downloads"] = [download_payload(item, policy) for item in downloads]
         if view == "cache":
-            from sharewarez.utils.download_cache import archive_summary
-            summary = archive_summary()
-            result["summary"] = {
-                "healthy": summary["health"]["healthy"], "message": summary["health"]["message"],
-                "used_bytes": summary["used_bytes"], "free_bytes": summary["health"]["free_bytes"],
-                "counts": summary["counts"],
-            }
-            archives = db.session.execute(select(DownloadArchive).options(joinedload(DownloadArchive.build_job)).where(
-                DownloadArchive.id.in_(ids),
-            )).scalars().all()
-            result["archives"] = [{
-                "id": item.id, "state": item.state, "pinned": item.pinned,
-                "source_bytes": item.source_bytes, "archive_bytes": item.archive_bytes,
-                "bytes_written": item.bytes_written, "failure_message": item.failure_message,
-                "cancel_requested": bool(item.build_job and item.build_job.cancel_requested),
-                "progress": min(99, max(0, item.build_job.progress or 0))
-                if item.build_job and item.state in {"queued", "building"} else None,
-                "progress_message": item.build_job.progress_message if item.build_job else None,
-            } for item in archives]
+            result.update(cache_payload(ids))
         return result

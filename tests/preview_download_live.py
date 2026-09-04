@@ -19,7 +19,7 @@ os.environ["PYTEST_CURRENT_TEST"] = "isolated-live-preview"
 from flask import redirect, session
 from alembic import command
 from sharewarez import create_app, db
-from sharewarez.models import User, DownloadTransfer, DownloadArchive, DownloadRequest, Game, Library
+from sharewarez.models import User, DownloadTransfer, DownloadArchive, DownloadRequest, Game, Library, BackgroundJob
 from sharewarez.platform import LibraryPlatform
 from sharewarez.utils.migrations import alembic_config
 from asgi import LazyASGIApp
@@ -48,6 +48,11 @@ with app.app_context():
     archive = DownloadArchive(id="11111111-1111-4111-8111-111111111111", cache_key="1" * 64,
                               source_path="/preview-only", display_name="Preview game archive", state="building",
                               source_bytes=104857600, bytes_written=10485760)
+    job = BackgroundJob(task_name="download.archive.build", queue="archive", status="running",
+                        progress=10, progress_message="Writing archive")
+    db.session.add(job)
+    db.session.flush()
+    archive.build_job_id = job.id
     db.session.add_all([game, archive])
     db.session.flush()
     download = DownloadRequest(user_id=user_id, game_uuid=game.uuid, archive_id=archive.id,
@@ -80,11 +85,15 @@ def simulate():
             tick += 1
             archive = db.session.get(DownloadArchive, archive_id)
             request = db.session.get(DownloadRequest, download_id)
+            job = archive.build_job
             phase = tick % 45
             archive.state = "building" if phase < 30 else "ready"
             archive.bytes_written = min(104857600, phase * 3495253)
             archive.archive_bytes = 104857600 if phase >= 30 else 0
             request.status = "processing" if phase < 30 else "available"
+            job.progress = min(100, round(phase / 30 * 100))
+            job.progress_message = "Publishing archive" if 27 <= phase < 30 else "Writing archive"
+            job.status = "running" if phase < 30 else "completed"
             db.session.commit()
 
 

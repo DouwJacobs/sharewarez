@@ -4,6 +4,8 @@ from datetime import datetime, timezone
 from flask import abort, flash, jsonify, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 from sqlalchemy import func, select
+from sqlalchemy.orm import joinedload
+from sharewarez.live_snapshots import cache_payload
 
 from sharewarez import cache, db
 from sharewarez.forms import CsrfProtectForm
@@ -45,7 +47,7 @@ def manage_download_cache():
     page = max(1, request.args.get('page', 1, type=int))
     state = request.args.get('state', '').strip().lower()
     query_text = request.args.get('q', '').strip()
-    statement = select(DownloadArchive).order_by(
+    statement = select(DownloadArchive).options(joinedload(DownloadArchive.build_job)).order_by(
         DownloadArchive.updated_at.desc(), DownloadArchive.created_at.desc()
     )
     if state in {'queued', 'building', 'ready', 'failed'}:
@@ -85,6 +87,14 @@ def manage_download_cache():
 @login_required
 @admin_required
 def download_cache_status():
+    raw_ids = request.args.get('ids')
+    if raw_ids is not None:
+        ids = list(set(filter(None, raw_ids.split(','))))
+        if len(ids) > 100 or any(len(value) > 36 for value in ids):
+            return jsonify({'error': 'Invalid archive IDs'}), 400
+        response = jsonify(cache_payload(ids))
+        response.headers['Cache-Control'] = 'no-store'
+        return response
     summary = archive_summary()
     return jsonify({
         'status': 'success',

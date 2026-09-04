@@ -580,9 +580,9 @@ def archive_summary() -> dict:
     return {
         'policy': policy,
         'health': health,
-        'used_bytes': ready_bytes,
-        'ready_bytes': ready_bytes,
-        'reclaimable_bytes': reclaimable_bytes,
+        'used_bytes': int(ready_bytes),
+        'ready_bytes': int(ready_bytes),
+        'reclaimable_bytes': int(reclaimable_bytes),
         'counts': {state: counts.get(state, 0) for state in ARCHIVE_STATES},
     }
 

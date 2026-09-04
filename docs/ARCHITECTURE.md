@@ -52,8 +52,11 @@ Every reconnect starts fresh rather than replaying historical events. Transfer
 payloads are bounded to 1,000 rows and explicitly flag truncation. Archive summary
 totals are SQL aggregates rather than loading the entire inventory into Python.
 
-The admin active-transfer and member Downloads frontends now consume SSE with
-polling fallback; archive inventory integration remains a subsequent stage. Both SSE activity snapshots and
+The admin active-transfer, member Downloads and cache inventory frontends consume
+SSE with polling fallback. Cache inventory snapshots include build-job stages and
+active-transfer counts; actions remain CSRF-protected server forms. Pagination is
+stable, with an explicit refresh hint when the total inventory count changes.
+Both SSE activity snapshots and
 the existing admin polling endpoint now supply current speed (an eight-second
 window), per-attempt average speed, and ETA when remaining size and current rate
 are meaningful. A bounded process-local sample store avoids multiplying samples
