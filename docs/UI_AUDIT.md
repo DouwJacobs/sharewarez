@@ -369,3 +369,26 @@ user Downloads and cache inventory are not covered by this stage's visual check.
 Transport behavior is tested with `node tests/download_live.test.cjs`; Python
 route tests verify script wiring. On Windows, invoke the test file directly rather
 than `node --test` when using a UNC repository path.
+
+## SSE member Downloads transitions (2026-09-04)
+
+The member page now uses the shared SSE client and polling fallback. Visible
+request IDs are subscribed in one stream. Status, archive progress, delivery
+label, expiry, size, transfer state and the page summary update without a page
+reload. All action forms are server-rendered with CSRF tokens and remain stable;
+only their visibility changes. If a focused action becomes invalid, focus moves
+to that row's status cell without scrolling. Expired/failed links expose Retry;
+ready cached archives expose Download and the Resumable label.
+
+The scoped hidden-action rule deliberately outranks shared button geometry:
+otherwise the shared `display: inline-flex !important` rule makes a hidden link
+visible. This conflict was caught in the rendered preview and fixed. Preparation
+percentages no longer announce every update through a live region.
+
+A cycling disposable archive fixture demonstrated Preparing → Ready in the open
+page without navigation, with Cancel hidden and Download visible afterwards.
+Default-theme desktop and 390 × 844 screenshots were inspected. Mobile remained
+within 390 px, with the shared 12 px gutter. No browser console errors were found.
+The fixture contains synthetic metadata only; it does not claim to validate the
+contents of a delivered archive. Other-theme and real-interruption testing remain
+part of the full implementation verification.

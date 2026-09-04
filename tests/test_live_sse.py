@@ -121,3 +121,22 @@ def test_snapshot_owner_admin_and_account_revocation(app, db_session):
         snapshot(app, signed(users[0]), "downloads", ())
     with pytest.raises(LiveAccessDenied):
         snapshot(app, scope(), "downloads", ())
+
+
+def test_download_payload_preparing_ready_and_fallback_policy():
+    from types import SimpleNamespace
+    from sharewarez.live_snapshots import download_payload
+    policy = {"archiveCacheMode": "prefer", "archiveCacheFallbackEnabled": True}
+    archive = SimpleNamespace(state="building", bytes_written=99, source_bytes=100, failure_message=None)
+    item = SimpleNamespace(id=1, status="processing", delivery_kind="cached_archive",
+                           download_size=100, expires_at=None, archive=archive)
+    preparing = download_payload(item, policy)
+    assert preparing["archive"]["progress"] == 99
+    assert preparing["fallback_available"] and not preparing["available"]
+    archive.state = "ready"
+    item.status = "available"
+    ready = download_payload(item, policy)
+    assert ready["available"] and ready["archive"]["state"] == "ready"
+    assert ready["archive"]["progress"] is None
+    policy["archiveCacheFallbackEnabled"] = False
+    assert not download_payload(item, policy)["fallback_available"]

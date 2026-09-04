@@ -10,7 +10,8 @@ from sharewarez.models import DownloadRequest, DownloadTransfer, GlobalSettings
 from sqlalchemy.orm import joinedload
 from sharewarez.utils.event_logging import log_system_event
 from sharewarez.utils.download_limits import calculate_download_expiry
-from sharewarez.utils.download_cache import request_resumable_archive
+from sharewarez.utils.download_cache import request_resumable_archive, archive_policy
+from sharewarez.live_snapshots import download_payload
 from . import apis_bp
 
 ALLOWED_BULK_ACTIONS = {'delete', 'cancel', 'retry'}
@@ -31,18 +32,10 @@ def download_statuses():
     if current_user.role != 'admin':
         query = query.where(DownloadRequest.user_id == current_user.id)
     downloads = db.session.execute(query).scalars().all()
-    return jsonify({'downloads': [
-        {
-            'id': item.id, 'status': item.status, 'available': item.status == 'available',
-            'archive': ({
-                'state': item.archive.state,
-                'progress': min(99, round(item.archive.bytes_written / item.archive.source_bytes * 100))
-                if item.archive.source_bytes and item.archive.state in {'queued', 'building'} else None,
-                'failure_message': item.archive.failure_message,
-            } if item.archive else None),
-        }
-        for item in downloads
-    ]})
+    policy = archive_policy()
+    response = jsonify({'downloads': [download_payload(item, policy) for item in downloads]})
+    response.headers['Cache-Control'] = 'no-store'
+    return response
 
 @apis_bp.route('/downloads/bulk', methods=['POST'])
 @login_required

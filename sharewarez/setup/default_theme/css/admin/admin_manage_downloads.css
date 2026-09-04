@@ -2,6 +2,8 @@
     width: min(1440px, calc(100% - 48px));
     margin: 24px auto 48px;
 }
+.downloads-page [hidden] { display: none !important; }
+.downloads-page .actions-cell [data-action][hidden] { display: none !important; }
 
 .downloads-page-header {
     display: flex;

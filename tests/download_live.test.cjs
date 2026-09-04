@@ -79,3 +79,12 @@ test('duration and speed distinguish unknown from stalled', () => {
     assert.equal(h.ui.speed(0), '0 B/s');
     assert.equal(h.ui.speed(1048576), '1.0 MiB/s'); h.client.close();
 });
+
+test('member updates retain server forms and never reload the page', () => {
+    const root = path.join(__dirname, '../sharewarez');
+    const script = fs.readFileSync(path.join(root, 'setup/default_theme/js/downloads_manager.js'), 'utf8');
+    const css = fs.readFileSync(path.join(root, 'setup/default_theme/css/admin/admin_manage_downloads.css'), 'utf8');
+    assert.doesNotMatch(script, /location\.reload|replaceChildren|innerHTML/);
+    assert.match(script, /preventScroll:true/);
+    assert.match(css, /\.downloads-page \.actions-cell \[data-action\]\[hidden\] \{ display: none !important; \}/);
+});

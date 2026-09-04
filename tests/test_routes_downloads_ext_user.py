@@ -149,7 +149,10 @@ class TestDownloadsRoute:
         assert response.status_code == 200
         assert b'Downloading' in response.data
         assert b'>Download</a>' not in response.data
-        assert b'> Delete</button>' not in response.data
+        import re
+        assert re.search(rb'<form data-action="delete"[^>]* hidden>', response.data)
+        assert re.search(rb'<a data-action="download"[^>]* hidden>', response.data)
+        assert b'download_live.js' in response.data
 
     def test_user_active_transfers_are_isolated(self, client, authenticated_user, admin_user, sample_download_request, db_session):
         db_session.add(DownloadTransfer(

@@ -1,179 +1,104 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const rows = [...document.querySelectorAll('tr[data-download-id]')];
-    if (!rows.length) return;
-
-    const activeStatuses = new Set(['pending', 'processing']);
-    let delay = 3000;
-    let timer = null;
-    let transferDelay = 2000;
-    let transferTimer = null;
-    let transferRefreshRunning = false;
-
-    const renderStatus = (row, status) => {
-        const cell = row.querySelector('.status-cell');
-        if (!cell) return;
-        const normalized = status.toLowerCase().replaceAll(' ', '-');
-        let badge = cell.querySelector('.download-status');
-        if (!badge) {
-            badge = document.createElement('span');
-            cell.prepend(badge);
-        }
-        badge.className = `download-status download-status--${normalized}`;
-        badge.innerHTML = `<span class="download-status-dot" aria-hidden="true"></span>${status.replaceAll('_', ' ').replace(/\b\w/g, char => char.toUpperCase())}`;
-        row.dataset.downloadStatus = status;
-        
-        const actionsCell = row.querySelector('.actions-cell');
-        if (actionsCell && status === 'available') {
-            const isTransferActive = row.dataset.transferActive === 'true';
-            if (!isTransferActive) {
-                actionsCell.querySelectorAll('.btn-downloading').forEach(el => el.remove());
-                if (!actionsCell.querySelector('a[href*="download_zip"]')) {
-                    const id = row.dataset.downloadId;
-                    const downloadBtn = document.createElement('a');
-                    downloadBtn.href = `/download_zip/${id}`;
-                    downloadBtn.className = 'btn btn-primary btn-sm';
-                    downloadBtn.innerHTML = '<i class="fas fa-download" aria-hidden="true"></i> Download';
-                    actionsCell.prepend(downloadBtn);
-                }
-            }
-        }
+    'use strict';
+    const ui = window.DownloadLive, views = new Map();
+    const connection = document.getElementById('downloadConnection');
+    const labels = {pending:'Queued', processing:'Preparing', available:'Ready', failed:'Failed',
+        cancelled:'Cancelled', expired:'Expired', removed:'Removed'};
+    const make = (tag, cls, parent) => {
+        const node = document.createElement(tag); node.className = cls; parent.append(node); return node;
     };
-
-    const refresh = async () => {
-        const activeRows = rows.filter(row => activeStatuses.has(row.dataset.downloadStatus || row.querySelector('.download-status')?.textContent.trim().toLowerCase()));
-        if (!activeRows.length) return;
-        const ids = activeRows.map(row => row.dataset.downloadId).join(',');
-        try {
-            const response = await fetch(`/api/downloads/status?ids=${encodeURIComponent(ids)}`);
-            if (!response.ok) throw new Error('Status refresh failed');
-            const data = await response.json();
-            data.downloads.forEach(item => {
-                const row = document.querySelector(`tr[data-download-id="${item.id}"]`);
-                if (!row) return;
-                if (item.status !== row.dataset.downloadStatus) {
-                    window.location.reload();
-                    return;
-                }
-                const progress = row.querySelector('.download-archive-progress');
-                if (progress && item.archive?.progress != null) {
-                    const bar = progress.querySelector('span > span');
-                    if (bar) bar.style.width = `${item.archive.progress}%`;
-                    progress.lastChild.textContent = ` ${item.archive.progress}% prepared`;
-                }
-            });
-            delay = 3000;
-        } catch (error) {
-            console.error(error);
-            delay = Math.min(delay * 2, 30000);
-        }
-        timer = window.setTimeout(refresh, delay);
+    const labelWithin = (node, tag = 'span') => {
+        const initial = [...node.childNodes].filter(child => child.nodeType === 3);
+        const label = make(tag, '', node);
+        label.textContent = initial.map(child => child.textContent).join('').trim();
+        initial.forEach(child => child.remove()); return label;
     };
-
-    const updateTransferUI = (row, transfer) => {
-        const id = row.dataset.downloadId;
-        const statusCell = row.querySelector('.status-cell');
-        const actionsCell = row.querySelector('.actions-cell');
-        const wasActive = row.dataset.transferActive === 'true';
-        const isActive = Boolean(transfer);
-        row.dataset.transferActive = isActive ? 'true' : 'false';
-
-        if (isActive) {
-            if (statusCell) {
-                let badge = statusCell.querySelector('.download-status');
-                if (!badge) {
-                    badge = document.createElement('span');
-                    statusCell.prepend(badge);
-                }
-                badge.className = 'download-status download-status--downloading';
-                badge.innerHTML = '<span class="download-status-dot" aria-hidden="true"></span>Downloading';
-
-                let detail = statusCell.querySelector('.download-transfer-detail');
-                if (!detail) {
-                    detail = document.createElement('small');
-                    detail.className = 'download-transfer-detail';
-                    statusCell.appendChild(detail);
-                }
-                const expected = transfer.expected_bytes_label ? ` of ${transfer.expected_bytes_label}` : '';
-                detail.textContent = `${transfer.bytes_sent_label || '0 B'} streamed${expected}`;
-            }
-
-            if (actionsCell) {
-                actionsCell.querySelectorAll('a[href*="download_zip"]').forEach(el => el.remove());
-                const existingDeleteBtn = actionsCell.querySelector('form[action*="delete_download"]');
-                if (existingDeleteBtn) existingDeleteBtn.style.display = 'none';
-
-                let downloadingBtn = actionsCell.querySelector('.btn-downloading');
-                if (!downloadingBtn) {
-                    downloadingBtn = document.createElement('span');
-                    downloadingBtn.className = 'btn btn-secondary btn-sm disabled btn-downloading';
-                    downloadingBtn.setAttribute('aria-disabled', 'true');
-                    downloadingBtn.innerHTML = '<i class="fas fa-circle-notch fa-spin" aria-hidden="true"></i> Downloading';
-                    actionsCell.prepend(downloadingBtn);
-                }
-            }
-        } else if (wasActive || actionsCell?.querySelector('.btn-downloading')) {
-            const currentStatus = row.dataset.downloadStatus || 'available';
-            if (statusCell) {
-                const detail = statusCell.querySelector('.download-transfer-detail');
-                if (detail) detail.remove();
-                renderStatus(row, currentStatus);
-            }
-            if (actionsCell) {
-                actionsCell.querySelectorAll('.btn-downloading').forEach(btn => btn.remove());
-                const deleteForm = actionsCell.querySelector('form[action*="delete_download"]');
-                if (deleteForm) deleteForm.style.display = '';
-
-                if (currentStatus === 'available' && !actionsCell.querySelector('a[href*="download_zip"]')) {
-                    const downloadBtn = document.createElement('a');
-                    downloadBtn.href = `/download_zip/${id}`;
-                    downloadBtn.className = 'btn btn-primary btn-sm';
-                    downloadBtn.innerHTML = '<i class="fas fa-download" aria-hidden="true"></i> Download';
-                    actionsCell.prepend(downloadBtn);
-                }
-            }
+    document.querySelectorAll('tr[data-download-id]').forEach(row => {
+        const cell = row.querySelector('.status-cell'), badge = cell.querySelector('.download-status');
+        const delivery = cell.querySelector('.download-delivery-badge');
+        let progress = cell.querySelector('.download-archive-progress');
+        if (!progress) {
+            progress = make('span', 'download-archive-progress', cell);
+            make('span', '', make('span', '', progress)); progress.hidden = true;
         }
-    };
-
-    const refreshTransfers = async () => {
-        if (transferRefreshRunning || document.hidden) return;
-        transferRefreshRunning = true;
-        try {
-            const response = await fetch('/downloads/active-transfers', {
-                credentials: 'same-origin', cache: 'no-store',
-            });
-            if (!response.ok) throw new Error('Transfer refresh failed');
-            const data = await response.json();
-            const transfers = data.transfers || [];
-            const activeMap = new Map(
-                transfers.map(item => [String(item.download_request_id), item])
-            );
-            rows.forEach(row => {
-                const id = row.dataset.downloadId;
-                const transfer = activeMap.get(id);
-                updateTransferUI(row, transfer);
-            });
-            transferDelay = transfers.length ? 2000 : 10000;
-        } catch (_error) {
-            // A transient polling failure should not interrupt the page.
-            transferDelay = Math.min(transferDelay * 2, 30000);
-        } finally {
-            transferRefreshRunning = false;
-            window.clearTimeout(transferTimer);
-            if (!document.hidden) {
-                transferTimer = window.setTimeout(refreshTransfers, transferDelay);
-            }
-        }
-    };
-
-    document.addEventListener('visibilitychange', () => {
-        if (document.hidden) {
-            window.clearTimeout(timer);
-            window.clearTimeout(transferTimer);
-        } else {
-            refresh();
-            refreshTransfers();
-        }
+        progress.removeAttribute('aria-live'); progress.removeAttribute('role');
+        const failures = [...cell.querySelectorAll('.download-failure-reason')];
+        failures.slice(1).forEach(node => { node.hidden = true; });
+        views.set(row.dataset.downloadId, {row, cell, badge, badgeLabel:labelWithin(badge),
+            delivery, deliveryLabel:labelWithin(delivery), progress, progressLabel:labelWithin(progress,'small'),
+            failure:failures[0] || make('small','download-failure-reason',cell),
+            detail:cell.querySelector('.download-transfer-detail') || make('small','download-transfer-detail',cell),
+            expiry:cell.querySelector('.download-expiry') || make('small','download-expiry',cell)});
     });
-    refresh();
-    refreshTransfers();
+    if (!views.size) { ui.text(connection, 'No download links to monitor'); return; }
+    const action = (view, name, visible) => {
+        const node = view.row.querySelector('[data-action="' + name + '"]');
+        if (!node) return;
+        if (!visible && node.contains(document.activeElement)) view.cell.focus({preventScroll:true});
+        node.hidden = !visible;
+    };
+    const render = data => {
+        if (!Array.isArray(data.downloads) || !Array.isArray(data.transfers)) throw new Error('Invalid snapshot');
+        const downloads = new Map(data.downloads.map(item => [String(item.id),item]));
+        const transfers = new Map(data.transfers.map(item => [String(item.download_request_id),item]));
+        const counts = {};
+        views.forEach((view,id) => {
+            const item = downloads.get(id) || {status:'removed'}, transfer = transfers.get(id);
+            const status = item.status, active = Boolean(transfer);
+            const pending = ['pending','processing'].includes(status), retry = ['failed','cancelled','expired'].includes(status);
+            const preparing = ['queued','building'].includes(item.archive?.state);
+            const label = active ? 'Downloading' : labels[status] || status;
+            counts[label] = (counts[label] || 0) + 1;
+            view.row.dataset.downloadStatus = status; view.row.dataset.transferActive = String(active);
+            view.badge.className = 'ui-status download-status download-status--' + label.toLowerCase();
+            ui.text(view.badgeLabel,label);
+            const resumable = (item.delivery_kind === 'direct' && view.row.dataset.directResumable === 'true')
+                || (item.delivery_kind === 'cached_archive' && item.archive?.state === 'ready');
+            ui.text(view.deliveryLabel,preparing ? 'Preparing' : resumable ? 'Resumable' : 'Streaming · restart required');
+            view.delivery.className = 'download-delivery-badge download-delivery-badge--' + (preparing ? 'preparing' : resumable ? 'resumable' : 'streaming');
+            view.delivery.querySelector('i').className = 'fas ' + (preparing ? 'fa-box-open' : resumable ? 'fa-rotate' : 'fa-triangle-exclamation');
+            view.delivery.hidden = status === 'removed'; view.progress.hidden = !preparing;
+            const percent = item.archive?.progress || 0;
+            view.progress.firstElementChild.firstElementChild.style.width = percent + '%';
+            ui.text(view.progressLabel,percent + '% prepared');
+            const failure = status === 'expired' ? 'This download link expired. Retry to create a fresh link.'
+                : item.archive?.failure_message || (status === 'failed' ? 'The request could not be completed. Retry to validate the source.' : '');
+            view.failure.hidden = !failure; ui.text(view.failure,failure);
+            view.detail.hidden = !active;
+            if (active) ui.text(view.detail,(transfer.bytes_sent_label || '0 B') + ' streamed' + (transfer.expected_bytes_label ? ' of ' + transfer.expected_bytes_label : ''));
+            view.expiry.hidden = active || status !== 'available' || !item.expires_at;
+            if (item.expires_at) {
+                const date = new Date(item.expires_at);
+                ui.text(view.expiry,'Available until ' + date.toLocaleString());
+                view.expiry.classList.toggle('is-urgent',date - Date.now() < 86400000);
+            }
+            if (item.size_label) ui.text(view.row.querySelector('.download-size'),item.size_label);
+            action(view,'download',!active && status === 'available'); action(view,'downloading',active);
+            action(view,'cancel',!active && pending); action(view,'retry',!active && retry);
+            action(view,'fallback',!active && (pending || retry) && item.fallback_available);
+            action(view,'delete',!active && status !== 'removed');
+        });
+        const summary = document.querySelector('.download-state-summary');
+        if (summary) {
+            for (const label of [...Object.values(labels),'Downloading']) {
+                let node = [...summary.children].find(child => child.dataset.stateLabel === label);
+                if (!node) {
+                    node = document.createElement('span'); node.dataset.stateLabel = label;
+                    node.append(document.createElement('strong'),document.createTextNode(label));
+                    summary.insertBefore(node,summary.querySelector('a'));
+                }
+                node.hidden = !counts[label]; ui.text(node.querySelector('strong'),counts[label] || 0);
+            }
+            [...summary.children].filter(node => node.tagName === 'SPAN' && !node.dataset.stateLabel)
+                .forEach(node => { node.hidden = true; });
+        }
+    };
+    const ids = [...views.keys()];
+    ui.connect({view:'downloads',ids,render,status:message => ui.text(connection,message),
+        poll:async signal => {
+            const [downloads,transfers] = await Promise.all([
+                ui.json('/api/downloads/status?ids=' + ids.join(','),signal),
+                ui.json('/downloads/active-transfers',signal)]);
+            return {...downloads,...transfers};
+        }});
 });

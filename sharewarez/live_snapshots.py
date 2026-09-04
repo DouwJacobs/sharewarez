@@ -17,6 +17,23 @@ class LiveAccessDenied(Exception):
         self.status = status
 
 
+def download_payload(item, policy):
+    archive = item.archive
+    return {
+        "id": item.id, "status": item.status, "delivery_kind": item.delivery_kind,
+        "available": item.status == "available", "size_label": format_size(item.download_size),
+        "expires_at": item.expires_at.isoformat() if item.expires_at else None,
+        "fallback_available": bool(archive and policy["archiveCacheMode"] == "prefer"
+                                   and policy["archiveCacheFallbackEnabled"]),
+        "archive": ({
+            "state": archive.state,
+            "progress": min(99, round(archive.bytes_written / archive.source_bytes * 100))
+            if archive.source_bytes and archive.state in {"queued", "building"} else None,
+            "failure_message": archive.failure_message,
+        } if archive else None),
+    }
+
+
 def authenticate(app, scope, view):
     headers = dict(scope.get("headers", []))
     request = Request({
@@ -76,18 +93,12 @@ def snapshot(app, scope, view, ids):
             result["transfers_truncated"] = len(transfers) > 1000
             result["transfers"] = [transfer_payload(item, now, admin=view == "activity") for item in transfers[:1000]]
         if view == "downloads":
+            from sharewarez.utils.download_cache import archive_policy
             downloads = db.session.execute(select(DownloadRequest).options(joinedload(DownloadRequest.archive)).where(
                 DownloadRequest.user_id == user.id, DownloadRequest.id.in_(ids),
             )).scalars().all()
-            result["downloads"] = [{
-                "id": item.id, "status": item.status, "delivery_kind": item.delivery_kind,
-                "available": item.status == "available", "archive": ({
-                    "state": item.archive.state,
-                    "progress": min(99, round(item.archive.bytes_written / item.archive.source_bytes * 100))
-                    if item.archive.source_bytes and item.archive.state in {"queued", "building"} else None,
-                    "failure_message": item.archive.failure_message,
-                } if item.archive else None),
-            } for item in downloads]
+            policy = archive_policy()
+            result["downloads"] = [download_payload(item, policy) for item in downloads]
         if view == "cache":
             from sharewarez.utils.download_cache import archive_summary
             summary = archive_summary()

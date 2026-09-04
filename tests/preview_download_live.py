@@ -19,7 +19,8 @@ os.environ["PYTEST_CURRENT_TEST"] = "isolated-live-preview"
 from flask import redirect, session
 from alembic import command
 from sharewarez import create_app, db
-from sharewarez.models import User, DownloadTransfer
+from sharewarez.models import User, DownloadTransfer, DownloadArchive, DownloadRequest, Game, Library
+from sharewarez.platform import LibraryPlatform
 from sharewarez.utils.migrations import alembic_config
 from asgi import LazyASGIApp
 import uvicorn
@@ -40,6 +41,20 @@ with app.app_context():
     db.session.add(transfer)
     db.session.commit()
     transfer_id = transfer.id
+    library = Library(name="Preview library", platform=LibraryPlatform.PCWIN)
+    db.session.add(library)
+    db.session.flush()
+    game = Game(name="Preview resumable game", library_uuid=library.uuid)
+    archive = DownloadArchive(id="11111111-1111-4111-8111-111111111111", cache_key="1" * 64,
+                              source_path="/preview-only", display_name="Preview game archive", state="building",
+                              source_bytes=104857600, bytes_written=10485760)
+    db.session.add_all([game, archive])
+    db.session.flush()
+    download = DownloadRequest(user_id=user_id, game_uuid=game.uuid, archive_id=archive.id,
+                               status="processing", delivery_kind="cached_archive", download_size=104857600)
+    db.session.add(download)
+    db.session.commit()
+    archive_id, download_id = archive.id, download.id
     db.session.remove()
 config = alembic_config(url)
 command.stamp(config, "20260902_23", purge=True)
@@ -55,12 +70,21 @@ def preview_session():
 
 def simulate():
     from datetime import datetime, timezone
+    tick = 0
     while True:
         time.sleep(1)
         with app.app_context():
             item = db.session.get(DownloadTransfer, transfer_id)
             item.bytes_sent += 8388608
             item.last_activity_at = datetime.now(timezone.utc)
+            tick += 1
+            archive = db.session.get(DownloadArchive, archive_id)
+            request = db.session.get(DownloadRequest, download_id)
+            phase = tick % 45
+            archive.state = "building" if phase < 30 else "ready"
+            archive.bytes_written = min(104857600, phase * 3495253)
+            archive.archive_bytes = 104857600 if phase >= 30 else 0
+            request.status = "processing" if phase < 30 else "available"
             db.session.commit()
 
 
