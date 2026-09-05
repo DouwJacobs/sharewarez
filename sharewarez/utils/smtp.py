@@ -31,7 +31,7 @@ def is_smtp_config_valid():
     """
     smtp_settings = get_smtp_settings()
     
-    if not smtp_settings['SMTP_ENABLED']:
+    if not smtp_settings or not smtp_settings['SMTP_ENABLED']:
         return False, "SMTP is not enabled"
     
     # Enhanced validation for required fields with detailed error messages
@@ -224,7 +224,7 @@ def send_password_reset_email(user_email, token, user_name='there'):
         'reset_url': reset_url,
         'expires_in': '15 minutes',
     })
-    send_email(user_email, subject, html)
+    return send_email(user_email, subject, html, show_feedback=False)
     
     
 def send_invite_email(email, invite_url, inviter_name='A user'):
@@ -236,4 +236,4 @@ def send_invite_email(email, invite_url, inviter_name='A user'):
         'invite_url': invite_url,
         'expires_in': '48 hours',
     })
-    send_email(email, subject, html_content)
+    return send_email(email, subject, html_content, show_feedback=False)

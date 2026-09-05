@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="container-login">
+    <div class="content-login">
+        <div class="container-base">
+            <div class="container">
+                <img src="{{ url_for('static', filename=brand_logo_path) }}" alt="{{ site_title }} logo" class="login-logo">
+            </div>
+        </div>
+        
+        <h1 style="text-align: center; margin-top: 5px;">Request Activation Link</h1>
+        <p style="text-align: center; font-size: 14px; opacity: 0.8; margin-bottom: 20px;">
+            Please enter your email address to receive a link to activate your account.
+        </p>
+
+        <div class="container-content">
+            <form action="{{ url_for('login.request_new_activation') }}" method="post">
+                {{ form.hidden_tag() }}
+                
+                <label for="email" class="label-large-text">Email</label><br>
+                <input type="email" class="input-glass" id="email" name="email" placeholder="Enter your email" autocomplete="email" required value="{{ form.email.data or '' }}">{% for error in form.email.errors %}<p role="alert">{{ error }}</p>{% endfor %}<br>
+                
+                <div class="container-buttons-login">
+                    <input type="submit" value="Request Activation Link" class="btn btn-primary button-login">
+                    <a href="/login" class="btn btn-secondary button-login">Back to Login</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

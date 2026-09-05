@@ -12,12 +12,12 @@ remain outstanding until explicitly recorded.
 | A3: AJAX attribute injection | Pending | |
 | A4: sensitive logs | Fixed; focused tests pass | Removed form/token dumps and SMTP protocol debugging. Request logs use route patterns, including a safe unmatched-route marker. Synthetic password/path token regressions pass. |
 | A5: fresh search bootstrap | Pending | |
-| A6: reset timestamps | Pending | |
+| A6: reset timestamps | Fixed; focused tests pass | Normalize legacy UTC timestamps; missing/expired tokens rejected and successful resets invalidate the token. |
 | A7: blocking download admission | Pending | |
 | A8: theme replacement/isolation | Fixed; focused tests pass | Stage and validate all packaged themes, serialize resets, roll back failed publication, retain originals if rollback fails. 43 theme route tests and 2 recovery tests pass using temporary assets. |
-| B1: email normalization | Pending | |
-| B2: invite transaction | Pending | |
-| B3: recovery/delivery feedback | Pending | Invalid confirmation also links to a nonexistent activation endpoint; fix with the resend flow. |
+| B1: email normalization | Fixed; focused tests pass | Normalize stored and signed registration addresses; legacy mixed-case confirmation links resolve. |
+| B2: invite transaction | Fixed; focused tests pass | Lock the invitation row and commit redemption with the new user. Concurrent redemption creates exactly one account with SMTP disabled. |
+| B3: recovery/delivery feedback | Fixed; focused tests pass | Silent public recovery responses; rate-limited activation resend and repaired confirmation links; registration/invites report failed delivery accurately. |
 | B4: Library state | Pending | |
 | B5: malformed cookie | Pending | |
 | B6: folder boundary | Fixed; focused tests pass | Canonical paths plus common-path containment reject sibling, parent, absolute and symlink escapes. Tests use actual temporary directories. |
@@ -47,3 +47,5 @@ Subsequent isolated checks passed for model behavior (32), API tokens (4), SSE
 contracts (1), theme routes (43), and theme rollback recovery (2). Older tests
 that expected unconditional active state or SMTP protocol debugging were updated
 to assert the corrected security contract.
+
+Account remediation: 7 PostgreSQL regressions, 28 SMTP tests and 12 email-template tests pass. Activation resend visually checked on the running app at desktop and 390 × 844: no horizontal overflow, 44 px mobile controls. Full-suite verification remains pending.

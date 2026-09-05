@@ -153,9 +153,7 @@ class TestIsSMTPConfigValid:
         # When SMTP is disabled, get_smtp_settings returns None
         mock_get_settings.return_value = None
         
-        # Test - this should raise a TypeError when trying to access None['SMTP_ENABLED']
-        with pytest.raises(TypeError):
-            is_smtp_config_valid()
+        assert is_smtp_config_valid() == (False, 'SMTP is not enabled')
     
     @patch('sharewarez.utils.smtp.get_smtp_settings')
     def test_config_missing_single_field(self, mock_get_settings):
@@ -771,5 +769,6 @@ class TestSendInviteEmail:
         mock_send_email.assert_called_once_with(
             'newuser@example.com',
             "You're invited to Game Library",
-            '<h1>You are invited!</h1>'
+            '<h1>You are invited!</h1>',
+            show_feedback=False
         )

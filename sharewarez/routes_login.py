@@ -85,7 +85,7 @@ def register():
     invite_token_from_url = request.args.get('token')
     invite = None
     if invite_token_from_url:
-        invite = db.session.execute(select(InviteToken).filter_by(token=invite_token_from_url, used=False)).scalar_one_or_none()
+        invite = db.session.execute(select(InviteToken).filter_by(token=invite_token_from_url, used=False).with_for_update()).scalar_one_or_none()
         if invite:
             # Handle timezone comparison safely
             current_time = datetime.now(timezone.utc)
@@ -115,7 +115,7 @@ def register():
                 'Registration could not be completed. Check your details or invite, '
                 'or contact an administrator.'
             )
-            email_address = form.email.data.lower()
+            email_address = form.email.data.strip().lower()
             existing_user_email = db.session.execute(select(User).filter(func.lower(User.email) == email_address)).scalar_one_or_none()
             if existing_user_email:
                 flash(registration_unavailable_message, 'warning')
@@ -141,23 +141,22 @@ def register():
             user = User(
                 user_id=user_uuid,
                 name=form.username.data,
-                email=form.email.data.lower(),
+                email=email_address,
                 role='user',
                 is_email_verified=False,
-                email_verification_token=get_serializer().dumps(form.email.data, salt='email-confirm'),
+                email_verification_token=get_serializer().dumps(email_address, salt='email-confirm'),
                 token_creation_time=datetime.now(timezone.utc),
                 created=datetime.now(timezone.utc)
             )
             user.set_password(form.password.data)
             db.session.add(user)
-            db.session.commit()
-            
-            log_system_event(f"New user registered: {user.name}", event_type='audit', event_level='information')
-            
+            db.session.flush()
             if invite:
                 invite.used = True
                 invite.used_by = user.user_id
                 invite.used_at = datetime.now(timezone.utc)
+            db.session.commit()
+            log_system_event(f"New user registered: {user.name}", event_type='audit', event_level='information')
 
             # Verification email
             verification_token = user.email_verification_token
@@ -168,10 +167,13 @@ def register():
                 'confirm_url': confirm_url,
                 'expires_in': '15 minutes',
             })
-            send_email(user.email, subject, html)
+            delivered = send_email(user.email, subject, html, show_feedback=False)
 
 
-            flash('A confirmation email has been sent via email.', 'success')
+            if delivered:
+                flash('Account created. Check your email for the confirmation link.', 'success')
+            else:
+                flash('Account created, but the confirmation email could not be sent. Request a new activation link or contact an administrator.', 'warning')
             return redirect(url_for('site.index'))
         except IntegrityError:
             db.session.rollback()
@@ -190,7 +192,7 @@ def confirm_email(token):
     except BadSignature:
         return render_template('login/confirmation_invalid.html'), 400
 
-    user = db.session.execute(select(User).filter_by(email=email)).scalar_one_or_none() or abort(404)
+    user = db.session.execute(select(User).filter(func.lower(User.email) == str(email).strip().lower())).scalar_one_or_none() or abort(404)
     if user.is_email_verified:
         return render_template('login/registration_already_confirmed.html')
     else:
@@ -220,7 +222,8 @@ def reset_password_request():
 
             # Send reset email
             try:
-                send_password_reset_email(user.email, token, user.name)
+                if not send_password_reset_email(user.email, token, user.name):
+                    log_system_event('Password reset email delivery failed', event_type='password_reset', event_level='error')
             except Exception:
                 # Keep the public response indistinguishable from an unknown
                 # address while recording an actionable server-side event.
@@ -240,13 +243,45 @@ def reset_password_request():
 
     return render_template('login/reset_password_request.html', title='Reset Password', form=form)
 
+
+def _as_utc(value):
+    """Legacy timestamp-without-time-zone columns contain UTC values."""
+    return value.replace(tzinfo=timezone.utc) if value.tzinfo is None else value.astimezone(timezone.utc)
+
+
+@login_bp.route('/request_new_activation', methods=['GET', 'POST'])
+@limiter.limit('5 per minute', methods=['POST'])
+def request_new_activation():
+    form = ResetPasswordRequestForm()
+    if form.validate_on_submit():
+        email = form.email.data.strip().lower()
+        user = db.session.scalar(select(User).where(func.lower(User.email) == email))
+        if user and not user.is_email_verified and user.state:
+            user.email_verification_token = get_serializer().dumps(email, salt='email-confirm')
+            db.session.commit()
+            from sharewarez.utils.email_templates import render_system_email
+            subject, html = render_system_email('account_confirmation', {
+                'user_name': user.name,
+                'confirm_url': url_for('login.confirm_email', token=user.email_verification_token, _external=True),
+                'expires_in': '15 minutes',
+            })
+            try:
+                delivered = send_email(user.email, subject, html, show_feedback=False)
+            except Exception:
+                delivered = False
+            if not delivered:
+                log_system_event('Activation email delivery failed', event_type='email', event_level='error')
+        flash('If an account needs activation, a confirmation link has been requested. Contact an administrator if it does not arrive.', 'success')
+        return redirect(url_for('login.login'))
+    return render_template('login/request_new_activation.html', title='Request activation link', form=form)
+
 @login_bp.route('/reset_password/<token>', methods=['GET', 'POST'])
 def reset_password(token):
     if current_user.is_authenticated:
         return redirect(url_for('login.login'))
 
     user = db.session.execute(select(User).filter_by(password_reset_token=token)).scalar_one_or_none()
-    if not user or user.token_creation_time + timedelta(minutes=15) < datetime.now(timezone.utc):
+    if not user or not user.token_creation_time or _as_utc(user.token_creation_time) + timedelta(minutes=15) < datetime.now(timezone.utc):
         flash('The password reset link is invalid or has expired.', 'warning')
         return redirect(url_for('login.login'))
 
@@ -255,6 +290,7 @@ def reset_password(token):
     if form.validate_on_submit():
         user.set_password(form.password.data)
         user.password_reset_token = None
+        user.token_creation_time = None
         db.session.commit()
         flash('Your password has been reset.', 'success')
         return redirect(url_for('login.login'))
@@ -291,9 +327,10 @@ def invites():
             # Build the invite URL using the configured site URL
             invite_url = f"{site_url}/register?token={token}"
 
-            send_invite_email(email, invite_url, current_user.name)
-
-            flash('Invite sent successfully. The invite expires after 48 hours.', 'success')
+            if send_invite_email(email, invite_url, current_user.name):
+                flash('Invite sent successfully. The invite expires after 48 hours.', 'success')
+            else:
+                flash('Invite created, but email delivery failed. You can copy its link below.', 'warning')
         else:
             flash('You have reached your invite limit.', 'danger')
         return redirect(url_for('login.invites'))
