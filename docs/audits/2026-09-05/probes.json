@@ -1,0 +1,324 @@
+{
+  "fresh_extensions": [
+    "plpgsql"
+  ],
+  "fresh_search_indexes": [],
+  "password_reset": {
+    "exception": "TypeError",
+    "message": "can't compare offset-naive and offset-aware datetimes"
+  },
+  "fresh_search": {
+    "exception": "ProgrammingError",
+    "message": "(psycopg2.errors.UndefinedFunction) function similarity(text, unknown) does not exist\nLINE 1: ...bsearch_to_tsquery('simple', 'audit')) + greatest(similarity...\n                                                             ^\nHINT:  No function matches the given name and argument types. You might need to add explicit type casts.\n\n[SQL: SELECT games.i"
+  },
+  "banned_session": {
+    "status": 200,
+    "location": null,
+    "bytes": 179822
+  },
+  "array_cookie": {
+    "exception": "AttributeError",
+    "message": "'list' object has no attribute 'items'"
+  },
+  "routes": {
+    "/discover": {
+      "status": 200,
+      "location": null,
+      "bytes": 33511,
+      "ms": 81.3,
+      "sql": 16
+    },
+    "/library": {
+      "status": 200,
+      "location": null,
+      "bytes": 186930,
+      "ms": 24.9,
+      "sql": 18
+    },
+    "/favorites": {
+      "status": 200,
+      "location": null,
+      "bytes": 32238,
+      "ms": 18.0,
+      "sql": 9
+    },
+    "/downloads": {
+      "status": 200,
+      "location": null,
+      "bytes": 31409,
+      "ms": 36.3,
+      "sql": 11
+    },
+    "/requests": {
+      "status": 200,
+      "location": null,
+      "bytes": 32136,
+      "ms": 44.5,
+      "sql": 14
+    },
+    "/issues": {
+      "status": 200,
+      "location": null,
+      "bytes": 31228,
+      "ms": 18.9,
+      "sql": 11
+    },
+    "/activity": {
+      "status": 200,
+      "location": null,
+      "bytes": 31501,
+      "ms": 39.0,
+      "sql": 12
+    },
+    "/notifications": {
+      "status": 200,
+      "location": null,
+      "bytes": 31418,
+      "ms": 21.1,
+      "sql": 10
+    },
+    "/settings_panel": {
+      "status": 200,
+      "location": null,
+      "bytes": 36524,
+      "ms": 64.1,
+      "sql": 8
+    },
+    "/settings_profile_view": {
+      "status": 200,
+      "location": null,
+      "bytes": 43499,
+      "ms": 25.4,
+      "sql": 10
+    },
+    "/settings_profile_edit": {
+      "status": 200,
+      "location": null,
+      "bytes": 34386,
+      "ms": 19.0,
+      "sql": 8
+    },
+    "/settings_password": {
+      "status": 200,
+      "location": null,
+      "bytes": 32211,
+      "ms": 13.5,
+      "sql": 8
+    },
+    "/user/invites": {
+      "status": 200,
+      "location": null,
+      "bytes": 33682,
+      "ms": 21.5,
+      "sql": 11
+    },
+    "/help": {
+      "status": 200,
+      "location": null,
+      "bytes": 40372,
+      "ms": 33.0,
+      "sql": 8
+    },
+    "/trailers": {
+      "status": 200,
+      "location": null,
+      "bytes": 37206,
+      "ms": 13.5,
+      "sql": 8
+    },
+    "/admin/dashboard": {
+      "status": 200,
+      "location": null,
+      "bytes": 47118,
+      "ms": 43.8,
+      "sql": 22
+    },
+    "/admin/libraries": {
+      "status": 200,
+      "location": null,
+      "bytes": 48347,
+      "ms": 23.4,
+      "sql": 11
+    },
+    "/admin/library/add": {
+      "status": 200,
+      "location": null,
+      "bytes": 47434,
+      "ms": 27.9,
+      "sql": 8
+    },
+    "/admin/scan_management": {
+      "status": 200,
+      "location": null,
+      "bytes": 100796,
+      "ms": 55.5,
+      "sql": 15
+    },
+    "/admin/manage-downloads": {
+      "status": 200,
+      "location": null,
+      "bytes": 50726,
+      "ms": 56.4,
+      "sql": 12
+    },
+    "/admin/download-cache": {
+      "status": 200,
+      "location": null,
+      "bytes": 47483,
+      "ms": 42.6,
+      "sql": 14
+    },
+    "/admin/game-requests": {
+      "status": 200,
+      "location": null,
+      "bytes": 46257,
+      "ms": 26.3,
+      "sql": 12
+    },
+    "/admin/issues": {
+      "status": 200,
+      "location": null,
+      "bytes": 43184,
+      "ms": 22.4,
+      "sql": 11
+    },
+    "/admin/users": {
+      "status": 200,
+      "location": null,
+      "bytes": 52382,
+      "ms": 35.0,
+      "sql": 10
+    },
+    "/admin/manage_invites": {
+      "status": 200,
+      "location": null,
+      "bytes": 44052,
+      "ms": 16.9,
+      "sql": 10
+    },
+    "/admin/whitelist": {
+      "status": 200,
+      "location": null,
+      "bytes": 44634,
+      "ms": 19.7,
+      "sql": 9
+    },
+    "/admin/collections": {
+      "status": 200,
+      "location": null,
+      "bytes": 42751,
+      "ms": 19.1,
+      "sql": 9
+    },
+    "/admin/collections/new": {
+      "status": 200,
+      "location": null,
+      "bytes": 52672,
+      "ms": 28.4,
+      "sql": 9
+    },
+    "/admin/discovery_sections": {
+      "status": 200,
+      "location": null,
+      "bytes": 42449,
+      "ms": 22.5,
+      "sql": 9
+    },
+    "/admin/system_logs": {
+      "status": 200,
+      "location": null,
+      "bytes": 45818,
+      "ms": 56.6,
+      "sql": 13
+    },
+    "/admin/statistics": {
+      "status": 200,
+      "location": null,
+      "bytes": 44281,
+      "ms": 20.1,
+      "sql": 8
+    },
+    "/admin/new_server_info": {
+      "status": 308,
+      "location": "/admin/server-status",
+      "bytes": 227,
+      "ms": 4.3,
+      "sql": 1
+    },
+    "/admin/new_server_settings": {
+      "status": 308,
+      "location": "/admin/settings",
+      "bytes": 217,
+      "ms": 4.0,
+      "sql": 1
+    },
+    "/admin/branding": {
+      "status": 200,
+      "location": null,
+      "bytes": 44468,
+      "ms": 15.3,
+      "sql": 9
+    },
+    "/admin/themes": {
+      "status": 200,
+      "location": null,
+      "bytes": 50080,
+      "ms": 38.6,
+      "sql": 8
+    },
+    "/admin/themes/builder": {
+      "status": 200,
+      "location": null,
+      "bytes": 48090,
+      "ms": 17.1,
+      "sql": 8
+    },
+    "/admin/attract_mode_settings": {
+      "status": 200,
+      "location": null,
+      "bytes": 51867,
+      "ms": 42.8,
+      "sql": 13
+    },
+    "/admin/integrations": {
+      "status": 200,
+      "location": null,
+      "bytes": 64872,
+      "ms": 62.2,
+      "sql": 9
+    },
+    "/admin/newsletter": {
+      "status": 302,
+      "location": "/admin/dashboard",
+      "bytes": 219,
+      "ms": 4.3,
+      "sql": 2
+    },
+    "/admin/help": {
+      "status": 200,
+      "location": null,
+      "bytes": 54435,
+      "ms": 14.0,
+      "sql": 8
+    },
+    "/api/global-search?q=audit": {
+      "status": 200,
+      "location": null,
+      "bytes": 1879,
+      "ms": 21.2,
+      "sql": 8
+    }
+  },
+  "mixed_registration": {
+    "status": 302,
+    "created": true
+  },
+  "mixed_confirmation": {
+    "status": 404
+  },
+  "invite_registration": {
+    "status": 302,
+    "used": false,
+    "created": 1
+  }
+}

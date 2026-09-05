@@ -1,0 +1,74 @@
+{
+  "member_move_game": {
+    "status": 200,
+    "moved": true
+  },
+  "folder_boundary": {
+    "status": 200,
+    "names": [
+      "audit-marker.txt"
+    ]
+  },
+  "search_plan": [
+    "Limit  (cost=4134.60..4134.62 rows=8 width=1384) (actual time=164.030..164.032 rows=8 loops=1)",
+    "  Buffers: shared hit=298",
+    "  ->  Sort  (cost=4134.60..4142.98 rows=3354 width=1384) (actual time=164.029..164.030 rows=8 loops=1)",
+    "        Sort Key: ((ts_rank_cd(to_tsvector('simple'::regconfig, (((COALESCE(name, ''::character varying))::text || ' '::text) || COALESCE(summary, ''::text))), '''synthetic'' & ''9999'''::tsquery) + GREATEST(similarity(lower((name)::text), 'synthetic 9999'::text), word_similarity('synthetic 9999'::text, lower((name)::text))))) DESC, name",
+    "        Sort Method: top-N heapsort  Memory: 28kB",
+    "        Buffers: shared hit=298",
+    "        ->  Seq Scan on games  (cost=0.00..4067.52 rows=3354 width=1384) (actual time=0.196..157.392 rows=10000 loops=1)",
+    "              Filter: ((to_tsvector('simple'::regconfig, (((COALESCE(name, ''::character varying))::text || ' '::text) || COALESCE(summary, ''::text))) @@ '''synthetic'' & ''9999'''::tsquery) OR (GREATEST(similarity(lower((name)::text), 'synthetic 9999'::text), word_similarity('synthetic 9999'::text, lower((name)::text))) >= '0.24'::double precision) OR ((name)::text ~~* '%Synthetic 9999%'::text))",
+    "              Rows Removed by Filter: 30",
+    "              Buffers: shared hit=295",
+    "Planning:",
+    "  Buffers: shared hit=232",
+    "Planning Time: 0.403 ms",
+    "Execution Time: 164.322 ms"
+  ],
+  "timings": {
+    "/library?per_page=20": {
+      "status": 200,
+      "ms": [
+        100.8,
+        26.6,
+        24.2,
+        23.0
+      ],
+      "bytes": 186938,
+      "result_count": null
+    },
+    "/library?per_page=100": {
+      "status": 200,
+      "ms": [
+        34.2,
+        37.1,
+        36.6,
+        35.4
+      ],
+      "bytes": 779243,
+      "result_count": null
+    },
+    "/api/search?query=%25": {
+      "status": 200,
+      "ms": [
+        168.5,
+        152.8,
+        144.2,
+        187.1
+      ],
+      "bytes": 870236,
+      "result_count": 10030
+    },
+    "/api/global-search?q=Synthetic%209999": {
+      "status": 200,
+      "ms": [
+        179.8,
+        180.5,
+        192.0,
+        175.7
+      ],
+      "bytes": 1374,
+      "result_count": null
+    }
+  }
+}

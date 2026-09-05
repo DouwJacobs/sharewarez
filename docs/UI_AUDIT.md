@@ -434,3 +434,15 @@ overflow. Back to game navigation was exercised. The viewport was reset.
 Other theme variants were not visually re-audited. Python regressions cover all
 five curated upload types, transparency, default selection, invalid categories,
 and discovery of logos absent from the nested game artwork list.
+
+## Full-stack audit (2026-09-05)
+
+See [the full audit report](FULL_AUDIT_2026-09-05.md) for reproduced backend,
+security, UX and performance findings and synthetic evidence. Library filter
+removal, count synchronization and AJAX attribute escaping require follow-up.
+Metadata editing lacks an H1; metadata/image editing and Download Cache retain
+generic document titles. Mobile and desktop document-width measurements passed,
+but repeated browser screenshot timeouts prevented a completed visual/contrast
+review. No UI fixes were applied in this pass. A theme test unexpectedly deleted
+the installed default theme; it was restored from canonical source and compared
+for equality. The report records the test-isolation and theme-reset defects.

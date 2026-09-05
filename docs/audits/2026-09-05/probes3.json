@@ -1,0 +1,29 @@
+{
+  "download_pool_block": {
+    "exception": "TimeoutError",
+    "timer_ms": 300.4
+  },
+  "invalid_setup_logging": {
+    "status": 200,
+    "password_found_in_stdout": true
+  },
+  "reset_enumeration": {
+    "known_flashes": [
+      [
+        "error",
+        "SMTP settings not configured. Email not sent."
+      ],
+      [
+        "success",
+        "If an account exists for that email, password reset instructions have been sent."
+      ]
+    ],
+    "unknown_flashes": [
+      [
+        "success",
+        "If an account exists for that email, password reset instructions have been sent."
+      ]
+    ],
+    "different": true
+  }
+}
