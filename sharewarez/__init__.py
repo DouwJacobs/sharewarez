@@ -138,26 +138,13 @@ def create_app():
         if current_user.is_authenticated:
             from sqlalchemy import func, select
             from sharewarez.models import Notification
-            unread_notification_count = db.session.execute(
-                select(func.count(Notification.id)).where(
-                    Notification.user_id == current_user.id,
-                    Notification.read_at.is_(None),
-                )
-            ).scalar_one()
-            unread_request_count = db.session.execute(
-                select(func.count(Notification.id)).where(
-                    Notification.user_id == current_user.id,
-                    Notification.read_at.is_(None),
-                    Notification.event_type == 'request_updated',
-                )
-            ).scalar_one()
-            unread_issue_count = db.session.execute(
-                select(func.count(Notification.id)).where(
-                    Notification.user_id == current_user.id,
-                    Notification.read_at.is_(None),
-                    Notification.event_type.in_(('issue_comment', 'issue_status', 'issue_deleted')),
-                )
-            ).scalar_one()
+            unread_notification_count, unread_request_count, unread_issue_count = db.session.execute(
+                select(
+                    func.count(Notification.id),
+                    func.count(Notification.id).filter(Notification.event_type == 'request_updated'),
+                    func.count(Notification.id).filter(Notification.event_type.in_(('issue_comment', 'issue_status', 'issue_deleted'))),
+                ).where(Notification.user_id == current_user.id, Notification.read_at.is_(None))
+            ).one()
         global_settings = get_global_settings()
         admin_navigation = []
         if current_user.is_authenticated and current_user.role == 'admin':

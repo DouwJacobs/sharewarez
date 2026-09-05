@@ -65,54 +65,6 @@ $(document).ready(function() {
         console.error('Error reading server filter data:', e);
     }
     
-    var savedFilters = getCookie('libraryFilters');
-    if (savedFilters) {
-        try {
-            $('#libraryNameSelect').val(savedFilters.library_uuid || '');
-            $('#collectionSelect').val(savedFilters.collection || '');
-            $('#genreSelect').val(savedFilters.genre || '');
-            $('#themeSelect').val(savedFilters.theme || '');
-            $('#tagSelect').val(savedFilters.tag || '');
-            $('#gameModeSelect').val(savedFilters.game_mode || '');
-            $('#playerPerspectiveSelect').val(savedFilters.player_perspective || '');
-            $('#ratingSlider').val(savedFilters.rating || 0);
-            $('#ratingValue').text(savedFilters.rating || 0);
-            console.log('Successfully restored filters from cookie');
-        } catch (e) {
-            console.error('Error parsing saved filters:', e);
-            deleteCookie('libraryFilters');
-            resetFilters();
-        }
-    }
-    
-    // Function to compare if saved filters match server filters
-    function filtersMatch(savedFilters, currentFilters) {
-        if (!savedFilters || !currentFilters) return false;
-        
-        var keyMappings = {
-            'library_uuid': 'library_uuid',
-            'collection': 'collection',
-            'family': 'family',
-            'genre': 'genre', 
-            'theme': 'theme',
-            'tag': 'tag',
-            'game_mode': 'game_mode',
-            'player_perspective': 'player_perspective',
-            'rating': 'rating'
-        };
-        
-        for (var key in keyMappings) {
-            var savedVal = savedFilters[key] || '';
-            var currentVal = currentFilters[keyMappings[key]] || '';
-            
-            // Convert to strings for comparison
-            if (String(savedVal) !== String(currentVal)) {
-                console.log(`Filter mismatch on ${key}: saved="${savedVal}" vs current="${currentVal}"`);
-                return false;
-            }
-        }
-        return true;
-    }
     var userPerPage = $('body').data('user-per-page');
     var userDefaultSort = $('body').data('user-default-sort');
     var userDefaultSortOrder = $('body').data('user-default-sort-order');
@@ -162,7 +114,7 @@ $(document).ready(function() {
             }
         }).done(function() {
             if (paramName) {
-                const initialParams = getUrlParams();
+                const initialParams = currentFilters;
                 if (initialParams[paramName]) {
                     $(elementId).val(initialParams[paramName]);
                 }
@@ -171,7 +123,7 @@ $(document).ready(function() {
     }
 
     function populateLibraries(callback) {
-        populateDropdown({
+        return populateDropdown({
             apiUrl: '/api/get_libraries',
             elementId: '#libraryNameSelect',
             defaultText: 'All Libraries',
@@ -186,7 +138,7 @@ $(document).ready(function() {
     }
 
     function populateGenres(callback) {
-        populateDropdown({
+        return populateDropdown({
             apiUrl: '/api/genres',
             elementId: '#genreSelect',
             defaultText: 'All Genres',
@@ -198,7 +150,7 @@ $(document).ready(function() {
     }
 
     function populateCollections(callback) {
-        populateDropdown({
+        return populateDropdown({
             apiUrl: '/api/collections',
             elementId: '#collectionSelect',
             defaultText: 'All Collections',
@@ -210,31 +162,31 @@ $(document).ready(function() {
     }
 
     function populateGameModes(callback) {
-        populateDropdown({
+        return populateDropdown({
             apiUrl: '/api/game_modes',
             elementId: '#gameModeSelect',
             defaultText: 'All Game Modes',
             valueField: 'name',
             textField: 'name',
-            paramName: 'gameMode',
+            paramName: 'game_mode',
             callback: callback
         });
     }
 
     function populatePlayerPerspectives(callback) {
-        populateDropdown({
+        return populateDropdown({
             apiUrl: '/api/player_perspectives',
             elementId: '#playerPerspectiveSelect',
             defaultText: 'All Perspectives',
             valueField: 'name',
             textField: 'name',
-            paramName: 'playerPerspective',
+            paramName: 'player_perspective',
             callback: callback
         });
     }
 
     function populateThemes(callback) {
-        populateDropdown({
+        return populateDropdown({
             apiUrl: '/api/themes',
             elementId: '#themeSelect',
             defaultText: 'All Themes',
@@ -246,7 +198,7 @@ $(document).ready(function() {
     }
 
     function populateTags(callback) {
-        populateDropdown({
+        return populateDropdown({
             apiUrl: '/api/tags',
             elementId: '#tagSelect',
             defaultText: 'All Tags',
@@ -258,33 +210,26 @@ $(document).ready(function() {
     }
 
     function getUrlParams() {
-        var params = {};
-        var queryString = window.location.search.substring(1);
-        var vars = queryString.split('&');
-        vars.forEach(function(param) {
-            var pair = param.split('=');
-            if (pair[0] && pair[1]) {
-                params[pair[0]] = decodeURIComponent(pair[1].replace(/\+/g, ' '));
-            }
-        });
-        return params;
+        return Object.fromEntries(new URLSearchParams(window.location.search));
     }
 
     function fetchFilteredGames(page) {
         var urlParams = getUrlParams(); 
         page = page || urlParams.page || 1; 
         var filters = {
-            library_uuid: $('#libraryNameSelect').val() || urlParams.library_uuid || undefined,
+            library_uuid: $('#libraryNameSelect').val() || undefined,
             collection: $('#collectionSelect').val() || undefined,
             family: urlParams.family || undefined,
             page: page,
+            filters: '1',
+            render: 'html',
             per_page: $('#perPageSelect').val() || 20,
             category: $('#categorySelect').val() || urlParams.category,
-            genre: $('#genreSelect').val() || urlParams.genre,
-            game_mode: $('#gameModeSelect').val() || urlParams.gameMode,
-            player_perspective: $('#playerPerspectiveSelect').val() || urlParams.playerPerspective,
-            theme: $('#themeSelect').val() || urlParams.theme,
-            tag: $('#tagSelect').val() || urlParams.tag,
+            genre: $('#genreSelect').val() || undefined,
+            game_mode: $('#gameModeSelect').val() || undefined,
+            player_perspective: $('#playerPerspectiveSelect').val() || undefined,
+            theme: $('#themeSelect').val() || undefined,
+            tag: $('#tagSelect').val() || undefined,
             rating: $('#ratingSlider').val() !== '0' ? $('#ratingSlider').val() : undefined, 
             sort_by: $('#sortSelect').val(),
             sort_order: sortOrder,
@@ -316,7 +261,18 @@ $(document).ready(function() {
                 totalPages = response.pages;
                 currentPage = response.current_page;
                 $('#currentPageInfo, #currentPageInfoBottom').text(currentPage + '/' + totalPages);
-                updateGamesContainer(response.games);
+                $('#gamesContainer').html(response.html);
+                $('#libraryFilterChips').html(response.chips_html);
+                $('.library-browser-count').text(`${response.total} ${response.total === 1 ? 'game' : 'games'}`);
+                const nextParams = new URLSearchParams();
+                Object.entries(filters).forEach(([key, value]) => {
+                    if (key !== 'render' && value !== undefined && value !== '') nextParams.set(key, value);
+                });
+                nextParams.set('page', currentPage);
+                const view = document.querySelector('[data-library-view][aria-pressed="true"]')?.dataset.libraryView;
+                if (view) nextParams.set('view', view);
+                window.history.pushState({}, '', `/library?${nextParams}`);
+                setCookie('libraryFilters', filters, 30);
                 updatePaginationControls();
             },
             error: function(xhr, status, error) {
@@ -334,246 +290,6 @@ $(document).ready(function() {
             }
         });
     }
-
-    function updateGamesContainer(games) {
-        $('#gamesContainer').empty();
-        if (libraryCount < 1) {
-            $.ajax({
-                url: '/api/current_user_role',
-                method: 'GET',
-                success: function(response) {
-                    let message;
-                    if (response.role === 'admin') {
-                        message = `<div class="app-empty-state game-grid-empty"><i class="fas fa-book" aria-hidden="true"></i><h2>No libraries yet</h2><p>Create a library, then scan it to start building the collection.</p><a class="btn btn-primary" href="${libraryManagerUrl}">Create a library</a></div>`;
-                    } else {
-                        message = '<div class="app-empty-state game-grid-empty"><i class="fas fa-gamepad" aria-hidden="true"></i><h2>No games available</h2><p>An administrator has not published a library yet.</p></div>';
-                    }
-                    if ($('#gamesContainer').empty()) {
-                        $('#gamesContainer').append(message);
-                    }
-                },
-                error: function() {
-                    $('#gamesContainer').append('<div class="app-empty-state game-grid-empty game-grid-error"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i><h2>Library unavailable</h2><p>Unable to load this library state. Please try again.</p></div>');
-                }
-            });
-            return;
-        }
-
-        else if (gamesCount < 1) {
-            $.ajax({
-                url: '/api/current_user_role',
-                method: 'GET',
-                success: function(response) {
-                    let message;
-                    if (response.role === 'admin') {
-                        message = `<div class="app-empty-state game-grid-empty"><i class="fas fa-magnifying-glass" aria-hidden="true"></i><h2>No games scanned</h2><p>Run a scan to add games from this library.</p><a class="btn btn-primary" href="${libraryScanUrl}">Open Scan Manager</a></div>`;
-                    } else {
-                        message = '<div class="app-empty-state game-grid-empty"><i class="fas fa-gamepad" aria-hidden="true"></i><h2>No games available</h2><p>Contact an administrator to scan this library.</p></div>';
-                    }
-                    if ($('#gamesContainer').empty()) {
-                        $('#gamesContainer').append(message);
-                    }
-                },
-                error: function() {
-                    $('#gamesContainer').append('<div class="app-empty-state game-grid-empty game-grid-error"><h2>Unable to load games</h2><p>Please try again later.</p></div>');
-                }
-            });
-            return;
-        }
-
-        else if (games.length === 0) {
-            $.ajax({
-                url: '/api/current_user_role', 
-                method: 'GET',
-                success: function(response) {
-                    let message; 
-                    if (response.role === 'admin') {
-                        message = `<div class="app-empty-state game-grid-empty"><i class="fas fa-filter" aria-hidden="true"></i><h2>No matching games</h2><p>Clear the filters or scan this library for new games.</p><a class="btn btn-secondary" href="${libraryScanUrl}">Open Scan Manager</a></div>`;
-                    } else {
-                        message = '<div class="app-empty-state game-grid-empty"><i class="fas fa-filter" aria-hidden="true"></i><h2>No matching games</h2><p>Try clearing the active filters.</p></div>';
-                    }
-                    if ($('#gamesContainer').empty()) {
-                        $('#gamesContainer').append(message);
-                    }
-                },
-                error: function() {
-                    $('#gamesContainer').append('<div class="app-empty-state game-grid-empty game-grid-error"><h2>Unable to load games</h2><p>Please try again later.</p></div>');
-                }
-            });
-            return;
-        }
-
-        games.forEach(function(game) {
-            var gameCardHtml = createGameCardHtml(game);
-            $('#gamesContainer').append(gameCardHtml);
-        });
-    }
-
-    function createPopupMenuHtml(game) {
-        const csrfToken = CSRFUtils.getToken();
-        const enableDeleteGameOnDisk = document.body.getAttribute('data-enable-delete-game-on-disk') === 'true';
-        const discordConfigured = document.body.getAttribute('data-discord-configured') === 'true';
-        const discordManualTrigger = document.body.getAttribute('data-discord-manual-trigger') === 'true';
-        const isAdmin = document.body.getAttribute('data-is-admin') === 'true';
-        const supplementalScanningEnabled =
-            document.body.getAttribute('data-enable-game-updates') === 'true' ||
-            document.body.getAttribute('data-enable-game-extras') === 'true';
-        let menuHtml = `
-    <div id="popupMenu-${game.uuid}" class="popup-menu" style="display: none;">
-        <form action="/download_game/${game.uuid}" method="get" class="menu-item">
-            <button type="submit" class="menu-button">Download</button>
-        </form>
-        <form action="/game_edit/${game.uuid}" method="get" class="menu-item">
-            <button type="submit" class="menu-button">Edit Details</button>
-        </form>
-        <form action="/edit_game_images/${game.uuid}" method="get" class="menu-item">
-            <button type="submit" class="menu-button">Edit Images</button>
-        </form>
-        <form action="/refresh_game_images/${game.uuid}" method="post" class="menu-item">
-            <input type="hidden" name="csrf_token" value="${csrfToken}">
-            <button type="submit" class="menu-button refresh-game-images" data-game-uuid="${game.uuid}">Refresh Images</button>
-        </form>
-        <div class="menu-item">
-            <button type="button" class="menu-button delete-game" data-game-uuid="${game.uuid}">Remove Game</button>
-        </div>
-        <div class="menu-item move-library-container">
-            <button type="button" class="menu-button move-library" data-game-uuid="${game.uuid}">Move Library</button>
-            <div class="submenu-libraries" style="display: none;">
-                <div class="loading-libraries">
-                    <span>Loading libraries...</span>
-                </div>
-                <div class="libraries-list" style="display: none;">
-                </div>
-            </div>
-        </div>`;
-        if (isAdmin && supplementalScanningEnabled) {
-            menuHtml += `
-        <form action="/refresh_game_metadata_updates/${game.uuid}" method="post" class="menu-item">
-            <input type="hidden" name="csrf_token" value="${csrfToken}">
-            <button type="submit" class="menu-button refresh-game-metadata-updates" data-game-uuid="${game.uuid}">Refresh Metadata &amp; Updates</button>
-        </form>`;
-        }
-        if (enableDeleteGameOnDisk) {
-            menuHtml += `
-        <div class="menu-item">
-            <button type="button" class="menu-button trigger-delete-disk-modal delete-game-from-disk" data-game-uuid="${game.uuid}">Delete Game from Disk</button>
-        </div>`;
-        }
-        if (game.url) {
-            menuHtml += `
-        <div class="menu-item">
-            <button type="submit" onclick="window.open('${game.url}', '_blank')" class="menu-button">Open IGDB Page</button>
-        </div>`;
-        }
-        
-        if (discordConfigured && discordManualTrigger && isAdmin) {
-            menuHtml += `
-        <div class="menu-item">
-            <button type="button" class="menu-button trigger-discord-notification" data-game-uuid="${game.uuid}">Send Discord Notification</button>
-        </div>`;
-        }
-        
-        menuHtml += `
-    </div>
-    `;
-        return menuHtml;
-    }
-
-    function createGameCardHtml(game) {
-        const safeName = $('<div>').text(game.name || 'Untitled game').html();
-        var genres = game.genres ? game.genres.join(', ') : 'No Genres';
-        var tags = game.tags ? game.tags.join(', ') : '';
-        var defaultCover = 'newstyle/default_cover.jpg';
-        var fullCoverUrl = !game.cover_url || game.cover_url === defaultCover ? '/static/' + defaultCover : '/static/library/images/' + game.cover_url;
-        const monogramWords = (game.name || '').replace(/[’']s\b/gi, '').match(/[\p{L}\p{N}]+/gu) || [];
-        const fillerWords = new Set(['a', 'an', 'and', 'at', 'for', 'from', 'in', 'of', 'on', 'the', 'to', 'with']);
-        const meaningfulWords = monogramWords.filter(word => !fillerWords.has(word.toLocaleLowerCase()));
-        const selectedWords = meaningfulWords.length ? meaningfulWords : monogramWords;
-        const monogram = selectedWords.length > 1
-            ? selectedWords.slice(0, 3).map(word => [...word][0]).join('').toLocaleUpperCase()
-            : (selectedWords[0] ? [...selectedWords[0]][0].toLocaleUpperCase() : '?');
-        var initials = $('<div>').text(monogram).html();
-        var coverHtml = game.has_cover
-            ? `<img src="${fullCoverUrl}" alt="${safeName}" class="game-cover" loading="lazy">`
-            : `<span class="game-cover game-cover-placeholder"><i class="fas fa-gamepad" aria-hidden="true"></i><strong>${initials}</strong><small>${safeName}</small></span>`;
-        var popupMenuHtml = createPopupMenuHtml(game);
-
-        // Check if play status feature is enabled
-        const showPlayStatusRaw = $('body').data('show-play-status');
-        // Convert to boolean - handles true, 'true', 'True', 1, etc.
-        const showPlayStatus = showPlayStatusRaw === true || showPlayStatusRaw === 'true' || showPlayStatusRaw === 'True' || showPlayStatusRaw === 1;
-        var statusButtonHtml = '';
-
-        if (showPlayStatus) {
-            // Generate status button and dropdown HTML
-            const statusConfig = {
-                'unplayed': { icon: 'fa-box', label: 'Unplayed' },
-                'unfinished': { icon: 'fa-gamepad', label: 'Unfinished' },
-                'beaten': { icon: 'fa-flag-checkered', label: 'Beaten' },
-                'completed': { icon: 'fa-trophy', label: 'Completed' },
-                'null': { icon: 'fa-ban', label: "Won't Play" }
-            };
-
-            // Determine current status icon and color
-            const currentStatus = game.user_status || '';
-            const config = statusConfig[currentStatus] || { icon: 'fa-circle', label: 'No Status' };
-
-            statusButtonHtml = `
-                <button class="game-status-btn" type="button" data-game-uuid="${game.uuid}" data-current-status="${currentStatus}" title="${config.label}" aria-label="Set play status for ${safeName}. Current status: ${config.label}" aria-haspopup="menu" aria-expanded="false">
-                    <i class="fas ${config.icon} status-icon-${currentStatus || 'empty'}"></i>
-                </button>
-                <div class="status-dropdown" data-game-uuid="${game.uuid}" role="menu" aria-label="Play status for ${safeName}" style="display: none;">
-                    <button type="button" class="status-dropdown-option" role="menuitem" data-status="unplayed">
-                        <i class="fas fa-box status-icon-unplayed"></i>
-                        <span class="status-label">Unplayed</span>
-                    </button>
-                    <button type="button" class="status-dropdown-option" role="menuitem" data-status="unfinished">
-                        <i class="fas fa-gamepad status-icon-unfinished"></i>
-                        <span class="status-label">Unfinished</span>
-                    </button>
-                    <button type="button" class="status-dropdown-option" role="menuitem" data-status="beaten">
-                        <i class="fas fa-flag-checkered status-icon-beaten"></i>
-                        <span class="status-label">Beaten</span>
-                    </button>
-                    <button type="button" class="status-dropdown-option" role="menuitem" data-status="completed">
-                        <i class="fas fa-trophy status-icon-completed"></i>
-                        <span class="status-label">Completed</span>
-                    </button>
-                    <button type="button" class="status-dropdown-option" role="menuitem" data-status="null">
-                        <i class="fas fa-ban status-icon-null"></i>
-                        <span class="status-label">Won't Play</span>
-                    </button>
-                    <button type="button" class="status-dropdown-option status-dropdown-option--clear" role="menuitem" data-status="">
-                        <i class="fas fa-times status-icon-empty"></i>
-                        <span class="status-label">Clear Status</span>
-                    </button>
-                </div>
-            `;
-        }
-
-        var gameCardHtml = `
-    <div class="game-card-container">
-        <div class="game-card" onmouseover="showDetails(this, '${game.uuid}')" onmouseout="hideDetails()" onfocusin="showDetails(this, '${game.uuid}')" onfocusout="hideDetails()" data-name="${safeName}" data-size="${game.size}" data-genres="${genres}" data-tags="${tags}">
-            <button id="menuButton-${game.uuid}" class="button-glass-hamburger" type="button" aria-label="Open actions for ${safeName}" aria-haspopup="menu" aria-expanded="false"><i class="fas fa-ellipsis-vertical" aria-hidden="true"></i></button>
-            <button class="favorite-btn" type="button" data-game-uuid="${game.uuid}" data-is-favorite="${game.is_favorite}" data-game-name="${safeName}" aria-label="${game.is_favorite ? 'Remove' : 'Add'} ${safeName} ${game.is_favorite ? 'from' : 'to'} favorites">
-                <i class="fas fa-heart" aria-hidden="true"></i>
-            </button>
-            ${popupMenuHtml}
-            ${statusButtonHtml}
-
-            <a href="/game_details/${game.uuid}">
-                ${coverHtml}
-            </a>
-            <div id="details-${game.uuid}" class="popup-game-details hidden">
-                <!-- Details and screenshots will be injected here by JavaScript -->
-            </div>
-        </div>
-        <div class="library-game-copy"><a class="library-game-title" href="/game_details/${game.uuid}">${safeName}</a><span class="library-game-metadata"><span class="library-game-genres">${genres || 'Game'}</span></span></div>
-    </div>
-    `;
-        return gameCardHtml;
-    }
-
 
     $('#sortOrderToggle').click(function() {
         sortOrder = sortOrder === 'asc' ? 'desc' : 'asc';
@@ -660,6 +376,10 @@ $(document).ready(function() {
         $('#ratingValue').text('0');
         $('#sortSelect').val('name');
         deleteCookie('libraryFilters');
+        const clearedUrl = new URL(window.location.href);
+        clearedUrl.searchParams.delete('family');
+        clearedUrl.searchParams.delete('category');
+        window.history.replaceState({}, '', clearedUrl);
         fetchFilteredGames(1);
     });
 
@@ -667,50 +387,18 @@ $(document).ready(function() {
         fetchFilteredGames(currentPage);
     });
 
-    populateLibraries(function() {
-        populateCollections(function() {
-        populateGenres(function() {
-            populateThemes(function() {
-                populateTags(function() {
-                populateGameModes(function() {
-                    populatePlayerPerspectives(function() {
-                        // restore filters from cookie
-                        var savedFilters = getCookie('libraryFilters');
-                        if (savedFilters) {
-                            console.log('Restoring filters from cookie:', savedFilters);
-                            $('#libraryNameSelect').val(savedFilters.library_uuid || '');
-                            $('#collectionSelect').val(getUrlParams().collection || savedFilters.collection || '');
-                            $('#genreSelect').val(savedFilters.genre || '');
-                            $('#themeSelect').val(savedFilters.theme || '');
-                            $('#tagSelect').val(savedFilters.tag || '');
-                            $('#gameModeSelect').val(savedFilters.game_mode || '');
-                            $('#playerPerspectiveSelect').val(savedFilters.player_perspective || '');
-                            $('#ratingSlider').val(savedFilters.rating || 0);
-                            $('#ratingValue').text(savedFilters.rating || 0);
-
-                            // Only fetch games if saved filters don't match server-rendered filters
-                            if (!filtersMatch(savedFilters, currentFilters)) {
-                                console.log('Filters changed from server-rendered, fetching updated games');
-                                fetchFilteredGames();
-                            } else {
-                                console.log('Filters match server-rendered data, skipping redundant fetch');
-                            }
-                        } else {
-                            // No saved filters, check if server has any filters applied
-                            var hasServerFilters = Object.keys(currentFilters).length > 0;
-                            if (hasServerFilters) {
-                                console.log('No saved filters but server has filters, skipping redundant fetch');
-                            } else {
-                                console.log('No filters anywhere, server should have rendered all games already');
-                            }
-                        }
-                    });
-        });
-                });
-                });
-            });
-        });
-    });
+    $('#ratingSlider').val(currentFilters.rating || 0);
+    $('#ratingValue').text(currentFilters.rating || 0);
+    // All option lists are independent; populate them concurrently using the
+    // server's canonical filters rather than restoring stale cookie state.
+    populateLibraries();
+    populateCollections();
+    populateGenres();
+    populateThemes();
+    populateTags();
+    populateGameModes();
+    populatePlayerPerspectives();
+    window.addEventListener('popstate', () => window.location.reload());
 });
 
 document.body.addEventListener('click', function(event) {

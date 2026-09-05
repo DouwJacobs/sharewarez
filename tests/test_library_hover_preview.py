@@ -5,7 +5,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def test_library_hover_preview_uses_modern_accessible_structure():
-    template = (ROOT / "sharewarez/templates/games/library_browser.html").read_text(encoding="utf-8")
+    template = (ROOT / "sharewarez/templates/games/library_cards.html").read_text(encoding="utf-8")
     script = (ROOT / "sharewarez/setup/default_theme/js/library_slideshow.js").read_text(encoding="utf-8")
     css = (ROOT / "sharewarez/setup/default_theme/css/games/library_browser.css").read_text(encoding="utf-8")
 

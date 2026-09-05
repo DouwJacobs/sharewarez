@@ -173,7 +173,8 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    document.body.addEventListener('click', function(event) {
+    let menuRequestSequence = 0;
+    document.body.addEventListener('click', async function(event) {
         var clickedElement = event.target.closest('[id^="menuButton-"]');
         if (clickedElement) {
             console.log('Menu button or its child clicked');
@@ -181,6 +182,26 @@ document.addEventListener('DOMContentLoaded', function() {
 
             var uuid = clickedElement.id.replace('menuButton-', '');
             var popupMenu = document.getElementById('popupMenu-' + uuid);
+            if (!popupMenu && clickedElement.closest('#gamesContainer')) {
+                const sequence = ++menuRequestSequence;
+                clickedElement.setAttribute('aria-busy', 'true');
+                try {
+                    const response = await fetch(`/library/game-actions/${encodeURIComponent(uuid)}`);
+                    if (!response.ok) throw new Error('Game actions could not be loaded.');
+                    const html = await response.text();
+                    if (sequence !== menuRequestSequence || !clickedElement.isConnected) return;
+                    document.querySelectorAll('#gamesContainer .popup-menu').forEach(menu => menu.remove());
+                    clickedElement.closest('.game-card').insertAdjacentHTML('beforeend', html);
+                    popupMenu = document.getElementById('popupMenu-' + uuid);
+                } catch (error) {
+                    $.notify(error.message, 'error');
+                    return;
+                } finally {
+                    clickedElement.removeAttribute('aria-busy');
+                }
+            }
+            if (!popupMenu) return;
+
 
             // Handle both library page (.game-card) and game details page (.game-card-coverimage)
             var gameCard = clickedElement.closest('.game-card');
@@ -218,9 +239,25 @@ document.addEventListener('DOMContentLoaded', function() {
             // Hide or show the favorite button and game status elements
             if (isOpening) {
                 hideCardButtons(parentContainer);
+                popupMenu.querySelector('button:not([disabled]), a')?.focus();
             } else {
                 showCardButtons(parentContainer);
             }
+        }
+    });
+
+    document.addEventListener('keydown', event => {
+        const menu = event.target.closest('.popup-menu');
+        if (!menu) return;
+        if (event.key === 'Escape') {
+            menu.style.display = 'none';
+            const trigger = document.getElementById(menu.id.replace('popupMenu-', 'menuButton-'));
+            trigger?.setAttribute('aria-expanded', 'false');
+            trigger?.focus();
+            const card = menu.closest('.game-card');
+            card?.classList.remove('menu-open');
+            card?.closest('.game-card-container')?.classList.remove('menu-open');
+            showCardButtons(card);
         }
     });
 

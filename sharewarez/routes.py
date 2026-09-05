@@ -68,130 +68,18 @@ def inject_settings():
 @bp.route('/browse_games')
 @login_required
 def browse_games():
-    print(f"Route: /browse_games - {current_user.name}")
-    page = request.args.get('page', 1, type=int)
-    per_page = request.args.get('per_page', 20, type=int)
-    page, per_page = normalize_library_pagination(page, per_page)
-    library_uuid = request.args.get('library_uuid')
-    category = request.args.get('category')
-    genre = request.args.get('genre')
-    rating = request.args.get('rating', type=int)
-    game_mode = request.args.get('game_mode')
-    player_perspective = request.args.get('player_perspective')
-    theme = request.args.get('theme')
-    tag = request.args.get('tag')
-    collection = request.args.get('collection')
-    family = request.args.get('family')
-    sort_by = request.args.get('sort_by', 'name')
-    sort_order = request.args.get('sort_order', 'asc')
-    query = select(Game).options(
-        selectinload(Game.genres),
-        selectinload(Game.tags),
-        selectinload(Game.favorited_by),
+    from sharewarez.routes_library import get_games, request_filters, filter_chips
+    filters = request_filters()
+    page, per_page = normalize_library_pagination(request.args.get('page', 1, type=int), request.args.get('per_page', 20, type=int))
+    games, total, pages, current_page = get_games(
+        page, per_page, sort_by=request.args.get('sort_by', 'name'),
+        sort_order=request.args.get('sort_order', 'asc'), **filters,
     )
-    # Get current user ID for favorite status
-    current_user_id = current_user.id if current_user.is_authenticated else None
-    if library_uuid:
-        query = query.filter(Game.library_uuid == library_uuid)
-    if category:
-        query = query.filter(Game.category.has(Category.name == category))
-    if genre:
-        query = query.filter(Game.genres.any(Genre.name == genre))
-    if rating is not None:
-        query = query.filter(Game.rating >= rating)
-    if game_mode:
-        query = query.filter(Game.game_modes.any(GameMode.name == game_mode))
-    if player_perspective:
-        query = query.filter(Game.player_perspectives.any(PlayerPerspective.name == player_perspective))
-    if theme:
-        query = query.filter(Game.themes.any(Theme.name == theme))
-    if tag:
-        query = query.filter(Game.tags.any(GameTag.name == tag))
-    if collection:
-        from sharewarez.models import Collection, CollectionGame
-        query = query.filter(
-            Game.collection_links.any(
-                CollectionGame.collection.has(Collection.slug == collection)
-            )
-        )
-    if family:
-        from sharewarez.models import GameGroup
-        query = query.filter(Game.groups.any(GameGroup.name == family))
-    if sort_by == 'name':
-        query = query.order_by(Game.name.asc() if sort_order == 'asc' else Game.name.desc())
-    elif sort_by == 'rating':
-        query = query.order_by(Game.rating.asc() if sort_order == 'asc' else Game.rating.desc())
-    elif sort_by == 'first_release_date':
-        query = query.order_by(Game.first_release_date.asc() if sort_order == 'asc' else Game.first_release_date.desc())
-    elif sort_by == 'size':
-        query = query.order_by(Game.size.asc() if sort_order == 'asc' else Game.size.desc())
-    elif sort_by == 'date_identified':
-        query = query.order_by(Game.date_identified.asc() if sort_order == 'asc' else Game.date_identified.desc())
-
-    # Pagination
-    pagination = db.paginate(query, page=page, per_page=per_page, error_out=False)
-    if pagination.pages and page > pagination.pages:
-        pagination = db.paginate(query, page=pagination.pages, per_page=per_page, error_out=False)
-    games = pagination.items
-
-    # Get all user statuses for games in this page (batch query for performance)
-    game_uuids = [game.uuid for game in games]
-    cover_urls = {}
-    if game_uuids:
-        cover_rows = db.session.execute(
-            select(Image.game_uuid, Image.url)
-            .where(Image.game_uuid.in_(game_uuids), Image.image_type == 'cover')
-            .order_by(Image.id)
-        ).all()
-        for game_uuid, image_url in cover_rows:
-            cover_urls.setdefault(game_uuid, image_url)
-    user_statuses = {}
-    if current_user_id and game_uuids:
-        from sharewarez.models import user_game_status
-        status_results = db.session.execute(
-            select(user_game_status.c.game_uuid, user_game_status.c.status).where(
-                and_(
-                    user_game_status.c.user_id == current_user_id,
-                    user_game_status.c.game_uuid.in_(game_uuids)
-                )
-            )
-        ).all()
-        user_statuses = {row[0]: row[1] for row in status_results}
-
-    # Get game data
-    game_data = []
-    for game in games:
-        cover_url = cover_urls.get(game.uuid, 'newstyle/default_cover.jpg')
-        genres = [genre.name for genre in game.genres]
-        tags = [tag.name for tag in game.tags]
-        game_size_formatted = format_size(game.size)
-
-        # Get user status for this game
-        user_status = user_statuses.get(game.uuid)
-
-        game_data.append({
-            'id': game.id,
-            'uuid': game.uuid,
-            'name': game.name,
-            'cover_url': cover_url,
-            'has_cover': game.uuid in cover_urls,
-            'summary': game.summary,
-            'url': game.url,
-            'size': game_size_formatted,
-            'genres': genres,
-            'tags': tags,
-            'library_uuid': game.library_uuid,
-            'is_favorite': current_user_id in [user.id for user in game.favorited_by],
-            'user_status': user_status
-        })
-
-    return jsonify({
-        'games': game_data,
-        'total': pagination.total,
-        'pages': pagination.pages,
-        'current_page': pagination.page,
-        'per_page': per_page,
-    })
+    result = {'games': games, 'total': total, 'pages': pages, 'current_page': current_page, 'per_page': per_page}
+    if request.args.get('render') == 'html':
+        result['html'] = render_template('games/library_cards.html', games=games)
+        result['chips_html'] = render_template('games/library_filter_chips.html', active_filter_chips=filter_chips(filters))
+    return jsonify(result)
 
 
 @bp.route('/scan_manual_folder', methods=['GET', 'POST'])

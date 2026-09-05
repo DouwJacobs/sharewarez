@@ -74,7 +74,7 @@ def test_library_view_and_saved_view_are_account_scoped(client, db_session):
     settings = get_experience_settings(user)
     assert settings['library_view'] == 'compact'
     assert settings['saved_library_views'] == [{
-        'name': 'Indie favourites', 'query': 'genre=Indie&sort_by=rating',
+        'name': 'Indie favourites', 'query': 'genre=Indie&sort_by=rating&filters=1',
     }]
 
 

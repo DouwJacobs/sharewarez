@@ -16,22 +16,60 @@ import urllib.parse
 
 library_bp = Blueprint('library', __name__)
 
-def get_saved_filters_from_cookie():
-    """Parse saved filters from the libraryFilters cookie"""
-    try:
-        cookie_value = request.cookies.get('libraryFilters')
-        if not cookie_value:
-            return {}
-        
-        # Decode URL-encoded cookie value and parse JSON
-        decoded_value = urllib.parse.unquote(cookie_value)
-        saved_filters = json.loads(decoded_value)
-        
-        # Return only non-empty filter values
-        return {k: v for k, v in saved_filters.items() if v}
-    except (json.JSONDecodeError, ValueError, TypeError) as e:
-        print(f"Error parsing saved filters cookie: {e}")
+FILTER_KEYS = {'library_uuid', 'genre', 'rating', 'game_mode', 'player_perspective',
+               'theme', 'tag', 'collection', 'family', 'category'}
+
+
+def normalize_filters(values):
+    if not isinstance(values, dict):
         return {}
+    filters = {}
+    for key, value in values.items():
+        if key not in FILTER_KEYS or not isinstance(value, (str, int)) or isinstance(value, bool):
+            continue
+        value = str(value).strip()
+        if not value or len(value) > 256:
+            continue
+        if key == 'rating':
+            try:
+                value = int(value)
+            except ValueError:
+                continue
+            if not 1 <= value <= 100:
+                continue
+        filters[key] = value
+    return filters
+
+
+def get_saved_filters_from_cookie():
+    try:
+        raw = request.cookies.get('libraryFilters', '')
+        return normalize_filters(json.loads(urllib.parse.unquote(raw))) if len(raw) <= 4096 else {}
+    except (ValueError, TypeError):
+        return {}
+
+
+def request_filters(*, use_cookie=False):
+    explicit = 'filters' in request.args or bool(FILTER_KEYS.intersection(request.args))
+    return normalize_filters(request.args.to_dict()) if explicit or not use_cookie else get_saved_filters_from_cookie()
+
+
+def filter_chips(filters):
+    labels = {'library_uuid': 'Library', 'game_mode': 'Mode', 'player_perspective': 'Perspective', 'family': 'Series'}
+    chips = []
+    for key, value in filters.items():
+        args = {**request.args.to_dict(), **filters, 'filters': '1'}
+        args.pop(key, None)
+        args.pop('page', None)
+        args.pop('render', None)
+        display = value
+        if key == 'library_uuid':
+            display = db.session.scalar(select(Library.name).where(Library.uuid == value)) or 'Unavailable library'
+        if key == 'collection':
+            display = db.session.scalar(select(Collection.name).where(Collection.slug == value)) or 'Unavailable collection'
+        chips.append({'label': labels.get(key, key.title()), 'value': display,
+                      'remove_url': url_for('library.library', **args)})
+    return chips
 
 @library_bp.context_processor
 @cache.cached(timeout=500, key_prefix='global_settings')
@@ -68,40 +106,12 @@ def library():
     sort_by = current_user.preferences.default_sort if current_user.preferences else 'name'
     sort_order = current_user.preferences.default_sort_order if current_user.preferences else 'asc'
 
-    # Get saved filters from cookie (fallback if no URL params)
-    saved_filters = get_saved_filters_from_cookie()
-    
-    # Extract filters from request arguments (URL params take priority over cookie)
-    page = request.args.get('page', 1, type=int)
-    library_uuid = request.args.get('library_uuid') or saved_filters.get('library_uuid')
+    filters = request_filters(use_cookie=True)
+    page, per_page = normalize_library_pagination(request.args.get('page', 1, type=int), request.args.get('per_page', per_page, type=int))
+    library_uuid = filters.get('library_uuid')
     library_name = request.args.get('library_name')
-    # Only override per_page, sort_by, and sort_order if the URL parameters are provided
-    per_page = request.args.get('per_page', type=int) or per_page
-    page, per_page = normalize_library_pagination(page, per_page)
-    genre = request.args.get('genre') or saved_filters.get('genre')
-    rating = request.args.get('rating', type=int) or (int(saved_filters.get('rating')) if saved_filters.get('rating') and str(saved_filters.get('rating')).isdigit() else None)
-    game_mode = request.args.get('game_mode') or saved_filters.get('game_mode')
-    player_perspective = request.args.get('player_perspective') or saved_filters.get('player_perspective')
-    theme = request.args.get('theme') or saved_filters.get('theme')
-    tag = request.args.get('tag') or saved_filters.get('tag')
-    collection = request.args.get('collection') or saved_filters.get('collection')
-    family = request.args.get('family') or saved_filters.get('family')
     sort_by = request.args.get('sort_by') or sort_by
     sort_order = request.args.get('sort_order') or sort_order
-
-    filters = {
-        'library_uuid': library_uuid,
-        'genre': genre,
-        'rating': rating,
-        'game_mode': game_mode,
-        'player_perspective': player_perspective,
-        'theme': theme,
-        'tag': tag,
-        'collection': collection,
-        'family': family,
-    }
-    # Filter out None values
-    filters = {k: v for k, v in filters.items() if v is not None}
 
     # Determine the appropriate library filter to use
     if library_uuid:
@@ -126,22 +136,7 @@ def library():
     library_view = request.args.get('view') or experience['library_view']
     if library_view not in {'grid', 'compact', 'list'}:
         library_view = 'grid'
-    chip_labels = {
-        'library_uuid': 'Library', 'genre': 'Genre', 'rating': 'Rating',
-        'game_mode': 'Mode', 'player_perspective': 'Perspective',
-        'theme': 'Theme', 'tag': 'Tag', 'collection': 'Collection',
-        'family': 'Series',
-    }
-    active_filter_chips = []
-    for key, value in filters.items():
-        args = request.args.to_dict()
-        args.pop(key, None)
-        args.pop('page', None)
-        active_filter_chips.append({
-            'label': chip_labels.get(key, key.replace('_', ' ').title()),
-            'value': value,
-            'remove_url': url_for('library.library', **args),
-        })
+    active_filter_chips = filter_chips(filters)
 
     return render_template(
         'games/library_browser.html',
@@ -183,10 +178,10 @@ def save_library_preferences():
         allowed_keys = {
             'library_uuid', 'genre', 'rating', 'game_mode', 'player_perspective',
             'theme', 'tag', 'collection', 'family', 'sort_by', 'sort_order',
-            'per_page', 'view',
+            'per_page', 'view', 'filters',
         }
         pairs = [(key, value) for key, value in urllib.parse.parse_qsl(query) if key in allowed_keys]
-        safe_query = urllib.parse.urlencode(pairs)
+        safe_query = urllib.parse.urlencode([*pairs, ('filters', '1')])
         views = [
             item for item in experience['saved_library_views']
             if isinstance(item, dict) and item.get('name', '').casefold() != name.casefold()
@@ -232,7 +227,7 @@ def get_games(page=1, per_page=20, sort_by='name', sort_order='asc', **filters):
 
     if filters.get('genre'):
         query = query.filter(Game.genres.any(Genre.name == filters['genre']))
-    if filters.get('rating') is not None:
+    if filters.get('rating'):
         query = query.filter(Game.rating >= filters['rating'])
     if filters.get('game_mode'):
         query = query.filter(Game.game_modes.any(GameMode.name == filters['game_mode']))
@@ -250,6 +245,9 @@ def get_games(page=1, per_page=20, sort_by='name', sort_order='asc', **filters):
         )
     if filters.get('family'):
         query = query.filter(Game.groups.any(GameGroup.name == filters['family']))
+    if filters.get('category'):
+        from sharewarez.models import Category
+        query = query.where(Game.category.has(Category.name == filters['category']))
     # Sorting logic
     if sort_by == 'name':
         query = query.order_by(Game.name.asc() if sort_order == 'asc' else Game.name.desc())
@@ -261,6 +259,7 @@ def get_games(page=1, per_page=20, sort_by='name', sort_order='asc', **filters):
         query = query.order_by(Game.size.asc() if sort_order == 'asc' else Game.size.desc())
     elif sort_by == 'date_identified':
         query = query.order_by(Game.date_identified.asc() if sort_order == 'asc' else Game.date_identified.desc())
+    query = query.order_by(Game.id)
     # Pagination
     pagination = db.paginate(query, page=page, per_page=per_page, error_out=False)
     if pagination.pages and page > pagination.pages:
@@ -316,6 +315,7 @@ def get_games(page=1, per_page=20, sort_by='name', sort_order='asc', **filters):
 
         game_data.append({
             'id': game.id,
+            'library_uuid': game.library_uuid,
             'uuid': game.uuid,
             'name': game.name,
             'cover_url': cover_url,
@@ -332,3 +332,20 @@ def get_games(page=1, per_page=20, sort_by='name', sort_order='asc', **filters):
         })
 
     return game_data, pagination.total, pagination.pages, pagination.page
+
+
+@library_bp.get('/library/game-actions/<game_uuid>')
+@login_required
+def library_game_actions(game_uuid):
+    game = db.get_or_404(Game, db.session.scalar(select(Game.id).where(Game.uuid == game_uuid)))
+    return render_template('games/popup_menu.html', game=game, game_uuid=game.uuid,
+                           game_url=game.url, form=CsrfForm(), is_admin=current_user.role == 'admin',
+                           library_context=True)
+
+
+@library_bp.after_request
+def persist_library_filters(response):
+    if request.path == '/library' and response.status_code == 200:
+        response.set_cookie('libraryFilters', urllib.parse.quote(json.dumps(request_filters(use_cookie=True))),
+                            max_age=30 * 86400, samesite='Lax')
+    return response

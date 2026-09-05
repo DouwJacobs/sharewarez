@@ -1,6 +1,5 @@
 <!-- in templates/games/popup_menu.html -->
-<!-- when updating this file, remember to change library_pagination.js too -->
-<!-- it regenerates this popup menu -->
+<!-- Shared by game details and on-demand Library actions. -->
 
 <div id="popupMenu-{{ game_uuid }}" class="popup-menu" style="display: none;">
     <form action="{{ url_for('download.download_game', game_uuid=game_uuid) }}" method="get" class="menu-item">
@@ -8,7 +7,7 @@
         <button type="submit" class="menu-button">Download</button>
     </form>
 
-    {% if enable_game_requests %}
+    {% if enable_game_requests and not library_context %}
     <div class="menu-item">
         {% if has_pending_update_request %}
         <button type="button" class="menu-button" disabled title="You have already requested an update for this game" style="opacity: 0.65; cursor: default;">Update Requested</button>
@@ -17,10 +16,11 @@
         {% endif %}
     </div>
     {% endif %}
-    {% if enable_game_issues %}<div class="menu-item">
+    {% if enable_game_issues and not library_context %}<div class="menu-item">
         <button type="button" class="menu-button" onclick="toggleReportIssueModal()" id="reportIssueBtn">Report Issue</button>
     </div>{% endif %}
 
+    {% if is_admin %}
     <form action="{{ url_for('games.game_edit', game_uuid=game_uuid) }}" method="get" class="menu-item">
         {{ form.csrf_token }}
         <button type="submit" class="menu-button">Edit Details</button>
@@ -45,7 +45,7 @@
     </div>
     {% if enable_delete_game_on_disk %}
     <div class="menu-item">
-        <button type="button" class="menu-button trigger-delete-modal" data-game-uuid="{{ game_uuid }}">Delete Game on disk</button>
+        <button type="button" class="menu-button trigger-delete-modal delete-game-from-disk" data-game-uuid="{{ game_uuid }}">Delete Game on disk</button>
     </div>
     {% endif %}
     <div class="menu-item move-library-container">
@@ -58,9 +58,10 @@
             </div>
         </div>
     </div>
+    {% endif %}
     <div class="menu-item">
-        {% if game.url %}
-        <button type="submit" onclick="window.open('{{ game.url }}', 'target=_new')" class="menu-button">Open IGDB Page</button>
+        {% if game.url and game.url.startswith(('https://', 'http://')) %}
+        <a href="{{ game.url }}" target="_blank" rel="noopener noreferrer" class="menu-button">Open IGDB Page</a>
         {% endif %}
     </div>
     {% if discord_configured and discord_manual_trigger_enabled and is_admin %}

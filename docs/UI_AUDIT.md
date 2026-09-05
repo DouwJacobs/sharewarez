@@ -446,3 +446,13 @@ but repeated browser screenshot timeouts prevented a completed visual/contrast
 review. No UI fixes were applied in this pass. A theme test unexpectedly deleted
 the installed default theme; it was restored from canonical source and compared
 for equality. The report records the test-isolation and theme-reset defects.
+### Audit fixes — 5 September 2026
+
+Library initial and AJAX cards share `games/library_cards.html` and escaped metadata.
+The shared action-menu template is fetched on demand; maintain its admin boundary
+and keyboard Escape/focus behavior. URL filters are authoritative when `filters=1`
+or filter parameters are present; zero rating includes unrated titles. Option lists
+populate independently. Browser desktop/mobile and apply/remove/paginate checks pass.
+Activation recovery has a working rate-limited resend route and 44 px mobile controls.
+Metadata editing uses an H1; image edit and download-cache pages have specific titles.
+See the remediation ledger for full-suite and remaining verification status.

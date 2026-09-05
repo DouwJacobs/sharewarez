@@ -20,7 +20,7 @@
         '/admin/integrations': 'Integrations', '/admin/statistics': 'Statistics',
         '/admin/system_logs': 'System logs', '/admin/server-status': 'Server status', '/admin/new_server_info': 'Server status',
         '/admin/users': 'Users', '/admin/whitelist': 'Whitelist', '/admin/manage_invites': 'Invitations',
-        '/admin/branding': 'Branding', '/admin/manage-downloads': 'Download delivery',
+        '/admin/download-cache': 'Download cache', '/admin/branding': 'Branding', '/admin/manage-downloads': 'Download delivery',
         '/admin/themes': 'Themes', '/admin/newsletter': 'Newsletter', '/admin/email-templates': 'Email templates',
         '/admin/help': 'Administrator guide', '/admin/smtp_settings': 'SMTP settings',
         '/admin/image_queue': 'Image queue', '/admin/extensions': 'File extensions'
@@ -36,7 +36,8 @@
         'admin2.view_newsletter': 'Newsletter details',
         'game_requests.admin_request_details': 'Request details',
         'issues.issue_detail': 'Issue details', 'issues.admin_issue_detail': 'Issue details',
-        'info.admin_server_status': 'Server status'
+        'info.admin_server_status': 'Server status',
+        'games.game_edit': 'Edit game', 'main.edit_game_images': 'Edit game images'
     } %}
     {% set document_page_title = title|default(route_titles.get(request.path) or endpoint_titles.get(request.endpoint), true) %}
     <title>{% block title %}{% if document_page_title %}{{ document_page_title }} · {% endif %}{{ site_title }}{% endblock %}</title>

@@ -9,7 +9,7 @@ remain outstanding until explicitly recorded.
 | --- | --- | --- |
 | A1: member catalogue mutation | Fixed; focused tests pass | Administrator guard on move endpoint; member denial preserves library assignment. |
 | A2: disabled sessions | Fixed; focused tests pass | Flask loader and user authentication state reject disabled records; direct downloads use SSE account validation in a thread. Existing-session read/mutation and direct-download regressions pass. |
-| A3: AJAX attribute injection | Pending | |
+| A3: AJAX attribute injection | Fixed; focused tests pass | Shared autoescaped Jinja card fragment replaces JavaScript string renderer. Hostile attribute/HTML payload regressions pass. |
 | A4: sensitive logs | Fixed; focused tests pass | Removed form/token dumps and SMTP protocol debugging. Request logs use route patterns, including a safe unmatched-route marker. Synthetic password/path token regressions pass. |
 | A5: fresh search bootstrap | Fixed; focused tests pass | Revision 25 repairs omitted extension/index DDL; fresh bootstrap includes it. Fresh and already-stamped PostgreSQL regressions pass. |
 | A6: reset timestamps | Fixed; focused tests pass | Normalize legacy UTC timestamps; missing/expired tokens rejected and successful resets invalidate the token. |
@@ -18,13 +18,13 @@ remain outstanding until explicitly recorded.
 | B1: email normalization | Fixed; focused tests pass | Normalize stored and signed registration addresses; legacy mixed-case confirmation links resolve. |
 | B2: invite transaction | Fixed; focused tests pass | Lock the invitation row and commit redemption with the new user. Concurrent redemption creates exactly one account with SMTP disabled. |
 | B3: recovery/delivery feedback | Fixed; focused tests pass | Silent public recovery responses; rate-limited activation resend and repaired confirmation links; registration/invites report failed delivery accurately. |
-| B4: Library state | Pending | |
-| B5: malformed cookie | Pending | |
+| B4: Library state | Fixed; focused tests pass | Canonical URL/cookie filters, explicit persistent clear, consistent zero-rating semantics, AJAX count/chips/history updates and named Library chips. |
+| B5: malformed cookie | Fixed; focused tests pass | Require an object, allowlisted scalar keys and bounded values; discard malformed and zero-rating filters. |
 | B6: folder boundary | Fixed; focused tests pass | Canonical paths plus common-path containment reject sibling, parent, absolute and symlink escapes. Tests use actual temporary directories. |
 | B7: indexed candidate search | Fixed; focused tests pass | Bounded full-text/substring candidates plus GiST nearest title/word candidates. 10,002 games: selective SQL 9.9 ms, common SQL 16.0 ms; index use verified. |
 | B8: unbounded legacy search | Fixed; focused tests pass | Autocomplete selects only id/UUID/name, escapes wildcards, orders deterministically and caps at 20. |
 | B9: startup failure | Fixed; focused tests pass | Strict shell error handling; stub initializer exit 17 prevents Uvicorn launch. |
-| C1: page semantics | Pending | |
+| C1: page semantics | Fixed; focused tests pass | Added metadata-edit H1 and metadata/image/cache page titles; final route visual check pending. |
 
 ## Verification so far
 
@@ -51,3 +51,10 @@ to assert the corrected security contract.
 Account remediation: 7 PostgreSQL regressions, 28 SMTP tests and 12 email-template tests pass. Activation resend visually checked on the running app at desktop and 390 × 844: no horizontal overflow, 44 px mobile controls. Full-suite verification remains pending.
 
 Search checks: 7 global-search, 28 game API, 2 search/bootstrap/performance and 1 live bootstrap tests pass. Corrected a missing newline in the earlier game API administrator fixture, exposed by isolated module execution. Query plans are saved in `docs/audits/2026-09-05/search-remediation.json`.
+
+Library verification: 29 Library route, 9 audit, 6 experience, 2 hover, 4 accessibility
+contract and 3 notification tests pass. Desktop/mobile Library screenshots, AJAX
+pagination, applying/removing a named filter, action-menu opening and Escape focus
+return verified on port 5006. Menus are rendered on demand (one per Library), seven
+filter requests run concurrently, and unread notification badges use one aggregate.
+20-game HTML: 130,715 bytes / 17.6 ms warm; 100 games: 492,981 bytes / 22.9 ms.
