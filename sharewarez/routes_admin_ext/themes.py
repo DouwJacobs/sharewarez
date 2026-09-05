@@ -367,71 +367,18 @@ def delete_theme(theme_name: str):
 @login_required
 @admin_required
 def reset_default_themes():
-    """Restore the default and bundled themes from source directories.
+    """Restore packaged themes without destroying the working copy on failure."""
+    from sharewarez.utils.theme_install import install_packaged_themes
 
-    Returns:
-        Response: Redirect to themes management page
-    """
+    source = current_app.config.get('THEME_SOURCE_ROOT', Path(current_app.root_path) / 'setup')
+    target = current_app.config.get(
+        'THEME_INSTALL_ROOT', Path(current_app.static_folder) / 'library' / 'themes'
+    )
     try:
-        default_theme_source = Path('sharewarez') / 'setup' / 'default_theme'
-        if not default_theme_source.exists():
-            error_msg = "Failed to reset default themes: source directory not found"
-            flash('Error: default theme source not found in sharewarez/setup/default_theme', 'error')
-            log_system_event(
-                error_msg,
-                event_type='themes',
-                event_level='error'
-            )
-            return redirect(url_for('admin2.manage_themes'))
-
-        default_theme_target = Path('sharewarez') / 'static' / 'library' / 'themes' / 'default'
-
-        log_system_event(
-            "Starting default themes reset...",
-            event_type='themes',
-            event_level='information'
-        )
-
-        # Remove existing default theme if it exists
-        if default_theme_target.exists():
-            try:
-                shutil.rmtree(default_theme_target)
-                log_system_event(
-                    "Removed existing default theme directory",
-                    event_type='themes',
-                    event_level='information'
-                )
-            except Exception as e:
-                error_message = f"Failed to remove existing default theme: {str(e)}"
-                flash(error_message, 'error')
-                log_system_event(error_message, event_type='themes', event_level='error')
-                return redirect(url_for('admin2.manage_themes'))
-
-        # Create themes directory if it doesn't exist
-        default_theme_target.parent.mkdir(parents=True, exist_ok=True)
-
-        # Copy default theme from source
-        try:
-            shutil.copytree(default_theme_source, default_theme_target)
-            log_system_event(
-                "Default theme copied successfully from source directory",
-                event_type='themes',
-                event_level='information'
-            )
-            bundled_source = Path('sharewarez') / 'setup' / 'bundled_themes'
-            if bundled_source.exists():
-                for source in bundled_source.iterdir():
-                    if source.is_dir():
-                        shutil.copytree(source, default_theme_target.parent / source.name, dirs_exist_ok=True)
-            flash('Bundled themes have been restored successfully!', 'success')
-        except Exception as e:
-            error_message = f"Failed to copy default theme: {str(e)}"
-            flash(error_message, 'error')
-            log_system_event(error_message, event_type='themes', event_level='error')
-
-    except Exception as e:
-        error_message = f"Error resetting default themes: {str(e)}"
-        flash(error_message, 'error')
-        log_system_event(error_message, event_type='themes', event_level='error')
-
+        install_packaged_themes(source, target)
+        flash('Bundled themes have been restored successfully!', 'success')
+        log_system_event('Packaged themes restored', event_type='themes', event_level='information')
+    except Exception as error:
+        flash('Theme reset failed; the prior themes were retained unless recovery is reported in the log.', 'error')
+        log_system_event(f'Theme reset failed: {error}', event_type='themes', event_level='error')
     return redirect(url_for('admin2.manage_themes'))

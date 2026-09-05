@@ -14,7 +14,7 @@ remain outstanding until explicitly recorded.
 | A5: fresh search bootstrap | Pending | |
 | A6: reset timestamps | Pending | |
 | A7: blocking download admission | Pending | |
-| A8: theme replacement/isolation | Pending | |
+| A8: theme replacement/isolation | Fixed; focused tests pass | Stage and validate all packaged themes, serialize resets, roll back failed publication, retain originals if rollback fails. 43 theme route tests and 2 recovery tests pass using temporary assets. |
 | B1: email normalization | Pending | |
 | B2: invite transaction | Pending | |
 | B3: recovery/delivery feedback | Pending | Invalid confirmation also links to a nonexistent activation endpoint; fix with the resend flow. |
@@ -28,7 +28,7 @@ remain outstanding until explicitly recorded.
 
 ## Verification so far
 
-71 focused tests passed across audit security, filesystem browser, game API,
+The initial 71 focused tests passed across audit security, filesystem browser, game API,
 authentication utilities and observability. Ruff passed before the final
 verification run. Tests use the explicitly disposable PostgreSQL database
 `sharewarezfixestest` in container `sharewarez-fixes-test` on port 55439.
@@ -41,3 +41,9 @@ verification run. Tests use the explicitly disposable PostgreSQL database
 - Complete full isolated-module verification and retry visual/accessibility checks.
 - Measure revised search and Library response costs and exercise real disposable
   archive/interruption/concurrent-stream behavior; record production/WAN limits.
+Subsequent isolated checks passed for model behavior (32), API tokens (4), SSE
+(15), download ranges (18), HTTP security (3), SMTP diagnostics (31), SMTP sending
+(28), the expanded audit security module (10), container layout (2), quality-gate
+contracts (1), theme routes (43), and theme rollback recovery (2). Older tests
+that expected unconditional active state or SMTP protocol debugging were updated
+to assert the corrected security contract.

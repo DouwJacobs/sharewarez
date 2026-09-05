@@ -543,99 +543,72 @@ class TestDeleteThemeRoute:
 
 
 class TestResetDefaultThemesRoute:
-    """Tests for the reset_default_themes route."""
+    """The real installation algorithm runs only in isolated asset roots."""
+
+    @pytest.fixture(autouse=True)
+    def asset_roots(self, app, tmp_path):
+        source = tmp_path / 'setup'
+        target = tmp_path / 'installed'
+        for directory, payload in [(source / 'default_theme', 'new'),
+                                   (source / 'bundled_themes' / 'bundled', 'new bundled'),
+                                   (target / 'default', 'old'), (target / 'custom', 'custom')]:
+            directory.mkdir(parents=True)
+            (directory / 'theme.json').write_text('{}')
+            (directory / 'style.css').write_text(payload)
+        app.config.update(THEME_SOURCE_ROOT=source, THEME_INSTALL_ROOT=target)
+        self.source, self.target = source, target
 
     def test_reset_default_themes_requires_login(self, client):
-        """Test that reset default themes requires login."""
-        response = client.post('/admin/themes/reset')
-        assert response.status_code == 302
-        assert 'login' in response.location
+        assert client.post('/admin/themes/reset').status_code == 302
+        assert (self.target / 'default' / 'style.css').read_text() == 'old'
 
     def test_reset_default_themes_requires_admin(self, client, regular_user):
-        """Test that reset default themes requires admin role."""
-        with client.session_transaction() as sess:
-            sess['_user_id'] = str(regular_user.id)
-            sess['_fresh'] = True
-        
-        response = client.post('/admin/themes/reset')
-        assert response.status_code == 302
-        assert 'login' in response.location
+        with client.session_transaction() as session:
+            session['_user_id'] = str(regular_user.id)
+        assert client.post('/admin/themes/reset').status_code == 302
+        assert (self.target / 'default' / 'style.css').read_text() == 'old'
 
-    @patch('sharewarez.routes_admin_ext.themes.log_system_event')
-    @patch('os.path.exists')
-    def test_reset_default_themes_missing_source(self, mock_exists, mock_log, client, admin_user):
-        """Test reset default themes when source directory is missing."""
-        with client.session_transaction() as sess:
-            sess['_user_id'] = str(admin_user.id)
-            sess['_fresh'] = True
+    def test_reset_default_themes_success(self, client, admin_user):
+        with client.session_transaction() as session:
+            session['_user_id'] = str(admin_user.id)
+        assert client.post('/admin/themes/reset').status_code == 302
+        assert (self.target / 'default' / 'style.css').read_text() == 'new'
+        assert (self.target / 'bundled' / 'style.css').read_text() == 'new bundled'
+        assert (self.target / 'custom' / 'style.css').read_text() == 'custom'
+        assert not list(self.target.glob('.theme-install-*'))
 
-        mock_exists.return_value = False
+    def test_reset_default_themes_copy_failure(self, client, admin_user):
+        with client.session_transaction() as session:
+            session['_user_id'] = str(admin_user.id)
+        with patch('sharewarez.utils.theme_install.shutil.copytree', side_effect=OSError('disk full')):
+            assert client.post('/admin/themes/reset').status_code == 302
+        assert (self.target / 'default' / 'style.css').read_text() == 'old'
+        assert (self.target / 'custom' / 'style.css').read_text() == 'custom'
 
-        response = client.post('/admin/themes/reset')
-        assert response.status_code == 302  # Redirect after error
-        mock_log.assert_called()
+    def test_reset_publish_failure_rolls_back(self, client, admin_user):
+        with client.session_transaction() as session:
+            session['_user_id'] = str(admin_user.id)
+        replace = os.replace
+        def fail_second_publish(source, target):
+            if Path(source).parent.name == 'new' and Path(source).name == 'bundled':
+                raise OSError('publish failure')
+            return replace(source, target)
+        with patch('sharewarez.utils.theme_install.os.replace', side_effect=fail_second_publish):
+            assert client.post('/admin/themes/reset').status_code == 302
+        assert (self.target / 'default' / 'style.css').read_text() == 'old'
+        assert not (self.target / 'bundled').exists()
 
-    @patch('sharewarez.routes_admin_ext.themes.log_system_event')
-    @patch('shutil.copytree')
-    @patch('shutil.rmtree')
-    @patch('pathlib.Path.exists')
-    @patch('pathlib.Path.mkdir')
-    def test_reset_default_themes_success(self, mock_mkdir, mock_exists, mock_rmtree, mock_copytree, mock_log, client, admin_user):
-        """Test successful reset of default themes."""
-        with client.session_transaction() as sess:
-            sess['_user_id'] = str(admin_user.id)
-            sess['_fresh'] = True
-
-        mock_exists.return_value = True
-
-        response = client.post('/admin/themes/reset')
-        assert response.status_code == 302  # Redirect after success
-        mock_copytree.assert_any_call(
-            Path('sharewarez/setup/default_theme'),
-            Path('sharewarez/static/library/themes/default'),
-        )
-        assert mock_copytree.call_count >= 1
-        mock_log.assert_called()
-
-    @patch('sharewarez.routes_admin_ext.themes.log_system_event')
-    @patch('shutil.copytree')
-    @patch('pathlib.Path.exists')
-    def test_reset_default_themes_copy_failure(self, mock_exists, mock_copytree, mock_log, client, admin_user):
-        """Test reset default themes with failure during copying."""
-        with client.session_transaction() as sess:
-            sess['_user_id'] = str(admin_user.id)
-            sess['_fresh'] = True
-
-        mock_exists.return_value = True
-        mock_copytree.side_effect = Exception("Copy failed")
-
-        response = client.post('/admin/themes/reset')
-        assert response.status_code == 302
-        mock_log.assert_called()
-
-    @patch('sharewarez.routes_admin_ext.themes.log_system_event')
-    @patch('os.path.exists')
-    def test_reset_default_themes_unexpected_error(self, mock_exists, mock_log, client, admin_user):
-        """Test reset default themes with unexpected error."""
-        with client.session_transaction() as sess:
-            sess['_user_id'] = str(admin_user.id)
-            sess['_fresh'] = True
-        
-        mock_exists.side_effect = Exception("Unexpected error")
-        
-        response = client.post('/admin/themes/reset')
-        assert response.status_code == 302  # Redirect after error
-        mock_log.assert_called()
+    def test_reset_rejects_bad_metadata_before_replacement(self, client, admin_user):
+        with client.session_transaction() as session:
+            session['_user_id'] = str(admin_user.id)
+        (self.source / 'default_theme' / 'theme.json').write_text('invalid')
+        assert client.post('/admin/themes/reset').status_code == 302
+        assert (self.target / 'default' / 'style.css').read_text() == 'old'
 
     def test_reset_default_themes_post_method_only(self, client, admin_user):
-        """Test that reset default themes only accepts POST requests."""
-        with client.session_transaction() as sess:
-            sess['_user_id'] = str(admin_user.id)
-            sess['_fresh'] = True
-        
-        # GET should not be allowed
-        response_get = client.get('/admin/themes/reset')
-        assert response_get.status_code == 405
+        with client.session_transaction() as session:
+            session['_user_id'] = str(admin_user.id)
+        assert client.get('/admin/themes/reset').status_code == 405
 
 
 class TestThemeRoutesIntegration:

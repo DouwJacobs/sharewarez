@@ -108,3 +108,19 @@ Download counts and transfer reporting remain on `/admin/statistics`; they are n
 The development launcher aborts immediately when initialization fails and only
 exports completion flags after success. An initialization error must be resolved
 before restarting; the launcher must not start partially initialized workers.
+## Recoverable theme reset
+
+Administrator theme reset stages every packaged theme under the installed-theme
+root before replacing any live directory. A filesystem lock serializes resets
+across web workers. Failed publication restores the previous directories; custom
+themes are retained. The staging path uses the same filesystem as the target so
+renames do not require copying during publication.
+
+If both publication and rollback fail, the operation retains its
+`.theme-install-*` directory and records the recovery path. Stop the app before
+manual recovery and restore originals from that directory's `old/` subtree.
+Do not delete the staging directory until installed themes have been verified.
+
+Tests of theme reset use explicit `THEME_SOURCE_ROOT` and `THEME_INSTALL_ROOT`
+paths beneath a temporary directory. These are fixture overrides; normal
+operation resolves source and installed assets from the application root.
