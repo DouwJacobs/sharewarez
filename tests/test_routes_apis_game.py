@@ -594,7 +594,10 @@ class TestGameAPIResponseFormats:
         data = response.get_json()
         assert isinstance(data, dict)
         assert 'next_id' in data
-        assert isinstance(data['next_id'], int)@pytest.fixture
+        assert isinstance(data['next_id'], int)
+
+
+@pytest.fixture
 def admin_user(regular_user, db_session):
     regular_user.role = 'admin'
     db_session.commit()

@@ -33,3 +33,11 @@ downgrade where practical. Commit model and migration changes together.
 Production containers apply upgrades automatically. Operators can inspect the
 current revision with `flask db current` inside the application container.
 Revision `20260809_03` adds optional one-level collection grouping and collection artwork URLs. Existing collections remain top-level and require no data conversion.
+
+Revision `20260905_25` repairs missing search extension/indexes on metadata-created
+schemas that were stamped without historical non-model DDL. Fresh bootstrap runs
+this immutable revision before stamping. It also adds GiST title-distance indexes
+for bounded global-search candidates. Startup must complete this migration before
+serving revised search traffic. Normal upgrades acquire index creation locks;
+allow a maintenance window on large catalogues. Downgrade retains repaired search
+objects and removes only the added distance indexes.

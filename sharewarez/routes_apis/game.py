@@ -19,8 +19,9 @@ def search():
             return jsonify({'error': 'Search term too long'}), 400
 
         # Build query with name search
-        search_term = f'%{query}%'
-        search_query = select(Game).filter(Game.name.ilike(search_term))
+        search_query = select(Game.id, Game.uuid, Game.name).where(
+            func.lower(Game.name).contains(query.lower(), autoescape=True)
+        )
 
         # Apply active filters from request parameters
         library_uuid = request.args.get('library_uuid')
@@ -48,7 +49,7 @@ def search():
             search_query = search_query.filter(Game.tags.any(GameTag.name == tag))
 
         # Execute query and build results
-        games = db.session.execute(search_query).scalars().all()
+        games = db.session.execute(search_query.order_by(func.lower(Game.name), Game.id).limit(20)).all()
         results = [{'id': game.id, 'uuid': game.uuid, 'name': game.name} for game in games]
     return jsonify(results)
 

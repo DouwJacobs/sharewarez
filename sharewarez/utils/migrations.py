@@ -43,6 +43,7 @@ def bootstrap_schema_extras(engine):
         context = MigrationContext.configure(connection)
         with Operations.context(context):
             scripts.get_revision('20260904_24').module.upgrade()
+            scripts.get_revision('20260905_25').module.upgrade()
 
 
 def current_revision(database_uri):

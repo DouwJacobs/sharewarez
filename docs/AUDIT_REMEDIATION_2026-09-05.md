@@ -11,7 +11,7 @@ remain outstanding until explicitly recorded.
 | A2: disabled sessions | Fixed; focused tests pass | Flask loader and user authentication state reject disabled records; direct downloads use SSE account validation in a thread. Existing-session read/mutation and direct-download regressions pass. |
 | A3: AJAX attribute injection | Pending | |
 | A4: sensitive logs | Fixed; focused tests pass | Removed form/token dumps and SMTP protocol debugging. Request logs use route patterns, including a safe unmatched-route marker. Synthetic password/path token regressions pass. |
-| A5: fresh search bootstrap | Pending | |
+| A5: fresh search bootstrap | Fixed; focused tests pass | Revision 25 repairs omitted extension/index DDL; fresh bootstrap includes it. Fresh and already-stamped PostgreSQL regressions pass. |
 | A6: reset timestamps | Fixed; focused tests pass | Normalize legacy UTC timestamps; missing/expired tokens rejected and successful resets invalidate the token. |
 | A7: blocking download admission | Pending | |
 | A8: theme replacement/isolation | Fixed; focused tests pass | Stage and validate all packaged themes, serialize resets, roll back failed publication, retain originals if rollback fails. 43 theme route tests and 2 recovery tests pass using temporary assets. |
@@ -21,8 +21,8 @@ remain outstanding until explicitly recorded.
 | B4: Library state | Pending | |
 | B5: malformed cookie | Pending | |
 | B6: folder boundary | Fixed; focused tests pass | Canonical paths plus common-path containment reject sibling, parent, absolute and symlink escapes. Tests use actual temporary directories. |
-| B7: indexed candidate search | Pending | |
-| B8: unbounded legacy search | Pending | |
+| B7: indexed candidate search | Fixed; focused tests pass | Bounded full-text/substring candidates plus GiST nearest title/word candidates. 10,002 games: selective SQL 9.9 ms, common SQL 16.0 ms; index use verified. |
+| B8: unbounded legacy search | Fixed; focused tests pass | Autocomplete selects only id/UUID/name, escapes wildcards, orders deterministically and caps at 20. |
 | B9: startup failure | Fixed; focused tests pass | Strict shell error handling; stub initializer exit 17 prevents Uvicorn launch. |
 | C1: page semantics | Pending | |
 
@@ -49,3 +49,5 @@ that expected unconditional active state or SMTP protocol debugging were updated
 to assert the corrected security contract.
 
 Account remediation: 7 PostgreSQL regressions, 28 SMTP tests and 12 email-template tests pass. Activation resend visually checked on the running app at desktop and 390 × 844: no horizontal overflow, 44 px mobile controls. Full-suite verification remains pending.
+
+Search checks: 7 global-search, 28 game API, 2 search/bootstrap/performance and 1 live bootstrap tests pass. Corrected a missing newline in the earlier game API administrator fixture, exposed by isolated module execution. Query plans are saved in `docs/audits/2026-09-05/search-remediation.json`.

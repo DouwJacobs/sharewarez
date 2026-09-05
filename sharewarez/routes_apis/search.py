@@ -1,7 +1,7 @@
 from flask import jsonify, request
 from flask_login import current_user, login_required
-from sqlalchemy import func, literal, or_, select
-from sqlalchemy.orm import selectinload
+from sqlalchemy import func, inspect, literal, or_, select, union
+from sqlalchemy.orm import load_only, selectinload
 
 from sharewarez import db
 from sharewarez.models import Game, GameIssue, GameRequest, Library, User, UserPreference
@@ -21,10 +21,31 @@ def _ranked_search(model, title_column, text_columns, query, limit):
         func.word_similarity(query.lower(), func.lower(title_column)),
     )
     rank = (func.ts_rank_cd(document, tsquery) + fuzzy_score).label('search_rank')
+    # Rank a bounded union, not every matching full ORM row. GiST KNN scans
+    # supply the nearest title/word matches even for very common search terms.
+    primary_key = inspect(model).primary_key[0]
+    lowered = func.lower(title_column)
+    candidates = union(
+        select(primary_key).where(document.op('@@')(tsquery)).limit(200),
+        select(primary_key).where(lowered.contains(query.lower(), autoescape=True)).limit(200),
+        select(primary_key).order_by(lowered.op('<->')(query.lower())).limit(100),
+        select(primary_key).order_by(lowered.op('<->>')(query.lower())).limit(100),
+        select(primary_key).where(lowered == query.lower()).limit(20),
+    ).cte('search_candidates').prefix_with('MATERIALIZED')
+    fields = {
+        Game: (Game.uuid, Game.name),
+        Library: (Library.uuid, Library.name, Library.platform),
+        User: (User.name, User.email),
+        GameRequest: (GameRequest.game_name, GameRequest.status),
+        GameIssue: (GameIssue.title, GameIssue.category, GameIssue.status),
+    }
     return (
         select(model, rank)
-        .where(or_(document.op('@@')(tsquery), fuzzy_score >= 0.24, title_column.ilike(f'%{query}%')))
-        .order_by(rank.desc(), title_column)
+        .join(candidates, primary_key == candidates.c[0])
+        .where(or_(document.op('@@')(tsquery), fuzzy_score >= 0.24,
+                   lowered.contains(query.lower(), autoescape=True)))
+        .options(load_only(*fields[model]))
+        .order_by(rank.desc(), title_column, primary_key)
         .limit(limit)
     )
 
@@ -34,6 +55,8 @@ def _ranked_search(model, title_column, text_columns, query, limit):
 def global_search():
     """Return compact, permission-aware results for the global command palette."""
     query = request.args.get('q', '').strip()
+    if len(query) > 100:
+        return jsonify({'error': 'Search term too long'}), 400
     preferences = current_user.preferences
     saved_searches = list(preferences.saved_searches or []) if preferences else []
     if len(query) < 2:
