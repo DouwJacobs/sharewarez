@@ -388,11 +388,11 @@ class User(db.Model):
 
     @property
     def is_authenticated(self):
-        return True
+        return bool(self.state)
 
     @property
     def is_active(self):
-        return True
+        return bool(self.state)
 
     @property
     def is_anonymous(self):

@@ -380,64 +380,17 @@ class LazyASGIApp:
             )
     
     async def _get_user_from_session(self, scope):
-        """Extract user ID from Flask session cookie"""
-        headers = dict(scope.get("headers", []))
-        cookie_header = headers.get(b"cookie", b"").decode("utf-8")
-        
-        if not cookie_header:
-            return None
-        
-        # Parse cookies to find session cookie
-        cookies = {}
-        for cookie in cookie_header.split(';'):
-            if '=' in cookie:
-                name, value = cookie.strip().split('=', 1)
-                cookies[name] = value
-        
-        session_cookie = cookies.get('session')
-        if not session_cookie:
-            return None
-        
-        try:
-            # Decode Flask session using Flask's session interface
-            with self._flask_app.app_context():
-                from flask.sessions import SecureCookieSessionInterface
-                # Create a session interface to decode the cookie
-                session_interface = SecureCookieSessionInterface()
-                
-                # Create a fake request context to use Flask's session decoding
-                from flask import Request
+        """Validate the current account off the event loop, as SSE does."""
+        from sharewarez.live_snapshots import authenticate, LiveAccessDenied
 
-                # Create minimal WSGI environ for the request
-                environ = {
-                    'REQUEST_METHOD': 'GET',
-                    'PATH_INFO': '/',
-                    'SERVER_NAME': 'localhost',
-                    'SERVER_PORT': '5000',
-                    'HTTP_COOKIE': cookie_header,
-                    'wsgi.url_scheme': 'http'
-                }
-                
-                # Create request object
-                request = Request(environ)
-                
-                # Decode session using Flask's interface
-                session_data = session_interface.open_session(self._flask_app, request)
-                
-                if session_data:
-                    # Extract user_id from session data (Flask-Login stores it as '_user_id')
-                    user_id = session_data.get('_user_id')
-                    
-                    if user_id:
-                        return int(user_id)
-                    
-                return None
-                
-        except Exception as e:
-            log_system_event(f"Error parsing Flask session cookie: {str(e)}", 
-                           event_type='security', event_level='warning')
-            return None
-    
+        def resolve():
+            with self._flask_app.app_context():
+                try:
+                    return authenticate(self._flask_app, scope, 'downloads').id
+                except LiveAccessDenied:
+                    return None
+        return await asyncio.to_thread(resolve)
+
     def _sync_reserve_transfer(
         self, user_id, filename, length, download_request_id, game_uuid=None,
         archive_id=None, range_start=None, range_end=None, http_status=None,

@@ -151,7 +151,6 @@ def send_email(to, subject, template, show_feedback=True):
         print("=== SMTP Transaction Start ===")
         with smtplib.SMTP(mail_server, mail_port, timeout=30) as server:
             print("1. Server connection established")
-            server.set_debuglevel(1)  # Enable SMTP debug logging
             
             if smtp_settings['MAIL_USE_TLS']:
                 print("2. Starting TLS handshake")

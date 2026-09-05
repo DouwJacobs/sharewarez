@@ -324,7 +324,7 @@ class TestSMTPTesterConnection:
         assert result == "Unexpected error: Unexpected error"
 
     def test_connection_debug_mode(self, tester):
-        """Test that debug mode enables SMTP debug output."""
+        """Debug mode must not expose SMTP authentication or message payloads."""
         debug_tester = SMTPTester(debug=True)
         
         with patch('sharewarez.utils.smtp_test.socket.create_connection') as mock_socket, \
@@ -339,8 +339,8 @@ class TestSMTPTesterConnection:
             # Test
             debug_tester.test_connection('smtp.example.com', 587)
             
-            # Verify debug was enabled
-            mock_smtp.set_debuglevel.assert_called_once_with(1)
+            # Protocol transcripts remain disabled even in diagnostic mode
+            mock_smtp.set_debuglevel.assert_not_called()
 
     @patch('sharewarez.utils.smtp_test.socket.create_connection')
     @patch('sharewarez.utils.smtp_test.smtplib.SMTP')

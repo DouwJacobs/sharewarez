@@ -104,3 +104,7 @@ time.
 `/admin/new_server_info` is the single operator-facing instance health dashboard. It combines local database readiness, stale background-job detection, and safe configuration/test-state summaries for SMTP, Discord, and IGDB. It deliberately does not perform outbound network calls during page rendering and never displays integration secrets. Each integration card links to its existing configuration tab under `/admin/integrations`.
 
 Download counts and transfer reporting remain on `/admin/statistics`; they are not duplicated in instance health.
+
+The development launcher aborts immediately when initialization fails and only
+exports completion flags after success. An initialization error must be resolved
+before restarting; the launcher must not start partially initialized workers.

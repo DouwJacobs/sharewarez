@@ -1,6 +1,6 @@
 # /sharewarez/routes_apis/browse.py
 from flask import jsonify, request, current_app
-import os, sys
+import os
 from flask_login import login_required
 from sharewarez.utils.auth import admin_required
 from . import apis_bp
@@ -11,23 +11,17 @@ from . import apis_bp
 def browse_folders_ss():
     # Select base by operating system
     base_directory = current_app.config.get('BASE_FOLDER_WINDOWS') if os.name == 'nt' else current_app.config.get('BASE_FOLDER_POSIX')
-    print(f'SS folder browser: Base directory: {base_directory}', file=sys.stderr)
-    # Attempt to get 'path' from request arguments; default to an empty string which signifies the base directory
+    if not base_directory:
+        return jsonify({'error': 'Scan location is not configured.'}), 404
     request_path = request.args.get('path', '')
-    print(f'SS folder browser: Requested path: {request_path}', file=sys.stderr)
-    # Handle the default path case
-    if not request_path:
-        print(f'SS folder browser: No default path provided; using base directory: {base_directory}', file=sys.stderr)
-        request_path = ''
-        folder_path = base_directory
-    else:
-        # Safely construct the folder path to prevent directory traversal vulnerabilities
-        folder_path = os.path.abspath(os.path.join(base_directory, request_path))
-        print(f'SS folder browser: Folder path: {folder_path}', file=sys.stderr)
-        # Prevent directory traversal outside the base directory
-        if not folder_path.startswith(base_directory):
-            print(f'SS folder browser: Access denied: {folder_path} outside of base directory: {base_directory}', file=sys.stderr)
-            return jsonify({'error': 'Access denied'}), 403
+    base_directory = os.path.realpath(base_directory)
+    folder_path = os.path.realpath(os.path.join(base_directory, request_path))
+    try:
+        within_root = os.path.commonpath([base_directory, folder_path]) == base_directory
+    except ValueError:
+        within_root = False
+    if not within_root:
+        return jsonify({'error': 'Access denied'}), 403
 
     if not os.path.isdir(folder_path):
         return jsonify({

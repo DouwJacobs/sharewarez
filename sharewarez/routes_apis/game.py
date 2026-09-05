@@ -2,6 +2,7 @@
 from flask import jsonify, request, url_for
 from flask_login import login_required, current_user
 from sharewarez import db
+from sharewarez.utils.auth import admin_required
 from sharewarez.models import Image, Game, Library, Genre, GameMode, PlayerPerspective, Theme, GameTag
 from sharewarez.utils.event_logging import log_system_event
 from sqlalchemy import func, select
@@ -60,6 +61,7 @@ def game_screenshots(game_uuid):
 
 @apis_bp.route('/move_game_to_library', methods=['POST'])
 @login_required
+@admin_required
 def move_game_to_library():
     try:
         data = request.get_json()

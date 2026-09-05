@@ -118,8 +118,7 @@ class SMTPTester:
             
             # Initialize SMTP connection
             smtp = smtplib.SMTP(host, port, timeout=timeout)
-            if self.debug:
-                smtp.set_debuglevel(1)
+            # Protocol debug is intentionally disabled to protect authentication data.
             
             try:
                 # Initial EHLO

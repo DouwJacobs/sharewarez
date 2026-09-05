@@ -1,4 +1,5 @@
 #!/bin/bash
+set -Eeuo pipefail
 
 
 # Parse arguments
@@ -23,7 +24,7 @@ cd "$(dirname "$0")"
 # legacy project-local venv when present.
 if [ -f venv/bin/activate ]; then
     source venv/bin/activate
-elif [ -z "$VIRTUAL_ENV" ]; then
+elif [ -z "${VIRTUAL_ENV:-}" ]; then
     echo "❌ No Python environment is active. Run: pyenv activate sharewarez"
     exit 1
 fi
@@ -36,7 +37,7 @@ if [ -f .env ]; then
     set +a  # turn off automatic export
 
     # Debug: Verify DATABASE_URL is loaded
-    if [ -n "$DATABASE_URL" ]; then
+    if [ -n "${DATABASE_URL:-}" ]; then
         echo "✅ DATABASE_URL loaded from .env"
     else
         echo "❌ WARNING: DATABASE_URL not found in environment!"
@@ -102,7 +103,7 @@ export PORT=${PORT:-5006}
 if [[ "$RELOAD_MODE" == "true" || "$RELOAD_MODE" == "1" || "$RELOAD_MODE" == "yes" ]]; then
     echo "🔥 Hot reload enabled (single development worker)"
     export SHAREWAREZ_HOT_RELOAD=true
-    uvicorn asgi:asgi_app \
+    uvicorn asgi:asgi_app --no-access-log \
         --host 0.0.0.0 \
         --port "$PORT" \
         --timeout-graceful-shutdown 30 \
@@ -115,5 +116,5 @@ if [[ "$RELOAD_MODE" == "true" || "$RELOAD_MODE" == "1" || "$RELOAD_MODE" == "ye
         --reload-include '*.json'
 else
     echo "🚀 Hot reload disabled (${WEB_WORKERS:-4} workers)"
-    uvicorn asgi:asgi_app --host 0.0.0.0 --port "$PORT" --workers "${WEB_WORKERS:-4}" --timeout-graceful-shutdown 30
+    uvicorn asgi:asgi_app --no-access-log --host 0.0.0.0 --port "$PORT" --workers "${WEB_WORKERS:-4}" --timeout-graceful-shutdown 30
 fi

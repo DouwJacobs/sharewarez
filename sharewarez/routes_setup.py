@@ -31,7 +31,6 @@ def setup_submit():
 
     form = SetupForm()
     if form.validate_on_submit():
-        print(f"Form CSRF token: {form.csrf_token.data}")
         print("Form validation succeeded")
         
         user = User(
@@ -57,7 +56,6 @@ def setup_submit():
             flash(f'Error during setup: {str(e)}', 'error')
             return redirect(url_for('setup.setup'))
     else:
-        print(f"Form contents: {form.data}")
         print(f"Form validation failed: {form.errors}")
         return render_template('setup/setup.html', form=form, is_setup_mode=True)
 

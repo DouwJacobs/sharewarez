@@ -17,6 +17,7 @@ from uuid import uuid4
 from sqlalchemy.exc import IntegrityError
 
 
+
 login_bp = Blueprint('login', __name__)
 
 def get_serializer():
@@ -47,7 +48,6 @@ def login():
         return redirect(next_page or url_for('discover.discover'))
 
 
-    print("Route: /login")
     form = LoginForm()
     if request.method == 'POST' and form.validate_on_submit():
         username = form.username.data
@@ -63,7 +63,6 @@ def login():
             if not user.state:
                 flash('Your account has been banned.', 'error')
                 log_system_event(f"User {username} attempted to log in with a banned account.", event_type='login', event_level='warning')
-                print(f"Error: Attempted login to disabled account - User: {username}")
                 return redirect(url_for('login.login', next=next_page) if next_page else url_for('login.login'))
 
             log_system_event(f"User {username} logged in successfully.", event_type='login', event_level='information')
@@ -81,15 +80,12 @@ def login():
 def register():
     if current_user.is_authenticated:
         return redirect(url_for('login.login'))
-    print("Route: /register")
 
     # Attempt to get the invite token from the query parameters
     invite_token_from_url = request.args.get('token')
-    print(f"Invite token from URL: {invite_token_from_url}")
     invite = None
     if invite_token_from_url:
         invite = db.session.execute(select(InviteToken).filter_by(token=invite_token_from_url, used=False)).scalar_one_or_none()
-        print(f"Invite found: {invite}")
         if invite:
             # Handle timezone comparison safely
             current_time = datetime.now(timezone.utc)
@@ -122,7 +118,6 @@ def register():
             email_address = form.email.data.lower()
             existing_user_email = db.session.execute(select(User).filter(func.lower(User.email) == email_address)).scalar_one_or_none()
             if existing_user_email:
-                print(f"/register: Email already in use - {email_address}")
                 flash(registration_unavailable_message, 'warning')
                 return redirect(url_for('login.register'))
                     # Proceed with the whitelist check only if no valid invite token is provided
@@ -134,14 +129,12 @@ def register():
 
             existing_user = db.session.execute(select(User).filter_by(name=form.username.data)).scalar_one_or_none()
             if existing_user is not None:
-                print(f"/register: User already exists - {form.username.data}")
                 flash(registration_unavailable_message, 'warning')
                 return redirect(url_for('login.register'))
 
             user_uuid = str(uuid4())
             existing_uuid = db.session.execute(select(User).filter_by(user_id=user_uuid)).scalar_one_or_none()
             if existing_uuid is not None:
-                print("/register: UUID collision detected.")
                 flash('An error occurred while registering. Please try again.', 'error')
                 return redirect(url_for('login.register'))
 
@@ -180,9 +173,8 @@ def register():
 
             flash('A confirmation email has been sent via email.', 'success')
             return redirect(url_for('site.index'))
-        except IntegrityError as e:
+        except IntegrityError:
             db.session.rollback()
-            print(f"IntegrityError occurred: {e}")
             flash('Error while registering. Please try again.', 'error')
 
     return render_template('login/registration.html', title='Register', form=form)
@@ -213,12 +205,9 @@ def confirm_email(token):
 def reset_password_request():
     if current_user.is_authenticated:
         return redirect(url_for('login.login'))
-    print('pwr Reset Password Request')
     form = ResetPasswordRequestForm()
     if form.validate_on_submit():
-        print(f'pwr form data: {form.data}')
         user = db.session.execute(select(User).filter_by(email=form.email.data.lower())).scalar_one_or_none()
-        print(f'pwr user: {user}')
         if user:
             # Generate a unique token
             token = get_serializer().dumps(user.email, salt='password-reset-salt')
@@ -230,7 +219,6 @@ def reset_password_request():
             db.session.commit()
 
             # Send reset email
-            print('Calling send password reset email function...')
             try:
                 send_password_reset_email(user.email, token, user.name)
             except Exception:
@@ -335,7 +323,6 @@ def delete_invite(token):
             return jsonify({'success': True})
         else:
             return jsonify({'success': False, 'message': 'Invite not found or you do not have permission to delete it.'})
-    except Exception as e:
+    except Exception:
         db.session.rollback()
-        print(f"Error deleting invite: {str(e)}")
         return jsonify({'success': False, 'message': 'An error occurred while deleting the invite.'}), 500

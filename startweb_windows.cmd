@@ -54,4 +54,4 @@ REM Set port for uvicorn (default 5006, can be overridden by PORT env var)
 if not defined PORT set PORT=5006
 
 REM Start uvicorn with workers (migrations already complete)
-uvicorn asgi:asgi_app --host 0.0.0.0 --port %PORT% --workers 4
+uvicorn asgi:asgi_app --no-access-log --host 0.0.0.0 --port %PORT% --workers 4

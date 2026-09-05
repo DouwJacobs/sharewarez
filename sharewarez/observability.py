@@ -70,7 +70,7 @@ def init_observability(app):
                 extra={
                     'request_id': req_id,
                     'method': request.method,
-                    'path': request.path,
+                    'path': request.url_rule.rule if request.url_rule is not None else '<unmatched>',
                     'status': response.status_code,
                     'duration_ms': duration_ms,
                     'remote_addr': request.remote_addr,

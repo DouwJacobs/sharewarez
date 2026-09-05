@@ -256,8 +256,8 @@ class TestUserModel:
             user_id=str(uuid4())
         )
         
-        assert user.is_authenticated is True
-        assert user.is_active is True
+        assert user.is_authenticated is False
+        assert user.is_active is False
         assert user.is_anonymous is False
         # get_id() returns string 'None' when id is None
         assert user.get_id() == 'None'  # No ID until saved
@@ -267,6 +267,11 @@ class TestUserModel:
         db_session.flush()
         
         assert user.get_id() == str(user.id)
+        assert user.is_authenticated is True
+        assert user.is_active is True
+        user.state = False
+        assert user.is_authenticated is False
+        assert user.is_active is False
     
     def test_username_reserved_validation(self):
         """Test reserved username validation."""

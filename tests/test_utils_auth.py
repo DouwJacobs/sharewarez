@@ -77,8 +77,7 @@ class TestLoadUser:
     def test_load_user_invalid_id_format(self, app, db_session):
         """Test loading with invalid ID format raises ValueError."""
         with app.app_context():
-            with pytest.raises(ValueError):
-                load_user('invalid_id')
+            assert load_user('invalid_id') is None
 
 
 class TestAuthenticateAndRedirect:

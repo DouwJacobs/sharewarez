@@ -8,7 +8,11 @@ from sharewarez import login_manager
 
 @login_manager.user_loader
 def load_user(user_id):
-    return db.session.get(User, int(user_id))
+    try:
+        user = db.session.get(User, int(user_id))
+    except (ValueError, TypeError):
+        return None
+    return user if user is not None and user.state else None
 
 def get_safe_next_url():
     """Return a local post-login destination supplied by the request."""
@@ -25,7 +29,7 @@ def get_safe_next_url():
 def _authenticate_and_redirect(username, password):
     user = db.session.execute(select(User).filter(func.lower(User.name) == func.lower(username))).scalars().first()
     
-    if user and user.check_password(password):
+    if user and user.state and user.check_password(password):
         user.lastlogin = datetime.now(timezone.utc)
         db.session.commit()
         login_user(user, remember=True)

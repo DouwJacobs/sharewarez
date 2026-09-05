@@ -29,3 +29,19 @@ links to 20. Limits return HTTP 429.
 application instance maintains independent counters. Multi-host deployments should configure
 a Flask-Limiter-compatible shared `RATELIMIT_STORAGE_URI` and install its client
 dependency in a reviewed dependency update.
+
+## Session and diagnostic boundaries (2026-09-05)
+
+Disabling an account rejects its subsequent authenticated Flask requests and
+direct downloads as well as SSE snapshots. These paths resolve current database
+state instead of trusting a previously issued cookie alone. Moving a game to
+another library requires administrator permission. The folder browser resolves
+symlinks and only permits locations contained by its configured root.
+
+Request diagnostics record route patterns rather than literal token-bearing
+paths; unmatched paths are represented by a fixed marker. Authentication forms
+and SMTP protocol transcripts must never be dumped to stdout or stderr.
+All maintained launchers disable Uvicorn's separate raw access log with
+`--no-access-log`; the redacted application request logger is authoritative.
+A custom launcher must preserve this flag to avoid recording recovery tokens in
+raw request paths or query strings.

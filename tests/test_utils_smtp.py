@@ -477,7 +477,7 @@ class TestSendEmail:
         
         # Verify
         assert result is True
-        mock_server.set_debuglevel.assert_called_with(1)
+        mock_server.set_debuglevel.assert_not_called()
         mock_server.starttls.assert_called_once()
         mock_server.login.assert_called_with('testuser@example.com', 'testpass123')
         mock_server.send_message.assert_called_once()
