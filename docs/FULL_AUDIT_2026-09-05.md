@@ -2,6 +2,9 @@
 
 Audited checkout: `/home/douw/sharewarez`, `main`, commit `dc73a12`, version **1.13.0**. The branch was clean and 22 commits ahead of its remote at the start. This is a findings report; application fixes were not implemented.
 
+Remediation status and subsequent verification: [audit fixes](AUDIT_REMEDIATION_2026-09-05.md).
+The findings below preserve the original audit evidence.
+
 ## Assessment
 
 The application has substantial automated coverage and generally consistent responsive structure. Nevertheless, targeted PostgreSQL and browser probes exposed authorization, account recovery, HTML escaping, fresh-install, and download concurrency defects that the existing suite misses. Fix the P1 items before treating the current release as fully hardened.

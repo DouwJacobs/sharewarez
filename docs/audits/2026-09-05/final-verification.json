@@ -1,0 +1,26 @@
+{
+  "python_tests_passed": 1835,
+  "python_modules": 120,
+  "skipped": 0,
+  "javascript_tests_passed": 7,
+  "quality_gate": "passed",
+  "python_runtime": "3.12 pyenv sharewarez",
+  "database": "isolated PostgreSQL 17.6, fresh database per module",
+  "checks": [
+    "locked dependencies",
+    "pip check",
+    "pip-audit: no known vulnerabilities",
+    "ruff",
+    "accessibility: 88 templates",
+    "mypy: 4 modules",
+    "Python compilation",
+    "fresh bootstrap and migrations",
+    "version consistency",
+    "Compose config",
+    "release-equivalent Docker build",
+    "packaged code compilation"
+  ],
+  "container_image": "sharewarez:audit-fixes-check",
+  "additional_final_checks": "4 admission/integration tests and 18 download-range tests rerun after retryable archive-capacity response; passed",
+  "browser": "desktop and 390x844, default and Ember; see remediation ledger for scope and limits"
+}

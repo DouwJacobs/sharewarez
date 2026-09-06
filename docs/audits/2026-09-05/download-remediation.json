@@ -1,0 +1,17 @@
+{
+  "environment": "Disposable PostgreSQL 17.6, local machine; concurrent quality gate running",
+  "pool_pressure_timer_ms": 14.736267999978736,
+  "concurrent_two_streams_sse_and_health_ms": 15.782360977027565,
+  "admission_regressions_passed": 4,
+  "archive_cache_regressions_passed": 7,
+  "scope": [
+    "normal request pool held at capacity",
+    "cancelled and disconnected admission",
+    "real 4 MiB ZIP build and exact byte ranges",
+    "interruption and resume",
+    "archive lease capacity returns 503 and releases slot",
+    "two real file streams with SSE and health",
+    "ENOSPC removes partial archive and preserves source"
+  ],
+  "limits": "No production throughput, WAN, or browser-vitals claim."
+}
