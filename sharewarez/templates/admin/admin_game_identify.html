@@ -13,7 +13,7 @@
         </div>
     </div>
 
-    <div class="glass-panel-addgame">
+    <div class="app-surface glass-panel-addgame">
 
         
         <form method="POST" action="" class="game_edit-form">
@@ -44,14 +44,14 @@
                     <button type="submit" name="action" value="save" class="btn btn-primary">
                         <i class="fas fa-floppy-disk" aria-hidden="true"></i> Save changes
                     </button>
-                    <button type="submit" name="action" value="save_and_refresh" class="btn btn-primary">
+                    <button type="submit" name="action" value="save_and_refresh" class="btn btn-secondary">
                         <i class="fas fa-rotate" aria-hidden="true"></i> Save &amp; Refresh Metadata
                     </button>
                 </div>
             </div>
             {{ form.hidden_tag() }}
             {% if metadata_conflicts %}
-            <section class="metadata-conflicts app-surface" aria-labelledby="metadata-conflicts-title">
+            <section class="metadata-conflicts" aria-labelledby="metadata-conflicts-title">
                 <div>
                     <p class="game-edit-eyebrow">Metadata review</p>
                     <h3 id="metadata-conflicts-title">Provider conflicts</h3>

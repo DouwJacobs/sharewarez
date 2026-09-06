@@ -457,3 +457,34 @@ small.form-text {
     .metadata-conflict-item dl { grid-template-columns: 1fr; }
     .metadata-conflict-actions .btn { flex: 1 1 auto; }
 }
+
+/* The editor owns one surface; field groups are flat parts of its form. */
+.game-identify-page .glass-panel-addgame-top,
+.game-identify-page .game_edit-form-group-id,
+.game-identify-page .game_edit-form-group-name,
+.game-identify-page .game_edit-form-group-path,
+.game-identify-page .details-credits-grid,
+.game-identify-page .details-section,
+.game-identify-page .group-game-details,
+.game-identify-page .metadata-conflicts,
+.game-identify-page .metadata-conflict-item {
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    padding-inline: 0;
+}
+.game-identify-page .metadata-conflict-item + .metadata-conflict-item {
+    border-top: 1px solid var(--theme-border-color);
+}
+
+.game-identify-page .game-edit-library-labels {
+    font-size: .9rem;
+    gap: var(--spacing-xs);
+}
+.game-identify-page #library_display,
+.game-identify-page #platform_display {
+    font-size: 1em;
+    color: var(--theme-text-secondary);
+    text-shadow: none;
+}

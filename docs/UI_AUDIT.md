@@ -456,3 +456,15 @@ populate independently. Browser desktop/mobile and apply/remove/paginate checks 
 Activation recovery has a working rate-limited resend route and 44 px mobile controls.
 Metadata editing uses an H1; image edit and download-cache pages have specific titles.
 See the remediation ledger for full-suite and remaining verification status.
+
+
+### Completed remediation visual follow-up — 6 September 2026
+
+The screenshot tooling recovered. Default-theme Library, metadata/image editors,
+activation resend and Download Cache were reviewed on desktop and 390 × 844;
+Ember Library was reviewed with isolated synthetic data. No horizontal overflow
+was found on these pages. Metadata field groups and details are flat within the
+shared outer surface, with one primary Save action. Mobile ordinary actions are
+44 px. Library menu replacement restores the old card controls, Escape returns
+focus, and saved layouts retain the selected view in the URL. The remediation
+ledger records security probes, performance results and verification limits.

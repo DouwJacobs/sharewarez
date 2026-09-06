@@ -15,6 +15,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.querySelectorAll('[data-library-view]').forEach(button => button.addEventListener('click', async () => {
         const view = button.dataset.libraryView;
+        const url = new URL(window.location.href);
+        url.searchParams.set('view', view);
+        window.history.replaceState({}, '', url);
         container.classList.remove('library-view-grid', 'library-view-compact', 'library-view-list');
         container.classList.add(`library-view-${view}`);
         document.querySelectorAll('[data-library-view]').forEach(item => {

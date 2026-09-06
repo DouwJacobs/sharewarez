@@ -190,7 +190,14 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (!response.ok) throw new Error('Game actions could not be loaded.');
                     const html = await response.text();
                     if (sequence !== menuRequestSequence || !clickedElement.isConnected) return;
-                    document.querySelectorAll('#gamesContainer .popup-menu').forEach(menu => menu.remove());
+                    document.querySelectorAll('#gamesContainer .popup-menu').forEach(menu => {
+                        const card = menu.closest('.game-card');
+                        card?.classList.remove('menu-open');
+                        card?.closest('.game-card-container')?.classList.remove('menu-open');
+                        document.getElementById(menu.id.replace('popupMenu-', 'menuButton-'))?.setAttribute('aria-expanded', 'false');
+                        showCardButtons(card);
+                        menu.remove();
+                    });
                     clickedElement.closest('.game-card').insertAdjacentHTML('beforeend', html);
                     popupMenu = document.getElementById('popupMenu-' + uuid);
                 } catch (error) {
@@ -387,6 +394,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     window.addEventListener('click', function() {
+        ++menuRequestSequence;
         document.querySelectorAll('.popup-menu').forEach(function(menu) {
             menu.style.display = 'none';
             document.getElementById(menu.id.replace('popupMenu-', 'menuButton-'))?.setAttribute('aria-expanded', 'false');

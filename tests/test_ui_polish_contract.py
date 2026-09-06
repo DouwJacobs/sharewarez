@@ -45,7 +45,7 @@ def test_library_exposes_sort_before_advanced_filters_and_hides_card_file_size()
 
 
 def test_play_status_uses_semantic_classes_in_static_and_dynamic_cards():
-    library_template = Path("sharewarez/templates/games/library_browser.html").read_text(encoding="utf-8")
+    library_template = Path("sharewarez/templates/games/library_cards.html").read_text(encoding="utf-8")
     details_template = Path("sharewarez/templates/games/game_details.html").read_text(encoding="utf-8")
     pagination = (THEME / "js/library_pagination.js").read_text(encoding="utf-8")
     manager = (THEME / "js/game_status_manager.js").read_text(encoding="utf-8")
@@ -57,7 +57,8 @@ def test_play_status_uses_semantic_classes_in_static_and_dynamic_cards():
         assert "#FFD700" not in source
     assert "status-icon-unfinished" in library_template
     assert "status-icon-unfinished" in details_template
-    assert "status-icon-${currentStatus || 'empty'}" in pagination
+    assert "response.html" in pagination
+    assert "library_cards.html" in Path("sharewarez/routes.py").read_text(encoding="utf-8")
     assert "`status-icon-${status || 'empty'}`" in manager
     assert "color: var(--status-success-color)" in status_css
 
