@@ -120,3 +120,16 @@ ZIP reservations use the total size of their source files.
 
 When changing download delivery, preserve the path and ownership checks in
 `asgi.py` and run `tests/test_download_ranges.py` plus the download route tests.
+
+
+## Download admission connection capacity
+
+PostgreSQL transfer-slot and archive leases use a separate bounded pool of up to
+32 connections per web process (no overflow), in addition to the ordinary ORM
+pool. Direct-file transfers hold one lease; cached archives normally hold two.
+Account for worker count and background jobs when setting database connection
+capacity. Lease checkout waits at most 100 ms; connection establishment and SQL
+have 3 second and 2 second limits respectively. Admission and preparation run in
+worker threads so waiting cannot block SSE or other ASGI requests. Disconnected
+queue entries and late acquisitions are reclaimed; expired queue rows provide
+recovery if database cleanup is unavailable.

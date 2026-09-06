@@ -100,6 +100,9 @@ class ArchiveLease:
                 self.connection.execute(text(
                     'SELECT pg_advisory_unlock(:namespace, :resource)'
                 ), {'namespace': 139822755, 'resource': self.resource})
+        except BaseException:
+            self.connection.invalidate()
+            raise
         finally:
             self.connection.close()
             self.connection = None
@@ -108,16 +111,23 @@ class ArchiveLease:
 def acquire_archive_lease(archive_id: str):
     """Prevent eviction while a cached archive is being opened or streamed."""
     resource = int.from_bytes(hashlib.sha256(archive_id.encode()).digest()[:4], 'big') & 0x7fffffff
-    connection = db.engine.connect()
+    from sharewarez.utils.download_limits import download_lock_engine
+    connection = download_lock_engine(db.engine).connect()
     if connection.dialect.name != 'postgresql':
         return ArchiveLease(connection, resource)
-    acquired = bool(connection.execute(text(
-        'SELECT pg_try_advisory_lock(:namespace, :resource)'
-    ), {'namespace': 139822755, 'resource': resource}).scalar())
-    if not acquired:
+    try:
+        acquired = bool(connection.execute(text(
+            'SELECT pg_try_advisory_lock(:namespace, :resource)'
+        ), {'namespace': 139822755, 'resource': resource}).scalar())
+        if not acquired:
+            connection.close()
+            return None
+        connection.commit()
+        return ArchiveLease(connection, resource)
+    except BaseException:
+        connection.invalidate()
         connection.close()
-        return None
-    return ArchiveLease(connection, resource)
+        raise
 
 
 def archive_policy(settings_record=None):

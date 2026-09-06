@@ -1,3 +1,5 @@
+import errno
+import pytest
 import hashlib
 import inspect
 from types import SimpleNamespace
@@ -189,3 +191,28 @@ def test_admin_can_cancel_queued_archive_build(client, db_session, app, tmp_path
     assert archive.failure_code == 'build_cancelled'
     assert archive.build_job_id is None
     assert download_request.status == 'failed'
+
+
+def test_archive_disk_full_removes_partial_and_never_publishes(db_session, app, tmp_path):
+    source, _user, _game, request = _cache_download_fixture(
+        db_session, app, tmp_path, suffix='disk-full',
+    )
+    original = (source / 'part01.bin').read_bytes()
+    archive = request_resumable_archive(request, 'disk-full.zip')
+    db_session.commit()
+    context = SimpleNamespace(
+        job_id=archive.build_job_id, heartbeat=lambda *args: None,
+        check_cancelled=lambda: None,
+    )
+    with patch.object(
+        download_cache_module._HashingArchiveWriter, 'write',
+        side_effect=OSError(errno.ENOSPC, 'No space left on device'),
+    ), pytest.raises(OSError):
+        build_archive(context, archive.id)
+    db_session.refresh(archive)
+    db_session.refresh(request)
+    assert archive.state == 'failed'
+    assert request.status != 'available'
+    assert not list((tmp_path / 'cache').glob('*.partial'))
+    assert not list((tmp_path / 'cache').glob('*.zip'))
+    assert (source / 'part01.bin').read_bytes() == original

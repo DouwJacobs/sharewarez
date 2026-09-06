@@ -1,10 +1,56 @@
 import asyncio
 import time
+import threading
+from weakref import WeakKeyDictionary
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from uuid import uuid4
 
-from sqlalchemy import case, delete, func, insert, select, text, update
+from sqlalchemy import create_engine, case, delete, func, insert, select, text, update
+
+from sqlalchemy.exc import TimeoutError, OperationalError
+
+_LOCK_ENGINES = WeakKeyDictionary()
+_LOCK_ENGINES_MUTEX = threading.Lock()
+
+
+def download_lock_engine(engine):
+    """Separate bounded lease connections from the application's request pool."""
+    if engine.dialect.name != 'postgresql':
+        return engine
+    with _LOCK_ENGINES_MUTEX:
+        dedicated = _LOCK_ENGINES.get(engine)
+        if dedicated is None:
+            dedicated = create_engine(engine.url, pool_size=32, max_overflow=0,
+                                      pool_timeout=0.1, pool_pre_ping=True,
+                                      connect_args={'connect_timeout': 3, 'options': '-c statement_timeout=2000'})
+            _LOCK_ENGINES[engine] = dedicated
+        return dedicated
+
+
+async def run_owned_in_thread(operation, cleanup, on_cancel=None):
+    """On cancellation, reclaim resources produced by an in-flight worker."""
+    task = asyncio.create_task(asyncio.to_thread(operation))
+    try:
+        return await asyncio.shield(task)
+    except asyncio.CancelledError:
+        if on_cancel:
+            on_cancel()
+        # Cancellation must not abandon a connection/lease acquired after the
+        # awaiter disappeared. Shield cleanup against repeated cancellation.
+        async def reclaim():
+            try:
+                result = await task
+                await asyncio.to_thread(cleanup, result)
+            except Exception:
+                pass
+        cleanup_task = asyncio.create_task(reclaim())
+        while not cleanup_task.done():
+            try:
+                await asyncio.shield(cleanup_task)
+            except asyncio.CancelledError:
+                continue
+        raise
 
 
 class DownloadSlot:
@@ -23,6 +69,9 @@ class DownloadSlot:
                 text("SELECT pg_advisory_unlock(:user_id, :slot)"),
                 {"user_id": self.user_id, "slot": self.slot},
             )
+        except BaseException:
+            self.connection.invalidate()
+            raise
         finally:
             self.connection.close()
             self.connection = None
@@ -30,67 +79,81 @@ class DownloadSlot:
 
 def acquire_download_slot(engine, user_id, limit):
     """Claim one of a user's advisory-lock slots across all web workers."""
-    connection = engine.connect()
+    connection = download_lock_engine(engine).connect()
     if connection.dialect.name != "postgresql":
         connection.close()
         return DownloadSlot(None, user_id, 0)
-    for slot in range(limit):
-        acquired = connection.execute(
-            text("SELECT pg_try_advisory_lock(:user_id, :slot)"),
-            {"user_id": user_id, "slot": slot},
-        ).scalar()
-        if acquired:
-            return DownloadSlot(connection, user_id, slot)
-    connection.close()
-    return None
+    try:
+        for slot in range(limit):
+            acquired = connection.execute(
+                text("SELECT pg_try_advisory_lock(:user_id, :slot)"),
+                {"user_id": user_id, "slot": slot},
+            ).scalar()
+            if acquired:
+                connection.commit()
+                return DownloadSlot(connection, user_id, slot)
+        connection.close()
+        return None
+    except BaseException:
+        connection.invalidate()
+        connection.close()
+        raise
 
 
 async def acquire_queued_download_slot(
     engine, user_id, limit, *, request_id=None, priority=0, wait_seconds=10
 ):
-    """Wait fairly for a per-user slot, admitting higher priority requests first."""
-    if engine.dialect.name != "postgresql" or wait_seconds <= 0:
-        return acquire_download_slot(engine, user_id, limit)
+    """Perform bounded fair admission off the event loop; reclaim on cancellation."""
+    cancelled = threading.Event()
+    def acquire():
+        return _acquire_queued_slot(engine, user_id, limit, request_id, priority, wait_seconds, cancelled)
+    def cleanup(slot):
+        if slot is not None:
+            slot.release()
+    return await run_owned_in_thread(acquire, cleanup, on_cancel=cancelled.set)
 
+
+def _acquire_queued_slot(engine, user_id, limit, request_id, priority, wait_seconds, cancelled):
     from sharewarez.models import DownloadQueueEntry
-
     table = DownloadQueueEntry.__table__
-    token = str(uuid4())
-    now = datetime.now(timezone.utc)
-    expires_at = now + timedelta(seconds=max(wait_seconds + 5, 30))
-    with engine.begin() as connection:
-        connection.execute(delete(table).where(table.c.expires_at <= now))
-        entry_id = connection.execute(
-            insert(table).values(
-                token=token,
-                user_id=user_id,
-                download_request_id=request_id,
-                priority=normalize_download_priority(priority),
-                created_at=now,
-                expires_at=expires_at,
-            ).returning(table.c.id)
-        ).scalar_one()
-
+    queue_engine = download_lock_engine(engine)
+    entry_id = None
     deadline = time.monotonic() + wait_seconds
     try:
-        while True:
-            with engine.begin() as connection:
-                first_id = connection.execute(
-                    select(table.c.id)
-                    .where(table.c.user_id == user_id, table.c.expires_at > datetime.now(timezone.utc))
-                    .order_by(table.c.priority.desc(), table.c.created_at.asc(), table.c.id.asc())
-                    .limit(1)
-                ).scalar_one_or_none()
+        if engine.dialect.name != 'postgresql' or wait_seconds <= 0:
+            return None if cancelled.is_set() else acquire_download_slot(engine, user_id, limit)
+        now = datetime.now(timezone.utc)
+        with queue_engine.begin() as connection:
+            connection.execute(delete(table).where(table.c.expires_at <= now))
+            entry_id = connection.execute(insert(table).values(
+                token=str(uuid4()), user_id=user_id, download_request_id=request_id,
+                priority=normalize_download_priority(priority), created_at=now,
+                expires_at=now + timedelta(seconds=max(wait_seconds + 5, 30)),
+            ).returning(table.c.id)).scalar_one()
+        while not cancelled.is_set():
+            with queue_engine.begin() as connection:
+                first_id = connection.execute(select(table.c.id).where(
+                    table.c.user_id == user_id, table.c.expires_at > datetime.now(timezone.utc)
+                ).order_by(table.c.priority.desc(), table.c.created_at.asc(), table.c.id.asc()).limit(1)).scalar_one_or_none()
             if first_id == entry_id:
                 slot = acquire_download_slot(engine, user_id, limit)
                 if slot is not None:
                     return slot
-            if time.monotonic() >= deadline:
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
                 return None
-            await asyncio.sleep(0.15)
+            cancelled.wait(min(0.15, remaining))
+        return None
+    except (TimeoutError, OperationalError):
+        return None
     finally:
-        with engine.begin() as connection:
-            connection.execute(delete(table).where(table.c.id == entry_id))
+        if entry_id is not None:
+            try:
+                with queue_engine.begin() as connection:
+                    connection.execute(delete(table).where(table.c.id == entry_id))
+            except (TimeoutError, OperationalError):
+                # Entries also expire and are swept by the next admission.
+                pass
 
 
 def normalize_download_priority(value):

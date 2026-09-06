@@ -24,6 +24,7 @@ from sharewarez.utils.download_limits import (
     estimate_path_bytes,
     finish_transfer,
     reserve_transfer,
+    run_owned_in_thread,
     throttle_chunks,
     update_transfer_progress,
 )
@@ -31,6 +32,13 @@ from sharewarez.utils.download_cache import (
     ArchiveCacheError, acquire_archive_lease, resolved_archive_path,
 )
 from sqlalchemy import select
+from sqlalchemy.exc import TimeoutError as PoolTimeoutError
+
+
+class DownloadRejected(Exception):
+    def __init__(self, status, message):
+        super().__init__(message)
+        self.status = status
 
 
 def parse_single_byte_range(range_header, file_size):
@@ -126,34 +134,16 @@ class LazyASGIApp:
                 await self._send_error(send, 401, "Unauthorized")
                 return
 
-            with self._flask_app.app_context():
-                record = db.session.execute(select(GlobalSettings)).scalars().first()
-                settings = dict(record.settings or {}) if record else {}
-                concurrent_limit = max(1, min(int(settings.get('maxConcurrentDownloadsPerUser', 2)), 20))
-                bandwidth_limit = max(0.0, min(float(settings.get('downloadBandwidthLimitMbps', 0)), 10000.0))
-                queue_wait = max(0, min(int(settings.get('downloadQueueWaitSeconds', 10)), 60))
-                queue_request_id = None
-                queue_priority = 0
-                if path.startswith('/download_zip/'):
-                    match = re.match(r'/download_zip/(\d+)', path)
-                    if match:
-                        queue_request_id = int(match.group(1))
-                        queued_request = db.session.execute(
-                            select(DownloadRequest).where(
-                                DownloadRequest.id == queue_request_id,
-                                DownloadRequest.user_id == user_id,
-                            )
-                        ).scalar_one_or_none()
-                        if queued_request is not None:
-                            queue_priority = queued_request.priority
-                engine = db.engine
+            engine, concurrent_limit, bandwidth_limit, queue_wait, queue_request_id, queue_priority = await asyncio.to_thread(
+                self._sync_download_settings, path, user_id
+            )
             if method == 'HEAD':
                 if path.startswith('/download_zip/'):
                     await self._handle_zip_download(scope, receive, send, path, user_id, bandwidth_limit)
                 elif path.startswith('/api/downloadrom/'):
                     await self._handle_rom_download(scope, receive, send, path, user_id, bandwidth_limit)
                 return
-            slot = await acquire_queued_download_slot(
+            connected, slot = await self._admit_connected(receive,
                 engine,
                 user_id,
                 concurrent_limit,
@@ -161,6 +151,8 @@ class LazyASGIApp:
                 priority=queue_priority,
                 wait_seconds=queue_wait,
             )
+            if not connected:
+                return
             if slot is None:
                 await self._send_error(
                     send, 429, "Download queue wait expired",
@@ -174,7 +166,7 @@ class LazyASGIApp:
                 elif path.startswith('/api/downloadrom/'):
                     await self._handle_rom_download(scope, receive, send, path, user_id, bandwidth_limit)
             finally:
-                slot.release()
+                await run_owned_in_thread(slot.release, lambda _: None)
                 
         except Exception as e:
             # Use print instead of log_system_event to avoid context issues
@@ -196,189 +188,179 @@ class LazyASGIApp:
                     # Connection handling failed, nothing more we can do
                     pass
     
-    async def _handle_zip_download(self, scope, receive, send, path, user_id, bandwidth_limit):
-        """Handle ZIP file downloads"""
-        # Extract download_id from path
-        download_id_match = re.match(r'/download_zip/(\d+)', path)
-        if not download_id_match:
-            await self._send_error(send, 400, "Invalid download ID")
-            return
-        
-        download_id = int(download_id_match.group(1))
-        
-        # Extract all needed data inside app_context, then exit before streaming
-        with self._flask_app.app_context():
-            # Get download request
-            download_request = db.session.execute(
-                select(DownloadRequest).filter_by(id=download_id, user_id=user_id)
-            ).scalars().first()
-            
-            if not download_request:
-                await self._send_error(send, 404, "Download not found")
+    async def _admit_connected(self, receive, *args, **kwargs):
+        disconnected = asyncio.Event()
+        watcher = asyncio.create_task(self._watch_disconnect(receive, disconnected))
+        admission = asyncio.create_task(acquire_queued_download_slot(*args, **kwargs))
+        async def abandon():
+            admission.cancel()
+            try:
+                slot = await admission
+            except asyncio.CancelledError:
                 return
-
-            if download_request.expires_at and download_request.expires_at <= datetime.now(timezone.utc):
-                download_request.status = 'expired'
-                db.session.commit()
-                await self._send_error(send, 410, "Download request expired")
-                return
-            
-            if download_request.status != 'available':
-                await self._send_error(send, 400, "Download not ready")
-                return
-            
-            # Extract scalar values before leaving app_context
-            file_path = download_request.zip_file_path
-            req_id = download_request.id
-            req_file_location = download_request.file_location
-            game_name = download_request.game.name if download_request.game else None
-            archive_id = download_request.archive_id
-            archive_etag = None
-            archive_modified = None
-            archive_filename = None
-            archive_lease = None
-            if archive_id:
-                archive_lease = acquire_archive_lease(archive_id)
-                if archive_lease is None:
-                    await self._send_error(
-                        send, 409, 'Cached download is being maintained',
-                        extra_headers=[(b'retry-after', b'2')],
-                    )
-                    return
-                archive = db.session.get(DownloadArchive, archive_id)
-                if archive is None or archive.state != 'ready':
-                    archive_lease.release()
-                    await self._send_error(
-                        send, 409, 'Resumable download is still being prepared',
-                        extra_headers=[(b'retry-after', b'3')],
-                    )
-                    return
-                try:
-                    file_path = str(resolved_archive_path(archive))
-                except ArchiveCacheError:
-                    archive_lease.release()
-                    archive.state = 'failed'
-                    archive.failure_code = 'archive_missing'
-                    archive.failure_message = 'The cached file is missing and must be rebuilt.'
-                    download_request.status = 'failed'
-                    db.session.commit()
-                    await self._send_error(send, 500, 'Cached download is unavailable')
-                    return
-                archive.last_accessed_at = datetime.now(timezone.utc)
-                try:
-                    db.session.commit()
-                except Exception:
-                    archive_lease.release()
-                    raise
-                archive_etag = f'"{archive.sha256}"'
-                archive_modified = archive.ready_at
-                archive_filename = archive.display_name
-            is_dir = os.path.isdir(file_path) if file_path else False
-
-        # Check if this is a streaming download (source path is a directory)
-        if is_dir:
-            await self._handle_streaming_download(
-                receive, send, req_id, req_file_location, game_name,
-                file_path, user_id, bandwidth_limit, method=scope.get('method', 'GET'),
-            )
-            return
-        
-        # Direct files remain constrained to game storage. Cached archives were
-        # independently resolved beneath the private cache root above.
-        if not archive_id:
-            allowed_bases = get_allowed_base_directories(self._flask_app)
-            if not allowed_bases:
-                await self._send_error(send, 500, "Server configuration error")
-                return
-
-            is_safe, error_message = is_safe_path(file_path, allowed_bases)
-            if not is_safe:
-                with self._flask_app.app_context():
-                    log_system_event(f"Security violation - game file outside allowed directories: {file_path[:100]}",
-                                   event_type='security', event_level='warning')
-                await self._send_error(send, 403, "Access denied")
-                return
-        
-        if not os.path.exists(file_path):
-            if archive_lease is not None:
-                archive_lease.release()
-            await self._send_error(send, 404, "File not found")
-            return
-        
-        # Stream the file
-        filename = archive_filename or os.path.basename(file_path)
-        with self._flask_app.app_context():
-            log_system_event(f"Async file download: {filename}", event_type='download', event_level='information')
+            if slot is not None:
+                await run_owned_in_thread(slot.release, lambda _: None)
         try:
-            await self._stream_file(
-                receive, send, file_path, filename, scope, user_id, bandwidth_limit,
-                download_request_id=req_id,
-                archive_id=archive_id, etag=archive_etag, last_modified=archive_modified,
-            )
+            await asyncio.wait((watcher, admission), return_when=asyncio.FIRST_COMPLETED)
+            if watcher.done():
+                await watcher
+            if disconnected.is_set():
+                await abandon()
+                return False, None
+            return True, await admission
+        except BaseException:
+            await abandon()
+            raise
         finally:
-            if archive_lease is not None:
-                archive_lease.release()
-    
-    async def _handle_rom_download(self, scope, receive, send, path, user_id, bandwidth_limit):
-        """Handle ROM file downloads for emulator"""
-        # Extract game UUID from path
-        rom_match = re.match(r'/api/downloadrom/([a-f0-9-]+)', path)
-        if not rom_match:
-            await self._send_error(send, 400, "Invalid game UUID")
-            return
-        
-        game_uuid = rom_match.group(1)
-        
-        # Validate UUID format
-        try:
-            uuid.UUID(game_uuid)
-        except ValueError:
-            log_system_event(f"Invalid UUID format attempted for ROM download: {game_uuid}", 
-                           event_type='security', event_level='warning')
-            await self._send_error(send, 400, "Invalid game identifier")
-            return
-        
+            watcher.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await watcher
+
+    def _sync_download_settings(self, path, user_id):
         with self._flask_app.app_context():
-            # Get game
-            game = db.session.execute(select(Game).filter_by(uuid=game_uuid)).scalars().first()
-            
-            if not game:
-                log_system_event(f"ROM download attempt for non-existent game UUID: {game_uuid}", 
-                               event_type='security', event_level='warning')
-                await self._send_error(send, 404, "Game not found")
-                return
-            
-            # Check if file exists
-            if not os.path.exists(game.full_disk_path):
-                log_system_event(f"ROM download attempt for missing file: {game.name} at {game.full_disk_path}", 
-                               event_type='security', event_level='warning')
-                await self._send_error(send, 404, "ROM file not found on disk")
-                return
-            
-            # Validate path is within allowed directories
-            allowed_bases = get_allowed_base_directories(self._flask_app)
-            is_safe, error_message = is_safe_path(game.full_disk_path, allowed_bases)
-            
-            if not is_safe:
-                log_system_event(f"Path traversal attempt blocked for ROM download: {game.full_disk_path} - {error_message}", 
-                               event_type='security', event_level='warning')
-                await self._send_error(send, 403, "Access denied")
-                return
-            
-            # Check if it's a folder (not supported by WebRetro)
-            if os.path.isdir(game.full_disk_path):
-                await self._send_error(send, 400, "This game is a folder and cannot be played directly")
-                return
-            
-            # Stream the file
-            filename = os.path.basename(game.full_disk_path)
-            log_system_event(f"ROM file downloaded for WebRetro: {game.name}", 
-                           event_type='download', event_level='information')
-            await self._stream_file(
-                receive, send, game.full_disk_path, filename, scope, user_id,
-                bandwidth_limit, game_uuid=game.uuid,
+            record = db.session.execute(select(GlobalSettings)).scalars().first()
+            settings = dict(record.settings or {}) if record else {}
+            concurrent_limit = max(1, min(int(settings.get('maxConcurrentDownloadsPerUser', 2)), 20))
+            bandwidth_limit = max(0.0, min(float(settings.get('downloadBandwidthLimitMbps', 0)), 10000.0))
+            queue_wait = max(0, min(int(settings.get('downloadQueueWaitSeconds', 10)), 60))
+            queue_request_id = None
+            queue_priority = 0
+            if path.startswith('/download_zip/'):
+                match = re.match(r'/download_zip/(\d+)', path)
+                if match:
+                    queue_request_id = int(match.group(1))
+                    queued_request = db.session.execute(
+                        select(DownloadRequest).where(
+                            DownloadRequest.id == queue_request_id,
+                            DownloadRequest.user_id == user_id,
+                        )
+                    ).scalar_one_or_none()
+                    if queued_request is not None:
+                        queue_priority = queued_request.priority
+                    else:
+                        queue_request_id = None
+            engine = db.engine
+            return engine, concurrent_limit, bandwidth_limit, queue_wait, queue_request_id, queue_priority
+
+    def _sync_prepare_zip(self, download_id, user_id):
+        lease = None
+        try:
+            with self._flask_app.app_context():
+                record = db.session.scalar(select(DownloadRequest).where(
+                    DownloadRequest.id == download_id, DownloadRequest.user_id == user_id))
+                if record is None:
+                    raise DownloadRejected(404, 'Download not found')
+                if record.expires_at and record.expires_at <= datetime.now(timezone.utc):
+                    record.status = 'expired'
+                    db.session.commit()
+                    raise DownloadRejected(410, 'Download request expired')
+                if record.status != 'available':
+                    raise DownloadRejected(400, 'Download not ready')
+                data = {'file_path': record.zip_file_path, 'req_id': record.id,
+                        'file_location': record.file_location,
+                        'game_name': record.game.name if record.game else None,
+                        'archive_id': record.archive_id, 'etag': None,
+                        'modified': None, 'filename': None, 'lease': None}
+                if record.archive_id:
+                    try:
+                        lease = acquire_archive_lease(record.archive_id)
+                    except PoolTimeoutError as exc:
+                        raise DownloadRejected(503, 'Download capacity is busy; retry shortly') from exc
+                    if lease is None:
+                        raise DownloadRejected(409, 'Cached download is being maintained')
+                    archive = db.session.get(DownloadArchive, record.archive_id)
+                    if archive is None or archive.state != 'ready':
+                        raise DownloadRejected(409, 'Resumable download is still being prepared')
+                    try:
+                        data['file_path'] = str(resolved_archive_path(archive))
+                    except ArchiveCacheError:
+                        archive.state = 'failed'
+                        archive.failure_code = 'archive_missing'
+                        archive.failure_message = 'The cached file is missing and must be rebuilt.'
+                        record.status = 'failed'
+                        db.session.commit()
+                        raise DownloadRejected(500, 'Cached download is unavailable') from None
+                    archive.last_accessed_at = datetime.now(timezone.utc)
+                    db.session.commit()
+                    data.update(etag=f'"{archive.sha256}"', modified=archive.ready_at,
+                                filename=archive.display_name, lease=lease)
+                path = data['file_path']
+                if not path:
+                    raise DownloadRejected(404, 'File not found')
+                if not data['archive_id']:
+                    bases = get_allowed_base_directories(self._flask_app)
+                    if not bases:
+                        raise DownloadRejected(500, 'Server configuration error')
+                    if not is_safe_path(path, bases)[0]:
+                        raise DownloadRejected(403, 'Access denied')
+                if not os.path.exists(path):
+                    raise DownloadRejected(404, 'File not found')
+                data['is_dir'] = os.path.isdir(path)
+                data['filename'] = data['filename'] or os.path.basename(path)
+                return data
+        except BaseException:
+            if lease is not None:
+                lease.release()
+            raise
+
+    @staticmethod
+    def _release_prepared_download(data):
+        if data and data.get('lease') is not None:
+            data['lease'].release()
+
+    async def _handle_zip_download(self, scope, receive, send, path, user_id, bandwidth_limit):
+        match = re.fullmatch(r'/download_zip/(\d+)', path)
+        if not match:
+            await self._send_error(send, 400, 'Invalid download ID')
+            return
+        try:
+            data = await run_owned_in_thread(
+                lambda: self._sync_prepare_zip(int(match.group(1)), user_id),
+                self._release_prepared_download,
             )
-    
+        except DownloadRejected as error:
+            await self._send_error(send, error.status, str(error))
+            return
+        try:
+            if data['is_dir']:
+                await self._handle_streaming_download(receive, send, data['req_id'],
+                    data['file_location'], data['game_name'], data['file_path'], user_id,
+                    bandwidth_limit, method=scope.get('method', 'GET'))
+            else:
+                await self._stream_file(receive, send, data['file_path'], data['filename'],
+                    scope, user_id, bandwidth_limit, download_request_id=data['req_id'],
+                    archive_id=data['archive_id'], etag=data['etag'], last_modified=data['modified'])
+        finally:
+            await run_owned_in_thread(lambda: self._release_prepared_download(data), lambda _: None)
+
+    def _sync_prepare_rom(self, game_uuid):
+        with self._flask_app.app_context():
+            game = db.session.scalar(select(Game).where(Game.uuid == game_uuid))
+            if game is None:
+                raise DownloadRejected(404, 'Game not found')
+            path = game.full_disk_path
+            if not path or not os.path.exists(path):
+                raise DownloadRejected(404, 'ROM file not found on disk')
+            if not is_safe_path(path, get_allowed_base_directories(self._flask_app))[0]:
+                raise DownloadRejected(403, 'Access denied')
+            if os.path.isdir(path):
+                raise DownloadRejected(400, 'This game is a folder and cannot be played directly')
+            return path, os.path.basename(path), game.uuid
+
+    async def _handle_rom_download(self, scope, receive, send, path, user_id, bandwidth_limit):
+        try:
+            game_uuid = str(uuid.UUID(path.removeprefix('/api/downloadrom/')))
+        except ValueError:
+            await self._send_error(send, 400, 'Invalid game identifier')
+            return
+        try:
+            file_path, filename, game_uuid = await asyncio.to_thread(self._sync_prepare_rom, game_uuid)
+        except DownloadRejected as error:
+            await self._send_error(send, error.status, str(error))
+            return
+        await self._stream_file(receive, send, file_path, filename, scope, user_id,
+                                bandwidth_limit, game_uuid=game_uuid)
+
     async def _get_user_from_session(self, scope):
         """Validate the current account off the event loop, as SSE does."""
         from sharewarez.live_snapshots import authenticate, LiveAccessDenied
@@ -390,6 +372,10 @@ class LazyASGIApp:
                 except LiveAccessDenied:
                     return None
         return await asyncio.to_thread(resolve)
+
+    def _cleanup_reservation(self, result):
+        if result[0] is not None:
+            self._sync_finish_transfer(result[0], 0, 'interrupted')
 
     def _sync_reserve_transfer(
         self, user_id, filename, length, download_request_id, game_uuid=None,
@@ -435,10 +421,10 @@ class LazyASGIApp:
         disconnected = asyncio.Event()
         disconnect_task = asyncio.create_task(self._watch_disconnect(receive, disconnected))
         try:
-            file_size = os.path.getsize(file_path)
+            stat = await asyncio.to_thread(os.stat, file_path)
+            file_size = stat.st_size
             request_headers = dict(scope.get("headers", []))
             range_header = request_headers.get(b"range", b"").decode("ascii", "ignore")
-            stat = os.stat(file_path)
             etag = etag or f'"{file_size:x}-{stat.st_mtime_ns:x}"'
             modified_dt = last_modified or datetime.fromtimestamp(stat.st_mtime, timezone.utc)
             modified_http = modified_dt.strftime('%a, %d %b %Y %H:%M:%S GMT')
@@ -464,10 +450,10 @@ class LazyASGIApp:
                 length = end - start + 1
                 status = 206
             if user_id is not None and scope.get('method') != 'HEAD':
-                transfer_id, _used_bytes, _quota_bytes = await asyncio.to_thread(
-                    self._sync_reserve_transfer, user_id, filename, length,
-                    download_request_id, game_uuid, archive_id, start,
-                    (start + length - 1), status,
+                transfer_id, _used_bytes, _quota_bytes = await run_owned_in_thread(
+                    lambda: self._sync_reserve_transfer(user_id, filename, length,
+                        download_request_id, game_uuid, archive_id, start, (start + length - 1), status),
+                    self._cleanup_reservation,
                 )
                 if transfer_id is None:
                     await self._send_error(
@@ -526,10 +512,7 @@ class LazyASGIApp:
             completed = True
             
         except Exception as e:
-            if self._flask_app is not None:
-                with self._flask_app.app_context():
-                    log_system_event(f"Error streaming file {filename}: {str(e)}", 
-                                   event_type='download', event_level='error')
+            print(f"Error streaming file: {type(e).__name__}")
             if not response_started:
                 await self._send_error(send, 500, "Error streaming file")
         finally:
@@ -597,10 +580,10 @@ class LazyASGIApp:
                 completed = True
                 return
 
-            expected_bytes = estimate_path_bytes(source_path)
-            transfer_id, _used_bytes, _quota_bytes = await asyncio.to_thread(
-                self._sync_reserve_transfer, user_id, filename, expected_bytes,
-                download_request_id, None,
+            expected_bytes = await asyncio.to_thread(estimate_path_bytes, source_path)
+            transfer_id, _used_bytes, _quota_bytes = await run_owned_in_thread(
+                lambda: self._sync_reserve_transfer(user_id, filename, expected_bytes, download_request_id, None),
+                self._cleanup_reservation,
             )
             if transfer_id is None:
                 await self._send_error(

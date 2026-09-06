@@ -3,12 +3,20 @@ Async file streaming module for non-blocking file downloads.
 Replaces the synchronous streaming system with async I/O using aiofiles.
 """
 
+import asyncio
+import logging
 import os
 import mimetypes
 import aiofiles
 from werkzeug.utils import secure_filename
-from sharewarez.utils.event_logging import log_system_event
 from sharewarez.utils.zipstream import async_generate_zipstream_chunks
+
+def log_system_event(message, event_type='download', event_level='information'):
+    # Transfer rows own the durable audit. Stream diagnostics must not acquire
+    # Flask database sessions or block the ASGI loop on database logging.
+    logger = logging.getLogger(__name__)
+    logger.log(logging.ERROR if event_level == 'error' else logging.DEBUG, '%s: %s', event_type, message)
+
 
 
 def get_content_type_for_file(file_path, filename):
@@ -106,7 +114,7 @@ async def async_generate_file_chunks(file_path, chunk_size=2097152, start=0, len
     """
     
     try:
-        file_size = os.path.getsize(file_path)
+        file_size = await asyncio.to_thread(os.path.getsize, file_path)
         log_system_event(f"Starting async file stream: {os.path.basename(file_path)} ({file_size:,} bytes, {chunk_size:,} byte chunks)", 
                         event_type='download', event_level='information')
         
@@ -167,7 +175,7 @@ async def create_async_streaming_response(
             secure_name = "download.zip"
             
         # Get file size for Content-Length header
-        file_size = os.path.getsize(file_path)
+        file_size = await asyncio.to_thread(os.path.getsize, file_path)
         
         # Determine correct content-type based on file extension
         content_type = get_content_type_for_file(file_path, filename)
