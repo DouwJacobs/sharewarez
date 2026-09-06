@@ -40,13 +40,15 @@ echo "==> Starting isolated PostgreSQL test database"
 docker run -d --rm --name "$TEST_DB_CONTAINER" \
     -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=sharewareztest \
     -p "${TEST_DB_PORT}:5432" "$POSTGRES_IMAGE" >/dev/null
-for _ in $(seq 1 30); do
-    if docker exec "$TEST_DB_CONTAINER" pg_isready -U postgres -d sharewareztest >/dev/null 2>&1; then
+# The image uses a temporary Unix-socket-only server during initdb.
+# Wait for the final TCP listener so schema setup cannot race its restart.
+for _ in $(seq 1 60); do
+    if docker exec "$TEST_DB_CONTAINER" pg_isready -h 127.0.0.1 -U postgres -d sharewareztest >/dev/null 2>&1; then
         break
     fi
     sleep 1
 done
-docker exec "$TEST_DB_CONTAINER" pg_isready -U postgres -d sharewareztest >/dev/null
+docker exec "$TEST_DB_CONTAINER" pg_isready -h 127.0.0.1 -U postgres -d sharewareztest >/dev/null
 docker exec "$TEST_DB_CONTAINER" psql -U postgres -d sharewareztest \
     -v ON_ERROR_STOP=1 -c 'CREATE EXTENSION IF NOT EXISTS pg_trgm' >/dev/null
 
