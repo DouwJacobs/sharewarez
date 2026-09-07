@@ -586,3 +586,16 @@ placeholder inside a 72 px cover. Its monogram crossed the cover boundary and th
 small title duplicated the adjacent card title. List placeholders now contain a
 compact monogram and hide redundant icon/title content; grid and compact artwork
 fallbacks keep the established centered treatment.
+
+### Independent handoff review correction — 7 September 2026
+
+The completion claims above are superseded by the behavioral findings in
+[UI_HANDOFF_AUDIT_2026-09-07.md](UI_HANDOFF_AUDIT_2026-09-07.md). Both valid Game
+Edit save actions are cancelled by an overriding validator that returns undefined.
+The review also reproduced desktop list-action overlap, pending-menu Escape
+failure, missing dirty tracking for provider selections, and duplicate database
+removal requests. Keyboard selection and popup semantics remain unfinished.
+UI-02/UI-07 are reopened; UI-03/UI-05 are partial; UI-06 remains incomplete.
+The 130 Python and six favorite tests passed again, demonstrating that those
+tests do not establish browser submission correctness. This corrective audit
+changes documentation only and leaves the user's VERSION edit untouched.
