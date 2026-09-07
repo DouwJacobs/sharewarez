@@ -208,6 +208,114 @@ Fix concrete defects found and record evidence.
   need isolated fixtures for an end-to-end review. Do not reset the real instance
   or change real credentials to create those fixtures.
 
+## UI-07 — Rework Game Edit around everyday editing (P2, user requested)
+
+The user explicitly wants `/game_edit/<game_uuid>` to fit the shared UI and feel
+smoother to use. Treat this as a focused editor rework, not merely a button-color
+fix. Prioritize it alongside UI-01. Keep identification available without making
+it dominate ordinary metadata editing.
+
+Relevant sources:
+
+- `sharewarez/templates/admin/admin_game_identify.html` (shared by editing and
+  identification workflows; there is no separate `game_edit.html`).
+- `sharewarez/setup/default_theme/css/admin/admin_game_identify.css`
+- `sharewarez/setup/default_theme/js/admin_game_identify.js`
+- `sharewarez/routes_games_ext/edit.py`, `sharewarez/forms.py`
+- `docs/METADATA_PROVENANCE.md`, `tests/test_routes_games_ext_edit.py`, and
+  `tests/test_metadata_provenance.py`.
+
+Observed baseline and source findings:
+
+- A fresh desktop inspection in the synthetic port-5008 preview shows a large
+  generic heading, a deeply inset essentials region, and prominent ID/name
+  lookup buttons. The game identity and everyday editing tasks get less emphasis.
+  This follow-up did not repeat the mobile inspection; require it below.
+- Most metadata is hidden behind one generic Details collapse. Save actions are
+  only at the top, making the expanded form cumbersome to finish.
+- The stylesheet retains global `label`, `.form-control`, `.alert`, and other
+  overrides, plus layers of legacy surface rules. The final flattening selectors
+  omit `.essential-info`; the live essentials region still has its own fill and
+  inset within the page surface. Consolidate ownership instead of stacking more
+  overrides.
+- Ordinary Save redirects to Library, while Save & Refresh redirects to Game
+  Details. Cancel always returns to Library. Several early error render branches
+  omit library/platform/conflict context supplied by the normal render path.
+- Conflict resolution buttons submit the main editor form to a separate endpoint
+  that redirects without saving other edits. The shared submit handler preserves
+  `action` but disables all submit buttons without preserving `resolution`.
+  Reproduce and fix this payload risk; do not let conflict review discard edits.
+- Initial validation disables only the first submit button. The submit handler's
+  early `return` does not cancel submission. Verify equivalent validation for
+  Save, Save & Refresh, and Enter before changing the presentation.
+
+Target layout and interaction:
+
+1. Use the shared page header with **Edit game**, the current game name, compact
+   library/platform context, and secondary Back to game navigation. Use the
+   shared rail and one main surface with flat sections, quiet dividers, and
+   normal label typography. Remove route-wide restyling of shared controls.
+2. Present clearly named groups: **Overview** (name, summary, storyline, release
+   metadata, credits), **Package & installation** (version, edition, instructions,
+   disk path), **Classification** (genres, modes, themes, platforms, perspectives,
+   tags), and **Links & media** (existing URL/video fields plus navigation to the
+   image editor). Use two columns only for short related fields; prose remains
+   full-width. Keep all existing fields and their submission names.
+3. Put **IGDB identification** in its own secondary section with current ID and
+   explicit Search IGDB / Look up ID / Custom game actions. Explain when choosing
+   another identity populates fields and triggers replacement images on save.
+   Preserve the add/unmatched/re-identify workflows through mode-aware shared
+   partials or equivalent reuse; their primary task differs from editing.
+4. Replace the catch-all Details toggle with meaningful section headings and,
+   only where useful, accessible disclosures. Keep common editing fields visible.
+   Classification controls should summarize selected values/counts and remain
+   usable with many options, touch, and keyboard. Do not force checkbox lists
+   into ordinary single-select geometry.
+5. Keep **Save changes** primary and **Save & refresh metadata** secondary, with
+   concise explanation of manual-value preservation and refresh behavior. Make
+   actions reachable at the end of the form as well as the beginning using the
+   same labels/state. A sticky action area is optional only if it clears mobile
+   bottom navigation and never covers focused inputs or errors.
+6. Make Save, Save & Refresh, Cancel, and Back return predictably to the edited
+   game by default. If preserving entry context, use one validated same-origin
+   return destination across those actions. Protect dirty edits before leaving
+   through navigation or identity/conflict operations; do not prompt on a clean
+   form or a successful intentional save.
+7. Show inline errors and a linked error summary; open any section containing an
+   invalid field and focus the first actionable error. Preserve submitted values,
+   selected classifications, game identity, library/platform labels, and conflict
+   context on every server error path. Factor a common render-context helper if
+   appropriate. Keep errors readable without relying only on color.
+8. Prevent duplicate submits and expose accurate pending/failure state for each
+   action, including Enter submission. Ensure disabled controls do not remove
+   required action/resolution values from the payload. A failed save must remain
+   recoverable; a successful save followed by a failed refresh must say so.
+9. Keep provider-conflict review distinct from unsaved form editing. Use a
+   deliberate staged or guarded resolution flow; never silently lose the draft.
+   Preserve field ownership, provider candidates, CSRF, administrator checks,
+   path validation, scan restrictions, and re-identification image-refresh order.
+
+Acceptance and review evidence:
+
+- Capture before/after desktop and 390 × 844 views with a populated game, expanded
+  sections, long names/paths, several classifications, and provider conflicts.
+  Check Default and Ember, shared control heights, one mobile gutter, no nested
+  elevated form panels, no overflow, and bottom-navigation clearance.
+- Exercise ordinary editing without opening identification; users can find a
+  field, save it, and return to the same game without excessive scrolling.
+- Verify Save, Save & Refresh, Enter, Cancel/Back, dirty navigation, custom-game
+  mode, IGDB lookup success/empty/failure, and keyboard selection of a result.
+  Stub external calls and use disposable records for mutations.
+- Cover invalid input inside a collapsed section, scan-blocked saving, database
+  failure, and refresh failure after a successful save. Confirm values and page
+  context survive. No stuck blocking spinner or bypass via the secondary action.
+- Test both conflict resolutions with unrelated dirty fields and confirm the
+  intended resolution reaches the server. Assert manual metadata survives refresh
+  and identity replacement still uses the correct image-refresh ordering.
+- Run edit-route/provenance regressions plus relevant UI/accessibility tests; add
+  behavior regressions for confirmed submission/error-state defects. Inspect the
+  shared template's identification and unmatched variants for regressions too.
+
 ## Implementation and verification workflow
 
 1. Inspect the current branch/worktree. Work in WSL, activate the Sharewarez Python
@@ -215,8 +323,8 @@ Fix concrete defects found and record evidence.
 2. Use existing shared components and preserve the single mobile gutter owned by
    `#content`. Keep major surfaces as siblings; do not reintroduce the Favorites
    grid frame or equally elevated nested panels.
-3. Implement UI-01 through UI-04 as small coherent changes, then the verified
-   UI-05 findings. Do not turn this into a new frontend framework or broad visual
+3. Prioritize UI-01 and the user-requested UI-07 editor rework, then complete
+   UI-02 through UI-04 and the verified UI-05 findings in coherent changes. Do not turn this into a new frontend framework or broad visual
    redesign. Reuse the current Bootstrap/Jinja/JavaScript infrastructure.
 4. Use Computer Use to inspect real rendered routes at default desktop,
    1440 × 1000, and 390 × 844, plus narrow compact/list checks. Allow stylesheet
@@ -254,10 +362,10 @@ offline during the audit; this is an environment observation, not a UI defect.
 
 Return:
 
-- Commit hashes and a short mapping from UI-01…UI-06 to changes or explicit gaps.
+- Commit hashes and a short mapping from UI-01…UI-07 to changes or explicit gaps.
 - Before/after evidence for the IGDB row and compact/list action arrangement.
 - Desktop/mobile screenshots for Library, Favorites, Game Details, and affected
-  admin pages, with theme and viewport recorded.
+  admin pages and the reworked Game Edit form, with theme and viewport recorded.
 - Measured row heights/hit bounds and keyboard/focus results for the shared menu.
 - Exact tests run and outcomes; list anything blocked or intentionally untested.
 - Confirmation that equivalent link/button menu rows share one style contract,
