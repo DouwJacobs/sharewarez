@@ -580,3 +580,9 @@ six JavaScript favorite cases, JavaScript syntax checks, Ruff, and
 `git diff --check`. Ember/light-theme, production-scale populated records, setup,
 and token-dependent authentication states remain recorded under UI-06 rather
 than being claimed as complete.
+
+The missing-artwork follow-up also found that list cards placed the full grid
+placeholder inside a 72 px cover. Its monogram crossed the cover boundary and the
+small title duplicated the adjacent card title. List placeholders now contain a
+compact monogram and hide redundant icon/title content; grid and compact artwork
+fallbacks keep the established centered treatment.

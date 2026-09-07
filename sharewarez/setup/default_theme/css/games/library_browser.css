@@ -785,6 +785,16 @@
 .library-view-list .game-card-container { display: grid; grid-template-columns: 72px minmax(0, 1fr); align-items: center; gap: 14px; width: 100%; min-height: 102px; padding: 8px; border: 1px solid var(--theme-border-color); border-radius: 12px; background: var(--theme-card-background); }
 .library-view-list .game-card { width: 72px; }
 .library-view-list .game-card .game-cover { width: 72px; height: 96px; aspect-ratio: 3 / 4; border-radius: 8px; }
+.library-view-list .game-cover-placeholder { overflow: hidden; gap: 0; padding: 8px; }
+.library-view-list .game-cover-placeholder > i,
+.library-view-list .game-cover-placeholder > small { display: none; }
+.library-view-list .game-cover-placeholder > strong {
+    max-width: 100%;
+    overflow: hidden;
+    font-size: 1.1rem;
+    line-height: 1;
+    letter-spacing: .08em;
+}
 .library-view-list .library-game-title { width: 100%; margin: 0; font-size: .95rem; text-align: left; }
 .library-view-list .library-game-metadata { display: block; }
 @media (min-width: 769px) and (hover: hover) and (pointer: fine) {

@@ -92,6 +92,9 @@ def test_narrow_library_views_reserve_non_overlapping_action_space():
     css = (THEME / "css/games/library_browser.css").read_text(encoding="utf-8")
 
     assert "grid-template-columns: 104px minmax(0, 1fr)" in css
+    assert ".library-view-list .game-cover-placeholder > small { display: none; }" in css
+    assert ".library-view-list .game-cover-placeholder > strong" in css
+    assert "font-size: 1.1rem" in css
     assert "@media (max-width: 379px)" in css
     assert "grid-template-columns: repeat(2, minmax(0, 1fr)) !important" in css
 

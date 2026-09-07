@@ -26,6 +26,7 @@ an implementation brief, not a replacement for those contracts.
 | UI-05 semantic actions/feedback | ✅ Complete | User Edit is secondary, destructive menu rows have a shared danger modifier, and popup async feedback uses notifications/theme state. |
 | UI-06 expanded validation | 🟡 In progress | Changed routes received focused desktop/mobile checks; the broader data/theme matrix below remains a follow-up audit. |
 | UI-07 Game Edit rework | ✅ Complete | Task-based flat sections, end-of-form mobile actions, secondary IGDB disclosure, error summary, shared render context, safe submit state, and return-to-game flow implemented. |
+| UI-08 missing-cover list layout | ✅ Complete | List cards now keep a restrained monogram inside the compact cover and rely on the adjacent title, avoiding duplicated clipped text. |
 
 ## Starting state — preserve completed work
 
@@ -385,3 +386,11 @@ Return:
 
 The originating agent will review the commits, inspect the rendered result,
 re-run relevant regressions, and report any remaining issues to the user.
+
+## UI-08 — Keep missing artwork contained in list cards (complete)
+
+The list layout previously reused the full grid placeholder inside a 72 px cover.
+Its large monogram overflowed the artwork boundary, while the icon and small title
+duplicated information already displayed beside the cover. List placeholders now
+hide the redundant icon/title, constrain overflow, and use a compact monogram.
+Grid and compact placeholders retain their full centered treatment.
