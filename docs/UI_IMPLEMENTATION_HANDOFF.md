@@ -19,10 +19,10 @@ an implementation brief, not a replacement for those contracts.
 
 | Item | Status | Evidence |
 | --- | --- | --- |
-| UI-01 IGDB menu row | ✅ Complete | Anchor and button rows share `.popup-menu .menu-button`; live fixture measured both at 223.25 × 46.68 px. |
+| UI-01 IGDB menu row | ✅ Complete | Anchor and button rows share `.popup-menu .menu-button`; live fixture measured both at 223.25 × 46.68 px desktop and 188.11 × 46.03 px mobile. |
 | UI-02 menu close/focus | ✅ Complete | One `closeMenu()` path handles both card types; Game Details Escape restored controls, state, and trigger focus. |
 | UI-03 narrow card actions | ✅ Complete | Grid/compact/list checks at 390 px and compact/list at 320 px found 44 px targets, no overlap, and no document overflow. |
-| UI-04 mobile favorite | ✅ Complete | Mobile and cover controls use the shared manager; selected, label, pending, disabled, and busy state synchronize. |
+| UI-04 mobile favorite | ✅ Complete | Mobile and cover controls use the shared manager; one intercepted mobile activation produced one request and synchronized both controls plus the “Favorited” label. |
 | UI-05 semantic actions/feedback | ✅ Complete | User Edit is secondary, destructive menu rows have a shared danger modifier, and popup async feedback uses notifications/theme state. |
 | UI-06 expanded validation | 🟡 In progress | Changed routes received focused desktop/mobile checks; the broader data/theme matrix below remains a follow-up audit. |
 | UI-07 Game Edit rework | ✅ Complete | Task-based flat sections, end-of-form mobile actions, secondary IGDB disclosure, error summary, shared render context, safe submit state, and return-to-game flow implemented. |

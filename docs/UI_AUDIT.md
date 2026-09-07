@@ -550,7 +550,8 @@ populated-state and theme validation pass.
 
 - Popup action anchors and buttons now share one left-aligned row contract. A
   populated synthetic IGDB link measured the same 223.25 × 46.68 px as an
-  adjacent button. Destructive rows use the shared danger token and asynchronous
+  adjacent desktop button and 188.11 × 46.03 px at 390 px. Destructive rows use
+  the shared danger token and asynchronous
   Discord/move failures use the application notification system.
 - One popup close function handles Library cards and the Game Details cover.
   A rendered Escape check closed the menu, cleared both container states,
@@ -560,7 +561,9 @@ populated-state and theme validation pass.
   320 px. No targets overlapped and document width matched the viewport.
 - The mobile Game Details favorite control now participates directly in the
   shared favorite manager. All matching controls share selected, label, pending,
-  disabled, and busy state while one request per game remains in flight.
+  disabled, and busy state while one request per game remains in flight. A
+  browser-intercepted activation issued one request, synchronized both visible
+  representations, and changed the mobile label to “Favorited”.
 - Game Edit now uses a shared page header and one flat form surface with Overview,
   Package & installation, Classification, Links & media, and secondary IGDB
   identification sections. Common fields remain visible, selection summaries are
