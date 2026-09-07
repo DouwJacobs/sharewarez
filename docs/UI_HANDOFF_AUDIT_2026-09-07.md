@@ -1,5 +1,9 @@
 # UI handoff implementation audit — 7 September 2026
 
+**Follow-up:** all confirmed findings below have been addressed. The original
+review is retained as historical evidence; see the resolution and verification
+record at the end. UI-06's broader coverage gaps remain open.
+
 ## Verdict and scope
 
 The implementation is not ready for acceptance. The Game Edit redesign exists,
@@ -138,3 +142,48 @@ failure/confirmation flows were not freshly verified. Prior screenshots and
 measurements remain historical evidence, not proof that these cases pass.
 The unrelated existing VERSION edit remains untouched. No application fixes,
 release, deployment, or publication were performed as part of this audit.
+
+## Resolution and verification — implementation follow-up
+
+- [x] A1: removed the overriding validator; valid Save and Save & Refresh each
+  submit once with their correct action payload. Enter in Name performs ordinary
+  Save. Repeated submission is blocked; all save controls expose pending state.
+- [x] A2: desktop list covers use 104 px width, matching the mobile arrangement.
+  Browser assertions confirm disjoint favorite/hamburger targets and no document
+  overflow at 1440 × 1000, 390 × 844, and 320 × 844.
+- [x] A3: Escape and trigger toggling invalidate pending menu requests and clear
+  busy state. Stale successes/errors cannot reopen the dismissed menu. Loaded
+  Escape closes the disclosure and restores its trigger focus.
+- [x] A4: provider selection, ID lookup, and custom identity mark the editor dirty
+  and guard replacement of existing dirty values before applying changes.
+- [x] A5: database removal has a per-game pending guard and disabled/busy state;
+  failed requests restore retry. Move destinations also have pending/retry state,
+  and a failed destination fetch clears loading and reports recovery guidance.
+- [x] A6: search results and library destinations are native buttons. Game-action
+  triggers use aria-expanded/aria-controls with ordinary Tab navigation, without
+  aria-haspopup promising an unimplemented menu model.
+- [x] Additional error-focus gap: server error fields open their containing
+  disclosures and receive aria-invalid/aria-describedby; initial error focus and
+  error-summary links reveal and focus the target field.
+
+Reusable browser coverage lives in `tests/ui_handoff.browser.cjs`. It requires an
+explicit disposable `UI_AUDIT_BASE_URL` and `UI_AUDIT_GAME_UUID`, uses the preview's
+`/_preview/session` login, stubs provider responses, and intercepts POST requests.
+Set `PLAYWRIGHT_MODULE` if Playwright is installed outside the normal module path.
+Service workers are blocked in test contexts so they cannot bypass interception.
+Optional `UI_AUDIT_SCREENSHOTS` saves screenshots to a local directory.
+
+All **17 browser regression scenarios passed**. The run covers save payloads,
+Enter, invalid input, repeated submit,
+keyboard provider selection, dirty protection, custom identity, guarded lookup,
+server-error disclosure/focus, responsive list geometry, pending/loaded Escape,
+removal duplicate protection/retry, and keyboard move/retry. The error case uses
+an intercepted HTML fixture; it does not claim end-to-end validation persistence.
+
+The 130 targeted Python regressions passed (27.75 seconds), and six favorite
+behavior cases passed. JavaScript syntax and diff whitespace checks passed.
+Canonical and installed copies of all four changed theme assets were synchronized.
+In-app desktop inspection and separate 390 px rendered screenshots confirmed the
+list/editor presentation. UI-06's themes, large populated records, roles, setup,
+and token-dependent flows remain outside this focused fix verification.
+The unrelated VERSION edit is preserved; no deployment or publication occurred.

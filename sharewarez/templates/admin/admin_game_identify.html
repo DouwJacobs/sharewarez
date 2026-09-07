@@ -5,8 +5,8 @@
 {% macro actions(location) %}
 <div class="game-edit-actions game-edit-actions--{{ location }}" aria-label="Game entry actions">
   <a href="{{ url_for('games.game_details', game_uuid=game_uuid) if action == 'edit' else url_for('library.library') }}" class="btn btn-secondary">Cancel</a>
-  <button type="submit" name="action" value="save_and_refresh" class="btn btn-secondary game-save-action"><i class="fas fa-rotate" aria-hidden="true"></i> Save &amp; refresh</button>
   <button type="submit" name="action" value="save" class="btn btn-primary game-save-action"><i class="fas fa-floppy-disk" aria-hidden="true"></i> Save changes</button>
+  <button type="submit" name="action" value="save_and_refresh" class="btn btn-secondary game-save-action"><i class="fas fa-rotate" aria-hidden="true"></i> Save &amp; refresh</button>
 </div>
 {% endmacro %}
 {% macro multiselect(field, label) %}

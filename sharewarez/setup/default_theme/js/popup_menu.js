@@ -1,6 +1,7 @@
 document.addEventListener('DOMContentLoaded', function() {
     
     let currentLibrariesSubmenu = null;
+    const pendingRemovals = new Set();
     var csrfToken = CSRFUtils.getToken();
 
     function getMenuContainer(menu) {
@@ -61,7 +62,12 @@ document.addEventListener('DOMContentLoaded', function() {
         // Handling deletion of a game (not from disk)
         if (event.target.classList.contains('delete-game')) {
             event.stopPropagation();
+            const button = event.target;
             const gameUuid = event.target.getAttribute('data-game-uuid');
+            if (pendingRemovals.has(gameUuid)) return;
+            pendingRemovals.add(gameUuid);
+            button.disabled = true;
+            button.setAttribute('aria-busy', 'true');
             console.log(`Removing game from library UUID: ${gameUuid}`);
 
             fetch(`/delete_game/${gameUuid}`, {
@@ -112,6 +118,11 @@ document.addEventListener('DOMContentLoaded', function() {
             .catch(error => {
                 console.error('There has been a problem with your fetch operation:', error);
                 $.notify("An error occurred while removing the game.", "error");
+            })
+            .finally(() => {
+                pendingRemovals.delete(gameUuid);
+                button.disabled = false;
+                button.removeAttribute('aria-busy');
             });
         }
 
@@ -182,16 +193,28 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     let menuRequestSequence = 0;
+    let pendingMenuTrigger = null;
     document.body.addEventListener('click', async function(event) {
         var clickedElement = event.target.closest('[id^="menuButton-"]');
         if (clickedElement) {
             console.log('Menu button or its child clicked');
             event.stopPropagation();
 
+            if (pendingMenuTrigger === clickedElement) {
+                ++menuRequestSequence;
+                pendingMenuTrigger.removeAttribute('aria-busy');
+                pendingMenuTrigger = null;
+                return;
+            }
+            ++menuRequestSequence;
+            pendingMenuTrigger?.removeAttribute('aria-busy');
+            pendingMenuTrigger = null;
+
             var uuid = clickedElement.id.replace('menuButton-', '');
             var popupMenu = document.getElementById('popupMenu-' + uuid);
             if (!popupMenu && clickedElement.closest('#gamesContainer')) {
                 const sequence = ++menuRequestSequence;
+                pendingMenuTrigger = clickedElement;
                 clickedElement.setAttribute('aria-busy', 'true');
                 try {
                     const response = await fetch(`/library/game-actions/${encodeURIComponent(uuid)}`);
@@ -202,10 +225,14 @@ document.addEventListener('DOMContentLoaded', function() {
                     clickedElement.closest('.game-card').insertAdjacentHTML('beforeend', html);
                     popupMenu = document.getElementById('popupMenu-' + uuid);
                 } catch (error) {
+                    if (sequence !== menuRequestSequence) return;
                     $.notify(error.message, 'error');
                     return;
                 } finally {
-                    clickedElement.removeAttribute('aria-busy');
+                    if (sequence === menuRequestSequence) {
+                        clickedElement.removeAttribute('aria-busy');
+                        pendingMenuTrigger = null;
+                    }
                 }
             }
             if (!popupMenu) return;
@@ -246,6 +273,14 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     document.addEventListener('keydown', event => {
+        if (event.key !== 'Escape') return;
+        if (pendingMenuTrigger) {
+            event.preventDefault();
+            ++menuRequestSequence;
+            pendingMenuTrigger.removeAttribute('aria-busy');
+            pendingMenuTrigger.focus();
+            pendingMenuTrigger = null;
+        }
         const menu = event.target.closest('.popup-menu');
         if (!menu) return;
         if (event.key === 'Escape') {
@@ -291,8 +326,9 @@ document.addEventListener('DOMContentLoaded', function() {
                         
                         // Add libraries to the submenu
                         libraries.forEach(library => {
-                            const libraryItem = document.createElement('div');
-                            libraryItem.className = 'library-item';
+                            const libraryItem = document.createElement('button');
+                            libraryItem.type = 'button';
+                            libraryItem.className = 'library-item menu-button';
                             libraryItem.textContent = library.name;
                             libraryItem.setAttribute('data-library-uuid', library.uuid);
                             libraryItem.setAttribute('data-game-uuid', gameUuid);
@@ -304,6 +340,8 @@ document.addEventListener('DOMContentLoaded', function() {
                                 
                                 // Confirm with the user
                                 if (confirm(`Are you sure you want to move this game to the "${library.name}" library?`)) {
+                                    libraryItem.disabled = true;
+                                    libraryItem.setAttribute('aria-busy', 'true');
                                     // Send request to move the game
                                     fetch('/api/move_game_to_library', {
                                         method: 'POST',
@@ -324,11 +362,19 @@ document.addEventListener('DOMContentLoaded', function() {
                                     .catch(error => {
                                         console.error('Error moving game:', error);
                                         $.notify('An error occurred while moving the game.', 'error');
+                                    })
+                                    .finally(() => {
+                                        libraryItem.disabled = false;
+                                        libraryItem.removeAttribute('aria-busy');
                                     });
                                 }
                             });
                             librariesList.appendChild(libraryItem);
                         });
+                    })
+                    .catch(() => {
+                        loadingElement.style.display = 'none';
+                        $.notify('Unable to load libraries. Close and reopen Move Library to retry.', 'error');
                     });
             } else {
                 submenuContainer.style.display = 'none';
@@ -381,6 +427,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     window.addEventListener('click', function() {
         ++menuRequestSequence;
+        pendingMenuTrigger?.removeAttribute('aria-busy');
+        pendingMenuTrigger = null;
         document.querySelectorAll('.popup-menu').forEach(function(menu) {
             closeMenu(menu);
         });

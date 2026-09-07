@@ -599,3 +599,18 @@ UI-02/UI-07 are reopened; UI-03/UI-05 are partial; UI-06 remains incomplete.
 The 130 Python and six favorite tests passed again, demonstrating that those
 tests do not establish browser submission correctness. This corrective audit
 changes documentation only and leaves the user's VERSION edit untouched.
+
+### Audit fixes implemented — 7 September 2026
+
+The follow-up resolves A1–A6 and the collapsed-error focus gap from the independent
+review. The editor now submits valid saves with the correct action, protects
+programmatic identity changes, supports native keyboard result selection, and
+reveals invalid fields. Desktop list covers accommodate disjoint actions. Pending
+menu requests can be dismissed with Escape; game actions use disclosure semantics.
+Database removal prevents duplicate in-flight requests and permits failure retry.
+Library destinations are keyboard-operable and recover from loading/move errors.
+
+See the audit report's resolution section and `tests/ui_handoff.browser.cjs` for
+reproduction and validation. The 130 Python regressions and six favorite cases
+passed; desktop and mobile rendered checks were performed. UI-06 remains open;
+no broader theme/populated-state coverage is implied by these fixes.

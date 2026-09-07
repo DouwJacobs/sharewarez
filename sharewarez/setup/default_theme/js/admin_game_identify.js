@@ -22,6 +22,21 @@ document.addEventListener('DOMContentLoaded', function() {
     const igdbNameSearchButton = document.querySelector('#search-igdb');
     const igdbIdSearchStatus = document.querySelector('#igdb-id-search-status');
     const igdbNameSearchStatus = document.querySelector('#igdb-name-search-status');
+    let formIsDirty = false;
+    let formIsSubmitting = false;
+
+    function allowIdentityReplacement() {
+        return !formIsDirty || window.confirm('Replace the current form values with this game identity? Unsaved values may be overwritten.');
+    }
+
+    function focusField(field) {
+        if (!field) return;
+        for (let parent = field.parentElement; parent; parent = parent.parentElement) {
+            if (parent.tagName === 'DETAILS') parent.open = true;
+        }
+        field.focus({ preventScroll: true });
+        field.scrollIntoView({ block: 'center' });
+    }
 
     function setSearchLoading(button, statusElement, isLoading, message = '') {
         if (isLoading) {
@@ -58,10 +73,17 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Add Non-Existing Game button handler
     document.querySelector('#add-non-existing-game').addEventListener('click', async function() {
+        this.disabled = true;
+        this.setAttribute('aria-busy', 'true');
+        const nextId = await fetchNextCustomIgdbId();
+        this.disabled = false;
+        this.removeAttribute('aria-busy');
+        if (!allowIdentityReplacement()) return;
+        formIsDirty = true;
         // Disable IGDB search functionality
         document.querySelector('#search-igdb-btn').disabled = true;
         document.querySelector('#search-igdb').disabled = true;
-        igdbIdInput.value = await fetchNextCustomIgdbId();
+        igdbIdInput.value = nextId;
         igdbIdInput.readOnly = true;
 
         // Clear and enable name field
@@ -70,6 +92,7 @@ document.addEventListener('DOMContentLoaded', function() {
         nameInput.focus();
 
         document.querySelector('.game-edit-identification')?.setAttribute('open', '');
+        checkFieldsAndToggleSubmit();
     });
 
     fullPathFeedback.id = 'full_disk_path_feedback';
@@ -90,6 +113,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function validateField(inputElement, isValid) {
+        inputElement.setAttribute('aria-invalid', String(!isValid));
         if (isValid) {
             console.log(`${inputElement.id} is valid`);
             inputElement.classList.remove('invalid-input');
@@ -218,18 +242,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    function checkFieldsAndToggleSubmit() {
-        const igdbIdIsValid = igdbIdInput.value.trim().length > 0 && /^\d+$/.test(igdbIdInput.value);
-        const fullPathIsValid = fullPathInput.value.trim().length > 0;
-        const nameIsValid = nameInput.value.trim().length > 0;
-
-        validateField(igdbIdInput, igdbIdIsValid);
-        validateField(fullPathInput, fullPathIsValid);
-        validateField(nameInput, nameIsValid);
-
-        updateButtonState(!(igdbIdIsValid && fullPathIsValid && nameIsValid));
-    }
-
     function showFeedback(element, message, isSuccess) {
         element.textContent = message;
         element.className = isSuccess ? 'form-text text-success' : 'form-text text-danger';
@@ -243,10 +255,6 @@ document.addEventListener('DOMContentLoaded', function() {
     
     igdbIdInput.addEventListener('keypress', function(event) {
         triggerClickOnEnter(event, document.querySelector('#search-igdb-btn'));
-    });
-
-    nameInput.addEventListener('keypress', function(event) {
-        triggerClickOnEnter(event, document.querySelector('#search-igdb'));
     });
 
     igdbIdSearchButton.addEventListener('click', function() {
@@ -274,6 +282,8 @@ document.addEventListener('DOMContentLoaded', function() {
                         }
                         
                         setTimeout(() => {
+                            if (!allowIdentityReplacement()) return;
+                            formIsDirty = true;
                             // Update form fields
                             nameInput.value = data.name;
                             document.querySelector('#summary').value = data.summary || '';
@@ -312,7 +322,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     resultsContainer.innerHTML = '';
                     if (data.results && data.results.length > 0) {
                         data.results.forEach(game => {
-                            const resultItem = document.createElement('div');
+                            const resultItem = document.createElement('button');
+                            resultItem.type = 'button';
                             resultItem.className = 'search-result-item';
                             
                             // Initialize the img element early to ensure order
@@ -346,6 +357,8 @@ document.addEventListener('DOMContentLoaded', function() {
                             resultItem.appendChild(textNode);
     
                             resultItem.addEventListener('click', function() {
+                                if (!allowIdentityReplacement()) return;
+                                formIsDirty = true;
                                 // Update form with game data upon selection
                                 updateFormWithGameData(game);
     
@@ -366,6 +379,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                 document.querySelector('#url').value = game.url || '';
                                 checkFieldsAndToggleSubmit();
                                 resultsContainer.innerHTML = ''; // Clear results after selection
+                                focusField(nameInput);
                             });
     
                             resultsContainer.appendChild(resultItem);
@@ -450,12 +464,24 @@ document.addEventListener('DOMContentLoaded', function() {
     updateSelectionCounts();
     checkFieldsAndToggleSubmit();
 
+    document.querySelectorAll('.field-error[id]').forEach(error => {
+        const field = document.getElementById(error.id.replace(/-errors$/, ''));
+        if (!field) return;
+        field.setAttribute('aria-invalid', 'true');
+        const descriptions = new Set((field.getAttribute('aria-describedby') || '').split(/\s+/).filter(Boolean));
+        descriptions.add(error.id);
+        field.setAttribute('aria-describedby', [...descriptions].join(' '));
+        for (let parent = field.parentElement; parent; parent = parent.parentElement) {
+            if (parent.tagName === 'DETAILS') parent.open = true;
+        }
+    });
+
     const serverErrorLink = document.querySelector('.game-edit-error-summary a');
     if (serverErrorLink) {
         requestAnimationFrame(() => {
             const invalidField = document.querySelector(serverErrorLink.getAttribute('href'));
-            invalidField?.focus({ preventScroll: true });
-            invalidField?.scrollIntoView({ block: 'center' });
+            invalidField?.setAttribute('aria-invalid', 'true');
+            focusField(invalidField);
         });
     }
 
@@ -463,8 +489,12 @@ document.addEventListener('DOMContentLoaded', function() {
     const gameEditForm = document.querySelector('.game_edit-form');
     const allSubmitButtons = document.querySelectorAll('.game_edit-form .game-save-action');
     let lastClickedSubmit = null;
-    let formIsDirty = false;
-    let formIsSubmitting = false;
+    document.querySelectorAll('.game-edit-error-summary a').forEach(link => {
+        link.addEventListener('click', event => {
+            event.preventDefault();
+            focusField(document.querySelector(link.getAttribute('href')));
+        });
+    });
 
     gameEditForm?.addEventListener('input', () => { formIsDirty = true; });
     gameEditForm?.addEventListener('change', () => { formIsDirty = true; });
@@ -489,16 +519,20 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (gameEditForm) {
         gameEditForm.addEventListener('submit', function(event) {
+            if (formIsSubmitting) {
+                event.preventDefault();
+                return;
+            }
             if (!checkFieldsAndToggleSubmit()) {
                 event.preventDefault();
-                document.querySelector('.game_edit-form .invalid-input')?.focus();
+                focusField(document.querySelector('.game_edit-form .invalid-input'));
                 return;
             }
 
             // Disabled submit buttons are omitted from the browser payload. Preserve
             // the clicked action before disabling the controls so the backend can
             // distinguish a normal save from Save & Refresh Metadata.
-            const submittedButton = event.submitter || lastClickedSubmit;
+            const submittedButton = event.submitter || lastClickedSubmit || gameEditForm.querySelector('[value="save"]');
             if (submittedButton && submittedButton.name === 'action') {
                 let actionInput = gameEditForm.querySelector('input[data-submitted-action]');
                 if (!actionInput) {
@@ -527,7 +561,10 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             // Disable all submit buttons to prevent double-submit
-            allSubmitButtons.forEach(function(btn) { btn.disabled = true; });
+            allSubmitButtons.forEach(function(btn) {
+                btn.disabled = true;
+                btn.setAttribute('aria-busy', 'true');
+            });
         });
     }
 });

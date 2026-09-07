@@ -148,6 +148,11 @@
 }
 
 .search-result-item {
+    width: 100%;
+    border: 1px solid var(--theme-border-color);
+    color: var(--theme-text-primary);
+    font: inherit;
+    text-align: left;
     display: flex;
     align-items: center;
     min-height: 44px;
@@ -160,6 +165,11 @@
 .search-result-item:hover,
 .search-result-item:focus-visible {
     background: rgba(var(--theme-accent-rgb), .14);
+}
+
+.search-result-item:focus-visible {
+    outline: 2px solid var(--theme-accent);
+    outline-offset: 2px;
 }
 
 .metadata-multiselect-dropdown {

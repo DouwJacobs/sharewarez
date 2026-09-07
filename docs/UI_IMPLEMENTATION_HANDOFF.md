@@ -17,20 +17,21 @@ an implementation brief, not a replacement for those contracts.
 
 ## Implementation progress
 
-Review correction (7 September 2026): the implementation is **not fully accepted**.
-The independent browser audit found a blocking editor submission regression and
-additional behavior gaps. See [the audit report](UI_HANDOFF_AUDIT_2026-09-07.md).
-The status table below supersedes earlier completion claims and section labels.
+Follow-up fixes (7 September 2026): the confirmed independent-audit defects are
+fixed and covered by browser regressions. See the resolution section in
+[the audit report](UI_HANDOFF_AUDIT_2026-09-07.md). The broader UI-06 acceptance
+matrix remains incomplete; these statuses describe implemented fixes and the
+recorded checks, not untested themes or data states.
 
 | Item | Status | Evidence |
 | --- | --- | --- |
 | UI-01 IGDB menu row | ✅ Complete | Anchor and button rows share `.popup-menu .menu-button`; live fixture measured both at 223.25 × 46.68 px desktop and 188.11 × 46.03 px mobile. |
-| UI-02 menu close/focus | 🔴 Reopened | Normal Escape works, but Escape during loading still allows the menu to open; ARIA semantics remain incomplete. Audit A3/A6. |
-| UI-03 narrow card actions | 🟡 Partial | Prior mobile checks passed; desktop list actions overlap by 12 px at 1440 × 1000. Audit A2. |
+| UI-02 menu close/focus | ✅ Audit fixes verified | Pending Escape invalidates opening, busy state clears, loaded Escape restores focus, and actions use disclosure semantics. A3/A6 resolved. |
+| UI-03 narrow card actions | ✅ Audit fixes verified | Desktop list cover now accommodates both actions; disjoint targets and no document overflow verified at 1440, 390, and 320 px. A2 resolved. |
 | UI-04 mobile favorite | ✅ Complete | Mobile and cover controls use the shared manager; one intercepted mobile activation produced one request and synchronized both controls plus the “Favorited” label. |
-| UI-05 semantic actions/feedback | 🟡 Partial | Semantic styling implemented; database removal remains enabled during requests and permits duplicate submissions. Audit A5. |
+| UI-05 semantic actions/feedback | ✅ Audit fixes verified | Database removal uses an in-flight guard and disabled/busy state; failure allows retry. Move destinations are native buttons with pending/error recovery. A5 resolved. |
 | UI-06 expanded validation | 🟡 In progress | Changed routes received focused desktop/mobile checks; the broader data/theme matrix below remains a follow-up audit. |
-| UI-07 Game Edit rework | 🔴 Reopened — blocking | Layout implemented, but both valid save actions are cancelled by duplicate validation functions. Provider dirty tracking and keyboard selection also fail. Audit A1/A4/A6. |
+| UI-07 Game Edit rework | ✅ Audit fixes verified | One Boolean validator; Save/Refresh/Enter payloads and repeat-submit guard verified. Identity changes protect dirty drafts; results support keyboard activation; server errors open disclosures and focus linked fields. A1/A4/A6 resolved. |
 | UI-08 missing-cover list layout | ✅ Complete | List cards now keep a restrained monogram inside the compact cover and rely on the adjacent title, avoiding duplicated clipped text. |
 
 ## Starting state — preserve completed work
@@ -110,7 +111,7 @@ Acceptance:
 - Add a focused regression for anchor/button parity that would fail on the
   baseline; include rendered measurements, not only a selector-string assertion.
 
-## UI-02 — Unify menu close/focus behavior (P2, reopened)
+## UI-02 — Unify menu close/focus behavior (audit fixes verified)
 
 `popup_menu.js` handles both `.game-card` and `.game-card-coverimage` when opening
 menus or closing them by an outside click. Its Escape handler only resolves
@@ -137,7 +138,7 @@ Exercise open/close on Library, Favorites, and Game Details using keyboard and
 pointer, including opening a second card while a request is pending. No stranded
 hidden controls, stale overlays, duplicate menus, or lost keyboard focus.
 
-## UI-03 — Resolve narrow compact/list card action collisions (P2, partial)
+## UI-03 — Resolve narrow compact/list card action collisions (audit fixes verified)
 
 **Needs rendered reproduction; not a completed visual finding.**
 
@@ -181,7 +182,7 @@ Acceptance: toggle from mobile and desktop, verify persisted state after reload,
 exercise a slow response and a failed response, and ensure all visible instances
 stay synchronized with no duplicate network mutation.
 
-## UI-05 — Finish the semantic action/feedback inventory (P3, partial)
+## UI-05 — Finish the semantic action/feedback inventory (audit fixes verified)
 
 The prior pass corrected several legacy colors; it did not exhaustively review
 all dynamic controls. Concrete starting points:
@@ -226,7 +227,7 @@ Fix concrete defects found and record evidence.
   need isolated fixtures for an end-to-end review. Do not reset the real instance
   or change real credentials to create those fixtures.
 
-## UI-07 — Rework Game Edit around everyday editing (P1 save blocker, reopened)
+## UI-07 — Rework Game Edit around everyday editing (audit fixes verified)
 
 The user explicitly wants `/game_edit/<game_uuid>` to fit the shared UI and feel
 smoother to use. Treat this as a focused editor rework, not merely a button-color
