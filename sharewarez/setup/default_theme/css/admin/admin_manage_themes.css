@@ -27,3 +27,19 @@
 
 @media (max-width: 900px) { .themes-operation-grid { grid-template-columns: 1fr; } }
 @media (max-width: 600px) { .theme-operation-controls { align-items: stretch; flex-direction: column; } .theme-operation-controls .btn, .theme-reset-form .btn { width: 100%; } }
+
+/* The surrounding app-surface owns elevation. Each operation and installed
+   theme is a flat group with a divider, not another raised panel. */
+.admin-ui .app-surface :is(.theme-operation-card, .theme-card) {
+    padding: 16px 0;
+    border: 0 !important;
+    border-bottom: 1px solid var(--theme-border-color) !important;
+    border-radius: 0;
+    background: transparent !important;
+    box-shadow: none !important;
+    transform: none;
+}
+.admin-ui .theme-operation-copy > i {
+    background: transparent;
+    color: var(--theme-text-secondary);
+}

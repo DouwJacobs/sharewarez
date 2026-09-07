@@ -30,7 +30,7 @@
         <section class="transfer-history" aria-labelledby="transfer-history-title">
             <div class="active-transfer-heading">
                 <div><p class="downloads-section-eyebrow">Delivery history</p><h2 id="transfer-history-title">Transfer attempts</h2><small>One row per HTTP delivery. Streamed bytes measure data handed to the connection, not browser disk writes.</small></div>
-                <div class="transfer-history-actions"><span class="downloads-count">{{ transfer_pagination.total }} attempt{{ '' if transfer_pagination.total == 1 else 's' }}</span>{% if transfer_pagination.total %}<form method="post" action="{{ url_for('download.clear_transfer_history') }}" onsubmit="return confirm('Clear all completed, interrupted, and cancelled transfer history?');"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-secondary btn-sm" type="submit"><i class="fas fa-trash" aria-hidden="true"></i> Clear history</button></form>{% endif %}</div>
+                <div class="transfer-history-actions"><span class="downloads-count">{{ transfer_pagination.total }} attempt{{ '' if transfer_pagination.total == 1 else 's' }}</span>{% if transfer_pagination.total %}<form method="post" action="{{ url_for('download.clear_transfer_history') }}" onsubmit="return confirm('Clear all completed, interrupted, and cancelled transfer history?');"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-danger btn-sm" type="submit"><i class="fas fa-trash" aria-hidden="true"></i> Clear history</button></form>{% endif %}</div>
             </div>
             {% if transfers %}
             <div class="table-responsive">

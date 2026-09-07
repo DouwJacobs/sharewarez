@@ -221,7 +221,7 @@
                             <div class="jobs-controls">
                                 <form action="{{ url_for('main.clear_all_scan_jobs') }}" method="post" class="inline-form">
                                     {{ csrf_form.csrf_token }}
-                                    <button type="submit" class="btn btn-outline-danger btn-sm control-btn" onclick="return confirm('Delete ALL jobs?');">
+                                    <button type="submit" class="btn btn-danger btn-sm control-btn" onclick="return confirm('Delete ALL jobs?');">
                                         <i class="fas fa-trash"></i> <span class="btn-text">Clear All</span>
                                     </button>
                                 </form>
@@ -378,7 +378,7 @@
                         <form action="" method="post">
                             {{ csrf_form.csrf_token }}
                             <input type="hidden" name="submit" value="DeleteOnlyUnmatched">
-                            <button type="submit" class="admin_manage_scanjobs-clearunmatched-btn btn btn-warning" data-toggle="tooltip" title="Remove only folders with 'Unmatched' status, keeping identified items" onclick="return confirm('Are you sure you want to clear all unmatched folders? This cannot be undone.');">Clear Unmatched</button>
+                            <button type="submit" class="admin_manage_scanjobs-clearunmatched-btn btn btn-danger" data-toggle="tooltip" title="Remove only folders with 'Unmatched' status, keeping identified items" onclick="return confirm('Are you sure you want to clear all unmatched folders? This cannot be undone.');">Clear Unmatched</button>
                         </form>
                     </div>
 
@@ -532,7 +532,7 @@
                                         <tr data-id="{{ type.id }}" data-category="allowed">
                                                 <td class="type-value" data-label="Extension">{{ type.value }}</td>
                                                 <td data-label="Actions" class="extension-actions">
-                                                    <button type="button" class="btn btn-sm btn-warning" onclick="editFileType(this)" aria-label="Edit {{ type.value }} extension">
+                                                    <button type="button" class="btn btn-sm btn-secondary" onclick="editFileType(this)" aria-label="Edit {{ type.value }} extension">
                                                     <i class="fas fa-edit"></i>
                                                 </button>
                                                     <button type="button" class="btn btn-sm btn-danger" onclick="deleteFileType('allowed', {{ type.id }})" aria-label="Delete {{ type.value }} extension">
@@ -586,7 +586,7 @@
                             <button class="btn btn-secondary" onclick="refreshQueue()" title="Refresh Queue">
                                 <i class="fas fa-sync me-1"></i> Refresh
                             </button>
-                            <button class="btn btn-warning" onclick="fixHistoricStatus()" id="fix-status-btn" title="Scan all image records and fix download status based on what files exist on disk">
+                            <button class="btn btn-secondary" onclick="fixHistoricStatus()" id="fix-status-btn" title="Scan all image records and fix download status based on what files exist on disk">
                                 <i class="fas fa-wrench me-1"></i> Fix Status
                             </button>
                             <button class="btn btn-danger" onclick="clearQueue('pending')" id="clear-queue-btn" title="Clear pending items from queue">

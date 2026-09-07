@@ -706,22 +706,26 @@ img[loading="lazy"] { background: linear-gradient(100deg, var(--theme-input-bg) 
     appearance: none !important;
     padding-right: 44px !important;
     background-image:
-        linear-gradient(45deg, transparent 50%, #9ab1ff 50%),
-        linear-gradient(135deg, #9ab1ff 50%, transparent 50%) !important;
+        linear-gradient(45deg, transparent 50%, var(--theme-text-secondary) 50%),
+        linear-gradient(135deg, var(--theme-text-secondary) 50%, transparent 50%) !important;
     background-repeat: no-repeat !important;
     background-position: calc(100% - 26px) 50%, calc(100% - 21px) 50% !important;
     background-size: 5px 5px, 5px 5px !important;
 }
 
-:is(.app-page, .modal-content, .content-login) .btn:not(.btn-lg):not(.btn-circle) {
+:is(.app-page, .modal-content, .content-login) .btn:not(.btn-circle) {
     box-sizing: border-box;
-    display: inline-flex !important;
+    display: inline-flex;
     height: var(--app-control-height) !important;
     min-height: var(--app-control-height) !important;
     align-items: center;
     justify-content: center;
-    padding-top: 0 !important;
-    padding-bottom: 0 !important;
+    gap: 8px;
+    margin: 0;
+    padding: 0 14px !important;
+    border-radius: var(--border-radius-sm, 10px) !important;
+    font-size: .875rem !important;
+    font-weight: 650 !important;
     line-height: 1.2;
     text-align: center;
 }
@@ -755,4 +759,40 @@ img[loading="lazy"] { background: linear-gradient(100deg, var(--theme-input-bg) 
 
 @media (max-width: 768px) {
     :root { --app-control-height: 44px; }
+}
+
+/* Visibility and interaction state belong to the shared component, including
+   buttons updated by hidden attributes, Bootstrap utilities, and inline JS. */
+:is(#content, .modal-content, .content-login) [hidden]:not([hidden="until-found"]),
+:is(#content, .modal-content, .content-login) .btn.hidden {
+    display: none !important;
+}
+:is(.app-page, .modal-content, .content-login) .btn:hover {
+    transform: none !important;
+}
+:is(.app-page, .modal-content, .content-login) .btn:disabled,
+:is(.app-page, .modal-content, .content-login) .btn[aria-disabled="true"] {
+    opacity: .55;
+    cursor: not-allowed;
+    transform: none !important;
+    box-shadow: none !important;
+}
+:is(#content, .modal-content, .content-login) :is(.btn, input, select, textarea):focus-visible {
+    outline: 2px solid var(--theme-accent-color, var(--theme-primary)) !important;
+    outline-offset: 2px;
+}
+.favorite-btn i { color: var(--theme-text-secondary) !important; }
+.favorite-btn.favorited i { color: var(--theme-accent-color, var(--theme-primary)) !important; }
+
+.content-login h1 {
+    margin: 0 0 16px;
+    color: var(--theme-text-primary);
+    font-size: 1.5rem;
+    font-weight: 650;
+    text-align: center;
+}
+.content-login .label-large-text {
+    color: var(--theme-text-secondary);
+    font-size: .875rem;
+    font-weight: 600;
 }

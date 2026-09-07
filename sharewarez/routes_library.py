@@ -266,6 +266,11 @@ def get_games(page=1, per_page=20, sort_by='name', sort_order='asc', **filters):
         pagination = db.paginate(query, page=pagination.pages, per_page=per_page, error_out=False)
     games = pagination.items
 
+    return serialize_library_cards(games, current_user_id), pagination.total, pagination.pages, pagination.page
+
+
+def serialize_library_cards(games, current_user_id):
+    """Build the shared card context for Library and Favorites."""
     # Get all user statuses for games in this page (batch query for performance)
     game_uuids = [game.uuid for game in games]
     cover_urls = {}
@@ -331,7 +336,8 @@ def get_games(page=1, per_page=20, sort_by='name', sort_order='asc', **filters):
             'user_status': user_status
         })
 
-    return game_data, pagination.total, pagination.pages, pagination.page
+    return game_data
+
 
 
 @library_bp.get('/library/game-actions/<game_uuid>')

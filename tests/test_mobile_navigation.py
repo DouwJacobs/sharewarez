@@ -33,7 +33,7 @@ def test_mobile_pages_use_one_shared_outer_gutter():
     assert '--mobile-page-gutter: 12px' in css
     assert '.admin_manage_libraries-library-container' in css
     assert '.container-settings-dashboard > .container' in css
-    assert '#content .favorites-page' in css
+    assert '#content .favorites-page {' not in css
     assert 'margin-right: 0 !important' in css
     assert 'margin-left: 0 !important' in css
 
@@ -124,7 +124,8 @@ def test_ui_consistency_feature_uses_shared_theme_and_navigation_patterns():
     assert "'admin2.background_jobs': 'Background jobs'" in base
     assert 'admin-breadcrumb-current' in base
 
-    assert 'discovery-favorites-container{% if not favorites %} is-empty{% endif %}' in favorites
+    assert 'app-page library-browser-page favorites-page' in favorites
+    assert "include 'games/library_cards.html'" in favorites
     assert '.discovery-favorites-container.is-empty .favorites-empty-state' in favorites_css
 
     assert settings.count('app-surface settings-section') >= 3

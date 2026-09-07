@@ -13,7 +13,7 @@
                 </div>
             </div>
             <div class="container-content">
-                <h1 class="visually-hidden">Sign in</h1>
+                <h1 class="auth-title">Sign in</h1>
                 <form action="/login" method="post">
                     {{ form.hidden_tag() }}
                     {% if next_page %}<input type="hidden" name="next" value="{{ next_page }}">{% endif %}
@@ -24,8 +24,8 @@
                     
                     <div class="container-buttons-login">
                         <input type="submit" value="Login" class="btn btn-primary button-login">
-                        <a href="/register" class="btn btn-primary button-login">Sign up</a>
-                        <a href="{{ url_for('login.reset_password_request') }}" class="btn btn-danger button-login">Forgot Password?</a>
+                        <a href="/register" class="btn btn-secondary button-login">Sign up</a>
+                        <a href="{{ url_for('login.reset_password_request') }}" class="btn btn-secondary button-login">Forgot Password?</a>
                     </div>
                 </form>
                 

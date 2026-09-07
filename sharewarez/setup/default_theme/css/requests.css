@@ -18,8 +18,8 @@
 .request-search-wrap {
     width: min(680px, 100%);
     box-sizing: border-box;
-    height: 40px;
-    min-height: 40px;
+    height: var(--app-control-height);
+    min-height: var(--app-control-height);
     margin: 1rem auto 0;
     padding: .35rem .7rem;
     border-radius: var(--border-radius-md, 12px);
@@ -203,7 +203,7 @@
     display: inline-flex;
     align-items: center;
     gap: .55rem;
-    min-height: 40px;
+    min-height: var(--app-control-height);
     padding: .55rem .85rem;
     border: 1px solid var(--theme-border-color, rgba(255,255,255,.12));
     border-radius: 10px;

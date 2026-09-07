@@ -66,7 +66,7 @@ def test_play_status_uses_semantic_classes_in_static_and_dynamic_cards():
 def test_scan_workspace_flattens_active_tab_panel():
     css = (THEME / "css/admin/admin_manage_scanjobs.css").read_text(encoding="utf-8")
 
-    assert ".admin_manage_scanjobs-tab-content > :is(" in css
+    assert "#content .scan-management-page .admin_manage_scanjobs-tab-content :is(" in css
     assert "backdrop-filter: none;" in css
 
 

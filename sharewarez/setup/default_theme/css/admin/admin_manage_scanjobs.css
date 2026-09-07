@@ -1640,17 +1640,17 @@
 
 /* The workspace surface is the page container; active tab panels are content
    sections rather than another card nested inside it. */
-.admin_manage_scanjobs-tab-content > :is(
+#content .scan-management-page .admin_manage_scanjobs-tab-content :is(
     .admin_manage_scanjobs-manual-panel,
     .admin_manage_scanjobs-unmatched-panel,
     .admin_manage_scanjobs-filters-panel,
     .admin_manage_scanjobs-extensions-panel,
     .admin_manage_scanjobs-imagequeue-panel
 ) {
-    padding: 0;
-    border: 0;
+    padding: 0 !important;
+    border: 0 !important;
     border-radius: 0;
-    background: transparent;
-    box-shadow: none;
+    background: transparent !important;
+    box-shadow: none !important;
     backdrop-filter: none;
 }

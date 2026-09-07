@@ -25,7 +25,7 @@ def test_shared_control_contract_is_present_and_synchronized(installed_theme):
     assert "--app-control-height: 42px" in source
     assert "--app-control-padding-inline: 12px" in source
     assert "height: var(--app-control-height) !important" in source
-    assert "display: inline-flex !important" in source
+    assert "display: inline-flex;" in source
     assert "justify-content: center" in source
     assert "text-align: left" in source
     assert "box-shadow: inset 0 1px 2px rgba(0, 0, 0, .24) !important" in source
@@ -67,3 +67,24 @@ def test_download_cache_policy_action_spans_the_form_grid(installed_theme):
     assert ".cache-policy-actions { display:flex;grid-column:1/-1;" in source
     assert ".cache-policy-actions,.cache-policy-actions .btn{width:100%}" in source
     assert ".cache-help" not in source
+
+
+def test_control_states_and_mobile_card_visibility_are_shared():
+    css = THEME_SOURCE.read_text()
+    assert '[hidden]:not([hidden="until-found"])' in css
+    assert '.btn:not(.btn-circle)' in css
+    assert '.btn:not(.btn-lg)' not in css
+    assert '.btn[aria-disabled="true"]' in css
+    assert 'var(--theme-text-secondary) 50%' in css
+    cards = Path('sharewarez/setup/default_theme/css/games/library_browser.css').read_text()
+    assert '@media (min-width: 769px) and (hover: hover) and (pointer: fine)' in cards
+
+
+def test_favorites_uses_library_card_markup_and_interactions():
+    template = Path('sharewarez/templates/games/favorites.html').read_text()
+    assert "include 'games/library_cards.html'" in template
+    assert 'id="gamesContainer"' in template
+    assert 'js/game_status_manager.js' in template
+    assert 'removeFavoriteModal' not in template
+    css = Path('sharewarez/setup/default_theme/css/mobile.css').read_text()
+    assert '#content .favorites-page {' not in css

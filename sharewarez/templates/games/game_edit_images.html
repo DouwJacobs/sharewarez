@@ -18,7 +18,7 @@
 </div>
 
 <main class="app-page image-editor-page">
-    <a class="image-editor-back" href="{{ url_for('games.game_details', game_uuid=game.uuid) }}" aria-label="Back to game details"><i class="fas fa-arrow-left" aria-hidden="true"></i> Game details</a>
+    <a class="btn btn-secondary image-editor-back" href="{{ url_for('games.game_details', game_uuid=game.uuid) }}" aria-label="Back to game details"><i class="fas fa-arrow-left" aria-hidden="true"></i> Game details</a>
     <header class="app-page-header image-editor-header">
         <div>
             <p class="image-editor-eyebrow">Game media</p>
@@ -43,8 +43,8 @@
                     <img src="{{ url_for('static', filename='newstyle/default_cover.jpg') }}" alt="Default cover image">
                 {% endif %}
             </div>
-            <label class="image-file-input" for="cover-image-input"><i class="fas fa-image"></i> Replace cover</label>
-            <input type="file" id="cover-image-input" accept="image/*">
+            <button class="btn btn-secondary image-file-input" type="button" onclick="document.getElementById('cover-image-input').click()"><i class="fas fa-image" aria-hidden="true"></i> Replace cover</button>
+            <input type="file" id="cover-image-input" aria-label="Choose cover image" accept="image/*">
         </section>
 
         <section class="glass-panel image-editor-card image-editor-upload-card">
@@ -86,7 +86,7 @@
                     <img src="{{ url_for('static', filename='library/images/' + image.url) }}?v={{ image.id }}" alt="{{ 'Key art with logo' if image.image_type == 'key_art_logo' else 'Key art without logo' }}">
                     <figcaption><span>{{ 'With logo' if image.image_type == 'key_art_logo' else 'Without logo' }}</span><span class="image-default-badge">Default</span></figcaption>
                     <div class="image-editor-actions">
-                        <button class="btn btn-sm image-default-button" type="button" onclick="setDefaultImage({{ image.id }}, 'key-art')"{% if image.is_default %} disabled{% endif %}><i class="fas fa-star"></i> <span>{{ 'Default' if image.is_default else 'Set default' }}</span></button>
+                        <button class="btn btn-secondary btn-sm image-default-button" type="button" onclick="setDefaultImage({{ image.id }}, 'key-art')"{% if image.is_default %} disabled{% endif %}><i class="fas fa-star"></i> <span>{{ 'Default' if image.is_default else 'Set default' }}</span></button>
                         <button class="image-delete-button image-delete-inline" type="button" onclick="deleteImage({{ image.id }})" aria-label="Delete key art" title="Delete key art"><i class="fas fa-trash"></i></button>
                     </div>
                 </figure>
@@ -109,7 +109,7 @@
                     <img src="{{ url_for('static', filename='library/images/' + image.url) }}?v={{ image.id }}" alt="Game logo {{ image.image_type.rsplit('_', 1)[-1] }}">
                     <figcaption><span>{{ image.image_type.rsplit('_', 1)[-1]|capitalize }}</span><span class="image-default-badge">Default</span></figcaption>
                     <div class="image-editor-actions">
-                        <button class="btn btn-sm image-default-button" type="button" onclick="setDefaultImage({{ image.id }}, 'logo')"{% if image.is_default %} disabled{% endif %}><i class="fas fa-star"></i> <span>{{ 'Default' if image.is_default else 'Set default' }}</span></button>
+                        <button class="btn btn-secondary btn-sm image-default-button" type="button" onclick="setDefaultImage({{ image.id }}, 'logo')"{% if image.is_default %} disabled{% endif %}><i class="fas fa-star"></i> <span>{{ 'Default' if image.is_default else 'Set default' }}</span></button>
                         <button class="image-delete-button image-delete-inline" type="button" onclick="deleteImage({{ image.id }})" aria-label="Delete game logo" title="Delete game logo"><i class="fas fa-trash"></i></button>
                     </div>
                 </figure>

@@ -36,7 +36,7 @@
                         <tr data-id="{{ type.id }}" data-category="allowed">
                             <td class="type-value" data-label="Extension">{{ type.value }}</td>
                             <td data-label="Actions" class="extension-actions">
-                                <button type="button" class="btn btn-sm btn-warning" onclick="editFileType(this)" aria-label="Edit {{ type.value }} extension">
+                                <button type="button" class="btn btn-sm btn-secondary" onclick="editFileType(this)" aria-label="Edit {{ type.value }} extension">
                                     <i class="fas fa-edit"></i>
                                 </button>
                                 <button type="button" class="btn btn-sm btn-danger" onclick="deleteFileType('allowed', {{ type.id }})" aria-label="Delete {{ type.value }} extension">

@@ -1,75 +1,33 @@
 {% extends "base.html" %}
-
 {% block content %}
-
-<link rel="stylesheet" href="{{ 'css/games/favorites.css'|theme_asset }}">
-
-<script src="{{ 'js/library_slideshow.js'|theme_asset }}"></script>
-
+<link rel="stylesheet" href="{{ 'css/games/library_browser.css'|theme_asset }}">
+<link rel="stylesheet" href="{{ 'css/games/game_status.css'|theme_asset }}">
 <script src="{{ 'js/popup_menu.js'|theme_asset }}"></script>
-
+<script src="{{ 'js/library_slideshow.js'|theme_asset }}"></script>
 <script src="{{ 'js/favorites_manager.js'|theme_asset }}"></script>
+<script src="{{ 'js/game_status_manager.js'|theme_asset }}"></script>
 
-
-<main class="app-page favorites-page">
-        <header class="app-page-header discovery-page-header favorites-page-header">
-            <p class="discovery-eyebrow">Your collection</p>
-            <h1 class="discovery-header">My Favorites</h1>
-            <p class="favorites-page-description">The games you have saved for quick access.</p>
-        </header>
-        <div class="app-surface discovery-panel discovery-favorites-container{% if not favorites %} is-empty{% endif %}">
-            {% if favorites %}
-                <div class="discovery-favorites-games game-library-container">
-                    {% for game in favorites %}
-                    <div class="game-card-container">
-                        <div class="game-card" onmouseover="showDetails(this, '{{ game.uuid }}')" onmouseout="hideDetails()" data-name="{{ game.name }}" data-size="{{ game.size }}" data-genres="{{ game.genres|join(', ') }}">
-                            {% with game_uuid=game.uuid, game_url=game.url %}
-                            {% endwith %}
-                            <div class="game-cover-container">
-                                {% if game.cover_url %}
-                                    <a href="{{ url_for('games.game_details', game_uuid=game.uuid) }}">
-                                        <img src="{{ url_for('static', filename='library/images/' ~ game.cover_url) }}" alt="{{ game.name }}" class="game-cover">
-                                    </a>
-                                {% else %}
-                                    <a href="{{ url_for('games.game_details', game_uuid=game.uuid) }}">
-                                        <img src="{{ url_for('static', filename='newstyle/default_cover.jpg') }}" alt="Default Cover Image" class="game-cover">
-                                    </a>
-                                {% endif %}
-                                <div class="favorite-count">
-                                    <button class="favorite-btn" data-game-uuid="{{ game.uuid }}" data-is-favorite="{{ game.is_favorite|lower }}" data-game-name="{{ game.name }}" aria-label="Remove {{ game.name }} from favorites">
-                                        <i class="fas fa-heart"></i>
-                                    </button>
-                                    <span class="favorite-number">{{ game.favorite_count }}</span>
-                                </div>
-                            </div>
-                            <div id="details-{{ game.uuid }}" class="popup-game-details hidden">
-                                <!-- Details and screenshots will be injected here by JavaScript -->
-                            </div>
-                        </div>
-                    </div>
-                    {% endfor %}
-                </div>
-            {% else %}
-                <div class="favorites-empty-state">
-                    <i class="fas fa-heart" aria-hidden="true"></i>
-                    <h2>No favorites yet</h2>
-                    <p>Save games from your library to keep them close at hand.</p>
-                    <a href="{{ url_for('library.library') }}" class="btn btn-primary">Browse your library</a>
-                </div>
-            {% endif %}
-        </div>
-    </main>
-
-    <!-- Remove Favorite Confirmation Modal -->
-    <div id="removeFavoriteModal" class="modal remove-favorite-modal" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="removeFavoriteModalTitle" aria-hidden="true" data-focus-managed-dialog>
-        <div class="modal-content">
-            <button type="button" class="close-button" aria-label="Close" data-dialog-close>&times;</button>
-            <h2 id="removeFavoriteModalTitle">Remove from Favorites?</h2>
-            <p>Are you sure you want to remove "<span id="gameNameToRemove"></span>" from your favorites?</p>
-            <div class="modal-buttons">
-                <button type="button" class="confirm-remove btn btn-danger">Remove</button>
-                <button type="button" class="cancel-remove btn btn-secondary">Cancel</button>
+<main class="app-page library-browser-page favorites-page">
+    <div class="app-surface glass-panel library-browser-panel">
+        <header class="app-page-header library-browser-header">
+            <div>
+                <p class="library-browser-eyebrow">Your collection</p>
+                <h1>My Favorites</h1>
+                <p>The games you have saved for quick access.</p>
             </div>
+        </header>
+        {% if favorites %}
+        <div class="game-library-container library-view-grid" id="gamesContainer">
+            {% with games=favorites %}{% include 'games/library_cards.html' %}{% endwith %}
         </div>
+        {% else %}
+        <div class="app-empty-state favorites-empty-state">
+            <i class="fas fa-heart" aria-hidden="true"></i>
+            <h2>No favorites yet</h2>
+            <p>Save games from your library to keep them close at hand.</p>
+            <a href="{{ url_for('library.library') }}" class="btn btn-primary">Browse your library</a>
+        </div>
+        {% endif %}
     </div>
+</main>
 {% endblock %}

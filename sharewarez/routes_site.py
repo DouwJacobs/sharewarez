@@ -217,18 +217,9 @@ def admin_dashboard():
 @site_bp.route('/favorites')
 @login_required
 def favorites():
-    favorites = current_user.favorites
-    game_data = []
-    for game in favorites:
-        cover_image = db.session.execute(select(Image).filter_by(game_uuid=game.uuid, image_type='cover')).scalars().first()
-        cover_url = cover_image.url if cover_image else 'newstyle/default_cover.jpg'
-        genres = [genre.name for genre in game.genres]
-        game_size_formatted = format_size(game.size)
-        favorite_count = len(game.favorited_by)
-        game_data.append({'uuid': game.uuid, 'name': game.name, 'cover_url': cover_url, 
-                         'size': game_size_formatted, 'genres': genres, 
-                         'favorite_count': favorite_count, 'is_favorite': True})
-    
+    from sharewarez.routes_library import serialize_library_cards
+
+    game_data = serialize_library_cards(current_user.favorites, current_user.id)
     return render_template('games/favorites.html', favorites=game_data)
 
 @site_bp.route('/favicon.ico')
@@ -342,8 +333,9 @@ def get_random_trailer():
             except (ValueError, TypeError):
                 pass  # Invalid date format, skip filter
 
-        # Execute query with distinct to avoid duplicates from joins
-        games_with_videos = db.session.execute(query.distinct()).scalars().all()
+        # Deduplicate ORM identities: Game includes JSON metadata, which PostgreSQL
+        # cannot compare for a whole-row DISTINCT.
+        games_with_videos = db.session.execute(query).scalars().unique().all()
 
         if not games_with_videos:
             return jsonify({

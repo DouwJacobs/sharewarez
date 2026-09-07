@@ -25,3 +25,12 @@
   .attract-settings-page .section-header { align-items: flex-start; flex-direction: column; }
   .attract-settings-page .section-header small { margin-left: 0; }
 }
+
+/* Field groups are divided content inside the one settings surface. */
+#content .attract-settings-page .settings-section {
+    padding: 18px 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+}

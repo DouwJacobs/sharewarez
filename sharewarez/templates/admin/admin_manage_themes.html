@@ -15,12 +15,12 @@
         <a href="{{ url_for('admin2.theme_builder') }}" class="btn btn-primary">
             <i class="fas fa-wand-magic-sparkles" aria-hidden="true"></i> Build a theme
         </a>
-        <a href="{{ url_for('admin2.download_default_theme') }}" class="btn btn-primary">
+        <a href="{{ url_for('admin2.download_default_theme') }}" class="btn btn-secondary">
             <i class="fas fa-download" aria-hidden="true"></i> Download reference
         </a>
     {% endcall %}
 
-    <section class="admin-surface themes-operations" aria-labelledby="theme-operations-title">
+    <section class="app-surface admin-surface themes-operations" aria-labelledby="theme-operations-title">
         <div class="admin-section-header">
             <div>
                 <h2 id="theme-operations-title">Theme operations</h2>
@@ -47,12 +47,12 @@
                     <i class="fas fa-arrow-rotate-left" aria-hidden="true"></i>
                     <div><h3>Restore bundled themes</h3><p>Replace modified built-in theme files with the shipped versions.</p></div>
                 </div>
-                <button type="submit" class="btn btn-warning"><i class="fas fa-arrow-rotate-left" aria-hidden="true"></i> Restore themes</button>
+                <button type="submit" class="btn btn-danger"><i class="fas fa-arrow-rotate-left" aria-hidden="true"></i> Restore themes</button>
             </form>
         </div>
     </section>
 
-    <section class="admin-surface installed-themes-section" aria-labelledby="installed-themes-title">
+    <section class="app-surface admin-surface installed-themes-section" aria-labelledby="installed-themes-title">
         <div class="admin-section-header">
             <div>
                 <h2 id="installed-themes-title">Installed themes</h2>

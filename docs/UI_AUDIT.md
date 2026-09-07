@@ -468,3 +468,75 @@ shared outer surface, with one primary Save action. Mobile ordinary actions are
 44 px. Library menu replacement restores the old card controls, Escape returns
 focus, and saved layouts retain the selected view in the URL. The remediation
 ledger records security probes, performance results and verification limits.
+
+
+## Responsive consistency inspection — 6–7 September 2026
+
+The inspection covered 49 authenticated URL variants at 1440 × 1000 and
+390 × 844, plus sign-in, registration, and password-reset request screens.
+The normal WSL development server on port 5006 was offline. Browser verification
+used an isolated PostgreSQL-backed preview on port 5008 with synthetic records;
+no production library, account, or configuration was changed.
+
+Changes and current contracts:
+
+- Favorites and Library now share `games/library_cards.html`, the Library grid
+  stylesheet, and `serialize_library_cards()`. Cover fallback, escaped title,
+  action menu, play state, and favorite controls come from the same sources.
+  The obsolete mobile Favorites page-card override was removed. Favorites uses
+  the same single panel/header arrangement as Library, without a separate frame
+  around the game grid.
+- Favorite toggles behave identically on Library, Favorites, and Game Details.
+  They use the existing notification system, expose pressed/busy state, prevent
+  duplicate pending requests, and synchronize duplicate controls. Removed
+  favorites stay on the current page until navigation/reload so they can be
+  toggled back immediately, just as on Library. Reload reflects persisted state.
+- Ordinary buttons share height (42 px desktop, 44 px mobile), radius, type size,
+  inline padding, centered content, and gap. They no longer scale or move on
+  hover. Hidden attributes, Bootstrap hiding, inline JavaScript visibility, and
+  disabled states remain authoritative. Keyboard focus has a themed outline.
+- Request search shells now follow ordinary control height while their inner
+  inputs remain borderless. Select chevrons use theme text tokens.
+- Edit/navigation actions use secondary styling; deletion and destructive restore
+  actions use danger styling. Authentication navigation is secondary, including
+  password recovery. Long Attract Mode forms retain Save at both ends, with the
+  same label and size. Authentication headings and labels are consistent.
+- Theme operations and installed-theme groups, the nested Scan Manager tab
+  panels, Discord connection form, Attract Mode field groups, and the mobile
+  Newsletter shell no longer add redundant elevated panels.
+- Narrow viewports expose card controls even when the device has a mouse. Image
+  replacement is a keyboard-operable ordinary button with a labelled file input.
+- The manual identification page has a specific document title. The email
+  templates description no longer hard-codes an incorrect template count.
+- The trailer inspection exposed a PostgreSQL whole-row DISTINCT failure on JSON
+  game metadata. ORM identity deduplication now preserves genre/theme join
+  behavior without comparing JSON columns; a real PostgreSQL regression covers it.
+
+Coverage: profile/view/edit/password/preferences, invitations, Discover, Library,
+Favorites, activity, requests, issues, downloads, notifications, trailers, help,
+library list/add/edit, game details/metadata/images/manual identification, and
+administrator overview, scanning, collections/new, discovery ordering, requests,
+issues, delivery, users, invitations, whitelist, cache, jobs, logs, server status,
+statistics, settings/notification rules, integrations, branding, themes/builder,
+attract mode, newsletter, and email templates. Scan Manager's six categories and
+all three integration categories were also exercised. Newsletter and Server
+Status were enabled only in the disposable fixture to inspect their real routes.
+
+The final 98 authenticated viewport checks found no document overflow or visible
+hidden controls. Ordinary button heights passed after waiting for the email
+editor stylesheet to settle (an initial pre-load measurement was transient).
+Screenshots were inspected for representative member/admin pages and all changed
+page families. Favorites menu open/Escape/focus restoration and reversible favorite
+toggling were exercised. Default and Ember themes were inspected; the fixture's
+default theme was restored and the temporary viewport reset.
+
+Limits: populated production-scale grids, real external integration calls,
+state-changing admin operations, initial setup, token-dependent authentication
+completion pages, and data-dependent request/issue/collection detail variants
+were not exercised end to end. No light theme was available for a visual pass.
+This is a broad responsive/component audit, not a claim that every possible
+application state or contrast combination has been tested.
+
+Verification: 87 focused Python UI/accessibility/mobile/Library/favorite route
+regressions passed; six JavaScript favorite success/failure/concurrent-control cases;
+Ruff and `git diff --check`. Canonical and installed changed theme files match.

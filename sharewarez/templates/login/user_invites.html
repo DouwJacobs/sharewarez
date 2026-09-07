@@ -71,10 +71,10 @@
                         {% endif %}
                     </div>
                     <div class="invite-card-actions">
-                        <button type="button" class="btn btn-outline-secondary btn-sm" {% if invite.used %}disabled{% endif %} onclick="copyToClipboard('{{ site_url }}/register?token={{ invite.token }}', this)">
+                        <button type="button" class="btn btn-secondary btn-sm" {% if invite.used %}disabled{% endif %} onclick="copyToClipboard('{{ site_url }}/register?token={{ invite.token }}', this)">
                             <i class="fas fa-copy"></i> Copy link
                         </button>
-                        <button type="button" class="btn btn-outline-danger btn-sm" onclick="deleteInvite('{{ invite.token }}')">
+                        <button type="button" class="btn btn-danger btn-sm" onclick="deleteInvite('{{ invite.token }}')">
                             <i class="fas fa-trash"></i><span class="visually-hidden">Delete invitation</span>
                         </button>
                     </div>

@@ -150,7 +150,6 @@
     .users-management-panel,
     .extensions-management-page,
     .image-queue-page,
-    .newsletter-page,
     .settings-panel-page,
     .restricted-area-page {
         background: var(--theme-card-background, var(--bg-dark-secondary)) !important;
@@ -166,7 +165,6 @@
     #content > main > .container-settings,
     .discovery-panel,
     .users-management-panel,
-    .newsletter-page,
     .settings-panel-page,
     .restricted-area-page {
         width: 100% !important;
@@ -911,19 +909,5 @@
         margin-left: 0 !important;
     }
 
-    /* Favorites is itself the page card; its route stylesheet previously
-       flattened it after mobile.css had loaded. */
-    #content .favorites-page {
-        padding: 22px 16px 30px !important;
-        border: 1px solid var(--theme-border-color, var(--border-light)) !important;
-        border-radius: 14px !important;
-        background: var(--theme-card-background, var(--bg-dark-secondary)) !important;
-        box-shadow: var(--shadow-card, 0 14px 34px rgba(0, 0, 0, 0.28)) !important;
-    }
 
-    #content .favorites-page-header,
-    #content .discovery-favorites-container {
-        padding-right: 0 !important;
-        padding-left: 0 !important;
-    }
 }

@@ -787,7 +787,7 @@
 .library-view-list .game-card .game-cover { width: 72px; height: 96px; aspect-ratio: 3 / 4; border-radius: 8px; }
 .library-view-list .library-game-title { width: 100%; margin: 0; font-size: .95rem; text-align: left; }
 .library-view-list .library-game-metadata { display: block; }
-@media (hover: hover) and (pointer: fine) {
+@media (min-width: 769px) and (hover: hover) and (pointer: fine) {
     .game-library-container .game-card :is(.button-glass-hamburger, .favorite-btn, .game-status-btn) { opacity: 0; transition: opacity .16s ease; }
     .game-library-container .game-card:hover :is(.button-glass-hamburger, .favorite-btn, .game-status-btn),
     .game-library-container .game-card:focus-within :is(.button-glass-hamburger, .favorite-btn, .game-status-btn) { opacity: 1; }
