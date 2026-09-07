@@ -3,6 +3,23 @@ document.addEventListener('DOMContentLoaded', function() {
     let currentLibrariesSubmenu = null;
     var csrfToken = CSRFUtils.getToken();
 
+    function getMenuContainer(menu) {
+        return menu?.closest('.game-card') || menu?.closest('.game-card-coverimage');
+    }
+
+    function closeMenu(menu, options = {}) {
+        if (!menu) return;
+        const trigger = document.getElementById(menu.id.replace('popupMenu-', 'menuButton-'));
+        const container = getMenuContainer(menu);
+        menu.style.display = 'none';
+        trigger?.setAttribute('aria-expanded', 'false');
+        container?.classList.remove('menu-open');
+        container?.closest('.game-card-container')?.classList.remove('menu-open');
+        showCardButtons(container);
+        if (options.restoreFocus) trigger?.focus();
+        if (options.remove) menu.remove();
+    }
+
     // Adjusted for dynamic content using event delegation
     document.body.addEventListener('click', function(event) {
         if (event.target.classList.contains('refresh-game-metadata-updates')) {
@@ -129,45 +146,36 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    // Show success message
                     button.textContent = 'Sent!';
-                    button.style.backgroundColor = '#28a745';
+                    $.notify(data.message || 'Discord notification sent.', 'success');
                     console.log('Discord notification sent successfully:', data.message);
                     
                     // Reset button after 2 seconds
                     setTimeout(() => {
                         button.textContent = originalText;
                         button.disabled = false;
-                        button.style.backgroundColor = '';
                     }, 2000);
                 } else {
-                    // Show error message
                     button.textContent = 'Failed';
-                    button.style.backgroundColor = '#dc3545';
                     console.error('Failed to send Discord notification:', data.message);
-                    
-                    // Show user-friendly error message
-                    alert('Failed to send Discord notification: ' + data.message);
+                    $.notify(data.message || 'Failed to send Discord notification.', 'error');
                     
                     // Reset button after 2 seconds
                     setTimeout(() => {
                         button.textContent = originalText;
                         button.disabled = false;
-                        button.style.backgroundColor = '';
                     }, 2000);
                 }
             })
             .catch(error => {
                 console.error('Error sending Discord notification:', error);
                 button.textContent = 'Error';
-                button.style.backgroundColor = '#dc3545';
-                alert('An error occurred while sending the Discord notification.');
+                $.notify('An error occurred while sending the Discord notification.', 'error');
                 
                 // Reset button after 2 seconds
                 setTimeout(() => {
                     button.textContent = originalText;
                     button.disabled = false;
-                    button.style.backgroundColor = '';
                 }, 2000);
             });
         }
@@ -190,14 +198,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (!response.ok) throw new Error('Game actions could not be loaded.');
                     const html = await response.text();
                     if (sequence !== menuRequestSequence || !clickedElement.isConnected) return;
-                    document.querySelectorAll('#gamesContainer .popup-menu').forEach(menu => {
-                        const card = menu.closest('.game-card');
-                        card?.classList.remove('menu-open');
-                        card?.closest('.game-card-container')?.classList.remove('menu-open');
-                        document.getElementById(menu.id.replace('popupMenu-', 'menuButton-'))?.setAttribute('aria-expanded', 'false');
-                        showCardButtons(card);
-                        menu.remove();
-                    });
+                    document.querySelectorAll('#gamesContainer .popup-menu').forEach(menu => closeMenu(menu, { remove: true }));
                     clickedElement.closest('.game-card').insertAdjacentHTML('beforeend', html);
                     popupMenu = document.getElementById('popupMenu-' + uuid);
                 } catch (error) {
@@ -217,16 +218,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             document.querySelectorAll('.popup-menu').forEach(function(menu) {
                 if (menu.id !== 'popupMenu-' + uuid) {
-                    menu.style.display = 'none';
-                    document.getElementById(menu.id.replace('popupMenu-', 'menuButton-'))?.setAttribute('aria-expanded', 'false');
-                    // Show favorite button and game status elements for other cards
-                    var otherCard = menu.closest('.game-card') || menu.closest('.game-card-coverimage');
-                    if (otherCard) {
-                        otherCard.classList.remove('menu-open');
-                        var otherContainer = otherCard.closest('.game-card-container');
-                        if (otherContainer) otherContainer.classList.remove('menu-open');
-                        showCardButtons(otherCard);
-                    }
+                    closeMenu(menu);
                 }
             });
 
@@ -248,7 +240,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 hideCardButtons(parentContainer);
                 popupMenu.querySelector('button:not([disabled]), a')?.focus();
             } else {
-                showCardButtons(parentContainer);
+                closeMenu(popupMenu);
             }
         }
     });
@@ -257,14 +249,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const menu = event.target.closest('.popup-menu');
         if (!menu) return;
         if (event.key === 'Escape') {
-            menu.style.display = 'none';
-            const trigger = document.getElementById(menu.id.replace('popupMenu-', 'menuButton-'));
-            trigger?.setAttribute('aria-expanded', 'false');
-            trigger?.focus();
-            const card = menu.closest('.game-card');
-            card?.classList.remove('menu-open');
-            card?.closest('.game-card-container')?.classList.remove('menu-open');
-            showCardButtons(card);
+            event.preventDefault();
+            closeMenu(menu, { restoreFocus: true });
         }
     });
 
@@ -332,12 +318,12 @@ document.addEventListener('DOMContentLoaded', function() {
                                         if (data.success) {
                                             window.location.reload();
                                         } else {
-                                            alert('Error: ' + data.message);
+                                            $.notify(data.message || 'Could not move the game.', 'error');
                                         }
                                     })
                                     .catch(error => {
                                         console.error('Error moving game:', error);
-                                        alert('An error occurred while moving the game.');
+                                        $.notify('An error occurred while moving the game.', 'error');
                                     });
                                 }
                             });
@@ -396,17 +382,7 @@ document.addEventListener('DOMContentLoaded', function() {
     window.addEventListener('click', function() {
         ++menuRequestSequence;
         document.querySelectorAll('.popup-menu').forEach(function(menu) {
-            menu.style.display = 'none';
-            document.getElementById(menu.id.replace('popupMenu-', 'menuButton-'))?.setAttribute('aria-expanded', 'false');
-            // Show favorite button and game status elements when menu closes
-            // Handle both library page (.game-card) and game details page (.game-card-coverimage)
-            var gameCard = menu.closest('.game-card') || menu.closest('.game-card-coverimage');
-            if (gameCard) {
-                gameCard.classList.remove('menu-open');
-                var cardContainer = gameCard.closest('.game-card-container');
-                if (cardContainer) cardContainer.classList.remove('menu-open');
-                showCardButtons(gameCard);
-            }
+            closeMenu(menu);
         });
 
         // Also close any open libraries submenu

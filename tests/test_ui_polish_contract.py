@@ -63,6 +63,59 @@ def test_play_status_uses_semantic_classes_in_static_and_dynamic_cards():
     assert "color: var(--status-success-color)" in status_css
 
 
+def test_game_action_menu_rows_and_close_behavior_are_shared():
+    base = (THEME / "css/base.css").read_text(encoding="utf-8")
+    template = Path("sharewarez/templates/games/popup_menu.html").read_text(encoding="utf-8")
+    javascript = (THEME / "js/popup_menu.js").read_text(encoding="utf-8")
+
+    assert ".popup-menu .menu-button" in base
+    assert "min-height: 44px" in base
+    assert "menu-button menu-button-danger delete-game" in template
+    assert 'class="menu-button">Open IGDB Page</a>' in template
+    assert "function closeMenu(menu, options = {})" in javascript
+    assert "menu?.closest('.game-card') || menu?.closest('.game-card-coverimage')" in javascript
+    assert "closeMenu(menu, { restoreFocus: true })" in javascript
+    assert "style.backgroundColor" not in javascript
+
+
+def test_game_details_mobile_favorite_uses_shared_state_contract():
+    template = Path("sharewarez/templates/games/game_details.html").read_text(encoding="utf-8")
+    manager = (THEME / "js/favorites_manager.js").read_text(encoding="utf-8")
+
+    assert 'class="favorite-btn favorite-btn-mobile"' in template
+    assert "favorite-btn-cover')?.click()" not in template
+    assert "const setPendingAppearance" in manager
+    assert "label.textContent = isFavorite ? 'Favorited' : 'Favorite'" in manager
+
+
+def test_narrow_library_views_reserve_non_overlapping_action_space():
+    css = (THEME / "css/games/library_browser.css").read_text(encoding="utf-8")
+
+    assert "grid-template-columns: 104px minmax(0, 1fr)" in css
+    assert "@media (max-width: 379px)" in css
+    assert "grid-template-columns: repeat(2, minmax(0, 1fr)) !important" in css
+
+
+def test_game_editor_uses_task_sections_and_safe_action_contract():
+    template = Path("sharewarez/templates/admin/admin_game_identify.html").read_text(encoding="utf-8")
+    css = (THEME / "css/admin/admin_game_identify.css").read_text(encoding="utf-8")
+    javascript = (THEME / "js/admin_game_identify.js").read_text(encoding="utf-8")
+    route = Path("sharewarez/routes_games_ext/edit.py").read_text(encoding="utf-8")
+
+    for heading in ("Overview", "Package &amp; installation", "Classification", "Links &amp; media"):
+        assert heading in template
+    assert 'class="game-edit-identification"' in template
+    assert template.count("{{ actions(") == 2
+    assert "gameDetails" not in template
+    assert ".game-identify-page .form-group > label" in css
+    assert "\nlabel {" not in css
+    assert "const submitButtons = Array.from" in javascript
+    assert "event.preventDefault();" in javascript
+    assert "function updateSelectionCounts()" in javascript
+    assert "def render_editor():" in route
+    assert "return redirect(url_for('games.game_details', game_uuid=game_uuid))" in route
+
+
 def test_scan_workspace_flattens_active_tab_panel():
     css = (THEME / "css/admin/admin_manage_scanjobs.css").read_text(encoding="utf-8")
 

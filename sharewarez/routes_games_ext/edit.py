@@ -42,6 +42,16 @@ def game_edit(game_uuid):
     platform_id = PLATFORM_IDS.get(game.library.platform.value.upper(), None)
     platform_name = game.library.platform.value
     library_name = game.library.name
+
+    def render_editor():
+        """Render every edit outcome with the same location and conflict context."""
+        return render_template(
+            'admin/admin_game_identify.html', form=form, game_uuid=game_uuid,
+            platform_id=platform_id, platform_name=platform_name,
+            library_name=library_name, action="edit",
+            metadata_conflicts=metadata_conflicts(game),
+        )
+
     current_app.logger.debug(f"game_edit1 Platform ID: {platform_id}, Platform Name: {platform_name} Library Name: {library_name}")
     if form.validate_on_submit():
         if is_scan_job_running():
@@ -49,21 +59,21 @@ def game_edit(game_uuid):
             current_app.logger.warning(f"Attempt to edit a game while a scan job is running by user: {current_user.name}")
             db.session.rollback()
             # Re-render the template with the current form data
-            return render_template('admin/admin_game_identify.html', form=form, game_uuid=game_uuid, action="edit")
+            return render_editor()
 
         # Validate full_disk_path security
         allowed_bases = get_allowed_base_directories(current_app)
         if not allowed_bases:
             flash('Service configuration error: No allowed base directories configured.', 'error')
             db.session.rollback()
-            return render_template('admin/admin_game_identify.html', form=form, game_uuid=game_uuid, action="edit")
+            return render_editor()
 
         is_safe, error_message = is_safe_path(form.full_disk_path.data, allowed_bases)
         if not is_safe:
             current_app.logger.error(f"Security error: Game path validation failed for {sanitize_path_for_logging(form.full_disk_path.data)}: {error_message}")
             flash(f"Access denied: {error_message}", 'error')
             db.session.rollback()
-            return render_template('admin/admin_game_identify.html', form=form, game_uuid=game_uuid, action="edit")
+            return render_editor()
 
         # Check if any other game has the same igdb_id and is not the current game (atomic check)
         try:
@@ -77,12 +87,12 @@ def game_edit(game_uuid):
                 if existing_game_with_igdb_id is not None:
                     flash(f'The IGDB ID {form.igdb_id.data} is already used by another game.', 'error')
                     db.session.rollback()
-                    return render_template('admin/admin_game_identify.html', form=form, library_name=library_name, game_uuid=game_uuid, action="edit")
+                    return render_editor()
         except SQLAlchemyError as e:
             current_app.logger.error(f"Database error during IGDB ID validation: {e}")
             flash('Database error during validation. Please try again.', 'error')
             db.session.rollback()
-            return render_template('admin/admin_game_identify.html', form=form, library_name=library_name, game_uuid=game_uuid, action="edit")
+            return render_editor()
         
         previous_igdb_id = game.igdb_id
         igdb_id_changed = previous_igdb_id != form.igdb_id.data
@@ -137,16 +147,16 @@ def game_edit(game_uuid):
                 if parsed.scheme not in ['http', 'https']:
                     flash('URL must use http or https protocol', 'error')
                     db.session.rollback()
-                    return render_template('admin/admin_game_identify.html', form=form, game_uuid=game_uuid, action="edit")
+                    return render_editor()
                 if not parsed.netloc:
                     flash('Invalid URL format', 'error')
                     db.session.rollback()
-                    return render_template('admin/admin_game_identify.html', form=form, game_uuid=game_uuid, action="edit")
+                    return render_editor()
             except Exception as e:
                 current_app.logger.warning(f"URL validation error: {e}")
                 flash('Invalid URL format', 'error')
                 db.session.rollback()
-                return render_template('admin/admin_game_identify.html', form=form, game_uuid=game_uuid, action="edit")
+                return render_editor()
         game.url = url
         
         game.full_disk_path = form.full_disk_path.data
@@ -166,12 +176,12 @@ def game_edit(game_uuid):
                     current_app.logger.warning(f"Invalid status attempted: {status_str}")
                     flash(f'Invalid status: {status_str}', 'error')
                     db.session.rollback()
-                    return render_template('admin/admin_game_identify.html', form=form, game_uuid=game_uuid, action="edit")
+                    return render_editor()
         except (ValueError, AttributeError, KeyError) as e:
             current_app.logger.error(f"Status validation error: {e}")
             flash('Invalid status format', 'error')
             db.session.rollback()
-            return render_template('admin/admin_game_identify.html', form=form, game_uuid=game_uuid, action="edit")
+            return render_editor()
 
         # Validate and set category with proper error handling
         try:
@@ -186,12 +196,12 @@ def game_edit(game_uuid):
                     current_app.logger.warning(f"Invalid category attempted: {category_str}")
                     flash(f'Invalid category: {category_str}', 'error')
                     db.session.rollback()
-                    return render_template('admin/admin_game_identify.html', form=form, game_uuid=game_uuid, action="edit")
+                    return render_editor()
         except (ValueError, AttributeError, KeyError) as e:
             current_app.logger.error(f"Category validation error: {e}")
             flash('Invalid category format', 'error')
             db.session.rollback()
-            return render_template('admin/admin_game_identify.html', form=form, game_uuid=game_uuid, action="edit")
+            return render_editor()
         
         # Handling Developer with validation
         developer_name = form.developer.data
@@ -201,11 +211,11 @@ def game_edit(game_uuid):
             if len(developer_name) > 255:
                 flash('Developer name too long (max 255 characters)', 'error')
                 db.session.rollback()
-                return render_template('admin/admin_game_identify.html', form=form, game_uuid=game_uuid, action="edit")
+                return render_editor()
             if not developer_name:
                 flash('Developer name cannot be empty', 'error')
                 db.session.rollback()
-                return render_template('admin/admin_game_identify.html', form=form, game_uuid=game_uuid, action="edit")
+                return render_editor()
             
             developer = db.session.execute(select(Developer).filter_by(name=developer_name)).scalars().first()
             if not developer:
@@ -217,7 +227,7 @@ def game_edit(game_uuid):
                     current_app.logger.error(f"Error creating developer: {e}")
                     flash('Error creating developer', 'error')
                     db.session.rollback()
-                    return render_template('admin/admin_game_identify.html', form=form, game_uuid=game_uuid, action="edit")
+                    return render_editor()
             game.developer = developer
 
         # Handling Publisher with validation
@@ -228,11 +238,11 @@ def game_edit(game_uuid):
             if len(publisher_name) > 255:
                 flash('Publisher name too long (max 255 characters)', 'error')
                 db.session.rollback()
-                return render_template('admin/admin_game_identify.html', form=form, game_uuid=game_uuid, action="edit")
+                return render_editor()
             if not publisher_name:
                 flash('Publisher name cannot be empty', 'error')
                 db.session.rollback()
-                return render_template('admin/admin_game_identify.html', form=form, game_uuid=game_uuid, action="edit")
+                return render_editor()
             
             publisher = db.session.execute(select(Publisher).filter_by(name=publisher_name)).scalars().first()
             if not publisher:
@@ -244,7 +254,7 @@ def game_edit(game_uuid):
                     current_app.logger.error(f"Error creating publisher: {e}")
                     flash('Error creating publisher', 'error')
                     db.session.rollback()
-                    return render_template('admin/admin_game_identify.html', form=form, game_uuid=game_uuid, action="edit")
+                    return render_editor()
             game.publisher = publisher
 
         # Update many-to-many relationships
@@ -259,7 +269,7 @@ def game_edit(game_uuid):
         except ValueError as e:
             flash(str(e), 'error')
             db.session.rollback()
-            return render_template('admin/admin_game_identify.html', form=form, game_uuid=game_uuid, action="edit")
+            return render_editor()
         
         # Updating size with error handling
         try:
@@ -269,7 +279,7 @@ def game_edit(game_uuid):
                 current_app.logger.error(f"Path validation failed during file operations: {error_message}")
                 flash(f"Access denied: {error_message}", 'error')
                 db.session.rollback()
-                return render_template('admin/admin_game_identify.html', form=form, game_uuid=game_uuid, action="edit")
+                return render_editor()
             
             current_app.logger.info(f"Calculating folder size for {sanitize_path_for_logging(game.full_disk_path)}")
             new_folder_size_bytes = get_folder_size_in_bytes_updates(game.full_disk_path)
@@ -283,12 +293,12 @@ def game_edit(game_uuid):
             current_app.logger.error(f"File operation error for path {sanitize_path_for_logging(game.full_disk_path)}: {e}")
             flash('Error accessing game files. Please check permissions.', 'error')
             db.session.rollback()
-            return render_template('admin/admin_game_identify.html', form=form, game_uuid=game_uuid, action="edit")
+            return render_editor()
         except Exception as e:
             current_app.logger.error(f"Unexpected error during file operations: {e}")
             flash('Error processing game files', 'error')
             db.session.rollback()
-            return render_template('admin/admin_game_identify.html', form=form, game_uuid=game_uuid, action="edit")
+            return render_editor()
         game.date_identified = datetime.now(timezone.utc)
         mark_manual_changes(game, metadata_before)
                
@@ -416,29 +426,24 @@ def game_edit(game_uuid):
                     game_uuid,
                 )
 
-            return redirect(url_for('library.library'))
+            return redirect(url_for('games.game_details', game_uuid=game_uuid))
         except IntegrityError as e:
             db.session.rollback()
             current_app.logger.error(f"Database integrity error: {e}")
             flash('Database integrity error. Please check for duplicate values.', 'error')
-            return render_template('admin/admin_game_identify.html', form=form, game_uuid=game_uuid, action="edit")
+            return render_editor()
         except SQLAlchemyError as e:
             db.session.rollback()
             current_app.logger.error(f"Database error during commit: {e}")
             flash('An error occurred while updating the game. Please try again.', 'error')
-            return render_template('admin/admin_game_identify.html', form=form, game_uuid=game_uuid, action="edit")
+            return render_editor()
 
     if request.method == 'POST':
         current_app.logger.warning(f"/game_edit/: Form validation failed: {form.errors}")
 
     # For GET or if form fails
     current_app.logger.debug(f"game_edit2 Platform ID: {platform_id}, Platform Name: {platform_name}, Library Name: {library_name}")
-    return render_template(
-        'admin/admin_game_identify.html', form=form, game_uuid=game_uuid,
-        platform_id=platform_id, platform_name=platform_name,
-        library_name=library_name, action="edit",
-        metadata_conflicts=metadata_conflicts(game),
-    )
+    return render_editor()
 
 
 @games_bp.route('/game_edit/<game_uuid>/metadata_conflict/<field>', methods=['POST'])

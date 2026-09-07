@@ -541,9 +541,9 @@ class TestGameEditSuccessScenarios:
                     with patch('sharewarez.routes_games_ext.edit.read_first_nfo_content', return_value='Updated NFO'):
                         response = client.post(f'/game_edit/{test_game.uuid}', data=form_data)
         
-        # Should redirect to library on success
+        # Editing returns to the game so the administrator can review the result.
         if response.status_code == 302:
-            assert '/library' in response.location
+            assert f'/game_details/{test_game.uuid}' in response.location
         
         # Verify game was updated in database
         updated_game = db.session.execute(select(Game).filter_by(uuid=test_game.uuid)).scalars().first()

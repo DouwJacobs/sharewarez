@@ -51,13 +51,23 @@ document.addEventListener('DOMContentLoaded', () => {
         button.classList.toggle('favorited', isFavorite);
         button.setAttribute('aria-pressed', String(isFavorite));
         button.setAttribute('aria-label', `${isFavorite ? 'Remove' : 'Add'} ${gameName} ${isFavorite ? 'from' : 'to'} favorites`);
+        const label = button.querySelector?.('.favorite-btn-label');
+        if (label) label.textContent = isFavorite ? 'Favorited' : 'Favorite';
+    };
+
+    const setPendingAppearance = (gameUuid, isPending) => {
+        document.querySelectorAll('.favorite-btn').forEach(peer => {
+            if (peer.dataset.gameUuid !== gameUuid) return;
+            peer.classList.toggle('processing', isPending);
+            peer.disabled = isPending;
+            if (isPending) peer.setAttribute('aria-busy', 'true');
+            else peer.removeAttribute('aria-busy');
+        });
     };
 
     const toggleFavorite = async (button, gameUuid) => {
         pending.add(gameUuid);
-        button.classList.add('processing');
-        button.disabled = true;
-        button.setAttribute('aria-busy', 'true');
+        setPendingAppearance(gameUuid, true);
 
         try {
             const response = await fetch(`/api/toggle_favorite/${gameUuid}`, {
@@ -85,9 +95,7 @@ document.addEventListener('DOMContentLoaded', () => {
             throw error;
         } finally {
             pending.delete(gameUuid);
-            button.classList.remove('processing');
-            button.disabled = false;
-            button.removeAttribute('aria-busy');
+            setPendingAppearance(gameUuid, false);
         }
     };
 

@@ -10,7 +10,7 @@
     {% if enable_game_requests and not library_context %}
     <div class="menu-item">
         {% if has_pending_update_request %}
-        <button type="button" class="menu-button" disabled title="You have already requested an update for this game" style="opacity: 0.65; cursor: default;">Update Requested</button>
+        <button type="button" class="menu-button" disabled title="You have already requested an update for this game">Update Requested</button>
         {% else %}
         <button type="button" class="menu-button" onclick="toggleRequestUpdateModal()" id="requestUpdateBtn">Request Update</button>
         {% endif %}
@@ -41,11 +41,11 @@
         </form>
     {% endif %}
     <div class="menu-item">
-        <button type="button" class="menu-button delete-game" data-game-uuid="{{ game_uuid }}">Remove Game from DB</button>
+        <button type="button" class="menu-button menu-button-danger delete-game" data-game-uuid="{{ game_uuid }}">Remove Game from DB</button>
     </div>
     {% if enable_delete_game_on_disk %}
     <div class="menu-item">
-        <button type="button" class="menu-button trigger-delete-modal delete-game-from-disk" data-game-uuid="{{ game_uuid }}">Delete Game on disk</button>
+        <button type="button" class="menu-button menu-button-danger trigger-delete-modal delete-game-from-disk" data-game-uuid="{{ game_uuid }}">Delete Game on disk</button>
     </div>
     {% endif %}
     <div class="menu-item move-library-container">

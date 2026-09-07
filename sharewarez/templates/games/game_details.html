@@ -309,7 +309,7 @@
                     {# Cover Image #}
                     <div class="game-card-coverimage">
                         {# Hamburger menu button on cover #}
-                        <button id="menuButton-{{ game.uuid }}" class="button-glass-hamburger button-glass-hamburger-cover" type="button" aria-label="Open actions for {{ game.name }}" aria-haspopup="menu" aria-expanded="false">
+                        <button id="menuButton-{{ game.uuid }}" class="button-glass-hamburger button-glass-hamburger-cover" type="button" aria-label="Open actions for {{ game.name }}" aria-haspopup="true" aria-expanded="false">
                             <i class="fas fa-ellipsis-vertical" aria-hidden="true"></i>
                         </button>
 
@@ -372,7 +372,7 @@
 
                 <nav class="game-mobile-actions" aria-label="Game actions">
                     <button type="submit" form="gameDownloadForm"><i class="fas fa-download" aria-hidden="true"></i><span>Get game</span></button>
-                    <button type="button" onclick="document.querySelector('.favorite-btn-cover')?.click()"><i class="fas fa-heart" aria-hidden="true"></i><span>Favorite</span></button>
+                    <button class="favorite-btn favorite-btn-mobile" type="button" data-game-uuid="{{ game.uuid }}" data-is-favorite="{{ is_favorite|lower }}" data-game-name="{{ game.name }}"><i class="fas fa-heart" aria-hidden="true"></i><span class="favorite-btn-label">{% if is_favorite %}Favorited{% else %}Favorite{% endif %}</span></button>
                     {% if show_play_status %}
                     <button class="game-status-btn game-status-btn-mobile" type="button" data-game-uuid="{{ game.uuid }}" data-current-status="{{ user_status or '' }}" title="{{ status_label or 'No Status' }}" aria-label="Set play status for {{ game.name }}. Current status: {{ status_label or 'No Status' }}" aria-haspopup="menu" aria-expanded="false">
                         <i class="fas {{ status_icon or 'fa-circle' }} status-icon-{{ user_status or 'empty' }}" aria-hidden="true"></i><span>Status</span>

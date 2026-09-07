@@ -1,293 +1,96 @@
 {% extends "base.html" %}
-{% block styles %}
-{{ super() }}
-<link rel="stylesheet" href="{{ 'css/admin/admin_game_identify.css'|theme_asset }}">
-{% endblock %}
+{% block title %}{% if action == "edit" %}Edit {{ form.name.data or 'game' }}{% else %}Identify game{% endif %}{% endblock %}
+{% block styles %}{{ super() }}<link rel="stylesheet" href="{{ 'css/admin/admin_game_identify.css'|theme_asset }}">{% endblock %}
+{% macro errors(field) %}{% if field.errors %}<div class="field-error" id="{{ field.id }}-errors" role="alert">{% for error in field.errors %}<p>{{ error }}</p>{% endfor %}</div>{% endif %}{% endmacro %}
+{% macro actions(location) %}
+<div class="game-edit-actions game-edit-actions--{{ location }}" aria-label="Game entry actions">
+  <a href="{{ url_for('games.game_details', game_uuid=game_uuid) if action == 'edit' else url_for('library.library') }}" class="btn btn-secondary">Cancel</a>
+  <button type="submit" name="action" value="save_and_refresh" class="btn btn-secondary game-save-action"><i class="fas fa-rotate" aria-hidden="true"></i> Save &amp; refresh</button>
+  <button type="submit" name="action" value="save" class="btn btn-primary game-save-action"><i class="fas fa-floppy-disk" aria-hidden="true"></i> Save changes</button>
+</div>
+{% endmacro %}
+{% macro multiselect(field, label) %}
+<div class="form-group" id="{{ field.id }}-container">
+  <label>{{ label }}</label>
+  <details class="metadata-multiselect-dropdown">
+    <summary><span>Select {{ label|lower }}</span><span class="metadata-selection-count" aria-live="polite"></span></summary>
+    <div class="metadata-multiselect-options">{% for subfield in field %}<label>{{ subfield(class="form-check-input") }} {{ subfield.label.text }}</label>{% endfor %}</div>
+  </details>{{ errors(field) }}
+</div>
+{% endmacro %}
 {% block content %}
 <main class="app-page app-page--wide game-identify-page">
-    <!-- Loading Spinner -->
-    <div id="saveSpinner" class="spinner-overlay" style="display: none;">
-        <div class="spinner-container">
-            <div class="app-spinner app-spinner-lg" role="status" aria-label="Saving game"></div>
-            <div class="progress-text" id="spinnerMessage">Saving game...</div>
-        </div>
+  <div id="saveSpinner" class="spinner-overlay" style="display:none"><div class="spinner-container"><div class="app-spinner app-spinner-lg" role="status" aria-label="Saving game"></div><div class="progress-text" id="spinnerMessage">Saving game…</div></div></div>
+
+  <header class="app-page-header game-edit-page-header">
+    <div>
+      <p class="game-edit-eyebrow">{% if action == "edit" %}Library management{% else %}Game identification{% endif %}</p>
+      {% if action == "edit" %}<h1>Edit game</h1><p class="app-page-description">Update {{ form.name.data or 'this game' }} without losing manually maintained metadata.</p>
+      {% elif from_unmatched %}<h1>Edit unmatched folder</h1><p class="app-page-description">Review the folder and match it to the correct game.</p>
+      {% else %}<h1>Identify game</h1><p class="app-page-description">Match this entry to IGDB or create a custom game.</p>{% endif %}
+      <div class="game-edit-context" aria-label="Game location"><span id="library_display"><i class="fas fa-layer-group" aria-hidden="true"></i> {{ library_name }}</span><span id="platform_display"><i class="fas fa-gamepad" aria-hidden="true"></i> {{ platform_name }}</span><span id="platform_id" hidden>{{ platform_id }}</span></div>
     </div>
+    {% if action == "edit" %}<div class="app-page-actions"><a href="{{ url_for('main.edit_game_images', game_uuid=game_uuid) }}" class="btn btn-secondary"><i class="fas fa-images" aria-hidden="true"></i> Edit images</a><a href="{{ url_for('games.game_details', game_uuid=game_uuid) }}" class="btn btn-secondary"><i class="fas fa-arrow-left" aria-hidden="true"></i> Back to game</a></div>{% endif %}
+  </header>
 
-    <div class="app-surface glass-panel-addgame">
+  {% if metadata_conflicts %}
+  <section class="app-surface metadata-conflicts" aria-labelledby="metadata-conflicts-title">
+    <div class="game-edit-section-heading"><div><p class="game-edit-eyebrow">Metadata review</p><h2 id="metadata-conflicts-title">Provider conflicts</h2></div><p>Your manual values were preserved. Resolve conflicts before making other edits.</p></div>
+    <div class="metadata-conflict-list">{% for conflict in metadata_conflicts %}<article class="metadata-conflict-item">
+      <h3>{{ conflict.label }}</h3><dl><div><dt>Manual</dt><dd>{{ conflict.manual_value if conflict.manual_value is not none else 'Empty' }}</dd></div><div><dt>{{ conflict.provider }}</dt><dd>{{ conflict.provider_value if conflict.provider_value is not none else 'Empty' }}</dd></div></dl>
+      <form class="metadata-conflict-actions" method="post" action="{{ url_for('games.resolve_metadata_conflict', game_uuid=game_uuid, field=conflict.field) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-secondary" type="submit" name="resolution" value="manual">Keep manual</button><button class="btn btn-primary" type="submit" name="resolution" value="provider">Use {{ conflict.provider }}</button></form>
+    </article>{% endfor %}</div>
+  </section>
+  {% endif %}
 
-        
-        <form method="POST" action="" class="game_edit-form">
-            <div class="glass-panel-addgame-top">
-                <div class="game-edit-heading">
-                    {% if action == "edit" %}
-                    <h1>Edit Game Entry</h1>
-                    {% elif from_unmatched %}
-                    <h1>Edit Unmatched Folder Entry</h1>
-                    {% else %}
-                    <h1>(re-)Identify Game</h1>
-                    {% endif %}
-                    <!-- Library -->
-                    <div class="form-group game-edit-library-labels">
-                        <span id="library_display">Library Name: {{ library_name }}</span>
-                        <span id="platform_display">Platform: {{ platform_name }}</span>
-                        <span id="platform_id" style="display:none;">{{ platform_id }}</span>
-                        {{ form.library_uuid(class="form-control", style="display: none;") }}
-                        {% if form.library_uuid.errors %}
-                            {% for error in form.library_uuid.errors %}
-                                <div class="alert alert-danger">{{ error }}</div>
-                            {% endfor %}
-                        {% endif %}
-                    </div>
-                </div>
-                <div class="game-edit-actions" aria-label="Game entry actions">
-                    <a href="{{ url_for('library.library') }}" class="btn btn-secondary">Cancel</a>
-                    <button type="submit" name="action" value="save" class="btn btn-primary">
-                        <i class="fas fa-floppy-disk" aria-hidden="true"></i> Save changes
-                    </button>
-                    <button type="submit" name="action" value="save_and_refresh" class="btn btn-secondary">
-                        <i class="fas fa-rotate" aria-hidden="true"></i> Save &amp; Refresh Metadata
-                    </button>
-                </div>
-            </div>
-            {{ form.hidden_tag() }}
-            {% if metadata_conflicts %}
-            <section class="metadata-conflicts" aria-labelledby="metadata-conflicts-title">
-                <div>
-                    <p class="game-edit-eyebrow">Metadata review</p>
-                    <h3 id="metadata-conflicts-title">Provider conflicts</h3>
-                    <p>Your manual values were preserved during the last refresh. Choose which value to keep.</p>
-                </div>
-                <div class="metadata-conflict-list">
-                {% for conflict in metadata_conflicts %}
-                    <article class="metadata-conflict-item">
-                        <h4>{{ conflict.label }}</h4>
-                        <dl>
-                            <div><dt>Manual</dt><dd>{{ conflict.manual_value if conflict.manual_value is not none else 'Empty' }}</dd></div>
-                            <div><dt>{{ conflict.provider }}</dt><dd>{{ conflict.provider_value if conflict.provider_value is not none else 'Empty' }}</dd></div>
-                        </dl>
-                        <div class="metadata-conflict-actions">
-                            <button class="btn btn-secondary" type="submit" formaction="{{ url_for('games.resolve_metadata_conflict', game_uuid=game_uuid, field=conflict.field) }}" name="resolution" value="manual">Keep manual</button>
-                            <button class="btn btn-primary" type="submit" formaction="{{ url_for('games.resolve_metadata_conflict', game_uuid=game_uuid, field=conflict.field) }}" name="resolution" value="provider">Use {{ conflict.provider }}</button>
-                        </div>
-                    </article>
-                {% endfor %}
-                </div>
-            </section>
-            {% endif %}
-            <!-- Essential Information Section -->
-            <div class="essential-info">
-            <div class="essential-info-grid">
-            <div class="game_edit-form-group-id">
-                <label for="igdb_id">IGDB ID#</label>
-                {{ form.igdb_id(class="form-control", id="igdb_id") }}
-                <div class="field-actions">
-                    <button type="button" class="btn btn-primary" id="search-igdb-btn">
-                        <i class="fas fa-magnifying-glass" aria-hidden="true"></i> Look up ID
-                    </button>
-                    <button type="button" class="btn btn-secondary" id="add-non-existing-game">
-                        <i class="fas fa-plus" aria-hidden="true"></i> Custom game
-                    </button>
-                </div>
-                {% if form.igdb_id.errors %}
-                    <div class="alert alert-danger" role="alert">
-                        {% for error in form.igdb_id.errors %}
-                            {{ error }}
-                        {% endfor %}
-                    </div>
-                {% endif %}
-                <small id="igdb_id_feedback" class="form-text-muted">Enter the IGDB ID of the game.</small>
-                <p id="igdb-id-search-status" class="search-status" role="status" aria-live="polite"></p>
-            </div>
-            <div class="game_edit-form-group-name">
-                <label for="name">Name</label>
-                {{ form.name(class="form-control", id="name") }}
-                {% if form.name.errors %}
-                    <div class="alert alert-danger" role="alert">
-                        {% for error in form.name.errors %}
-                            {{ error }}
-                        {% endfor %}
-                    </div>
-                {% endif %}
-    
-                <div class="field-actions">
-                    <button type="button" id="search-igdb" class="btn btn-primary">
-                        <i class="fas fa-magnifying-glass" aria-hidden="true"></i> Search IGDB
-                    </button>
-                </div>
-                <p id="igdb-name-search-status" class="search-status" role="status" aria-live="polite"></p>
-                
-                <div id="search-results" style="margin-top: 10px;">
-                <!-- Container for search results -->
-                </div>
-            </div>
-            <div class="game_edit-form-group-path">
-                <label for="full_disk_path">Full Disk Path</label>
-                {{ form.full_disk_path(class="form-control", id="full_disk_path") }}
-                {% if form.full_disk_path.errors %}
-                    <div class="alert alert-danger" role="alert">
-                        {% for error in form.full_disk_path.errors %}
-                            {{ error }}
-                        {% endfor %}
-                    </div>
-                {% endif %}
-            </div>
-            </div>
-            </div>
-            
-            <!-- Collapsible Details Section -->
-            <div class="details-section">
-                <button class="btn btn-secondary w-100 mb-3" type="button" data-bs-toggle="collapse" data-bs-target="#gameDetails" aria-expanded="false" aria-controls="gameDetails">
-                    Details <i class="fas fa-chevron-down"></i>
-                </button>
-                <div class="collapse" id="gameDetails">
-                    <div class="details-fields-grid">
-                    <div class="game_edit-form-group-summary">
-                        <label for="summary">Summary</label>
-                        {{ form.summary(class="form-control", id="summary") }}
-                    </div>
-                    <div class="game_edit-form-group-storyline">
-                        <label for="storyline">Storyline</label>
-                        {{ form.storyline(class="form-control", id="storyline") }}
-                    </div>
-                    <div class="game_edit-form-group-install-instructions">
-                        <label for="install_instructions">How to Install</label>
-                        {{ form.install_instructions(class="form-control", id="install_instructions", rows="4", placeholder="Optional special installation instructions...") }}
-                    </div>
-                    <div class="game_edit-form-group-version">
-                        <label for="version">Base Package Version</label>
-                        {{ form.version(class="form-control", id="version", placeholder="Optional, e.g. 1.6.1170 or Build 1436") }}
-                        <small class="form-text text-muted">The version included in this downloadable base package.</small>
-                    </div>
-                    <div class="game_edit-form-group-edition">
-                        <label for="edition_name">Edition Name</label>
-                        {{ form.edition_name(class="form-control", id="edition_name", placeholder="e.g. Ultimate Edition, Gold Edition, GOTY Edition") }}
-                        <small class="form-text text-muted">Optional display label shown as a badge on the game details page. Point the IGDB ID to the base game for full metadata, then set this label to indicate the edition you have.</small>
-                    </div>
+  <form method="post" action="" class="game_edit-form app-surface" novalidate>
+    {{ form.hidden_tag() }}{{ form.library_uuid(class="form-control", hidden=true) }}
+    {% if form.errors %}<section class="game-edit-error-summary" role="alert" aria-labelledby="game-edit-errors-title"><h2 id="game-edit-errors-title">Check the highlighted fields</h2><ul>{% for field_name, field_errors in form.errors.items() %}{% if field_name != 'csrf_token' %}<li><a href="#{{ field_name }}">{{ form[field_name].label.text }}: {{ field_errors[0] }}</a></li>{% endif %}{% endfor %}</ul></section>{% endif %}
+    {{ actions('top') }}
 
-                    <div class="game_edit-form-group-url">
-                        <label for="url">URL</label>
-                        {{ form.url(class="form-control", id="url") }}
-                        {% if form.url.errors %}
-                            <div class="alert alert-danger" role="alert">
-                                {% for error in form.url.errors %}
-                                    {{ error }}
-                                {% endfor %}
-                            </div>
-                        {% endif %}
-                    </div>
-                    
-                    <div class="game_edit-form-group-video-url">
-                        <label for="video_urls">Video URLs</label>
-                        {{ form.video_urls(class="form-control", id="video_urls") }}
-                        {% if form.video_urls.errors %}
-                            <div class="alert alert-danger" role="alert">
-                                {% for error in form.video_urls.errors %}
-                                    {{ error }}
-                                {% endfor %}
-                            </div>
-                        {% endif %}
-                    </div>
-                    
-                    <div class="game_edit-form-group-status">
-                        <label for="status">Status</label>
-                        {{ form.status(class="form-control", id="status") }}
-                    </div>
-                    <div class="game_edit-form-group-release-type">
-                        <label for="category">Release Type</label>
-                        {{ form.category(class="form-control", id="category") }}
-                    </div>
-                    </div>
+    <section class="game-edit-section" aria-labelledby="overview-title">
+      <div class="game-edit-section-heading"><div><p class="game-edit-eyebrow">Core metadata</p><h2 id="overview-title">Overview</h2></div><p>The title and description shown throughout the library.</p></div>
+      <div class="game-edit-grid">
+        <div class="form-group game-edit-span-full"><label for="name">Name</label>{{ form.name(class="form-control", id="name") }}{{ errors(form.name) }}<div class="field-actions"><button type="button" id="search-igdb" class="btn btn-secondary"><i class="fas fa-magnifying-glass" aria-hidden="true"></i> Search IGDB by name</button></div><p id="igdb-name-search-status" class="search-status" role="status" aria-live="polite"></p><div id="search-results"></div></div>
+        <div class="form-group game-edit-span-full"><label for="summary">Summary</label>{{ form.summary(class="form-control", id="summary", rows="4") }}{{ errors(form.summary) }}</div>
+        <div class="form-group game-edit-span-full"><label for="storyline">Storyline</label>{{ form.storyline(class="form-control", id="storyline", rows="4") }}{{ errors(form.storyline) }}</div>
+        <div class="form-group"><label for="first_release_date">First release date</label>{{ form.first_release_date(class="form-control", id="first_release_date") }}{{ errors(form.first_release_date) }}</div>
+        <div class="form-group"><label for="aggregated_rating">Aggregated rating</label>{{ form.aggregated_rating(class="form-control", id="aggregated_rating", inputmode="decimal") }}{{ errors(form.aggregated_rating) }}</div>
+        <div class="form-group"><label for="developer">Developer</label>{{ form.developer(class="form-control", id="developer") }}{{ errors(form.developer) }}</div>
+        <div class="form-group"><label for="publisher">Publisher</label>{{ form.publisher(class="form-control", id="publisher") }}{{ errors(form.publisher) }}</div>
+        <div class="form-group"><label for="status">Status</label>{{ form.status(class="form-select", id="status") }}{{ errors(form.status) }}</div>
+        <div class="form-group"><label for="category">Release type</label>{{ form.category(class="form-select", id="category") }}{{ errors(form.category) }}</div>
+      </div>
+    </section>
 
-                    <div class="group-game-details">
+    <section class="game-edit-section" aria-labelledby="package-title">
+      <div class="game-edit-section-heading"><div><p class="game-edit-eyebrow">Local package</p><h2 id="package-title">Package &amp; installation</h2></div><p>Details for the files available from this library.</p></div>
+      <div class="game-edit-grid">
+        <div class="form-group"><label for="version">Base package version</label>{{ form.version(class="form-control", id="version", placeholder="e.g. 1.6.1170 or Build 1436") }}{{ errors(form.version) }}</div>
+        <div class="form-group"><label for="edition_name">Edition name</label>{{ form.edition_name(class="form-control", id="edition_name", placeholder="e.g. Ultimate Edition") }}{{ errors(form.edition_name) }}</div>
+        <div class="form-group game-edit-span-full"><label for="install_instructions">How to install</label>{{ form.install_instructions(class="form-control", id="install_instructions", rows="5", placeholder="Optional special installation instructions…") }}{{ errors(form.install_instructions) }}</div>
+        <div class="form-group game-edit-span-full"><label for="full_disk_path">Full disk path</label>{{ form.full_disk_path(class="form-control", id="full_disk_path") }}{{ errors(form.full_disk_path) }}</div>
+      </div>
+    </section>
 
-                        <div class="game_edit-form-group-genres" id="genres-container">
-                            <label>Genres</label>
-                            <details class="metadata-multiselect-dropdown">
-                                <summary>Select genres</summary>
-                                <div class="metadata-multiselect-options">
-                                    {% for subfield in form.genres %}
-                                        <label>{{ subfield(class="form-check-input") }} {{ subfield.label.text }}</label>
-                                    {% endfor %}
-                                </div>
-                            </details>
-                        </div>
+    <section class="game-edit-section" aria-labelledby="classification-title">
+      <div class="game-edit-section-heading"><div><p class="game-edit-eyebrow">Discovery</p><h2 id="classification-title">Classification</h2></div><p>Choose the labels people use to browse and filter the library.</p></div>
+      <div class="game-edit-classification-grid">{{ multiselect(form.genres, 'Genres') }}{{ multiselect(form.game_modes, 'Game modes') }}{{ multiselect(form.themes, 'Themes') }}{{ multiselect(form.platforms, 'Platforms') }}{{ multiselect(form.player_perspectives, 'Player perspectives') }}<div class="form-group game-edit-span-full"><label for="tags">Tags</label>{{ form.tags(class="form-control", id="tags", placeholder="e.g. Hypervisor, Portable") }}<small class="form-text-muted">Comma-separated tags.</small>{{ errors(form.tags) }}</div></div>
+    </section>
 
-                        <div class="game_edit-form-group-modes" id="gamemodes-container">
-                            <label>Game Modes</label>
-                            <details class="metadata-multiselect-dropdown">
-                                <summary>Select game modes</summary>
-                                <div class="metadata-multiselect-options">
-                                    {% for subfield in form.game_modes %}
-                                        <label>{{ subfield(class="form-check-input") }} {{ subfield.label.text }}</label>
-                                    {% endfor %}
-                                </div>
-                            </details>
-                        </div>
-                        
-                        <div class="game_edit-form-group-themes" id="themes-container">
-                            <label>Themes</label>
-                            <details class="metadata-multiselect-dropdown">
-                                <summary>Select themes</summary>
-                                <div class="metadata-multiselect-options">
-                                    {% for subfield in form.themes %}
-                                        <label>{{ subfield(class="form-check-input") }} {{ subfield.label.text }}</label>
-                                    {% endfor %}
-                                </div>
-                            </details>
-                        </div>
-                        
+    <section class="game-edit-section" aria-labelledby="links-title">
+      <div class="game-edit-section-heading"><div><p class="game-edit-eyebrow">References</p><h2 id="links-title">Links &amp; media</h2></div><p>External page and video references associated with this game.</p></div>
+      <div class="game-edit-grid"><div class="form-group"><label for="url">Game URL</label>{{ form.url(class="form-control", id="url", placeholder="https://…") }}{{ errors(form.url) }}</div><div class="form-group"><label for="video_urls">Video URLs</label>{{ form.video_urls(class="form-control", id="video_urls", placeholder="Comma-separated URLs") }}{{ errors(form.video_urls) }}</div></div>
+    </section>
 
-                        <div class="game_edit-form-group-platforms" id="platforms-container">
-                            <label>Platforms</label>
-                            <details class="metadata-multiselect-dropdown">
-                                <summary>Select platforms</summary>
-                                <div class="metadata-multiselect-options">
-                                    {% for subfield in form.platforms %}
-                                        <label>{{ subfield(class="form-check-input") }} {{ subfield.label.text }}</label>
-                                    {% endfor %}
-                                </div>
-                            </details>
-                        </div>
-                        
-                    
-                        <div class="game_edit-form-group-perspectives" id="perspectives-container">
-                            <label>Player Perspectives</label>
-                            <details class="metadata-multiselect-dropdown">
-                                <summary>Select player perspectives</summary>
-                                <div class="metadata-multiselect-options">
-                                    {% for subfield in form.player_perspectives %}
-                                        <label>{{ subfield(class="form-check-input") }} {{ subfield.label.text }}</label>
-                                    {% endfor %}
-                                </div>
-                            </details>
-                        </div>
-                    </div>
-                    <div class="details-credits-grid">
-                    <div class="game_edit-form-group-developer" id="developer-container">
-                        <label class="game_edit-form-group-developer-text" for="developer">Developer</label>
-                        <input class="game_edit-form-group-developer-data" type="text" id="developer" name="developer" value="{{ form.developer.data }}">
-                    </div>
-                    
-                    <div class="game_edit-form-group-publisher" id="publisher-container">
-                        <label class="game_edit-form-group-publisher-text" for="publisher">Publisher</label>
-                        <input class="game_edit-form-group-publisher-data" type="text" id="publisher" name="publisher" value="{{ form.publisher.data }}">
-                    </div>
-                    <div class="game_edit-form-group-tags" id="tags-container">
-                        <label for="tags">Tags</label>
-                        {{ form.tags(class="form-control", id="tags", placeholder="e.g. Hypervisor, Portable") }}
-                        <small class="form-text-muted">Comma-separated tags. Only admins can manage tags.</small>
-                    </div>
-                    </div>
+    <details class="game-edit-identification"{% if action != 'edit' %} open{% endif %}>
+      <summary><span><i class="fas fa-database" aria-hidden="true"></i> IGDB identification</span><i class="fas fa-chevron-down" aria-hidden="true"></i></summary>
+      <div class="game-edit-identification-body"><p>Changing the identity can repopulate provider fields and queues replacement images when you save.</p><div class="form-group"><label for="igdb_id">IGDB ID</label>{{ form.igdb_id(class="form-control", id="igdb_id") }}{{ errors(form.igdb_id) }}<small id="igdb_id_feedback" class="form-text-muted">Use the numeric IGDB game ID, or create a custom identity.</small><div class="field-actions"><button type="button" class="btn btn-secondary" id="search-igdb-btn"><i class="fas fa-magnifying-glass" aria-hidden="true"></i> Look up ID</button><button type="button" class="btn btn-secondary" id="add-non-existing-game"><i class="fas fa-plus" aria-hidden="true"></i> Custom game</button></div><p id="igdb-id-search-status" class="search-status" role="status" aria-live="polite"></p></div></div>
+    </details>
 
-                </div> <!-- End of collapse div -->
-            </div> <!-- End of details-section -->
-
-        </form>
-    </div>
-    {% block scripts %}
-    
-    <script src="{{ 'js/admin_game_identify.js'|theme_asset }}"></script>
-    
-    {% endblock %}
+    <div class="game-edit-save-note"><i class="fas fa-shield-heart" aria-hidden="true"></i><span>Refresh keeps manually edited values when the provider differs and records conflicts for review.</span></div>
+    {{ actions('bottom') }}
+  </form>
+  {% block scripts %}<script src="{{ 'js/admin_game_identify.js'|theme_asset }}"></script>{% endblock %}
 </main>
 {% endblock %}

@@ -541,3 +541,39 @@ application state or contrast combination has been tested.
 Verification: 87 focused Python UI/accessibility/mobile/Library/favorite route
 regressions passed; six JavaScript favorite success/failure/concurrent-control cases;
 Ruff and `git diff --check`. Canonical and installed changed theme files match.
+
+## Remaining UI handoff implementation — 7 September 2026
+
+UI-01 through UI-05 and the user-requested Game Edit rework (UI-07) in
+`UI_IMPLEMENTATION_HANDOFF.md` are implemented. UI-06 remains the broader
+populated-state and theme validation pass.
+
+- Popup action anchors and buttons now share one left-aligned row contract. A
+  populated synthetic IGDB link measured the same 223.25 × 46.68 px as an
+  adjacent button. Destructive rows use the shared danger token and asynchronous
+  Discord/move failures use the application notification system.
+- One popup close function handles Library cards and the Game Details cover.
+  A rendered Escape check closed the menu, cleared both container states,
+  restored hidden controls, set `aria-expanded` to false, and focused the trigger.
+- Mobile card layouts reserve enough cover width for two 44 px top actions. Grid,
+  compact, and list were measured at 390 px; compact and list were repeated at
+  320 px. No targets overlapped and document width matched the viewport.
+- The mobile Game Details favorite control now participates directly in the
+  shared favorite manager. All matching controls share selected, label, pending,
+  disabled, and busy state while one request per game remains in flight.
+- Game Edit now uses a shared page header and one flat form surface with Overview,
+  Package & installation, Classification, Links & media, and secondary IGDB
+  identification sections. Common fields remain visible, selection summaries are
+  live, and actions are available at the end of the mobile form. Validation has
+  an error summary; all error branches retain location/conflict context. Ordinary
+  saves return to Game Details, and dirty conflict/navigation actions are guarded.
+
+The reworked editor was inspected in the live synthetic preview and measured at
+desktop and 390 × 844. At 390 px it retained the single 12 px content gutter,
+had no nested surfaces or document overflow, hid the duplicate top action row,
+and rendered all bottom actions at 44 px. Default-theme canonical and installed
+assets were synchronized. The focused verification set passed 130 Python tests,
+six JavaScript favorite cases, JavaScript syntax checks, Ruff, and
+`git diff --check`. Ember/light-theme, production-scale populated records, setup,
+and token-dependent authentication states remain recorded under UI-06 rather
+than being claimed as complete.

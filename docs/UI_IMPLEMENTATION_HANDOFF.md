@@ -15,6 +15,18 @@ review on behalf of that agent or claim untested states are complete.
 Read `AGENTS.md`, `docs/UI_AUDIT.md`, and the Sharewarez UI skill first. This file is
 an implementation brief, not a replacement for those contracts.
 
+## Implementation progress
+
+| Item | Status | Evidence |
+| --- | --- | --- |
+| UI-01 IGDB menu row | ✅ Complete | Anchor and button rows share `.popup-menu .menu-button`; live fixture measured both at 223.25 × 46.68 px. |
+| UI-02 menu close/focus | ✅ Complete | One `closeMenu()` path handles both card types; Game Details Escape restored controls, state, and trigger focus. |
+| UI-03 narrow card actions | ✅ Complete | Grid/compact/list checks at 390 px and compact/list at 320 px found 44 px targets, no overlap, and no document overflow. |
+| UI-04 mobile favorite | ✅ Complete | Mobile and cover controls use the shared manager; selected, label, pending, disabled, and busy state synchronize. |
+| UI-05 semantic actions/feedback | ✅ Complete | User Edit is secondary, destructive menu rows have a shared danger modifier, and popup async feedback uses notifications/theme state. |
+| UI-06 expanded validation | 🟡 In progress | Changed routes received focused desktop/mobile checks; the broader data/theme matrix below remains a follow-up audit. |
+| UI-07 Game Edit rework | ✅ Complete | Task-based flat sections, end-of-form mobile actions, secondary IGDB disclosure, error summary, shared render context, safe submit state, and return-to-game flow implemented. |
+
 ## Starting state — preserve completed work
 
 - `13aadda`: responsive control/card standardization and regression coverage.
@@ -52,7 +64,7 @@ cases, Ruff, and `git diff --check`. A 98-check sweep covered 49 authenticated U
 variants at desktop/mobile sizes; public forms were also inspected. This is not
 proof of every populated state or interaction. Read the limits below.
 
-## UI-01 — Make the IGDB link a real shared menu row (P2, confirmed)
+## UI-01 — Make the IGDB link a real shared menu row (P2, complete)
 
 **User-reported and supported by source inspection.**
 
@@ -92,7 +104,7 @@ Acceptance:
 - Add a focused regression for anchor/button parity that would fail on the
   baseline; include rendered measurements, not only a selector-string assertion.
 
-## UI-02 — Unify menu close/focus behavior (P2, confirmed source defect)
+## UI-02 — Unify menu close/focus behavior (P2, complete)
 
 `popup_menu.js` handles both `.game-card` and `.game-card-coverimage` when opening
 menus or closing them by an outside click. Its Escape handler only resolves
@@ -119,7 +131,7 @@ Exercise open/close on Library, Favorites, and Game Details using keyboard and
 pointer, including opening a second card while a request is pending. No stranded
 hidden controls, stale overlays, duplicate menus, or lost keyboard focus.
 
-## UI-03 — Resolve narrow compact/list card action collisions (P2, source-derived risk)
+## UI-03 — Resolve narrow compact/list card action collisions (P2, complete)
 
 **Needs rendered reproduction; not a completed visual finding.**
 
@@ -144,7 +156,7 @@ Acceptance: action hit rectangles do not overlap each other or intercept the
 wrong link; long titles and missing artwork remain readable; view switches and
 pagination keep working; no document overflow or duplicate outer mobile gutter.
 
-## UI-04 — Synchronize the mobile Game Details favorite action (P2, source gap)
+## UI-04 — Synchronize the mobile Game Details favorite action (P2, complete)
 
 In `templates/games/game_details.html`, the mobile Favorite action is a separate
 button that proxies a click to `.favorite-btn-cover`. It is not itself a
@@ -163,7 +175,7 @@ Acceptance: toggle from mobile and desktop, verify persisted state after reload,
 exercise a slow response and a failed response, and ensure all visible instances
 stay synchronized with no duplicate network mutation.
 
-## UI-05 — Finish the semantic action/feedback inventory (P3, known remaining examples)
+## UI-05 — Finish the semantic action/feedback inventory (P3, complete for listed findings)
 
 The prior pass corrected several legacy colors; it did not exhaustively review
 all dynamic controls. Concrete starting points:
@@ -187,7 +199,7 @@ JavaScript hooks. Keep native confirmation behavior unless a coherent shared
 replacement is implemented and tested. Do not send real notifications or perform
 real deletions merely to verify presentation.
 
-## UI-06 — Complete the populated-state and theme validation gaps
+## UI-06 — Complete the populated-state and theme validation gaps (in progress)
 
 These are **verification tasks**, not claims that every listed screen is broken.
 Fix concrete defects found and record evidence.
@@ -208,7 +220,7 @@ Fix concrete defects found and record evidence.
   need isolated fixtures for an end-to-end review. Do not reset the real instance
   or change real credentials to create those fixtures.
 
-## UI-07 — Rework Game Edit around everyday editing (P2, user requested)
+## UI-07 — Rework Game Edit around everyday editing (P2, complete)
 
 The user explicitly wants `/game_edit/<game_uuid>` to fit the shared UI and feel
 smoother to use. Treat this as a focused editor rework, not merely a button-color

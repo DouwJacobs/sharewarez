@@ -1518,7 +1518,11 @@ fieldset:disabled .btn {
     cursor: pointer;
 }
 
-.menu-item button {
+.popup-menu .menu-button {
+    display: flex;
+    box-sizing: border-box;
+    min-height: 42px;
+    align-items: center;
     border: 1px solid transparent;
     border-radius: 8px;
     background: transparent;
@@ -1527,23 +1531,34 @@ fieldset:disabled .btn {
     padding: 10px 12px;
     width: 100%;
     text-align: left;
+    text-decoration: none;
+    white-space: normal;
     transition: background-color var(--transition-fast), border-color var(--transition-fast);
 }
 
-.menu-item button:hover {
+.popup-menu .menu-button:hover {
     background: rgba(var(--theme-accent-rgb, 115, 135, 255), 0.18);
     border-color: rgba(var(--theme-accent-soft-rgb, 164, 183, 255), 0.28);
 }
 
-.menu-item button:focus-visible {
+.popup-menu .menu-button:focus-visible {
     outline: 2px solid rgba(var(--theme-accent-soft-rgb, 164, 183, 255), 0.85);
     outline-offset: 1px;
 }
 
+.popup-menu .menu-button:disabled {
+    cursor: default;
+    opacity: .65;
+}
 
-.menu-item a {
-    color: inherit;
-    text-decoration: none;
+.popup-menu .menu-button-danger {
+    color: var(--status-danger-color, var(--semantic-danger));
+}
+
+@media (max-width: 768px) {
+    .popup-menu .menu-button {
+        min-height: 44px;
+    }
 }
 
 

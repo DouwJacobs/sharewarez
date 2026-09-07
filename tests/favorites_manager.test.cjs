@@ -31,6 +31,8 @@ async function exercise(route, fail = false) {
     start();
     const pending = buttons[0].click();
     assert.equal(buttons[0].disabled, true);
+    assert.equal(buttons[1].disabled, true, 'all visible favorite controls share pending state');
+    assert.equal(buttons[1].attrs['aria-busy'], 'true');
     await buttons[1].click();
     assert.equal(calls, 1, 'duplicate controls cannot submit twice while pending');
     resolve({ok: !fail, statusText: 'Unavailable', json: async () => ({is_favorite: false})});
@@ -41,6 +43,8 @@ async function exercise(route, fail = false) {
     }
     assert.equal(buttons[0].disabled, false);
     assert.equal(buttons[0].attrs['aria-busy'], undefined);
+    assert.equal(buttons[1].disabled, false);
+    assert.equal(buttons[1].attrs['aria-busy'], undefined);
     assert.equal(notifications.at(-1)[1], fail ? 'error' : 'success');
 }
 (async () => {

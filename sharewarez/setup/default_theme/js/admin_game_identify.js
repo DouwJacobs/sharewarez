@@ -13,7 +13,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const fullPathInput = document.querySelector('#full_disk_path');
     const nameInput = document.querySelector('#name');
     const urlInput = document.querySelector('#url');
-    const submitButton = document.querySelector('button[type="submit"]');
+    const submitButtons = Array.from(document.querySelectorAll('.game_edit-form .game-save-action'));
+    const submitButton = submitButtons[0];
+    const libraryUuidInput = document.querySelector('#library_uuid');
     const igdbIdFeedback = document.querySelector('#igdb_id_feedback');
     const fullPathFeedback = document.createElement('small');
     const igdbIdSearchButton = document.querySelector('#search-igdb-btn');
@@ -67,32 +69,24 @@ document.addEventListener('DOMContentLoaded', function() {
         nameInput.readOnly = false;
         nameInput.focus();
 
-        // Expand details section
-        const gameDetailsCollapse = document.querySelector('#gameDetails');
-        if (gameDetailsCollapse) {
-            const bootstrapCollapse = new bootstrap.Collapse(gameDetailsCollapse, {
-                show: true
-            });
-        }
+        document.querySelector('.game-edit-identification')?.setAttribute('open', '');
     });
 
     fullPathFeedback.id = 'full_disk_path_feedback';
     fullPathInput.parentNode.insertBefore(fullPathFeedback, fullPathInput.nextSibling);
 
-    $(submitButton).tooltip({
-        title: "Incomplete entry",
+    submitButtons.forEach(button => $(button).tooltip({
+        title: "Complete the required fields first",
         placement: "top",
         trigger: "hover"
-    });
+    }));
 
     function updateButtonState(isDisabled) {
         console.log(`Update submit button state: ${isDisabled ? 'Disabled' : 'Enabled'}`);
-        submitButton.disabled = isDisabled;
-        if (isDisabled) {
-            $(submitButton).tooltip('enable');
-        } else {
-            $(submitButton).tooltip('disable');
-        }
+        submitButtons.forEach(button => {
+            button.disabled = isDisabled;
+            $(button).tooltip(isDisabled ? 'enable' : 'disable');
+        });
     }
 
     function validateField(inputElement, isValid) {
@@ -116,7 +110,9 @@ document.addEventListener('DOMContentLoaded', function() {
         validateField(nameInput, nameIsValid);
         validateField(libraryUuidInput, libraryUuidIsValid);
 
-        updateButtonState(!(igdbIdIsValid && fullPathIsValid && nameIsValid && libraryUuidIsValid));
+        const isValid = igdbIdIsValid && fullPathIsValid && nameIsValid && libraryUuidIsValid;
+        updateButtonState(!isValid);
+        return isValid;
     }
 
     function updateFormWithGameData(gameData) {
@@ -134,10 +130,11 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         updateMultiSelect('#genres-container', gameData.genres);
-        updateMultiSelect('#gamemodes-container', gameData.game_modes);
+        updateMultiSelect('#game_modes-container', gameData.game_modes);
         updateMultiSelect('#themes-container', gameData.themes);
         updateMultiSelect('#platforms-container', gameData.platforms);
-        updateMultiSelect('#perspectives-container', gameData.player_perspectives);
+        updateMultiSelect('#player_perspectives-container', gameData.player_perspectives);
+        updateSelectionCounts();
 
         // Update Category select field - using original field names to match scanning code
         const categorySelect = document.querySelector('#category'); // Assuming #category is the ID of the select
@@ -439,13 +436,50 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
+    function updateSelectionCounts() {
+        document.querySelectorAll('.metadata-multiselect-dropdown').forEach(dropdown => {
+            const count = dropdown.querySelectorAll('input[type="checkbox"]:checked').length;
+            const output = dropdown.querySelector('.metadata-selection-count');
+            if (output) output.textContent = count ? `${count} selected` : 'None selected';
+        });
+    }
+
+    document.querySelectorAll('.metadata-multiselect-dropdown input[type="checkbox"]').forEach(input => {
+        input.addEventListener('change', updateSelectionCounts);
+    });
+    updateSelectionCounts();
     checkFieldsAndToggleSubmit();
-    console.log("Ready to add a game!.");
+
+    const serverErrorLink = document.querySelector('.game-edit-error-summary a');
+    if (serverErrorLink) {
+        requestAnimationFrame(() => {
+            const invalidField = document.querySelector(serverErrorLink.getAttribute('href'));
+            invalidField?.focus({ preventScroll: true });
+            invalidField?.scrollIntoView({ block: 'center' });
+        });
+    }
 
     // Show spinner on form submit — detect which button triggered it
     const gameEditForm = document.querySelector('.game_edit-form');
-    const allSubmitButtons = document.querySelectorAll('.game_edit-form button[type="submit"]');
+    const allSubmitButtons = document.querySelectorAll('.game_edit-form .game-save-action');
     let lastClickedSubmit = null;
+    let formIsDirty = false;
+    let formIsSubmitting = false;
+
+    gameEditForm?.addEventListener('input', () => { formIsDirty = true; });
+    gameEditForm?.addEventListener('change', () => { formIsDirty = true; });
+    document.querySelectorAll('.metadata-conflict-actions').forEach(form => {
+        form.addEventListener('submit', event => {
+            if (formIsDirty && !window.confirm('Resolve this conflict and discard your unsaved form changes?')) {
+                event.preventDefault();
+            }
+        });
+    });
+    window.addEventListener('beforeunload', event => {
+        if (!formIsDirty || formIsSubmitting) return;
+        event.preventDefault();
+        event.returnValue = '';
+    });
 
     allSubmitButtons.forEach(function(btn) {
         btn.addEventListener('click', function() {
@@ -455,7 +489,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (gameEditForm) {
         gameEditForm.addEventListener('submit', function(event) {
-            if (submitButton.disabled) return; // form is blocked (validation)
+            if (!checkFieldsAndToggleSubmit()) {
+                event.preventDefault();
+                document.querySelector('.game_edit-form .invalid-input')?.focus();
+                return;
+            }
 
             // Disabled submit buttons are omitted from the browser payload. Preserve
             // the clicked action before disabling the controls so the backend can
@@ -472,6 +510,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 actionInput.value = submittedButton.value;
             }
+
+            formIsSubmitting = true;
 
             const spinner = document.getElementById('saveSpinner');
             const spinnerMsg = document.getElementById('spinnerMessage');
