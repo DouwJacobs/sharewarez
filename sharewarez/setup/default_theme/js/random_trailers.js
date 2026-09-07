@@ -690,6 +690,8 @@ document.addEventListener('DOMContentLoaded', function() {
      * Show loading state
      */
     function showLoading() {
+        gameTitle.textContent = 'Loading trailer…';
+        gameTitleLink.removeAttribute('href');
         loadingState.style.display = 'flex';
         errorState.style.display = 'none';
         videoContainer.style.display = 'none';
@@ -715,6 +717,8 @@ document.addEventListener('DOMContentLoaded', function() {
      * @param {string} message - Error message to display
      */
     function showError(message) {
+        gameTitle.textContent = 'Trailers';
+        gameTitleLink.removeAttribute('href');
         errorText.textContent = message;
         loadingState.style.display = 'none';
         videoContainer.style.display = 'none';

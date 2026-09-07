@@ -511,6 +511,7 @@ Changes and current contracts:
 - The trailer inspection exposed a PostgreSQL whole-row DISTINCT failure on JSON
   game metadata. ORM identity deduplication now preserves genre/theme join
   behavior without comparing JSON columns; a real PostgreSQL regression covers it.
+  Empty/error states clear the stale game link and loading heading.
 
 Coverage: profile/view/edit/password/preferences, invitations, Discover, Library,
 Favorites, activity, requests, issues, downloads, notifications, trailers, help,
