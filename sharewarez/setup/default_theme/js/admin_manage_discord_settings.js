@@ -1,11 +1,14 @@
 document.addEventListener('DOMContentLoaded', function() {
     const testButton = document.createElement('button');
+    testButton.type = 'button';
     testButton.className = 'btn btn-secondary ms-2';
-    testButton.innerHTML = '<i class="fas fa-vial"></i> Test Webhook';
+    testButton.innerHTML = '<i class="fas fa-vial" aria-hidden="true"></i> Test webhook';
     testButton.id = 'test-webhook-btn';
 
     // Find the form's button container and add the test button
-    const formButtons = document.querySelector('.d-flex.justify-content-between');
+    const formButtons = document.querySelector(
+        '.discord-settings-container .integration-form-actions, .discord-settings-page .integration-form-actions'
+    );
     if (formButtons) {
         formButtons.appendChild(testButton);
     }
@@ -70,7 +73,7 @@ document.addEventListener('DOMContentLoaded', function() {
         } finally {
             // Reset button state
             testButton.disabled = false;
-            testButton.innerHTML = '<i class="fas fa-vial"></i> Test Webhook';
+            testButton.innerHTML = '<i class="fas fa-vial" aria-hidden="true"></i> Test webhook';
         }
     });
 });

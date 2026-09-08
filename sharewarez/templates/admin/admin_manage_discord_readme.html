@@ -1,17 +1,16 @@
 {% extends "base.html" %}
+{% from "partials/ui_components.html" import admin_page_header %}
 {% block content %}
+<link rel="stylesheet" href="{{ 'css/admin/admin_manage_discord_settings.css'|theme_asset }}">
 
-<div class="app-page app-page--narrow container">
-    <div class="glass-panel">
-        <a href="{{ url_for('admin2.discord_settings') }}" class="btn btn-secondary">Back</a>
-    </div>
-</div>
-<div class="container mt-4">
-    <div class="card">
-        <div class="card-header">
-            <h2>Discord Notifications Help</h2>
-        </div>
-        <div class="card-body">
+<main class="app-page app-page--narrow admin-page integration-settings-page discord-help-page" aria-labelledby="discord-help-title">
+    {% call admin_page_header('Discord setup help', 'Create a webhook and connect it to your game library.', 'Integrations', 'fa-circle-question', title_id='discord-help-title') %}
+        <a href="{{ url_for('admin2.discord_settings') }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left" aria-hidden="true"></i> Back to Discord
+        </a>
+    {% endcall %}
+
+    <section class="app-surface integration-settings-surface integration-help-surface">
             <h3>Setting Up Discord Notifications</h3>
             
             <div class="setup-steps">
@@ -53,8 +52,7 @@
                     <strong>Note:</strong> Make sure your webhook URL is kept private and secure.
                 </div>
             </div>
-        </div>
-    </div>
-</div>
+    </section>
+</main>
 
 {% endblock %}

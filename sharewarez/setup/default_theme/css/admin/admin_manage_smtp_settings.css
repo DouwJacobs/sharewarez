@@ -1,96 +1,79 @@
-/* Using unified admin-section container from admin-components.css */
-.smtp-settings-container {
-    max-width: 800px;
-    margin: var(--spacing-rem-xl) auto;
-    padding: var(--spacing-rem-xl);
-    background: var(--container-dark-primary);
-    border-radius: var(--border-radius-md);
-    box-shadow: var(--shadow-glass);
+.smtp-settings-page .integration-settings-surface {
+    max-width: 960px;
 }
 
-.smtp-settings-container h2 {
-    color: var(--text-white);
-    margin-bottom: var(--spacing-rem-xl);
-    padding-bottom: var(--spacing-rem-md);
-    border-bottom: 1px solid var(--border-light);
-    display: flex;
+:is(.smtp-settings-page, .integrations-page #email) .settings-form {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--spacing-lg, 24px);
+}
+
+:is(.smtp-settings-page, .integrations-page #email) .form-group {
+    display: grid;
+    gap: var(--spacing-xs, 6px);
+}
+
+:is(.smtp-settings-page, .integrations-page #email) .form-group label {
+    color: var(--theme-text-primary, var(--text-white));
+    font-weight: 650;
+}
+
+:is(.smtp-settings-page, .integrations-page #email) .form-group .input-glass {
+    width: 100%;
+    min-height: 44px;
+}
+
+:is(.smtp-settings-page, .integrations-page #email) .form-group:has(input[type="checkbox"]) {
+    grid-template-columns: 1fr auto;
     align-items: center;
-    justify-content: space-between;
+    min-height: 44px;
+    padding: 10px 12px;
+    border: 1px solid var(--theme-border-color, var(--border-light));
+    border-radius: var(--border-radius-sm, 10px);
+    background: var(--theme-panel-bg, var(--bg-dark-tertiary));
 }
 
-.smtp-settings-container h2 .btn-info {
-    font-size: var(--font-size-sm);
-    padding: 0.3em 0.6em;
-    margin-left: var(--spacing-rem-md);
-    background-color: var(--btn-info);
-    border: 1px solid var(--btn-info-border);
-}
-
-.smtp-settings-container h2 .btn-info:hover {
-    background-color: var(--btn-info-hover);
-}
-
-
-.settings-form {
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacing-rem-lg);
-}
-
-.form-group {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-}
-
-.form-group label {
-    color: var(--text-white);
-    font-weight: 500;
-}
-
-
-.button-group {
-    display: flex;
-    gap: 1rem;
-    margin-top: 1rem;
-}
-
-
-.last-tested {
-    color: var(--color-gray-888);
-    font-size: var(--font-size-095rem);
-    margin-top: var(--spacing-rem-md);
-}
-
-input[type="checkbox"] {
+:is(.smtp-settings-page, .integrations-page #email) input[type="checkbox"] {
     width: 20px;
     height: 20px;
+    margin: 0;
     cursor: pointer;
 }
 
+:is(.smtp-settings-page, .integrations-page #email) .message,
+:is(.smtp-settings-page, .integrations-page #email) #testResults,
+:is(.smtp-settings-page, .integrations-page #email) .last-tested,
+:is(.smtp-settings-page, .integrations-page #email) .integration-form-actions {
+    grid-column: 1 / -1;
+}
+
+:is(.smtp-settings-page, .integrations-page #email) .message,
+:is(.smtp-settings-page, .integrations-page #email) .last-tested {
+    color: var(--theme-text-secondary, var(--text-light));
+}
+
+:is(.smtp-settings-page, .integrations-page #email) .message {
+    margin-top: calc(-1 * var(--spacing-sm, 10px));
+    font-size: 0.9rem;
+}
+
+:is(.smtp-settings-page, .integrations-page #email) .integration-form-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-sm, 10px);
+}
+
 @media (max-width: 768px) {
-    .smtp-settings-container {
-        width: 100%;
-        max-width: 100%;
-        min-width: 0;
-        margin: 8px auto;
-        padding: 14px;
+    :is(.smtp-settings-page, .integrations-page #email) .settings-form {
+        grid-template-columns: 1fr;
+        gap: 16px;
     }
 
-    .smtp-settings-container h2 {
-        align-items: flex-start;
+    :is(.smtp-settings-page, .integrations-page #email) .integration-form-actions {
         flex-direction: column;
-        gap: 10px;
     }
 
-    .smtp-settings-container h2 .btn-info {
+    :is(.smtp-settings-page, .integrations-page #email) .integration-form-actions .btn {
         width: 100%;
-        margin-left: 0;
-    }
-
-    .button-group {
-        align-items: stretch;
-        flex-direction: column;
-        gap: 8px;
     }
 }

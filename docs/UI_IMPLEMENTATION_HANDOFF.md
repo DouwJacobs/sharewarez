@@ -33,6 +33,7 @@ statuses describe the recorded fixtures and checks, not every possible data stat
 | UI-06 expanded validation | ✅ Complete | 138 route/theme/viewport checks and 27 interaction/contrast scenarios passed; populated views, role menus, Default/Ember/light palette, modal focus, setup, and token flows verified. See UI06_VERIFICATION.md. |
 | UI-07 Game Edit rework | ✅ Audit fixes verified | One Boolean validator; Save/Refresh/Enter payloads and repeat-submit guard verified. Identity changes protect dirty drafts; results support keyboard activation; server errors open disclosures and focus linked fields. A1/A4/A6 resolved. |
 | UI-08 missing-cover list layout | ✅ Complete | List cards now keep a restrained monogram inside the compact cover and rely on the adjacent title, avoiding duplicated clipped text. |
+| UI-10 integration settings shell | ✅ Complete | Integrations, Discord help, legacy settings fallbacks, and scan-filter validation now share the semantic admin header/surface contract. SMTP, IGDB, and Discord actions stack consistently on mobile; Discord's generated test action stays within its own panel. |
 
 ## Starting state — preserve completed work
 
@@ -417,3 +418,23 @@ IGDB's public game and artwork endpoints return the cover, 15 screenshots, and 9
 artworks, but omit the two standalone logos shown by IGDB's press-kit page. Those
 website-only assets cannot be discovered through the supported API, so the editor
 states when no standalone logos were returned and keeps manual logo upload available.
+
+## UI-10 — Standardize integration settings and legacy fallbacks (complete)
+
+The live Integrations workspace now imports the shared administrator page header
+and relies on `.app-page` for its outer gutter. SMTP, IGDB, and Discord use the same
+action-row contract, with full-width stacked buttons at the mobile breakpoint and
+the normal shared button geometry on desktop. Their route styles are scoped to the
+owning panel and use theme tokens for surfaces, borders, and text.
+
+The Discord help page and the legacy direct-route templates use one semantic
+`main`, one H1 header, and one `app-surface`. Discord JavaScript is resolved through
+`theme_asset` and only inserts Test webhook in a Discord action row. The invalid
+scan-filter POST fallback uses the same shell and converts its desktop table into
+labeled mobile records.
+
+Verification: the accessibility audit passed 88 templates; 19 UI source-contract
+tests and 96 focused Discord, IGDB, SMTP, and filter route tests passed. The live
+disposable preview was inspected in Default and Ember at desktop and mobile
+breakpoints, including each integration tab, action wrapping, notification cards,
+and Discord help content.

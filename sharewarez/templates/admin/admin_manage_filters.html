@@ -1,18 +1,16 @@
 <!-- templates/admin/admin_manage_filters.html -->
 {% extends "base.html" %}
+{% from "partials/ui_components.html" import admin_page_header %}
 
 {% block content %}
-
-
-    <div class="app-page container mt-4">
-<div class="admin_manage_filters-panel">
-    <div class="admin_manage_filters-header">
-        <h2><i class="fas fa-filter"></i> Game Scanning Filters</h2>
-        <p>Manage game pattern filters to improve scanning speed.</p>
+<main class="app-page admin-page admin-manage-filters-page" aria-labelledby="scan-filters-title">
+    {% call admin_page_header('Game scanning filters', 'Manage filename patterns that improve scanning speed and identification.', 'Library', 'fa-filter', title_id='scan-filters-title') %}
         <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addFilterModal">
-            <i class="fas fa-plus"></i> Add New Filter
+            <i class="fas fa-plus" aria-hidden="true"></i> Add filter
         </button>
-    </div>
+    {% endcall %}
+
+    <section class="app-surface admin_manage_filters-panel" aria-labelledby="existing-filters-title">
 
     <!-- Add Filter Modal -->
     <div class="modal fade" id="addFilterModal" tabindex="-1">
@@ -43,35 +41,38 @@
         </div>
     </div>
 
-    <hr>
-    <h3>Existing Filters</h3>
+    <h2 id="existing-filters-title">Existing filters</h2>
     <div class="table-responsive">
-    <table class="admin_manage_filters-table table table-dark table-striped table-hover">
+    <table class="admin_manage_filters-table table">
         <thead>
             <tr>
-                <th width="60%">Scanning Filter Pattern</th>
-                <th width="20%">Case Sensitive</th>
-                <th width="20%">Actions</th>
+                <th scope="col">Scanning filter pattern</th>
+                <th scope="col">Case sensitive</th>
+                <th scope="col">Actions</th>
             </tr>
         </thead>
         <tbody>
         {% for group in scanning_filters %}
             <tr>
-                <td>{{ group.filter_pattern }}</td>
-                <td>
+                <td data-label="Pattern">{{ group.filter_pattern }}</td>
+                <td data-label="Case sensitive">
                     <span class="badge {% if group.case_sensitive %}bg-success{% else %}bg-secondary{% endif %}">
                         {{ 'Yes' if group.case_sensitive else 'No' }}
                     </span>
                 </td>
-                <td>
-                    <a href="{{ url_for('admin2.delete_filter', id=group.id) }}" class="admin_manage_filters-remove-btn btn btn-danger btn-sm"><i class="fas fa-trash"></i> Remove</a>
+                <td data-label="Actions">
+                    <a href="{{ url_for('admin2.delete_filter', id=group.id) }}" class="admin_manage_filters-remove-btn btn btn-danger btn-sm"><i class="fas fa-trash" aria-hidden="true"></i> Remove</a>
                 </td>
             </tr>
         {% endfor %}
+        {% if not scanning_filters %}
+            <tr class="admin_manage_filters-empty"><td colspan="3">No scanning filters have been added.</td></tr>
+        {% endif %}
         </tbody>
     </table>
     </div>
-</div>
+    </section>
+</main>
 
 <script src="{{ 'js/admin_manage_filters.js'|theme_asset }}"></script>
 

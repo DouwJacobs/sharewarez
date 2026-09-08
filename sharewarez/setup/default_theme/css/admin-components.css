@@ -678,10 +678,10 @@
 
 /* === MERGED FROM admin_manage_filters.css === */
 
-.admin_manage_filters-header h2 {
-    color: var(--text-white);
-    font-size: var(--font-size-2xl);
-    margin-bottom: var(--spacing-md);
+.admin-manage-filters-page .admin_manage_filters-panel > h2 {
+    margin: 0 0 var(--spacing-lg, 24px);
+    color: var(--theme-text-primary, var(--text-white));
+    font-size: 1.15rem;
 }
 
 .admin_manage_filters-form-group-case {
@@ -692,6 +692,82 @@
 
 .admin_manage_filters-form-group-case input[type="checkbox"] {
     margin-right: var(--spacing-sm);
+}
+
+.admin-manage-filters-page .table-responsive {
+    overflow-x: auto;
+}
+
+.admin-manage-filters-page .admin_manage_filters-table {
+    width: 100%;
+    margin: 0;
+    color: var(--theme-text-primary, var(--text-white));
+}
+
+.admin-manage-filters-page .admin_manage_filters-table th {
+    border-color: var(--theme-border-color, var(--border-light));
+    color: var(--theme-text-secondary, var(--text-light));
+}
+
+.admin-manage-filters-page .admin_manage_filters-table td {
+    border-color: var(--theme-border-color, var(--border-light));
+    vertical-align: middle;
+}
+
+.admin-manage-filters-page .admin_manage_filters-table th:first-child {
+    width: 60%;
+}
+
+.admin-manage-filters-page .admin_manage_filters-empty td {
+    padding: var(--spacing-xl, 32px);
+    color: var(--theme-text-secondary, var(--text-light));
+    text-align: center;
+}
+
+@media (max-width: 640px) {
+    .admin-manage-filters-page .admin_manage_filters-table thead {
+        display: none;
+    }
+
+    .admin-manage-filters-page .admin_manage_filters-table,
+    .admin-manage-filters-page .admin_manage_filters-table tbody,
+    .admin-manage-filters-page .admin_manage_filters-table tr,
+    .admin-manage-filters-page .admin_manage_filters-table td {
+        display: block;
+        width: 100%;
+    }
+
+    .admin-manage-filters-page .admin_manage_filters-table tr {
+        display: grid;
+        gap: 10px;
+        padding: 14px 0;
+        border-bottom: 1px solid var(--theme-border-color, var(--border-light));
+    }
+
+    .admin-manage-filters-page .admin_manage_filters-table td {
+        display: grid;
+        grid-template-columns: minmax(100px, 0.45fr) 1fr;
+        gap: 12px;
+        padding: 0;
+        border: 0;
+    }
+
+    .admin-manage-filters-page .admin_manage_filters-table td::before {
+        content: attr(data-label);
+        color: var(--theme-text-secondary, var(--text-light));
+        font-size: 0.78rem;
+        font-weight: 700;
+        text-transform: uppercase;
+    }
+
+    .admin-manage-filters-page .admin_manage_filters-empty td {
+        display: block;
+        padding: 18px 0;
+    }
+
+    .admin-manage-filters-page .admin_manage_filters-empty td::before {
+        display: none;
+    }
 }
 
 /* === ADMIN EXPERIENCE REFINEMENT ===

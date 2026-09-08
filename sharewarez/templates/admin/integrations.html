@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "partials/ui_components.html" import admin_page_header %}
 {% block content %}
 
 <meta name="csrf-token" content="{{ csrf_token() }}">
@@ -10,29 +11,25 @@
 <link rel="stylesheet" href="{{ 'css/admin/integrations_tabs.css'|theme_asset }}">
 
 
-<main class="app-page integrations-page">
-    <header class="app-page-header integrations-header">
-        <p class="integrations-eyebrow">Administration</p>
-        <h1>Integrations</h1>
-        <p>Connect email, game metadata, and notification services.</p>
-    </header>
+<main class="app-page admin-page integrations-page" aria-labelledby="integrations-title">
+    {{ admin_page_header('Integrations', 'Connect email, game metadata, and notification services.', 'Administration', 'fa-plug', title_id='integrations-title') }}
     <section class="app-surface integrations-panel admin-tab-workspace">
 
         <!-- Nav tabs -->
         <ul class="integrations-nav-tabs admin-tab-nav nav nav-tabs" id="integrationTabs" role="tablist" aria-label="Integration categories">
             <li class="integrations-nav-item nav-item" role="presentation">
                 <button class="integrations-nav-link admin-tab-link nav-link" id="email-tab" data-bs-toggle="tab" data-bs-target="#email" type="button" role="tab" aria-controls="email" aria-selected="false">
-                    <i class="fas fa-envelope"></i><span><strong>Email</strong><small>SMTP delivery and sender</small></span>
+                    <i class="fas fa-envelope" aria-hidden="true"></i><span><strong>Email</strong><small>SMTP delivery and sender</small></span>
                 </button>
             </li>
             <li class="integrations-nav-item nav-item" role="presentation">
                 <button class="integrations-nav-link admin-tab-link nav-link" id="igdb-tab" data-bs-toggle="tab" data-bs-target="#igdb" type="button" role="tab" aria-controls="igdb" aria-selected="false">
-                    <i class="fas fa-gamepad"></i><span><strong>IGDB</strong><small>Game metadata provider</small></span>
+                    <i class="fas fa-gamepad" aria-hidden="true"></i><span><strong>IGDB</strong><small>Game metadata provider</small></span>
                 </button>
             </li>
             <li class="integrations-nav-item nav-item" role="presentation">
                 <button class="integrations-nav-link admin-tab-link nav-link" id="discord-tab" data-bs-toggle="tab" data-bs-target="#discord" type="button" role="tab" aria-controls="discord" aria-selected="false">
-                    <i class="fab fa-discord"></i><span><strong>Discord</strong><small>Webhook and notifications</small></span>
+                    <i class="fab fa-discord" aria-hidden="true"></i><span><strong>Discord</strong><small>Webhook and notifications</small></span>
                 </button>
             </li>
         </ul>

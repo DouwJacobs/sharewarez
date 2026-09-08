@@ -7,8 +7,10 @@
         You must save your settings before testing.
     </div>
 
-    <button type="button" class="btn btn-primary me-2" onclick="saveSmtpSettings()">Save Settings</button>
-    <button type="button" class="btn btn-secondary" onclick="testSmtpSettings()">Test Settings</button>
+    <div class="button-group integration-form-actions">
+        <button type="button" class="btn btn-primary" onclick="saveSmtpSettings()"><i class="fas fa-check" aria-hidden="true"></i> Save settings</button>
+        <button type="button" class="btn btn-secondary" onclick="testSmtpSettings()"><i class="fas fa-vial" aria-hidden="true"></i> Test settings</button>
+    </div>
 
     <!-- Test results container with improved styling -->
     <div id="testResults" class="mt-4"></div>

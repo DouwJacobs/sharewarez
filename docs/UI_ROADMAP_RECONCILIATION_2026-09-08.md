@@ -18,17 +18,21 @@ passing means they are enhancements, not defects in the published 1.14.1 baselin
 
 ## Source-level UI findings
 
-### R1 — Legacy integration pages still bypass the shared page shell
+### R1 — Integration settings shell and controls (complete)
 
-The Discord settings/help, IGDB settings, SMTP settings, and scanning-filter
-templates use legacy Bootstrap containers/cards rather than one semantic `main`,
-the shared administrator page header, and a single themed surface. Several use an
-H2 as the page title. Discord settings also loads its JavaScript from the installed
-default-theme path instead of `theme_asset`, so a custom theme cannot override it.
+Completed 8 September 2026. The live Integrations workspace and its Discord, IGDB,
+and SMTP partials now use the shared administrator page header, consistent action
+groups, semantic theme tokens, and one responsive panel hierarchy. Legacy direct
+route templates and the Discord help page now use one semantic `main`, the shared
+header, and one `app-surface`; the scan-filter validation fallback follows the same
+shell and presents table rows as labeled mobile records.
 
-**Next package:** migrate these related administration pages together, preserve
-their existing forms and endpoints, and verify Default, Ember, and a light palette
-at 1440 × 1000 and 390 × 844.
+Discord's script now loads through `theme_asset` and scopes its generated Test
+webhook action to the Discord form. This prevents it from attaching to SMTP after
+the forms adopted a shared action class. The package preserves all endpoints and
+form IDs. Verification passed the 88-template accessibility audit, 19 UI contract
+tests, and 96 focused Discord/IGDB/SMTP/filter route tests. Default and Ember were
+inspected in the disposable browser preview at desktop and mobile breakpoints.
 
 ### R2 — System Logs is the clearest remaining table/theme cleanup
 
@@ -68,12 +72,11 @@ Ember, and a high-luminance palette, and keep canonical/installed theme assets e
 
 ## Recommended implementation order
 
-1. Shared-shell migration for Discord, IGDB, SMTP, and scanning filters.
-2. System Logs theme tokens and mobile information hierarchy.
-3. Remaining authenticated semantic page shells.
-4. Incremental route-level theme-token cleanup, starting with the pages touched
-   by steps 1–3.
-5. Metadata-provider abstraction as the next larger product feature; keep provider
+1. System Logs theme tokens and mobile information hierarchy.
+2. Remaining authenticated semantic page shells.
+3. Incremental route-level theme-token cleanup, starting with the pages touched
+   by steps 1–2.
+4. Metadata-provider abstraction as the next larger product feature; keep provider
    integrations API-only and preserve field ownership/provenance.
 
 The current working tree was clean before this reconciliation. No application

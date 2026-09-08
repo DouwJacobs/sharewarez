@@ -1,238 +1,162 @@
-/* .card definition removed - using unified version from base.css */
-
-.card-header h2 {
-    color: var(--text-white);
+.discord-settings-page .integration-settings-surface,
+.discord-help-page .integration-settings-surface {
+    max-width: 960px;
 }
 
-.card-body {
-    padding: 1.5rem;
-}
-
-.form-label {
-    color: var(--text-white);
-    font-weight: 500;
-    margin-bottom: 0.5rem;
-}
-
-/* Form controls now use unified system from base.css */
-
-/* Button styles now use unified .btn-primary and .btn-info from base.css */
-/* Orphaned styles removed - using unified button system */
-
-.alert {
-    background: var(--table-bg-40-alt);
-    border: 1px solid var(--border-light);
-    color: var(--text-white);
-    padding: var(--spacing-rem-md);
-    margin-bottom: var(--spacing-rem-md);
-    border-radius: var(--border-radius-sm);
-}
-
-.alert-success {
-    background-color: var(--alert-success-bg);
-    border-color: var(--btn-success-border);
-}
-
-.alert-danger {
-    background-color: var(--alert-danger-bg);
-    border-color: var(--btn-danger-border);
-}
-
-.extenstions-table {
-    background-color: var(--datatable-wrapper-bg);
-    border-radius: var(--border-radius-md);
-    box-shadow: var(--shadow-glass);
-    backdrop-filter: blur(10px);
-    border-bottom: 2px solid rgba(255, 255, 255, 0.1);
-    padding: 12px;
-    color: white; /* Keep text white */
-}
-
-.card {
-    background-color: rgba(0, 0, 0, 0.6);
-    border-radius: 10px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(10px);
-    border-bottom: 2px solid rgba(255, 255, 255, 0.1);
-    padding: 12px;
-    color: white; /* Keep text white */
-}
-
-.info-panel {
-    background-color: rgba(0, 0, 0, 0.6);
-    border-radius: 10px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(10px);
-    border-bottom: 2px solid rgba(255, 255, 255, 0.1);
-    padding: 12px;
-    color: white; /* Keep text white */
-}
-
-/* Discord Settings Container */
-.discord-settings-container {
+:is(.discord-settings-page, .integrations-page #discord) form {
     display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    gap: 1rem;
-    align-items: stretch;
+    gap: var(--spacing-md, 16px);
 }
 
-/* Connection Settings Section */
-.connection-settings-section {
-    min-width: 0; /* Allow shrinking */
-}
-.connection-settings-section > h4{margin-bottom:.45rem}.connection-settings-section>.text-muted{margin-bottom:.75rem!important}
-
-.connection-card {
-    background: rgba(0, 0, 0, 0.3);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 10px;
-    padding: .9rem;
-}
-.discord-settings-container form{display:block}.connection-card form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.75rem}.connection-card form>.mb-3{margin:0!important}.connection-card form>.mb-3:first-of-type{grid-column:1/-1}.connection-card form>.d-flex{grid-column:1/-1;display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));gap:.75rem}.connection-card .input-glass{width:100%;min-height:42px}.connection-card .btn{width:100%;min-height:42px;margin:0!important}
-
-/* Notification Settings Section */
-.notification-settings-section {
-    min-width: 0; /* Allow shrinking */
-    margin-top:0!important;
-    padding:.9rem;
-    border:1px solid var(--border-light);
-    border-radius:10px;
-    background:color-mix(in srgb,var(--theme-panel-bg) 72%,transparent);
+:is(.discord-settings-page, .integrations-page #discord) form > .mb-3 {
+    display: grid;
+    gap: var(--spacing-xs, 6px);
+    margin: 0 !important;
 }
 
-.notification-settings-section h5 {
-    color: var(--theme-text-primary, #f5f7ff);
-    font-weight: 600;
-    margin-bottom: 0.5rem;
-    font-size: 1.1rem;
+:is(.discord-settings-page, .integrations-page #discord) .form-label {
+    margin: 0;
+    color: var(--theme-text-primary, var(--text-white));
+    font-weight: 650;
 }
 
-.notification-settings-section .text-muted {
-    color: var(--theme-text-secondary, #c5ccdc) !important;
-    margin-bottom: 0.75rem;
-    font-size: 0.9rem;
+:is(.discord-settings-page, .integrations-page #discord) .input-glass {
+    width: 100%;
+    min-height: 44px;
 }
 
-/* Notification Cards */
-.notification-card {
-    background: rgba(0, 0, 0, 0.2);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 6px;
-    padding:.65rem .75rem;
-    transition: all 0.3s ease;
-    min-height:86px;
+.integration-form-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-sm, 10px);
+    margin-top: var(--spacing-xs, 6px);
+}
+
+:is(.discord-settings-page, .integrations-page #discord) .integration-form-actions .btn {
+    margin: 0 !important;
+}
+
+.integrations-page #discord .discord-settings-container {
+    display: grid;
+    gap: var(--spacing-lg, 24px);
+}
+
+.integrations-page #discord .connection-card,
+.integrations-page #discord .notification-settings-section {
+    min-width: 0;
+    padding: var(--spacing-md, 16px);
+    border: 1px solid var(--theme-border-color, var(--border-light));
+    border-radius: var(--border-radius-md, 14px);
+    background: var(--theme-panel-bg, var(--bg-dark-tertiary));
+}
+
+.integrations-page #discord .notification-settings-section {
+    margin-top: 0 !important;
+}
+
+.integrations-page #discord .notification-settings-section h5 {
+    margin: 0 0 6px;
+    color: var(--theme-text-primary, var(--text-white));
+}
+
+.integrations-page #discord .notification-settings-section > .text-muted {
+    margin-bottom: var(--spacing-md, 16px) !important;
+    color: var(--theme-text-secondary, var(--text-light)) !important;
+}
+
+.integrations-page #discord .notification-settings-section form > .row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--spacing-sm, 10px);
+    margin: 0;
+}
+
+.integrations-page #discord .notification-settings-section form > .row > [class*="col-"] {
+    width: auto;
+    padding: 0;
+}
+
+.integrations-page #discord .notification-card {
     height: 100%;
+    min-height: 92px;
+    padding: 12px;
+    border: 1px solid var(--theme-border-color, var(--border-light));
+    border-radius: var(--border-radius-sm, 10px);
+    background: var(--theme-card-background, var(--bg-dark-secondary));
+    transition: border-color var(--transition-normal), transform var(--transition-normal);
 }
-.notification-settings-section .alert{padding:.7rem .8rem;margin-bottom:.75rem}.notification-settings-section form{display:grid;grid-template-columns:1fr;gap:.75rem;align-items:start}.notification-settings-section form>.row{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:.65rem;margin:0}.notification-settings-section form>.row>[class*=col-]{width:auto;padding:0}.notification-settings-section form>.row>.col-12{grid-column:auto}.notification-settings-section form>.mt-3{display:flex;justify-content:flex-end;margin:0!important}.notification-settings-section form>.mt-3 .btn{width:auto;min-height:42px;white-space:nowrap}@media (min-width:993px){.connection-card form{grid-template-columns:minmax(15rem,2fr) minmax(10rem,1fr) minmax(12rem,1fr) minmax(14rem,auto);align-items:end}.connection-card form>.mb-3:first-of-type,.connection-card form>.d-flex{grid-column:auto}.notification-card{min-height:96px}}
 
-.notification-card:hover {
-    background: rgba(0, 0, 0, 0.3);
-    border-color: rgba(255, 255, 255, 0.2);
+.integrations-page #discord .notification-card:hover {
+    border-color: rgb(var(--theme-accent-soft-rgb, 154, 177, 255));
     transform: translateY(-2px);
 }
 
-.notification-card .form-check {
-    margin-bottom: 0;
-}
-
-.notification-card .form-check-input {
-    background: rgba(0, 0, 0, 0.3);
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    margin-top: 0.1rem;
-}
-
-.notification-card .form-check-input:checked {
-    background-color: var(--theme-primary);
-    border-color: var(--theme-primary);
-}
-
-.notification-card .form-check-input:focus {
-    border-color: rgb(var(--theme-accent-rgb, 0, 150, 255));
-    box-shadow: 0 0 5px rgba(var(--theme-accent-rgb, 0, 150, 255), 0.3);
-}
-
-.notification-card .form-check-label {
-    color: #ffffff;
+.integrations-page #discord .notification-card .form-check-label {
+    color: var(--theme-text-primary, var(--text-white));
     cursor: pointer;
-    font-weight: 500;
-    font-size: 0.9rem;
 }
 
-.notification-card .form-check-label strong {
+.integrations-page #discord .notification-card .form-check-label strong {
     display: block;
-    margin-bottom: 0.2rem;
-    font-size: 0.95rem;
+    margin-bottom: 3px;
 }
 
-.notification-card .form-text {
-    /* Using .form-text-light variant from base.css */
+.integrations-page #discord .notification-card .form-text {
+    color: var(--theme-text-secondary, var(--text-light));
 }
 
-/* Icons in notification cards */
-.notification-card .text-primary { color: var(--theme-primary) !important; }
-.notification-card .text-info { color: #17a2b8 !important; }
-.notification-card .text-warning { color: #ffc107 !important; }
-.notification-card .text-success { color: #28a745 !important; }
-.notification-card .text-secondary { color: #6c757d !important; }
-
-/* Connection form specific styles */
-.connection-card .form-label {
-    color: #fff;
-    font-weight: 500;
-    margin-bottom: 0.4rem;
-    font-size: 0.9rem;
+.integrations-page #discord .notification-settings-section form > .mt-3 {
+    display: flex;
+    justify-content: flex-end;
+    margin: 0 !important;
 }
 
-.connection-card .form-control {
-    background: rgba(0, 0, 0, 0.2);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    color: #fff;
-    padding: 0.4rem;
-    border-radius: 4px;
-    font-size: 0.9rem;
-    margin-bottom: 0.75rem;
+.integration-help-surface {
+    color: var(--theme-text-secondary, var(--text-light));
 }
 
-.connection-card .form-control:focus {
-    background: rgba(0, 0, 0, 0.3);
-    border-color: rgb(var(--theme-accent-rgb, 0, 150, 255));
-    box-shadow: 0 0 5px rgba(var(--theme-accent-rgb, 0, 150, 255), 0.3);
-    color: #fff;
+.integration-help-surface > h3 {
+    margin: 0 0 var(--spacing-lg, 24px);
+    color: var(--theme-text-primary, var(--text-white));
 }
 
-.connection-card .d-flex {
-    gap: 0.75rem;
+.integration-help-surface h4 {
+    margin: var(--spacing-xl, 32px) 0 var(--spacing-sm, 10px);
+    color: var(--theme-text-primary, var(--text-white));
+    font-size: 1.05rem;
 }
 
-.connection-card .btn {
-    font-size: 0.9rem;
-    padding: 0.4rem 0.8rem;
+.integration-help-surface :is(ol, ul) {
+    display: grid;
+    gap: 7px;
+    padding-left: 1.35rem;
 }
 
-/* Responsive improvements */
-@media (max-width: 992px) {
-    .discord-settings-container {
-        grid-template-columns:1fr;
-        gap: 1.5rem;
+.integration-help-surface .alert {
+    margin: var(--spacing-lg, 24px) 0 0;
+}
+
+@media (min-width: 993px) {
+    .integrations-page #discord .connection-card form {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
     }
 
-    .connection-settings-section,
-    .notification-settings-section {
-        flex: none;
+    .integrations-page #discord .connection-card form .integration-form-actions {
+        grid-column: 1 / -1;
     }
 }
 
 @media (max-width: 768px) {
-    .connection-card form,.notification-settings-section form,.notification-settings-section form>.row{grid-template-columns:1fr}.connection-card form>*{grid-column:1!important}.notification-settings-section form>.row>.col-12{grid-column:1}.notification-settings-section form>.mt-3 .btn{width:100%}
-    .notification-card {
-        padding: 0.6rem;
+    .integration-form-actions {
+        flex-direction: column;
     }
 
-    .connection-card {
-        padding: 0.75rem;
+    .integration-form-actions .btn,
+    .integrations-page #discord .notification-settings-section form > .mt-3 .btn {
+        width: 100%;
     }
 
-    .notification-card .form-text {
-        /* Responsive handled by .form-text-light from base.css */
+    .integrations-page #discord .notification-settings-section form > .row {
+        grid-template-columns: 1fr;
     }
 }

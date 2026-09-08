@@ -1,14 +1,16 @@
 {% extends "base.html" %}
+{% from "partials/ui_components.html" import admin_page_header %}
 {% block content %}
 
 <link rel="stylesheet" href="{{ 'css/admin/admin_manage_igdb_settings.css'|theme_asset }}">
 
-<div class="app-page app-page--narrow igdb-settings-container container-settings">
-    <div class="card">
-        <h2>IGDB API Settings</h2>
+<main class="app-page app-page--narrow admin-page integration-settings-page igdb-settings-page" aria-labelledby="igdb-settings-title">
+    {{ admin_page_header('IGDB', 'Connect the metadata API used to identify games and refresh their media.', 'Integrations', 'fa-gamepad', title_id='igdb-settings-title') }}
 
+    <section class="app-surface integration-settings-surface">
         {% include 'partials/integrations/igdb_form.html' %}
-    </div>
+    </section>
+</main>
 
 <script src="{{ 'js/password_visibility.js'|theme_asset }}"></script>
 

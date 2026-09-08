@@ -7,7 +7,7 @@
 <div class="collapse instructions-panel" id="instructionsPanel">
     <h3>How to Get Your IGDB API Credentials</h3>
     <ol>
-        <li>Go to the <a href="https://dev.twitch.tv/console" target="_blank">Twitch Developer Console</a></li>
+        <li>Go to the <a href="https://dev.twitch.tv/console" target="_blank" rel="noopener noreferrer">Twitch Developer Console</a></li>
         <li>Log in with your Twitch account (or create one if needed)</li>
         <li>Click on "Register Your Application"</li>
         <li>Fill in the application details:
@@ -51,8 +51,8 @@
     {% endif %}
 
     <div class="button-group">
-        <button onclick="saveIgdbSettings()" class="btn btn-primary">Save Settings</button>
-        <button onclick="testIgdbSettings()" class="btn btn-secondary">Test Connection</button>
+        <button type="button" onclick="saveIgdbSettings()" class="btn btn-primary"><i class="fas fa-check" aria-hidden="true"></i> Save settings</button>
+        <button type="button" onclick="testIgdbSettings()" class="btn btn-secondary"><i class="fas fa-vial" aria-hidden="true"></i> Test connection</button>
         <div id="loadingSpinner" class="loading-spinner" style="display: none;">
             <div class="app-loading-indicator" role="status">
                 <span class="app-spinner" aria-hidden="true"></span>

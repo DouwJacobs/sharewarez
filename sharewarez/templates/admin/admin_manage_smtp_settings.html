@@ -1,18 +1,22 @@
 {% extends "base.html" %}
+{% from "partials/ui_components.html" import admin_page_header %}
 {% block content %}
 
 <meta name="csrf-token" content="{{ csrf_token() }}">
 <link rel="stylesheet" href="{{ 'css/admin/admin_manage_smtp_settings.css'|theme_asset }}">
 
 
-<div class="app-page app-page--narrow container-settings">
-    <div class="card">
-    <h2>SMTP Settings <button type="button" class="btn btn-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#smtpHelpModal" aria-label="SMTP setup help">
-            <i class="fas fa-question-circle"></i>
-        </button></h2>
+<main class="app-page app-page--narrow admin-page integration-settings-page smtp-settings-page" aria-labelledby="smtp-settings-title">
+    {% call admin_page_header('SMTP', 'Configure the mail server used for account and application email.', 'Integrations', 'fa-envelope', title_id='smtp-settings-title') %}
+        <button type="button" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#smtpHelpModal">
+            <i class="fas fa-question-circle" aria-hidden="true"></i> Setup help
+        </button>
+    {% endcall %}
 
+    <section class="app-surface integration-settings-surface">
         {% include 'partials/integrations/smtp_form.html' %}
-    </div>
+    </section>
+</main>
 
 <script src="{{ 'js/admin_manage_smtp_settings.js'|theme_asset }}"></script>
 

@@ -265,3 +265,35 @@ def test_final_theme_and_vendor_audit_removes_legacy_leaks():
         assert "#4A90E2" not in stylesheet
     assert not Path("sharewarez/templates/admin/admin_server_status.html").exists()
     assert not (THEME / "js/admin_manage_scanjobs_backup.js").exists()
+
+
+def test_integration_pages_use_shared_shells_and_theme_assets():
+    templates = [
+        Path("sharewarez/templates/admin/integrations.html"),
+        Path("sharewarez/templates/admin/admin_manage_discord_settings.html"),
+        Path("sharewarez/templates/admin/admin_manage_discord_readme.html"),
+        Path("sharewarez/templates/admin/admin_manage_igdb_settings.html"),
+        Path("sharewarez/templates/admin/admin_manage_smtp_settings.html"),
+        Path("sharewarez/templates/admin/admin_manage_filters.html"),
+    ]
+
+    for path in templates:
+        source = path.read_text(encoding="utf-8")
+        assert "import admin_page_header" in source
+        assert '<main class="app-page' in source
+        assert "admin_page_header(" in source
+        assert "app-surface" in source
+
+    discord = templates[1].read_text(encoding="utf-8")
+    assert "'js/admin_manage_discord_settings.js'|theme_asset" in discord
+    assert "library/themes/default/js/admin_manage_discord_settings.js" not in discord
+    discord_javascript = (THEME / "js/admin_manage_discord_settings.js").read_text(encoding="utf-8")
+    assert ".discord-settings-container .integration-form-actions" in discord_javascript
+
+    integrations_css = (THEME / "css/admin/integrations_tabs.css").read_text(encoding="utf-8")
+    assert "width:min(1080px,calc(100% - 2rem))" not in integrations_css
+    assert "width:min(100% - 1rem,1080px)" not in integrations_css
+
+    filters = templates[-1].read_text(encoding="utf-8")
+    assert 'data-label="Pattern"' in filters
+    assert "table-dark" not in filters

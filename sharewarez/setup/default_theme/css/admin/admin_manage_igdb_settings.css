@@ -1,219 +1,131 @@
-.table {
-    background-color: #333;
-    color: var(--text-white);
-}
-.table th {
-    background-color: #444;
+:is(.igdb-settings-page, .integrations-page #igdb) .instructions-toggle {
+    margin-bottom: var(--spacing-lg, 24px);
 }
 
-.instructions-toggle {
-    margin-bottom: 1rem;
+.igdb-settings-page .integration-settings-surface {
+    max-width: 960px;
 }
 
-.instructions-toggle button {
-    width: 100%;
-    text-align: left;
+:is(.igdb-settings-page, .integrations-page #igdb) .instructions-toggle button {
     position: relative;
-    background-color: var(--btn-info);
-    border: 1px solid rgba(23, 162, 184, 0.3);
-    color: var(--text-white);
+    width: 100%;
+    justify-content: flex-start;
+    text-align: left;
 }
 
-.instructions-toggle button i {
+:is(.igdb-settings-page, .integrations-page #igdb) .instructions-toggle button i {
     position: absolute;
     right: 1rem;
     transition: transform var(--transition-normal);
 }
 
-.instructions-toggle button[aria-expanded="true"] i {
+:is(.igdb-settings-page, .integrations-page #igdb) .instructions-toggle button[aria-expanded="true"] i {
     transform: rotate(180deg);
 }
 
-.instructions-panel {
-    background-color: var(--bg-dark-tertiary);
-    padding: 1.5rem;
-    border-radius: var(--border-radius-sm);
-    margin-bottom: 2rem;
-    border: 1px solid var(--border-light);
+:is(.igdb-settings-page, .integrations-page #igdb) .instructions-panel {
+    margin-bottom: var(--spacing-lg, 24px);
+    padding: var(--spacing-lg, 24px);
+    border: 1px solid var(--theme-border-color, var(--border-light));
+    border-radius: var(--border-radius-md, 14px);
+    background: var(--theme-panel-bg, var(--bg-dark-tertiary));
+    color: var(--theme-text-secondary, var(--text-light));
 }
 
-.settings-form {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
+:is(.igdb-settings-page, .integrations-page #igdb) .instructions-panel h3 {
+    margin-top: 0;
+    color: var(--theme-text-primary, var(--text-white));
 }
 
-.form-group {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
+:is(.igdb-settings-page, .integrations-page #igdb) .settings-form {
+    display: grid;
+    gap: var(--spacing-lg, 24px);
 }
 
-.form-group label {
-    color: var(--text-white);
-    font-weight: 500;
+:is(.igdb-settings-page, .integrations-page #igdb) .form-group {
+    display: grid;
+    gap: var(--spacing-xs, 6px);
 }
 
-.input-glass {
-    background: var(--bg-dark-tertiary);
-    border: 1px solid var(--border-light-strong);
-    color: var(--text-white);
-    padding: 0.5rem;
-    border-radius: 4px;
+:is(.igdb-settings-page, .integrations-page #igdb) .form-group label {
+    color: var(--theme-text-primary, var(--text-white));
+    font-weight: 650;
 }
 
-.input-glass:focus {
-    outline: none;
-    border-color: rgb(var(--theme-accent-rgb, 0, 150, 255));
-    box-shadow: 0 0 5px rgba(var(--theme-accent-rgb, 0, 150, 255), 0.3);
-}
-
-.button-group {
-    display: flex;
-    gap: 1rem;
-    margin-top: 1rem;
-}
-
-.btn {
-    padding: 0.5rem 1rem;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: all var(--transition-normal);
-}
-
-.btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 2px 5px var(--bg-dark-tertiary);
-}
-
-.last-tested {
-    color: #888;
-    font-size: 0.9rem;
-    margin-top: 1rem;
-}
-
-#testResults {
-    margin-top: 1rem;
-}
-
-.alert {
-    padding: 1rem;
-    border-radius: 4px;
-    margin-bottom: 1rem;
-}
-
-.alert-success {
-    background-color: rgba(40, 167, 69, 0.2);
-    border: 1px solid rgba(40, 167, 69, 0.3);
-    color: var(--text-white);
-}
-
-.alert-danger {
-    background-color: rgba(220, 53, 69, 0.2);
-    border: 1px solid rgba(220, 53, 69, 0.3);
-    color: var(--text-white);
-}
-
-.alert-info {
-    background-color: var(--btn-info);
-    border: 1px solid rgba(23, 162, 184, 0.3);
-    color: var(--text-white);
-}
-
-.note {
-    background-color: #333;
-    padding: 1rem;
-    border-left: 4px solid #17a2b8;
-    margin-top: 1rem;
-    border-radius: 0 4px 4px 0;
-}
-
-.note strong {
-    color: #17a2b8;
-}
-
-/* Loading Spinner Overlay */
-#loadingSpinner {
-    position: fixed;
-    top: 0;
-    left: 0;
+:is(.igdb-settings-page, .integrations-page #igdb) .input-glass {
     width: 100%;
-    height: 100%;
-    background-color: var(--shadow-dark);
+    min-height: 44px;
+}
+
+:is(.igdb-settings-page, .integrations-page #igdb) .button-group {
     display: flex;
-    justify-content: center;
-    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--spacing-sm, 10px);
+}
+
+:is(.igdb-settings-page, .integrations-page #igdb) .last-tested {
+    color: var(--theme-text-secondary, var(--text-light));
+    font-size: 0.9rem;
+}
+
+:is(.igdb-settings-page, .integrations-page #igdb) .note {
+    margin-top: var(--spacing-lg, 24px);
+    padding: var(--spacing-md, 16px);
+    border-left: 4px solid var(--semantic-info, var(--btn-info));
+    border-radius: 0 var(--border-radius-sm, 8px) var(--border-radius-sm, 8px) 0;
+    background: color-mix(in srgb, var(--semantic-info, var(--btn-info)) 10%, var(--theme-card-background));
+}
+
+:is(.igdb-settings-page, .integrations-page #igdb) .note strong {
+    color: var(--semantic-info, var(--btn-info));
+}
+
+:is(.igdb-settings-page, .integrations-page #igdb) #loadingSpinner {
+    position: fixed;
+    inset: 0;
     z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.72);
 }
 
-#loadingSpinner img {
-    border-radius: var(--border-radius-lg);
-    max-width: 100px;
-    max-height: 100px;
-}
-
-/* Password visibility toggle styling */
-.password-input-container {
+:is(.igdb-settings-page, .integrations-page #igdb) .password-input-container {
     position: relative;
     display: flex;
     align-items: center;
 }
 
-.toggle-password {
+:is(.igdb-settings-page, .integrations-page #igdb) .password-input-container .input-glass {
+    padding-right: 48px;
+}
+
+:is(.igdb-settings-page, .integrations-page #igdb) .toggle-password {
     position: absolute;
-    right: var(--spacing-sm);
-    background: none;
-    border: none;
-    color: rgba(67, 64, 74, 0.733);
-    cursor: pointer;
+    right: 2px;
+    width: 42px;
+    height: 40px;
     padding: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 100%;
-    transition: color var(--transition-normal);
+    border: 0;
+    background: transparent;
+    color: var(--theme-text-secondary, var(--text-light));
 }
 
-.toggle-password:hover {
-    color: rgba(0, 0, 0, 0.8);
-}
-
-.toggle-password:focus {
-    outline: none;
-}
-.card {
-    width: 70%;
-    margin: 0 auto;
-    padding: var(--spacing-lg);
+:is(.igdb-settings-page, .integrations-page #igdb) .toggle-password:hover,
+:is(.igdb-settings-page, .integrations-page #igdb) .toggle-password:focus-visible {
+    color: var(--theme-text-primary, var(--text-white));
 }
 
 @media (max-width: 768px) {
-    .card,
-    .instructions-panel,
-    .settings-form {
-        width: 100%;
-        max-width: 100%;
-        min-width: 0;
+    :is(.igdb-settings-page, .integrations-page #igdb) .instructions-panel {
+        padding: 16px;
     }
 
-    .card,
-    .instructions-panel {
-        padding: 14px;
-    }
-
-    .button-group {
-        align-items: stretch;
+    :is(.igdb-settings-page, .integrations-page #igdb) .button-group {
         flex-direction: column;
-        gap: 8px;
     }
 
-    .button-group .btn {
+    :is(.igdb-settings-page, .integrations-page #igdb) .button-group .btn {
         width: 100%;
-    }
-
-    .toggle-password {
-        width: 44px;
-        min-width: 44px;
     }
 }
