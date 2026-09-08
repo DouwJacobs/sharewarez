@@ -24,10 +24,25 @@
             <p class="image-editor-eyebrow">Game media</p>
             <h1>Edit images</h1>
             <p class="image-editor-game-name">{{ game.name }}</p>
-            <p id="image-refresh-status" role="status"></p>
         </div>
         <div class="app-page-actions">{% if game.igdb_id %}<button class="btn btn-secondary" type="button" id="refresh-editor-images">Refresh from IGDB</button>{% endif %}</div>
     </header>
+
+    {% if game.igdb_id %}
+    <section class="image-refresh-overall" id="image-refresh-overall" hidden aria-live="polite" aria-atomic="true">
+        <div class="image-refresh-overall-heading">
+            <div>
+                <strong id="image-refresh-phase">Preparing image refresh</strong>
+                <p id="image-refresh-status" role="status">Connecting to IGDB…</p>
+            </div>
+            <span id="image-refresh-percent" aria-hidden="true">0%</span>
+        </div>
+        <div class="image-refresh-track" id="image-refresh-track" role="progressbar" aria-label="Overall image refresh progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+            <span id="image-refresh-fill"></span>
+        </div>
+        <p class="image-refresh-counts" id="image-refresh-counts">Checking media available through the IGDB API.</p>
+    </section>
+    {% endif %}
 
     <div class="image-editor-layout">
         <section class="app-surface glass-panel image-editor-card image-editor-cover-card">
@@ -114,7 +129,7 @@
                     </div>
                 </figure>
             {% else %}
-                <p class="image-editor-empty">No standalone logos are available. Upload a logo or refresh the game images to check IGDB again.</p>
+                <p class="image-editor-empty">No standalone logos are available from the IGDB API. Upload a logo or refresh the game images to check again.</p>
             {% endfor %}
         </div>
     </section>

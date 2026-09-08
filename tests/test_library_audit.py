@@ -66,7 +66,10 @@ def test_ajax_card_payloads_are_escaped_and_share_initial_renderer(client, catal
     assert not any('data-audit-injected' in attrs or 'onpointerenter' in attrs or 'onerror' in attrs for _,attrs in doc.elements)
     initial = client.get('/library?library_uuid='+library.uuid).get_data(as_text=True)
     assert response['html'].strip() in initial
-    assert 'popupMenu-' not in response['html']
+    # The disclosure trigger references its lazy panel with aria-controls;
+    # the panel itself must still be absent until the actions endpoint is used.
+    assert not any(attrs.get('id', '').startswith('popupMenu-') for _, attrs in doc.elements)
+    assert any(attrs.get('aria-controls') == f'popupMenu-{game.uuid}' for _, attrs in doc.elements)
     assert 'Named library' in response['chips_html']
     menu = client.get('/library/game-actions/'+game.uuid)
     assert menu.status_code == 200 and b'popupMenu-' in menu.data

@@ -367,6 +367,28 @@ def refresh_images_in_background(
             refresh_reason, audit_user_id,
         )
         lock_key = f'image_refresh_lock_{game_uuid}'
+        progress_key = f'image_refresh_progress_{game_uuid}'
+
+        def set_progress(
+            progress, *, status='in_progress', phase='preparing', message='',
+            total=0, processed=0, downloaded=0, failed=0,
+        ):
+            """Publish one overall refresh state for every client surface."""
+            cache.set(
+                progress_key,
+                {
+                    'status': status,
+                    'phase': phase,
+                    'message': message,
+                    'progress': max(0, min(100, int(progress))),
+                    'total': max(0, int(total)),
+                    'processed': max(0, int(processed)),
+                    'downloaded': max(0, int(downloaded)),
+                    'failed': max(0, int(failed)),
+                },
+                timeout=300,
+            )
+
         if not cache.add(lock_key, True, timeout=300):
             message = 'An image refresh is already running for this game'
             print(f"[IMAGE REFRESH] {message}: {game_uuid}")
@@ -378,7 +400,7 @@ def refresh_images_in_background(
             return False, message
         lock_owned = True
 
-        cache.set(f'image_refresh_progress_{game_uuid}', {'status': 'in_progress', 'progress': 0}, timeout=300)
+        set_progress(0, message='Starting image refresh…')
 
         try:
             game = db.session.execute(
@@ -391,7 +413,7 @@ def refresh_images_in_background(
                     game_uuid, refresh_reason,
                 )
                 admin_event(f'Image refresh failed: game={game_uuid} was not found', 'warning')
-                cache.set(f'image_refresh_progress_{game_uuid}', {'status': 'error', 'progress': 0}, timeout=300)
+                set_progress(0, status='error', phase='error', message='Game not found.')
                 return False, 'Game not found'
 
             print(f"[IMAGE REFRESH] Found game: {game.name} (IGDB ID: {game.igdb_id})")
@@ -406,7 +428,7 @@ def refresh_images_in_background(
                     f'{game.name[:80]}',
                     'warning',
                 )
-                cache.set(f'image_refresh_progress_{game_uuid}', {'status': 'error', 'progress': 0}, timeout=300)
+                set_progress(0, status='error', phase='error', message='This game has no IGDB ID.')
                 return False, 'Game has no IGDB ID'
 
             if (
@@ -425,13 +447,14 @@ def refresh_images_in_background(
                     f'{game.name[:80]}',
                     'warning',
                 )
-                cache.set(
-                    f'image_refresh_progress_{game_uuid}',
-                    {'status': 'error', 'progress': 0}, timeout=300,
-                )
+                set_progress(0, status='error', phase='error', message=message)
                 return False, message
 
-            cache.set(f'image_refresh_progress_{game_uuid}', {'status': 'in_progress', 'progress': 20}, timeout=300)
+            set_progress(
+                20,
+                phase='discovering',
+                message='Finding the game and its linked media in IGDB…',
+            )
 
             print(f"[IMAGE REFRESH] Fetching image IDs from IGDB API for IGDB ID: {game.igdb_id}")
             response_json = make_igdb_api_request(
@@ -456,10 +479,19 @@ def refresh_images_in_background(
                     f'media lookup failed; {game.name[:72]}',
                     'warning',
                 )
-                cache.set(f'image_refresh_progress_{game_uuid}', {'status': 'error', 'progress': 0}, timeout=300)
+                set_progress(
+                    0,
+                    status='error',
+                    phase='error',
+                    message=f'IGDB media lookup failed: {error}',
+                )
                 return False, error
 
-            cache.set(f'image_refresh_progress_{game_uuid}', {'status': 'in_progress', 'progress': 40}, timeout=300)
+            set_progress(
+                40,
+                phase='discovering',
+                message='Comparing IGDB media with the local collection…',
+            )
 
             # Merge refreshed media into the existing set. Do not delete valid
             # local images before every replacement has been classified and
@@ -494,7 +526,11 @@ def refresh_images_in_background(
                 store_image_url_for_download(game.uuid, image_data, image_type=image_type)
                 existing_by_igdb_id.setdefault(str(image_id), []).append(None)
 
-            cache.set(f'image_refresh_progress_{game_uuid}', {'status': 'in_progress', 'progress': 60}, timeout=300)
+            set_progress(
+                60,
+                phase='queueing',
+                message='Preparing new and changed images for download…',
+            )
 
             # Queue images into DB as pending so they appear in admin image queue
             cover_id = response_json[0].get('cover')
@@ -540,8 +576,6 @@ def refresh_images_in_background(
             # serializes a concurrent re-identification with image writes and
             # avoids attaching media from an old identity to the new one.
             db.session.flush()
-            cache.set(f'image_refresh_progress_{game_uuid}', {'status': 'in_progress', 'progress': 75}, timeout=300)
-
             # Immediately download this game's pending images
             pending = db.session.execute(
                 select(Image).filter_by(game_uuid=game_uuid, is_downloaded=False)
@@ -550,6 +584,17 @@ def refresh_images_in_background(
             total_pending = len(pending)
             downloaded_count = 0
             download_failed_count = 0
+            set_progress(
+                75,
+                phase='downloading',
+                message=(
+                    f'Downloading {total_pending} queued image'
+                    f'{"s" if total_pending != 1 else ""}…'
+                    if total_pending
+                    else 'No new or changed API images need downloading.'
+                ),
+                total=total_pending,
+            )
             print(f"[IMAGE REFRESH] Downloading {total_pending} queued images.")
             for idx, img in enumerate(pending):
                 if img.download_url:
@@ -584,7 +629,15 @@ def refresh_images_in_background(
                     )
                 if total_pending > 0:
                     progress = 75 + int(((idx + 1) / total_pending) * 24)
-                    cache.set(f'image_refresh_progress_{game_uuid}', {'status': 'in_progress', 'progress': progress}, timeout=300)
+                    set_progress(
+                        progress,
+                        phase='downloading',
+                        message='Downloading the complete queued image set…',
+                        total=total_pending,
+                        processed=idx + 1,
+                        downloaded=downloaded_count,
+                        failed=download_failed_count,
+                    )
 
             replaced_files = []
             if replace_existing:
@@ -625,7 +678,20 @@ def refresh_images_in_background(
                         image_path, file_error,
                     )
 
-            cache.set(f'image_refresh_progress_{game_uuid}', {'status': 'complete', 'progress': 100}, timeout=300)
+            completion_message = f'Image refresh complete: {downloaded_count} downloaded'
+            if download_failed_count:
+                completion_message += f', {download_failed_count} failed'
+            completion_message += '.'
+            set_progress(
+                100,
+                status='complete',
+                phase='complete',
+                message=completion_message,
+                total=total_pending,
+                processed=total_pending,
+                downloaded=downloaded_count,
+                failed=download_failed_count,
+            )
             print(f"[IMAGE REFRESH] Successfully finished for '{game.name}'")
             duration_ms = round((time.monotonic() - started_at) * 1000, 2)
             removed_count = len(replaced_files)
@@ -661,7 +727,12 @@ def refresh_images_in_background(
             )
             import traceback
             traceback.print_exc()
-            cache.set(f'image_refresh_progress_{game_uuid}', {'status': 'error', 'progress': 0}, timeout=300)
+            set_progress(
+                0,
+                status='error',
+                phase='error',
+                message='The IGDB image refresh failed. Please try again.',
+            )
             return False, str(e)
         finally:
             if lock_owned:

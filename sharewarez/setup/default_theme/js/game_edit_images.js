@@ -320,9 +320,51 @@ document.addEventListener('DOMContentLoaded', function() {
 
 document.getElementById('refresh-editor-images')?.addEventListener('click', async function () {
     const button = this;
+    const panel = document.getElementById('image-refresh-overall');
+    const phase = document.getElementById('image-refresh-phase');
     const status = document.getElementById('image-refresh-status');
+    const percent = document.getElementById('image-refresh-percent');
+    const track = document.getElementById('image-refresh-track');
+    const fill = document.getElementById('image-refresh-fill');
+    const counts = document.getElementById('image-refresh-counts');
+
+    const phaseLabels = {
+        preparing: 'Preparing image refresh',
+        discovering: 'Checking IGDB media',
+        queueing: 'Preparing downloads',
+        downloading: 'Downloading images',
+        complete: 'Image refresh complete',
+        error: 'Image refresh failed',
+    };
+
+    function renderOverallProgress(data) {
+        const value = Math.max(0, Math.min(100, Number(data.progress) || 0));
+        const processed = Number(data.processed) || 0;
+        const total = Number(data.total) || 0;
+        const downloaded = Number(data.downloaded) || 0;
+        const failed = Number(data.failed) || 0;
+
+        panel.hidden = false;
+        panel.classList.toggle('is-error', data.status === 'error');
+        phase.textContent = phaseLabels[data.phase] || phaseLabels.preparing;
+        status.textContent = data.message || 'Refreshing media available through the IGDB API…';
+        percent.textContent = `${value}%`;
+        track.setAttribute('aria-valuenow', String(value));
+        track.setAttribute('aria-valuetext', `${value}% complete`);
+        fill.style.width = `${value}%`;
+
+        if (total > 0) {
+            counts.textContent = `${processed} of ${total} queued images processed · ${downloaded} downloaded${failed ? ` · ${failed} failed` : ''}`;
+        } else if (data.phase === 'complete') {
+            counts.textContent = 'No new or changed API images needed downloading.';
+        } else {
+            counts.textContent = 'Checking media available through the IGDB API.';
+        }
+    }
+
     button.disabled = true;
-    status.textContent = 'Checking IGDB for images…';
+    button.setAttribute('aria-busy', 'true');
+    renderOverallProgress({progress: 0, phase: 'preparing', message: 'Connecting to IGDB…'});
     try {
         const response = await fetch(`/refresh_game_images/${gameUuid}`, {
             method: 'POST', headers: CSRFUtils.getHeaders({'X-Requested-With': 'XMLHttpRequest'}),
@@ -334,13 +376,24 @@ document.getElementById('refresh-editor-images')?.addEventListener('click', asyn
                 const response = await fetch(`/check_image_refresh_progress/${gameUuid}`);
                 if (!response.ok) throw new Error('Could not check image refresh progress. Reload the page to see downloaded images.');
                 const data = await response.json();
-                if (data.status === 'complete') { window.location.reload(); return; }
-                if (data.status === 'error') throw new Error('IGDB image refresh failed. Please try again.');
+                renderOverallProgress(data);
+                if (data.status === 'complete') {
+                    setTimeout(() => window.location.reload(), 700);
+                    return;
+                }
+                if (data.status === 'error') throw new Error(data.message || 'IGDB image refresh failed. Please try again.');
                 if (Date.now() - started > 180000) throw new Error('Images are still refreshing. Reload this page shortly.');
-                status.textContent = `Refreshing images… ${data.progress || 0}%`;
                 setTimeout(checkProgress, 1500);
-            } catch (error) { status.textContent = error.message; button.disabled = false; }
+            } catch (error) {
+                renderOverallProgress({status: 'error', phase: 'error', progress: Number(track.getAttribute('aria-valuenow')) || 0, message: error.message});
+                button.disabled = false;
+                button.removeAttribute('aria-busy');
+            }
         }
         setTimeout(checkProgress, 1500);
-    } catch (error) { status.textContent = error.message; button.disabled = false; }
+    } catch (error) {
+        renderOverallProgress({status: 'error', phase: 'error', progress: 0, message: error.message});
+        button.disabled = false;
+        button.removeAttribute('aria-busy');
+    }
 });

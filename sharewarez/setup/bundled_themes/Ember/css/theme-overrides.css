@@ -10,6 +10,9 @@
     --theme-text-secondary: #d6c5bd;
     --btn-primary: #f97316;
     --btn-primary-hover: #ea580c;
+    --theme-button-primary-text: #241006;
+    --theme-button-primary-background: linear-gradient(135deg, #fb923c, #f97316);
+    --theme-button-primary-hover-background: linear-gradient(135deg, #fdba74, #fb923c);
     --form-focus-border: #fb923c;
     --form-focus-shadow: 0 0 0 .25rem rgba(249, 115, 22, .22);
     --primary-brand-10: rgba(249, 115, 22, .10);

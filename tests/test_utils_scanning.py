@@ -4,7 +4,7 @@ from unittest.mock import patch, MagicMock, mock_open
 from datetime import datetime, timezone
 from uuid import uuid4
 
-from sharewarez import create_app, db
+from sharewarez import cache, create_app, db
 from sharewarez.models import (
     Game, Library, LibraryPlatform, UnmatchedFolder, 
     GameUpdate, GameExtra, GlobalSettings, ScanJob, Image
@@ -525,6 +525,16 @@ class TestRefreshImagesInBackground:
         # Should process cover and screenshots
         expected_calls = 3  # 1 cover + 2 screenshots
         assert mock_store_image.call_count == expected_calls
+        assert cache.get(f'image_refresh_progress_{sample_game.uuid}') == {
+            'status': 'complete',
+            'phase': 'complete',
+            'message': 'Image refresh complete: 0 downloaded.',
+            'progress': 100,
+            'total': 0,
+            'processed': 0,
+            'downloaded': 0,
+            'failed': 0,
+        }
 
     @patch('sharewarez.utils.scanning.log_system_event')
     @patch('sharewarez.utils.functions.download_image', return_value=True)
@@ -578,6 +588,16 @@ class TestRefreshImagesInBackground:
             ('screenshot', '220'),
         }
         assert not any(image.url == 'old-screenshot.jpg' for image in images)
+        assert cache.get(f'image_refresh_progress_{sample_game.uuid}') == {
+            'status': 'complete',
+            'phase': 'complete',
+            'message': 'Image refresh complete: 2 downloaded.',
+            'progress': 100,
+            'total': 2,
+            'processed': 2,
+            'downloaded': 2,
+            'failed': 0,
+        }
         mock_system_event.assert_called_once()
         event_args, event_kwargs = mock_system_event.call_args
         assert event_args[0].startswith(

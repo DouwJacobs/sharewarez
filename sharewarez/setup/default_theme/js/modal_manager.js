@@ -82,12 +82,14 @@
     });
 
     document.addEventListener('keydown', function (event) {
-        const dialogs = [...document.querySelectorAll(managedSelector)].filter(isOpen);
+        // Bootstrap's focusin trap cannot catch Tab moving into browser chrome
+        // from the last control. Wrap at the dialog boundary before that happens.
+        const dialogs = [...document.querySelectorAll(`${managedSelector}, .modal.show[aria-modal="true"]`)].filter(isOpen);
         const dialog = dialogs.at(-1);
         if (!dialog) return;
 
         if (event.key === 'Escape') {
-            const close = dialog.querySelector('[data-dialog-close]');
+            const close = dialog.querySelector('[data-dialog-close], [data-bs-dismiss="modal"]');
             if (close) {
                 event.preventDefault();
                 close.click();

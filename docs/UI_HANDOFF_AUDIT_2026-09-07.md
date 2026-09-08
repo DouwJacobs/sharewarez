@@ -2,7 +2,8 @@
 
 **Follow-up:** all confirmed findings below have been addressed. The original
 review is retained as historical evidence; see the resolution and verification
-record at the end. UI-06's broader coverage gaps remain open.
+record at the end. UI-06 was subsequently completed on 8 September; see
+[UI06_VERIFICATION.md](UI06_VERIFICATION.md).
 
 ## Verdict and scope
 

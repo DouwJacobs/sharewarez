@@ -614,3 +614,19 @@ See the audit report's resolution section and `tests/ui_handoff.browser.cjs` for
 reproduction and validation. The 130 Python regressions and six favorite cases
 passed; desktop and mobile rendered checks were performed. UI-06 remains open;
 no broader theme/populated-state coverage is implied by these fixes.
+
+### UI-06 completed — 8 September 2026
+
+The remaining UI-06 states were verified in isolated previews: 138 route/theme/
+viewport checks and 27 interaction/contrast scenarios passed, plus initial setup
+and confirmation/password-reset completion with disposable accounts. The run
+covered Default, Ember, and an injected high-luminance palette, populated request/
+issue/collection/invitation/gallery states, both user roles, long text, missing
+artwork, loading/errors, keyboard focus, reduced motion, table scrolling, and
+mobile bottom-navigation clearance. See [UI06_VERIFICATION.md](UI06_VERIFICATION.md).
+
+The shared button foreground now follows its theme; primary contrast has explicit
+background/foreground hooks, and native inputs expose a color-scheme token.
+Bootstrap dialogs now use explicit Tab wrapping alongside custom dialogs, closing
+the browser-chrome focus escape found during the upload-error check. These extend
+shared component ownership; no page-specific control system was introduced.

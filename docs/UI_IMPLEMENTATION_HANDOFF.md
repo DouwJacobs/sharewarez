@@ -20,8 +20,8 @@ an implementation brief, not a replacement for those contracts.
 Follow-up fixes (7 September 2026): the confirmed independent-audit defects are
 fixed and covered by browser regressions. See the resolution section in
 [the audit report](UI_HANDOFF_AUDIT_2026-09-07.md). The broader UI-06 acceptance
-matrix remains incomplete; these statuses describe implemented fixes and the
-recorded checks, not untested themes or data states.
+matrix is now covered by [the UI-06 verification](UI06_VERIFICATION.md); these
+statuses describe the recorded fixtures and checks, not every possible data state.
 
 | Item | Status | Evidence |
 | --- | --- | --- |
@@ -30,7 +30,7 @@ recorded checks, not untested themes or data states.
 | UI-03 narrow card actions | ✅ Audit fixes verified | Desktop list cover now accommodates both actions; disjoint targets and no document overflow verified at 1440, 390, and 320 px. A2 resolved. |
 | UI-04 mobile favorite | ✅ Complete | Mobile and cover controls use the shared manager; one intercepted mobile activation produced one request and synchronized both controls plus the “Favorited” label. |
 | UI-05 semantic actions/feedback | ✅ Audit fixes verified | Database removal uses an in-flight guard and disabled/busy state; failure allows retry. Move destinations are native buttons with pending/error recovery. A5 resolved. |
-| UI-06 expanded validation | 🟡 In progress | Changed routes received focused desktop/mobile checks; the broader data/theme matrix below remains a follow-up audit. |
+| UI-06 expanded validation | ✅ Complete | 138 route/theme/viewport checks and 27 interaction/contrast scenarios passed; populated views, role menus, Default/Ember/light palette, modal focus, setup, and token flows verified. See UI06_VERIFICATION.md. |
 | UI-07 Game Edit rework | ✅ Audit fixes verified | One Boolean validator; Save/Refresh/Enter payloads and repeat-submit guard verified. Identity changes protect dirty drafts; results support keyboard activation; server errors open disclosures and focus linked fields. A1/A4/A6 resolved. |
 | UI-08 missing-cover list layout | ✅ Complete | List cards now keep a restrained monogram inside the compact cover and rely on the adjacent title, avoiding duplicated clipped text. |
 
@@ -206,7 +206,10 @@ JavaScript hooks. Keep native confirmation behavior unless a coherent shared
 replacement is implemented and tested. Do not send real notifications or perform
 real deletions merely to verify presentation.
 
-## UI-06 — Complete the populated-state and theme validation gaps (in progress)
+## UI-06 — Complete the populated-state and theme validation gaps (verified)
+
+Completed 8 September 2026. See [UI06_VERIFICATION.md](UI06_VERIFICATION.md) for
+fixtures, findings, fixes, rendered evidence, and precise verification scope.
 
 These are **verification tasks**, not claims that every listed screen is broken.
 Fix concrete defects found and record evidence.
@@ -400,3 +403,17 @@ Its large monogram overflowed the artwork boundary, while the icon and small tit
 duplicated information already displayed beside the cover. List placeholders now
 hide the redundant icon/title, constrain overflow, and use a compact monogram.
 Grid and compact placeholders retain their full centered treatment.
+
+## UI-09 — Show one overall IGDB image-refresh state (complete)
+
+The image editor now shows one responsive progress panel for the complete refresh,
+with a single percentage bar, phase label, and processed/downloaded/failed totals.
+The cached progress contract exposes the same overall state to polling clients and
+retains a useful completion summary. Error messages remain in the panel and allow
+the administrator to retry.
+
+Media discovery remains API-only. For test game `282831` (The Blood of Dawnwalker),
+IGDB's public game and artwork endpoints return the cover, 15 screenshots, and 9
+artworks, but omit the two standalone logos shown by IGDB's press-kit page. Those
+website-only assets cannot be discovered through the supported API, so the editor
+states when no standalone logos were returned and keeps manual logo upload available.
