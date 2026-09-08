@@ -48,17 +48,20 @@ and all 61 System Logs/system administration route tests. Populated Default and
 Ember fixtures were inspected at desktop and mobile breakpoints, including long
 events, Debug and Information levels, actor email wrapping, filters, and summaries.
 
-### R3 — A small semantic-shell tail remains
+### R3 — Authenticated semantic-shell tail (complete)
 
-Most apparent missing H1 results are false positives because `page_header` and
-`admin_page_header` render the H1 from a macro. Genuine legacy exceptions include
-Edit Update using a `div` page root, newsletter detail using separate containers,
-and the browser emulator page having no page heading or semantic main region.
-Authentication and setup templates intentionally use their dedicated public/setup
-shells and are outside the authenticated `.app-page` contract.
+Completed 8 September 2026. Edit Update, newsletter detail, and the browser
+emulator now have one semantic `main`, a shared page-header macro with one visible
+H1, and one primary `app-surface`. Edit Update also removes invalid nested form
+labels. Newsletter detail presents delivery metadata as a responsive description
+grid and constrains rich message media. The emulator retains its desktop/mobile
+workspace height and now explains the placeholder state until media is inserted.
 
-**Next package:** migrate the authenticated exceptions without changing emulator
-canvas sizing or newsletter content rendering.
+Authentication and setup templates continue to use their dedicated public/setup
+shells and remain outside the authenticated `.app-page` contract. Verification
+passed the 88-template accessibility audit, 20 UI contract tests, and 41 focused
+newsletter, download/play, and update-metadata tests. Populated Default desktop and
+mobile views were inspected for all three routes.
 
 ### R4 — Theme-token migration remains broad and should be incremental
 
@@ -74,10 +77,8 @@ Ember, and a high-luminance palette, and keep canonical/installed theme assets e
 
 ## Recommended implementation order
 
-1. Remaining authenticated semantic page shells.
-2. Incremental route-level theme-token cleanup, starting with the pages touched
-   by step 1.
-3. Metadata-provider abstraction as the next larger product feature; keep provider
+1. Incremental route-level theme-token cleanup, one coherent page family at a time.
+2. Metadata-provider abstraction as the next larger product feature; keep provider
    integrations API-only and preserve field ownership/provenance.
 
 The current working tree was clean before this reconciliation. No application

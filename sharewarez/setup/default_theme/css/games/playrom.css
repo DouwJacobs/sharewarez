@@ -1,9 +1,54 @@
-.emulator-container {
-    min-height: min(72vh, 800px);
-    margin: 24px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 18px;
-    background: linear-gradient(145deg, rgba(18, 18, 28, 0.96), rgba(12, 12, 20, 0.98));
+.playrom-page {
+    display: grid;
+    gap: var(--spacing-lg, 24px);
 }
 
-@media (max-width: 768px) { .emulator-container { min-height: 60vh; margin: 12px; } }
+.playrom-page > .app-page-header {
+    margin-bottom: 0;
+}
+
+.emulator-container {
+    display: grid;
+    min-height: min(72vh, 800px);
+    place-items: center;
+    overflow: hidden;
+    background: var(--theme-card-background, var(--bg-dark-secondary));
+}
+
+.emulator-placeholder {
+    max-width: 460px;
+    color: var(--theme-text-secondary, var(--text-light));
+    text-align: center;
+}
+
+.emulator-placeholder > i {
+    color: rgb(var(--theme-accent-soft-rgb));
+    font-size: 2rem;
+}
+
+.emulator-placeholder h2 {
+    margin: 14px 0 6px;
+    color: var(--theme-text-primary, var(--text-white));
+    font-size: 1.15rem;
+}
+
+.emulator-placeholder p {
+    margin: 0;
+}
+
+.emulator-container:has(canvas, iframe, video) .emulator-placeholder {
+    display: none;
+}
+
+.emulator-container :is(canvas, iframe, video) {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+}
+
+@media (max-width: 768px) {
+    .emulator-container {
+        min-height: 60vh;
+        padding: 12px;
+    }
+}

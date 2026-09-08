@@ -299,3 +299,28 @@ def test_integration_pages_use_shared_shells_and_theme_assets():
     filters = templates[-1].read_text(encoding="utf-8")
     assert 'data-label="Pattern"' in filters
     assert "table-dark" not in filters
+
+
+def test_authenticated_semantic_shell_tail_uses_main_headers_and_surfaces():
+    update_template = Path("sharewarez/templates/admin/admin_game_update.html").read_text(encoding="utf-8")
+    newsletter_template = Path("sharewarez/templates/admin/view_newsletter.html").read_text(encoding="utf-8")
+    emulator_template = Path("sharewarez/templates/games/playrom.html").read_text(encoding="utf-8")
+    emulator_css = (THEME / "css/games/playrom.css").read_text(encoding="utf-8")
+
+    assert '<main class="app-page app-page--narrow admin-page game-update-page"' in update_template
+    assert "admin_page_header(" in update_template
+    assert 'class="app-surface game-update-form"' in update_template
+    assert '<label class="form-label">{{ form.' not in update_template
+
+    assert '<main class="app-page app-page--narrow admin-page newsletter-detail-page"' in newsletter_template
+    assert "admin_page_header(" in newsletter_template
+    assert 'class="app-surface newsletter-detail-surface"' in newsletter_template
+    assert '<dl class="newsletter-detail-meta"' in newsletter_template
+
+    assert '<main class="app-page app-page--wide playrom-page"' in emulator_template
+    assert "page_header(" in emulator_template
+    assert 'class="app-surface emulator-container"' in emulator_template
+    assert "Browser play is not available yet" in emulator_template
+    assert ".emulator-container:has(canvas, iframe, video)" in emulator_css
+    assert "margin: 24px" not in emulator_css
+    assert "margin: 12px" not in emulator_css

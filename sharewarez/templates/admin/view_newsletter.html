@@ -1,29 +1,34 @@
 {% extends "base.html" %}
+{% from "partials/ui_components.html" import admin_page_header %}
+{% block styles %}
+{{ super() }}
+<link rel="stylesheet" href="{{ 'css/admin/admin_newsletter.css'|theme_asset }}">
+{% endblock %}
 {% block content %}
-<div class="app-page app-page--narrow container">
-    <div class="glass-panel">
-        <a href="{{ url_for('admin2.newsletter') }}" class="btn btn-secondary">Back to Newsletters</a>
-    </div>
-</div>
-<div class="container-settings">
-    <div class="card">
-        <h1>{{ newsletter.subject }}</h1>
-        <div class="newsletter-meta">
-            <p>Sent by: {{ newsletter.sender.name }}</p>
-            <p>Date: {{ newsletter.sent_date.strftime('%Y-%m-%d %H:%M:%S') }}</p>
-            <p>Recipients: {{ newsletter.recipient_count }}</p>
-            <p>Status: 
+<main class="app-page app-page--narrow admin-page newsletter-detail-page" aria-labelledby="newsletter-detail-title">
+    {% call admin_page_header(newsletter.subject, 'Review the delivery details and message content.', 'Communication', 'fa-envelope-open-text', title_id='newsletter-detail-title') %}
+        <a href="{{ url_for('admin2.newsletter') }}" class="btn btn-secondary"><i class="fas fa-arrow-left" aria-hidden="true"></i> Back to newsletters</a>
+    {% endcall %}
+
+    <section class="app-surface newsletter-detail-surface">
+        <dl class="newsletter-detail-meta" aria-label="Delivery details">
+            <div><dt>Sent by</dt><dd>{{ newsletter.sender.name }}</dd></div>
+            <div><dt>Date</dt><dd><time datetime="{{ newsletter.sent_date.isoformat() }}">{{ newsletter.sent_date.strftime('%Y-%m-%d %H:%M:%S') }}</time></dd></div>
+            <div><dt>Recipients</dt><dd>{{ newsletter.recipient_count }}</dd></div>
+            <div><dt>Status</dt><dd>
                 {% if newsletter.status == 'sent' %}
-                    <span class="badge bg-success">Sent</span>
+                    <span class="ui-status newsletter-status newsletter-status--sent">Sent</span>
                 {% else %}
-                    <span class="badge bg-danger">Failed</span>
-                    <p class="text-danger">Error: {{ newsletter.error_message }}</p>
+                    <span class="ui-status newsletter-status newsletter-status--failed">Failed</span>
                 {% endif %}
-            </p>
-        </div>
-        <div class="newsletter-content">
+            </dd></div>
+        </dl>
+        {% if newsletter.status != 'sent' and newsletter.error_message %}<div class="alert alert-danger newsletter-delivery-error"><strong>Delivery error:</strong> {{ newsletter.error_message }}</div>{% endif %}
+
+        <div class="newsletter-content newsletter-detail-content">
+            <h2>Message</h2>
             {{ newsletter.content|safe }}
         </div>
-    </div>
-</div>
+    </section>
+</main>
 {% endblock %}

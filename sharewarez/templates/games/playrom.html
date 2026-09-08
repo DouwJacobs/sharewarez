@@ -1,13 +1,21 @@
 {% extends "base.html" %}
+{% from "partials/ui_components.html" import page_header %}
 {% block styles %}
 {{ super() }}
 <link rel="stylesheet" href="{{ 'css/games/playrom.css'|theme_asset }}">
 {% endblock %}
 {% block content %}
+<main class="app-page app-page--wide playrom-page" aria-labelledby="downloads-page-title">
+    {{ page_header('Browser emulator', 'Experimental in-browser play session.', 'Play', 'fa-gamepad') }}
 
-<div class="emulator-container">
-    
-</div>
+    <section class="app-surface emulator-container" aria-label="Browser emulator workspace">
+        <div class="emulator-placeholder">
+            <i class="fas fa-gamepad" aria-hidden="true"></i>
+            <h2>Browser play is not available yet</h2>
+            <p>This workspace is reserved for a future in-browser game session.</p>
+        </div>
+    </section>
+</main>
 
 
 <script>
@@ -30,7 +38,6 @@ function getquerystring() {
 
 }
 const args = getquerystring();
-console.log (args);
 
 </script>
 

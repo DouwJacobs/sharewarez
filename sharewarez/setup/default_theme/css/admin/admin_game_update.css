@@ -1,0 +1,51 @@
+.game-update-page .game-update-form {
+    max-width: 960px;
+}
+
+.game-update-form .form-label {
+    margin-bottom: 7px;
+    color: var(--theme-text-primary, var(--text-white));
+    font-weight: 650;
+}
+
+.game-update-form .form-control {
+    width: 100%;
+}
+
+.game-update-form textarea.form-control {
+    min-height: 140px;
+    resize: vertical;
+}
+
+.game-update-checkbox {
+    display: flex;
+    min-height: 44px;
+    align-items: center;
+    gap: 10px;
+    margin: 0;
+    padding: 10px 12px;
+    border: 1px solid var(--theme-border-color, var(--border-light));
+    border-radius: var(--border-radius-sm, 10px);
+    background: var(--theme-panel-bg, var(--bg-dark-tertiary));
+}
+
+.game-update-checkbox .form-check-input {
+    width: 20px;
+    height: 20px;
+    margin: 0;
+}
+
+.game-update-checkbox .form-check-label {
+    color: var(--theme-text-primary, var(--text-white));
+}
+
+.game-update-actions {
+    display: flex;
+    margin-top: var(--spacing-lg, 24px);
+}
+
+@media (max-width: 768px) {
+    .game-update-actions .btn {
+        width: 100%;
+    }
+}

@@ -35,6 +35,7 @@ statuses describe the recorded fixtures and checks, not every possible data stat
 | UI-08 missing-cover list layout | ✅ Complete | List cards now keep a restrained monogram inside the compact cover and rely on the adjacent title, avoiding duplicated clipped text. |
 | UI-10 integration settings shell | ✅ Complete | Integrations, Discord help, legacy settings fallbacks, and scan-filter validation now share the semantic admin header/surface contract. SMTP, IGDB, and Discord actions stack consistently on mobile; Discord's generated test action stays within its own panel. |
 | UI-11 System Logs hierarchy | ✅ Complete | Route-local dark colors now use theme tokens. Desktop retains one table scroll owner; mobile rows promote Event and label Time, Level, Type, and Actor without document overflow. |
+| UI-12 authenticated semantic shells | ✅ Complete | Edit Update, newsletter detail, and browser emulator now have one `main`, one shared H1 header, and one primary surface with responsive content. |
 
 ## Starting state — preserve completed work
 
@@ -453,3 +454,19 @@ Verification: all 61 system administration route tests, 19 UI source-contract
 tests, and the 88-template accessibility audit passed. Populated Default and Ember
 views were inspected at desktop and mobile breakpoints, including summary cards,
 filters, long event text, actor email wrapping, and Information/Debug levels.
+
+## UI-12 — Complete the authenticated semantic-shell tail (complete)
+
+Edit Update now uses the shared administrator header and a dedicated form surface;
+its WTForms labels render directly instead of being nested inside extra `<label>`
+elements. Newsletter detail uses the same shell, exposes delivery metadata through
+a responsive description list, applies semantic status styling, and constrains rich
+content to its panel. The browser emulator test route uses the shared user header
+and a single responsive workspace with an explanatory placeholder that yields when
+an emulator canvas, iframe, or video is present.
+
+Verification: 41 focused newsletter, download/play, and update-metadata tests,
+20 UI source-contract tests, and the 88-template accessibility audit passed.
+Populated Default desktop and mobile fixtures were inspected for Edit Update and
+newsletter detail; the emulator workspace height, single mobile gutter, and
+placeholder hierarchy were inspected at both breakpoints.

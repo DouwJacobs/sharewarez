@@ -1,26 +1,26 @@
 {% extends "base.html" %}
+{% from "partials/ui_components.html" import admin_page_header %}
 {% block content %}
-<div class="app-page app-page--narrow app-surface settings-card mx-auto">
-    <div class="settings-card-header">
-        <div>
-            <h1>Edit Update</h1>
-            <p>{{ game.name }} · {{ update.title or update.file_path.split('/')[-1] }}</p>
-        </div>
-        <a class="btn btn-secondary" href="{{ url_for('games.game_details', game_uuid=game.uuid) }}">Back to game</a>
-    </div>
-    <form method="post" class="settings-form">
+<link rel="stylesheet" href="{{ 'css/admin/admin_game_update.css'|theme_asset }}">
+
+<main class="app-page app-page--narrow admin-page game-update-page" aria-labelledby="game-update-title">
+    {% call admin_page_header('Edit update', game.name ~ ' · ' ~ (update.title or update.file_path.split('/')[-1]), 'Game metadata', 'fa-pen-to-square', title_id='game-update-title') %}
+        <a class="btn btn-secondary" href="{{ url_for('games.game_details', game_uuid=game.uuid) }}"><i class="fas fa-arrow-left" aria-hidden="true"></i> Back to game</a>
+    {% endcall %}
+
+    <form method="post" class="app-surface game-update-form">
         {{ form.hidden_tag() }}
         <div class="row g-3">
-            <div class="col-md-8"><label class="form-label">{{ form.title.label }}</label>{{ form.title(class="form-control") }}</div>
-            <div class="col-md-4"><label class="form-label">{{ form.update_number.label }}</label>{{ form.update_number(class="form-control") }}</div>
-            <div class="col-md-6"><label class="form-label">{{ form.version.label }}</label>{{ form.version(class="form-control") }}</div>
-            <div class="col-md-6"><label class="form-label">{{ form.requires_version.label }}</label>{{ form.requires_version(class="form-control") }}</div>
-            <div class="col-md-6"><label class="form-label">{{ form.release_date.label }}</label>{{ form.release_date(class="form-control") }}</div>
-            <div class="col-md-6 d-flex align-items-end"><div class="form-check mb-2">{{ form.is_cumulative(class="form-check-input") }} <label class="form-check-label">{{ form.is_cumulative.label }}</label></div></div>
-            <div class="col-12"><label class="form-label">{{ form.install_instructions.label }}</label>{{ form.install_instructions(class="form-control", rows="6") }}</div>
-            <div class="col-12"><label class="form-label">{{ form.changelog.label }}</label>{{ form.changelog(class="form-control", rows="8") }}</div>
+            <div class="col-md-8">{{ form.title.label(class="form-label") }}{{ form.title(class="form-control") }}</div>
+            <div class="col-md-4">{{ form.update_number.label(class="form-label") }}{{ form.update_number(class="form-control") }}</div>
+            <div class="col-md-6">{{ form.version.label(class="form-label") }}{{ form.version(class="form-control") }}</div>
+            <div class="col-md-6">{{ form.requires_version.label(class="form-label") }}{{ form.requires_version(class="form-control") }}</div>
+            <div class="col-md-6">{{ form.release_date.label(class="form-label") }}{{ form.release_date(class="form-control") }}</div>
+            <div class="col-md-6 d-flex align-items-end"><div class="form-check game-update-checkbox">{{ form.is_cumulative(class="form-check-input") }} {{ form.is_cumulative.label(class="form-check-label") }}</div></div>
+            <div class="col-12">{{ form.install_instructions.label(class="form-label") }}{{ form.install_instructions(class="form-control", rows="6") }}</div>
+            <div class="col-12">{{ form.changelog.label(class="form-label") }}{{ form.changelog(class="form-control", rows="8") }}</div>
         </div>
-        <div class="mt-4">{{ form.submit(class="btn btn-primary") }}</div>
+        <div class="game-update-actions">{{ form.submit(class="btn btn-primary") }}</div>
     </form>
-</div>
+</main>
 {% endblock %}
