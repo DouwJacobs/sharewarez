@@ -180,6 +180,13 @@ Desktop measurement finds later discovery cards beyond the viewport, while docum
 6. Add semantic main regions and specific document/H1 titles to legacy pages.
 7. Add screenshot regression coverage for `/discover`, `/library`, a game detail page, `/admin/dashboard`, `/admin/manage-downloads`, and `/admin/themes/builder` at desktop and mobile widths.
 
+Reconciled 8 September 2026: items 1 and 2 are complete. Shared UI-06 browser
+coverage supersedes item 7 for the core route/theme/viewport matrix, with the
+remaining route-specific checks retained in focused browser scripts and audit
+evidence. Items 3–6 remain progressive cleanup work rather than release blockers.
+See [the current roadmap reconciliation](UI_ROADMAP_RECONCILIATION_2026-09-08.md)
+for verified implementation state and the next bounded work packages.
+
 ## Re-audit checklist
 
 - Run `pyenv activate sharewarez` and `./startweb.sh --reload`.

@@ -3,6 +3,10 @@
 This checklist tracks planned product work. A checked item is implemented and
 committed; release version bumps are managed separately.
 
+Last reconciled against the source and test suite on 8 September 2026. Library
+layout and persistence entries were corrected during that review; remaining
+unchecked entries still require substantive product work.
+
 Collection portability uses the versioned `gamestack.collection` JSON format.
 Imports revalidate smart rules and skip manual game UUIDs that are unavailable
 in the destination library; the completion message reports the skipped count.
@@ -69,8 +73,8 @@ desktop sidebar remains the full navigation surface.
 - [x] Complete keyboard navigation and dialog focus management
 - [x] Reduced-motion and theme contrast validation
 - [x] Automated accessibility testing
-- [ ] Grid, compact-grid, and table library layouts
-- [ ] Persistent density and page-layout preferences
+- [x] Grid, compact-grid, and list library layouts
+- [x] Persistent density and page-layout preferences
 - [x] Mobile bottom navigation
 
 ## Engineering foundations
