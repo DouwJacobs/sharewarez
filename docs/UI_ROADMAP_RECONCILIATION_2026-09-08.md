@@ -63,14 +63,22 @@ passed the 88-template accessibility audit, 20 UI contract tests, and 41 focused
 newsletter, download/play, and update-metadata tests. Populated Default desktop and
 mobile views were inspected for all three routes.
 
-### R4 — Theme-token migration remains broad and should be incremental
+### R4 — Theme-token migration is in progress
 
 A conservative static scan still finds direct palette declarations across legacy
 route styles. Raw counts include intentional media overlays, shadows, fallbacks,
 and semantic warning colors, so they cannot be converted mechanically. The highest
-value route-owned targets are Game Details, scanning administration, integration
-settings, and System Logs. Shared `base.css` and sidebar values require cross-theme
-visual regression before replacement.
+value route-owned targets initially included Game Details, scanning administration,
+integration settings, and System Logs. Integration settings, System Logs, and Scan
+Management are now migrated and verified. Game Details and the remaining legacy
+route families still require incremental review. Shared `base.css` and sidebar
+values require cross-theme visual regression before replacement.
+
+Scan Management now maps its effective route layer to shared theme roles, uses one
+responsive control contract for queue/filter actions, and presents every desktop
+table as labeled mobile records. Default, Ember, and Evergreen passed responsive
+inspection without document overflow; focused regressions passed for scan status, unmatched
+folders, filters, file extensions, and the image queue.
 
 **Rule for follow-up:** migrate one coherent page family at a time, compare Default,
 Ember, and a high-luminance palette, and keep canonical/installed theme assets equal.

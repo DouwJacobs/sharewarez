@@ -1388,256 +1388,6 @@
     margin-bottom: 20px;
 }
 
-/* ── Scan management UI refresh ───────────────────────────── */
-.admin_manage_scanjobs-nav-panel {
-    width: 100%;
-    margin: 0 0 48px;
-    overflow: hidden;
-    background: linear-gradient(145deg, rgba(18, 18, 28, 0.96), rgba(12, 12, 20, 0.98));
-    border: 1px solid rgba(255, 255, 255, 0.09);
-    border-radius: 18px;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5), 0 0 60px rgba(80, 120, 255, 0.06);
-}
-
-.admin_manage_scanjobs-nav-panel .container-settings {
-    min-width: 0;
-    padding: 24px;
-    background: transparent;
-    border-radius: 0;
-    box-shadow: none;
-}
-
-.admin_manage_scanjobs-nav-tabs {
-    gap: 6px;
-    padding: 0 0 2px;
-    border-bottom-color: rgba(255, 255, 255, 0.1);
-}
-
-.admin_manage_scanjobs-nav-link {
-    color: rgba(225, 229, 245, 0.72);
-    border: 1px solid transparent;
-    border-radius: 9px 9px 0 0;
-    padding: 12px 16px;
-}
-
-.admin_manage_scanjobs-nav-link:hover,
-.admin_manage_scanjobs-nav-link.active {
-    color: #fff;
-    background: rgba(var(--theme-accent-rgb, 98, 122, 239), 0.14);
-    border-color: rgba(var(--theme-accent-soft-rgb, 154, 177, 255), 0.24);
-    box-shadow: none;
-}
-
-.admin_manage_scanjobs-nav-link.active {
-    border-bottom-color: rgba(var(--theme-accent-soft-rgb, 123, 150, 255), 0.9);
-}
-
-.admin_manage_scanjobs-tab-content {
-    padding: 24px 0 0;
-}
-
-.admin_manage_scanjobs-manual-panel,
-.admin_manage_scanjobs-unmatched-panel,
-.admin_manage_scanjobs-filters-panel,
-.admin_manage_scanjobs-extensions-panel,
-.admin_manage_scanjobs-imagequeue-panel {
-    margin: 0;
-    padding: 24px;
-    background: linear-gradient(145deg, rgba(28, 29, 45, 0.9), rgba(13, 14, 25, 0.95));
-    border: 1px solid rgba(255, 255, 255, 0.09);
-    border-radius: 16px;
-    box-shadow: 0 16px 38px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.04);
-}
-
-.admin_manage_scanjobs-unmatched-container,
-.admin_manage_scanjobs-filters-container,
-.admin_manage_scanjobs-extensions-container {
-    width: 100%;
-    max-width: none;
-    padding: 0;
-}
-
-.admin_manage_scanjobs-tab-header {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 10px 16px;
-    margin-bottom: 22px;
-    padding-bottom: 16px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.admin_manage_scanjobs-tab-header h3 {
-    margin: 0;
-    text-align: left;
-    color: rgba(235, 240, 255, 0.96);
-    font-size: 1.35rem;
-}
-
-.admin_manage_scanjobs-tab-header p {
-    flex-basis: 100%;
-    margin: -4px 0 0;
-    color: rgba(205, 214, 235, 0.68);
-}
-
-.admin_manage_scanjobs-tab-header .btn {
-    margin-left: auto;
-}
-
-.scan-extension-card {
-    overflow: hidden;
-    background: rgba(5, 6, 13, 0.32);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 12px;
-}
-
-.scan-extension-card .card-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    padding: 16px;
-    background: rgba(8, 10, 19, 0.75);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.scan-extension-card .card-header h4 {
-    margin: 0;
-    color: rgba(235, 240, 255, 0.96);
-    font-size: 1rem;
-}
-
-.scan-extension-card .card-body {
-    padding: 0;
-}
-
-.scan-extension-card .table {
-    margin: 0;
-}
-
-.scan-queue-toolbar {
-    margin-bottom: 1.5rem;
-}
-
-.scan-queue-toolbar .btn {
-    margin: 0;
-    height: 40px;
-    padding: 0 14px;
-    white-space: nowrap;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.85rem;
-    line-height: 1;
-    border-radius: var(--border-radius-sm, 6px) !important;
-}
-
-.scan-queue-toolbar .form-select {
-    height: 40px;
-    min-height: 40px;
-    padding-left: 14px;
-    padding-right: 36px;
-    background-color: rgba(255, 255, 255, 0.06);
-    border-color: rgba(255, 255, 255, 0.12);
-    color: var(--text-white);
-    min-width: 170px;
-    width: auto;
-}
-
-.scan-queue-table-wrapper {
-    overflow: auto;
-}
-
-.simple-jobs-table th,
-.simple-unmatched-table th {
-    padding: 14px 16px;
-    background: rgba(8, 10, 19, 0.88);
-    color: rgba(205, 217, 247, 0.82);
-    font-size: 0.7rem;
-    font-weight: 600;
-    letter-spacing: 0.09em;
-    text-transform: uppercase;
-}
-
-.simple-jobs-table td,
-.simple-unmatched-table td {
-    padding: 14px 16px;
-}
-
-@media (max-width: 768px) {
-    .admin_manage_scanjobs-nav-panel {
-        width: 100%;
-        margin: 0 0 24px;
-        border-radius: 14px;
-    }
-
-    .admin_manage_scanjobs-nav-panel .container-settings {
-        padding: 16px;
-    }
-
-    .admin_manage_scanjobs-manual-panel,
-    .admin_manage_scanjobs-unmatched-panel,
-    .admin_manage_scanjobs-filters-panel,
-    .admin_manage_scanjobs-extensions-panel,
-    .admin_manage_scanjobs-imagequeue-panel {
-        padding: 0;
-        border: 0;
-        background: transparent;
-        box-shadow: none;
-    }
-
-    .admin_manage_scanjobs-nav-tabs {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        overflow: visible;
-    }
-
-    .admin_manage_scanjobs-nav-link {
-        width: 100%;
-        min-height: 48px;
-        white-space: normal;
-    }
-
-    .admin_manage_scanjobs-nav-link small { display: none; }
-
-    .admin_manage_scanjobs-tab-header .btn {
-        width: 100%;
-        margin-left: 0;
-    }
-
-    .container-unmatched-buttons {
-        align-items: stretch;
-        flex-direction: column;
-    }
-
-    .container-unmatched-buttons form {
-        width: 100%;
-    }
-
-    .scan-extension-card .card-header {
-        align-items: flex-start;
-        flex-direction: column;
-    }
-}
-
-/* Keep the refreshed panels driven by the active theme. */
-.config-card,
-.path-card,
-.scan-jobs-card,
-.admin_manage_scanjobs-manual-panel,
-.admin_manage_scanjobs-unmatched-panel,
-.admin_manage_scanjobs-filters-panel,
-.admin_manage_scanjobs-extensions-panel,
-.admin_manage_scanjobs-imagequeue-panel {
-    background: var(--theme-card-background, linear-gradient(145deg, rgba(28, 29, 45, 0.9), rgba(13, 14, 25, 0.95)));
-    border-color: var(--theme-border-color, rgba(255, 255, 255, 0.09));
-}
-
-.config-path-row {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-}
-
 /* The workspace surface is the page container; active tab panels are content
    sections rather than another card nested inside it. */
 #content .scan-management-page .admin_manage_scanjobs-tab-content :is(
@@ -1653,4 +1403,550 @@
     background: transparent !important;
     box-shadow: none !important;
     backdrop-filter: none;
+}
+
+/* Route-level contract: the active theme owns every visible surface and text role. */
+.scan-management-page {
+    --scan-surface: var(--theme-card-background, var(--bg-dark-secondary));
+    --scan-panel: var(--theme-panel-bg, var(--bg-dark-primary));
+    --scan-input: var(--theme-input-bg, var(--bg-dark-primary));
+    --scan-border: var(--theme-border-color, var(--border-light-strong));
+    --scan-text: var(--theme-text-primary, var(--text-white));
+    --scan-muted: var(--theme-text-muted, var(--text-muted));
+    --scan-subtle: var(--theme-text-secondary, var(--text-muted-light));
+    --scan-accent: var(--theme-primary-color, var(--theme-primary));
+    --scan-hover: color-mix(in srgb, var(--scan-accent) 10%, transparent);
+    --scan-selected: color-mix(in srgb, var(--scan-accent) 18%, transparent);
+    color: var(--scan-text);
+}
+
+.scan-management-page :is(.scan-management-heading h1, .card-title, .jobs-title-section h4,
+    .section-title, .admin_manage_scanjobs-tab-header h3, .scan-extension-card .card-header h4,
+    .scan-empty-state strong, .folder-browser-empty strong, .folder-browser-error strong,
+    .admin_manage_scanjobs-foundgames-header h4) {
+    color: var(--scan-text);
+}
+
+.scan-management-page :is(.scan-management-heading p, .jobs-subtitle, .section-subtitle,
+    .field-help, .results-info, .scan-empty-state, .folder-browser-empty, .file-size,
+    .admin_manage_scanjobs-tab-header p, .extensions-info, .scan-schedule-heading p,
+    .scan-schedule-main small, .scan-schedule-empty) {
+    color: var(--scan-muted);
+}
+
+.scan-management-page :is(.scan-management-eyebrow, .supplemental-scan-note i,
+    .scan-empty-state i, .folder-browser-empty i, .scan-schedule-create > summary) {
+    color: var(--scan-accent);
+}
+
+.scan-management-page .admin_manage_scanjobs-nav-panel {
+    margin-bottom: var(--spacing-xl, 32px);
+    overflow: hidden;
+    border: 1px solid var(--scan-border);
+    border-radius: var(--border-radius-lg);
+    background: var(--scan-surface);
+    box-shadow: var(--shadow-card);
+}
+
+.scan-management-page .admin_manage_scanjobs-nav-panel .container-settings {
+    padding: clamp(16px, 2.2vw, 28px);
+}
+
+.scan-management-page .admin_manage_scanjobs-nav-tabs {
+    border-color: var(--scan-border);
+}
+
+.scan-management-page .admin_manage_scanjobs-nav-link {
+    min-height: 48px;
+    color: var(--scan-subtle);
+    border-radius: var(--border-radius-sm);
+}
+
+.scan-management-page .admin_manage_scanjobs-nav-link:hover {
+    color: var(--scan-text);
+    border-color: var(--scan-border);
+    background: var(--scan-hover);
+}
+
+.scan-management-page .admin_manage_scanjobs-nav-link.active {
+    color: var(--scan-text);
+    border-color: color-mix(in srgb, var(--scan-accent) 52%, var(--scan-border));
+    background: var(--scan-selected);
+    box-shadow: none;
+}
+
+.scan-management-page :is(.admin_manage_scanjobs-unmatched-container,
+    .admin_manage_scanjobs-filters-container, .admin_manage_scanjobs-extensions-container) {
+    width: 100%;
+    max-width: none;
+    padding: 0;
+}
+
+.scan-management-page .admin_manage_scanjobs-tab-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 16px;
+    margin-bottom: 22px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--scan-border);
+}
+
+.scan-management-page .admin_manage_scanjobs-tab-header h3 {
+    margin: 0;
+    color: var(--scan-text);
+    font-size: 1.35rem;
+    text-align: left;
+}
+
+.scan-management-page .admin_manage_scanjobs-tab-header p {
+    flex-basis: 100%;
+    margin: -4px 0 0;
+}
+
+.scan-management-page .admin_manage_scanjobs-tab-header .btn {
+    margin-left: auto;
+}
+
+.scan-management-page :is(.config-card, .path-card, .scan-jobs-card, .scan-schedule-card,
+    .manual-field-card, .manual-location-field, .manual-options-panel,
+    .scan-extension-card, .extensions-info .info-panel, .scan-empty-state-panel) {
+    border: 1px solid var(--scan-border);
+    background: color-mix(in srgb, var(--scan-panel) 84%, transparent);
+    box-shadow: none;
+    backdrop-filter: none;
+}
+
+.scan-management-page :is(.config-card, .path-card, .scan-jobs-card, .scan-schedule-card) {
+    padding: clamp(16px, 2vw, 24px);
+    border-radius: var(--border-radius-md);
+}
+
+.scan-management-page :is(.config-card .card-header, .path-card .card-header,
+    .scan-jobs-card .card-header, .admin_manage_scanjobs-tab-header,
+    .scan-extension-card .card-header, .scan-schedule-create, .scan-schedule-list,
+    .scan-schedule-row, .options-row) {
+    border-color: var(--scan-border);
+}
+
+.scan-management-page :is(.config-label, .manual-location-field label,
+    .manual-field-card > label, .scan-schedule-form > label,
+    .scan-schedule-form legend, .scan-schedule-row dt) {
+    color: var(--scan-muted);
+}
+
+.scan-management-page :is(.form-control, .form-select, .search-input,
+    .scan-schedule-form select, .scan-schedule-form input[type="text"],
+    .scan-schedule-form input[type="datetime-local"]) {
+    min-height: var(--app-control-height, 42px);
+    color: var(--scan-text);
+    border-color: var(--scan-border);
+    background: var(--scan-input);
+}
+
+.scan-management-page :is(.form-control, .form-select, .search-input):focus,
+.scan-management-page .scan-schedule-form :is(select, input):focus {
+    color: var(--scan-text);
+    border-color: var(--scan-accent);
+    background: var(--scan-input);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--scan-accent) 24%, transparent);
+}
+
+.scan-management-page :is(.form-check-label, .radio-option label, .modern-checkbox,
+    .scan-schedule-form fieldset label, .scan-schedule-main, .scan-schedule-row dd) {
+    color: var(--scan-text);
+}
+
+.scan-management-page .supplemental-scan-note {
+    color: var(--scan-subtle);
+}
+
+.scan-management-page :is(.folder-contents, #folderContentsManual:not(:empty)) {
+    color: var(--scan-text);
+    border-color: var(--scan-border);
+    background: var(--scan-input);
+}
+
+.scan-management-page :is(.folder-item, .file-item):hover,
+.scan-management-page :is(.folder-item, .file-item).active-selection {
+    border-color: color-mix(in srgb, var(--scan-accent) 48%, var(--scan-border));
+    background: var(--scan-hover);
+    box-shadow: none;
+}
+
+.scan-management-page .folder-browser-error {
+    color: var(--semantic-danger);
+}
+
+.scan-management-page .unmatched-filters {
+    border-color: var(--scan-border);
+    background: color-mix(in srgb, var(--scan-input) 86%, transparent);
+    backdrop-filter: none;
+}
+
+.scan-management-page .filter-btn {
+    min-height: 40px;
+    padding: 8px 13px;
+    color: var(--scan-subtle);
+    border-color: var(--scan-border);
+    background: transparent;
+}
+
+.scan-management-page .filter-btn:hover {
+    color: var(--scan-text);
+    border-color: var(--scan-border);
+    background: var(--scan-hover);
+}
+
+.scan-management-page .filter-btn.active {
+    color: var(--scan-text);
+    border-color: color-mix(in srgb, var(--scan-accent) 52%, var(--scan-border));
+    background: var(--scan-selected);
+}
+
+.scan-management-page :is(.jobs-table-wrapper, .table-responsive) {
+    max-width: 100%;
+}
+
+.scan-management-page .jobs-table-wrapper {
+    overflow: auto;
+    border-color: var(--scan-border);
+    background: transparent;
+    backdrop-filter: none;
+}
+
+.scan-management-page :is(.simple-jobs-table, .simple-unmatched-table,
+    .admin_manage_filters-table, .scan-extension-card .table, .scan-queue-table) {
+    margin-bottom: 0;
+    color: var(--scan-text);
+    border-color: var(--scan-border);
+    background: transparent;
+    box-shadow: none;
+    backdrop-filter: none;
+}
+
+.scan-management-page :is(.simple-jobs-table, .simple-unmatched-table, .scan-queue-table) {
+    min-width: 760px;
+}
+
+.scan-management-page :is(.simple-jobs-table, .simple-unmatched-table,
+    .admin_manage_filters-table, .scan-extension-card .table, .scan-queue-table) th {
+    color: var(--scan-muted);
+    border-color: var(--scan-border);
+    background: var(--theme-table-header, var(--scan-input));
+}
+
+.scan-management-page :is(.simple-jobs-table, .simple-unmatched-table,
+    .admin_manage_filters-table, .scan-extension-card .table, .scan-queue-table) td {
+    color: var(--scan-text);
+    border-color: var(--scan-border);
+    background: transparent;
+}
+
+.scan-management-page :is(.simple-jobs-table, .simple-unmatched-table,
+    .admin_manage_filters-table, .scan-extension-card .table, .scan-queue-table) tbody tr:hover td {
+    background: var(--scan-hover);
+}
+
+.scan-management-page .simple-unmatched-table tr[data-status="Unmatched"] {
+    background: color-mix(in srgb, var(--semantic-warning) 8%, transparent) !important;
+}
+
+.scan-management-page .simple-unmatched-table tr[data-status="Duplicate"] {
+    background: color-mix(in srgb, var(--semantic-danger) 8%, transparent) !important;
+}
+
+.scan-management-page .simple-unmatched-table tr[data-status="Ignore"] {
+    background: color-mix(in srgb, var(--scan-muted) 8%, transparent) !important;
+}
+
+.scan-management-page .simple-unmatched-table tr[data-status="Pending"] {
+    background: color-mix(in srgb, var(--semantic-info) 8%, transparent) !important;
+}
+
+.scan-management-page .scan-progress .progress {
+    height: 20px;
+    background: color-mix(in srgb, var(--scan-muted) 18%, transparent);
+}
+
+.scan-management-page .scan-progress .progress-bar {
+    background: var(--scan-accent);
+}
+
+.scan-management-page :is(.progress-numbers, .card-content) {
+    color: var(--scan-text);
+}
+
+.scan-management-page .text-bright-green {
+    color: var(--semantic-success) !important;
+}
+
+.scan-management-page .manual-scan-progress {
+    color: var(--scan-text);
+    border-color: color-mix(in srgb, var(--scan-accent) 42%, var(--scan-border));
+    background: var(--scan-selected);
+}
+
+.scan-management-page .scan-extension-card .card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 16px;
+    background: color-mix(in srgb, var(--scan-input) 88%, transparent);
+}
+
+.scan-management-page .scan-extension-card {
+    overflow: hidden;
+    border-radius: var(--border-radius-md);
+}
+
+.scan-management-page .scan-extension-card :is(.card-body, .table) {
+    margin: 0;
+    padding: 0;
+}
+
+.scan-management-page .scan-queue-toolbar {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr);
+    align-items: flex-start !important;
+}
+
+.scan-management-page .scan-queue-actions,
+.scan-management-page .scan-queue-filters {
+    display: grid !important;
+    width: 100%;
+}
+
+.scan-management-page .scan-queue-actions {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.scan-management-page .scan-queue-filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.scan-management-page :is(.scan-queue-actions, .scan-queue-filters) :is(.btn, .form-select) {
+    width: 100%;
+}
+
+.scan-management-page .scan-row-actions {
+    white-space: nowrap;
+}
+
+.scan-management-page .scan-row-actions .btn {
+    width: 38px;
+    min-width: 38px;
+    height: 38px;
+    padding: 0;
+}
+
+.scan-management-page .scan-queue-url {
+    max-width: 280px;
+    overflow-wrap: anywhere;
+}
+
+.scan-management-page .success-notification {
+    color: var(--scan-text);
+    border-color: color-mix(in srgb, var(--semantic-success) 48%, var(--scan-border));
+    background: color-mix(in srgb, var(--semantic-success) 28%, var(--scan-panel));
+    box-shadow: var(--shadow-card);
+    backdrop-filter: none;
+}
+
+.scan-management-page .loading-spinner {
+    display: block;
+    color: var(--scan-muted);
+}
+
+.scan-management-page [hidden] {
+    display: none !important;
+}
+
+@media (max-width: 768px) {
+    .scan-management-page .admin_manage_scanjobs-nav-panel {
+        margin-bottom: var(--spacing-lg, 24px);
+        border-radius: var(--border-radius-md);
+    }
+
+    .scan-management-page .admin_manage_scanjobs-nav-panel .container-settings {
+        padding: 12px;
+    }
+
+    .scan-management-page :is(.config-card, .path-card, .scan-jobs-card, .scan-schedule-card) {
+        padding: 16px;
+    }
+
+    .scan-management-page :is(.options-row, .manual-options-panel) {
+        grid-template-columns: 1fr;
+    }
+
+    .scan-management-page .filter-row,
+    .scan-management-page .search-container {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .scan-management-page .filter-buttons {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        width: 100%;
+    }
+
+    .scan-management-page .filter-btn:last-child {
+        grid-column: 1 / -1;
+    }
+
+    .scan-management-page .container-unmatched-buttons {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .scan-management-page .admin_manage_scanjobs-tab-header {
+        align-items: flex-start;
+    }
+
+    .scan-management-page .admin_manage_scanjobs-tab-header .btn {
+        width: 100%;
+        margin-left: 0;
+    }
+
+    .scan-management-page .scan-extension-card .card-header {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .scan-management-page .container-unmatched-buttons :is(form, .btn) {
+        width: 100%;
+    }
+
+    .scan-management-page :is(.scan-queue-actions, .scan-queue-filters) {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .scan-management-page :is(.jobs-table-wrapper, .table-responsive, .scan-queue-table-wrapper) {
+        max-height: none;
+        overflow: visible;
+        border: 0;
+    }
+
+    .scan-management-page :is(.simple-jobs-table, .simple-unmatched-table,
+        .admin_manage_filters-table, .scan-extension-card .table, .scan-queue-table) {
+        display: block;
+        width: 100%;
+        min-width: 0;
+        border: 0;
+    }
+
+    .scan-management-page :is(.simple-jobs-table, .simple-unmatched-table,
+        .admin_manage_filters-table, .scan-extension-card .table, .scan-queue-table) thead {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        white-space: nowrap;
+    }
+
+    .scan-management-page :is(.simple-jobs-table, .simple-unmatched-table,
+        .admin_manage_filters-table, .scan-extension-card .table, .scan-queue-table) :is(tbody, tr, td) {
+        display: block;
+        width: 100%;
+    }
+
+    .scan-management-page :is(.simple-jobs-table, .simple-unmatched-table,
+        .admin_manage_filters-table, .scan-extension-card .table, .scan-queue-table) tbody {
+        display: grid;
+        gap: 10px;
+    }
+
+    .scan-management-page :is(.simple-jobs-table, .simple-unmatched-table,
+        .admin_manage_filters-table, .scan-extension-card .table, .scan-queue-table) tbody tr {
+        padding: 12px 14px;
+        border: 1px solid var(--scan-border);
+        border-radius: var(--border-radius-md);
+        background: var(--theme-table-row, var(--scan-panel));
+    }
+
+    .scan-management-page :is(.simple-jobs-table, .simple-unmatched-table,
+        .admin_manage_filters-table, .scan-extension-card .table, .scan-queue-table) tbody td {
+        display: grid;
+        grid-template-columns: 104px minmax(0, 1fr);
+        align-items: start;
+        gap: 10px;
+        max-width: none;
+        padding: 8px 0;
+        border: 0;
+        text-align: left;
+        white-space: normal;
+        overflow-wrap: anywhere;
+    }
+
+    .scan-management-page :is(.simple-jobs-table, .simple-unmatched-table,
+        .admin_manage_filters-table, .scan-extension-card .table, .scan-queue-table) tbody td::before {
+        color: var(--scan-muted);
+        font-size: 0.68rem;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        content: attr(data-label);
+    }
+
+    .scan-management-page :is(.simple-jobs-table, .simple-unmatched-table,
+        .admin_manage_filters-table, .scan-extension-card .table, .scan-queue-table) .scan-row-actions {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .scan-management-page :is(.simple-jobs-table, .simple-unmatched-table,
+        .admin_manage_filters-table, .scan-extension-card .table, .scan-queue-table) .scan-row-actions::before {
+        width: 94px;
+        flex: 0 0 94px;
+    }
+
+    .scan-management-page :is(.simple-jobs-table, .simple-unmatched-table,
+        .admin_manage_filters-table, .scan-extension-card .table, .scan-queue-table) .scan-empty-state-row {
+        padding: 0;
+    }
+
+    .scan-management-page :is(.simple-jobs-table, .simple-unmatched-table,
+        .admin_manage_filters-table, .scan-extension-card .table, .scan-queue-table) .scan-empty-state-row td {
+        display: block;
+        padding: 0 !important;
+    }
+
+    .scan-management-page :is(.simple-jobs-table, .simple-unmatched-table,
+        .admin_manage_filters-table, .scan-extension-card .table, .scan-queue-table) .scan-empty-state-row td::before {
+        content: none;
+    }
+
+    .scan-management-page .scan-queue-url {
+        max-width: none;
+    }
+
+    .scan-management-page .success-notification {
+        top: 12px;
+        right: 12px;
+        left: 12px;
+    }
+}
+
+@media (max-width: 480px) {
+    .scan-management-page .container-unmatched-buttons,
+    .scan-management-page :is(.scan-queue-actions, .scan-queue-filters) {
+        grid-template-columns: 1fr;
+    }
+
+    .scan-management-page :is(.simple-jobs-table, .simple-unmatched-table,
+        .admin_manage_filters-table, .scan-extension-card .table, .scan-queue-table) tbody td {
+        grid-template-columns: 88px minmax(0, 1fr);
+    }
+
+    .scan-management-page :is(.simple-jobs-table, .simple-unmatched-table,
+        .admin_manage_filters-table, .scan-extension-card .table, .scan-queue-table) .scan-row-actions::before {
+        width: 78px;
+        flex-basis: 78px;
+    }
 }

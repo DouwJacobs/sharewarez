@@ -121,9 +121,19 @@ def test_game_editor_uses_task_sections_and_safe_action_contract():
 
 def test_scan_workspace_flattens_active_tab_panel():
     css = (THEME / "css/admin/admin_manage_scanjobs.css").read_text(encoding="utf-8")
+    template = Path("sharewarez/templates/admin/admin_manage_scanjobs.html").read_text(encoding="utf-8")
+    javascript = (THEME / "js/admin_manage_scanjobs.js").read_text(encoding="utf-8")
 
     assert "#content .scan-management-page .admin_manage_scanjobs-tab-content :is(" in css
     assert "backdrop-filter: none;" in css
+    assert "--scan-surface: var(--theme-card-background" in css
+    assert "content: attr(data-label);" in css
+    assert 'class="table table-dark table-striped scan-queue-table"' in template
+    assert 'data-label="Case sensitive"' in template
+    assert 'data-label="Folder path"' in javascript
+    assert 'data-label="Progress"' in javascript
+    assert "window.clearEntry = function(folderId, triggerButton)" in javascript
+    assert "event.target.closest('button')" not in javascript
 
 
 def test_operations_pages_use_compact_theme_aware_components():

@@ -4,11 +4,11 @@ var currentPathAuto = '';
 var currentPathManual = '';
 
 function showSpinner() {
-    document.getElementById('globalSpinner').style.display = 'block';
+    document.getElementById('globalSpinner').hidden = false;
 }
 
 function hideSpinner() {
-    document.getElementById('globalSpinner').style.display = 'none';
+    document.getElementById('globalSpinner').hidden = true;
 }
 
 function attachDeleteFolderFormListeners() {
@@ -261,7 +261,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         const processed = job.folders_success + job.folders_failed;
                         progressColumn = `
                             <div class="scan-progress">
-                                <div class="progress mb-1" style="height: 20px;">
+                                <div class="progress mb-1">
                                     <div class="progress-bar" style="width: ${percentage}%"></div>
                                 </div>
                                 <div class="progress-info">
@@ -298,19 +298,19 @@ document.addEventListener('DOMContentLoaded', function() {
                     // Create actions column content
                     const actionsColumn = `
                         ${job.status === 'Running' ?
-                            `<form action="/cancel_scan_job/${job.id}" method="post" style="display: inline-block;">
+                            `<form action="/cancel_scan_job/${job.id}" method="post" class="inline-form">
                                 <input type="hidden" name="csrf_token" value="${csrfToken}">
-                                <button type="submit" class="btn btn-warning btn-sm" title="Cancel Scan"><i class="fas fa-stop"></i></button>
+                                <button type="submit" class="btn btn-warning btn-sm" title="Cancel Scan" aria-label="Cancel scan"><i class="fas fa-stop" aria-hidden="true"></i></button>
                             </form>` :
                         job.status === 'Stopping' ?
-                            `<button class="btn btn-warning btn-sm" disabled title="Scan is stopping, please wait...">
-                                <i class="fas fa-spinner fa-spin"></i>
+                            `<button class="btn btn-warning btn-sm" disabled title="Scan is stopping, please wait..." aria-label="Scan is stopping">
+                                <i class="fas fa-spinner fa-spin" aria-hidden="true"></i>
                             </button>` :
                             `${isAnyJobRunning ?
-                                `<button class="btn btn-secondary btn-sm" disabled title="Cannot restart while another scan is running"><i class="fas fa-sync"></i></button>` :
-                                `<form action="/restart_scan_job/${job.id}" method="post" style="display: inline-block;">
+                                `<button class="btn btn-secondary btn-sm" disabled title="Cannot restart while another scan is running" aria-label="Restart unavailable while another scan is running"><i class="fas fa-sync" aria-hidden="true"></i></button>` :
+                                `<form action="/restart_scan_job/${job.id}" method="post" class="inline-form">
                                     <input type="hidden" name="csrf_token" value="${csrfToken}">
-                                        <button type="submit" class="btn btn-secondary btn-sm" title="Restart Scan"><i class="fas fa-sync"></i></button>
+                                        <button type="submit" class="btn btn-secondary btn-sm" title="Restart Scan" aria-label="Restart scan"><i class="fas fa-sync" aria-hidden="true"></i></button>
                                 </form>`
                             }`
                         }
@@ -318,12 +318,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     
                     const row = document.createElement('tr');
                     row.innerHTML = `
-                        <td>${job.id.substring(0, 8)}</td>
-                        <td>${job.library_name || 'N/A'}</td>
-                        <td>${job.scan_folder || 'N/A'}</td>
-                        <td>${getDisplayStatus(job)}</td>
-                        <td>${progressColumn}</td>
-                        <td>${actionsColumn}</td>
+                        <td data-label="ID">${job.id.substring(0, 8)}</td>
+                        <td data-label="Library">${job.library_name || 'N/A'}</td>
+                        <td data-label="Path">${job.scan_folder || 'N/A'}</td>
+                        <td data-label="Status">${getDisplayStatus(job)}</td>
+                        <td data-label="Progress">${progressColumn}</td>
+                        <td data-label="Actions" class="scan-row-actions">${actionsColumn}</td>
                     `;
                     scanJobsTableBody.appendChild(row);
                 });
@@ -376,22 +376,23 @@ document.addEventListener('DOMContentLoaded', function() {
                         <button 
                             onclick="window.toggleIgnoreStatus('${folder.id}', this)" 
                             class="btn ${folder.status === 'Ignore' ? 'btn-warning' : 'btn-secondary'} btn-sm"
-                            title="Ignored folders are not scanned">
-                            <i class="fas ${folder.status === 'Ignore' ? 'fa-eye-slash' : 'fa-eye'}"></i>
+                            title="Ignored folders are not scanned"
+                            aria-label="${folder.status === 'Ignore' ? 'Resume scanning this folder' : 'Ignore this folder'}">
+                            <i class="fas ${folder.status === 'Ignore' ? 'fa-eye-slash' : 'fa-eye'}" aria-hidden="true"></i>
                         </button>
-                        <button onclick="clearEntry('${folder.id}')" class="btn btn-secondary btn-sm" title="Remove from unmatched list"><i class="fas fa-eraser"></i></button>
-                        <form class="delete-folder-form" style="display: inline;">
+                        <button onclick="clearEntry('${folder.id}', this)" class="btn btn-secondary btn-sm" title="Remove from unmatched list" aria-label="Remove from unmatched list"><i class="fas fa-eraser" aria-hidden="true"></i></button>
+                        <form class="delete-folder-form inline-form">
                             <input type="hidden" name="csrf_token" value="${csrfToken}">
                             <input type="hidden" name="folder_path" value="${folder.folder_path}">
-                            <button type="submit" class="btn btn-danger btn-sm" title="Delete the folder from disk"><i class="fas fa-trash-alt"></i></button>
+                            <button type="submit" class="btn btn-danger btn-sm" title="Delete the folder from disk" aria-label="Delete folder from disk"><i class="fas fa-trash-alt" aria-hidden="true"></i></button>
                         </form>
-                        <form action="/add_game_manual" method="GET" style="display: inline;">
+                        <form action="/add_game_manual" method="GET" class="inline-form">
                             <input type="hidden" name="full_disk_path" value="${folder.folder_path}">
                             <input type="hidden" name="library_uuid" value="${folder.library_uuid}">
                             <input type="hidden" name="platform_name" value="${folder.platform_name}">
                             <input type="hidden" name="platform_id" value="${folder.platform_id}">
                             <input type="hidden" name="from_unmatched" value="true">
-                            <button type="submit" class="btn btn-primary btn-sm" title="Attempt manual IGDB search"><i class="fas fa-search"></i></button>
+                            <button type="submit" class="btn btn-primary btn-sm" title="Attempt manual IGDB search" aria-label="Identify with IGDB"><i class="fas fa-search" aria-hidden="true"></i></button>
                         </form>
                     `;
                     
@@ -401,11 +402,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     row.setAttribute('data-library-name', folder.library_name.toLowerCase());
                     row.setAttribute('data-platform-name', folder.platform_name.toLowerCase());
                     row.innerHTML = `
-                        <td><i class="fas fa-folder"></i> ${folder.folder_path}</td>
-                        <td><span class="status-${folder.status.toLowerCase()}">${folder.status}</span></td>
-                        <td>${folder.library_name}</td>
-                        <td>${folder.platform_name}</td>
-                        <td>${actionsColumn}</td>
+                        <td data-label="Folder path"><i class="fas fa-folder" aria-hidden="true"></i> ${folder.folder_path}</td>
+                        <td data-label="Status"><span class="status-${folder.status.toLowerCase()}">${folder.status}</span></td>
+                        <td data-label="Library">${folder.library_name}</td>
+                        <td data-label="Platform">${folder.platform_name}</td>
+                        <td data-label="Actions" class="scan-row-actions">${actionsColumn}</td>
                     `;
                     unmatchedTableBody.appendChild(row);
                 });
@@ -638,10 +639,9 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     };
 
-    window.clearEntry = function(folderId) {
+    window.clearEntry = function(folderId, triggerButton) {
         if (confirm('Remove this entry from the unmatched list?')) {
-            const button = event.target.closest('button');
-            const row = button.closest('tr');
+            const row = triggerButton.closest('tr');
 
             // Immediate visual feedback - fade out the row
             row.classList.add('row-fade-out');
@@ -691,7 +691,7 @@ function setupFolderBrowse(browseButtonId, folderContentsId, spinnerId, upButton
     
     $(browseButtonId).click(function() {
         window[currentPathVar] = ''; // Reset the current path
-        $(upButtonId).hide(); // Initially hide the "Up" button
+        $(upButtonId).prop('hidden', true); // Initially hide the "Up" button
         // Preserve the library selection
         var librarySelect = $(inputFieldId).closest('form').find('select[name="library_uuid"]');
         if (!librarySelect.val() && initialLibrarySelection) {
@@ -720,21 +720,21 @@ function setupFolderBrowse(browseButtonId, folderContentsId, spinnerId, upButton
         $(inputFieldId).val(window[currentPathVar]);
 
         if (segments.length < 1) {
-            $(upButtonId).hide();
+            $(upButtonId).prop('hidden', true);
         } else {
-            $(upButtonId).show();
+            $(upButtonId).prop('hidden', false);
         }
     });
 }
 
 function fetchFolders(path, folderContentsId, spinnerId, upButtonId, inputFieldId, currentPathVar) {
     console.log("Fetching folders for path:", path);
-    $(spinnerId).show();
+    $(spinnerId).prop('hidden', false);
     $.ajax({
         url: '/api/browse_folders_ss',
         data: { path: path },
         success: function(data) {
-            $(spinnerId).hide();
+            $(spinnerId).prop('hidden', true);
             $(folderContentsId).empty();
             
             // Check if we're using the new response format or the old one
@@ -805,13 +805,13 @@ function fetchFolders(path, folderContentsId, spinnerId, upButtonId, inputFieldI
                 $(this).addClass('active-selection');
             });
             if (path) {
-                $(upButtonId).show();
+                $(upButtonId).prop('hidden', false);
             } else {
-                $(upButtonId).hide();
+                $(upButtonId).prop('hidden', true);
             }
         },
         error: function(error) {
-            $(spinnerId).hide();
+            $(spinnerId).prop('hidden', true);
             console.error("Error fetching folders:", error);
             const response = error.responseJSON || {};
             const message = response.error || 'Could not browse the scan location.';

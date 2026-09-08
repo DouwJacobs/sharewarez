@@ -470,3 +470,30 @@ Verification: 41 focused newsletter, download/play, and update-metadata tests,
 Populated Default desktop and mobile fixtures were inspected for Edit Update and
 newsletter detail; the emulator workspace height, single mobile gutter, and
 placeholder hierarchy were inspected at both breakpoints.
+
+## UI-13 — Standardize Scan Management across themes and mobile (complete)
+
+Scan Management now resolves its route-owned surfaces, inputs, borders, text
+roles, selected states, progress, and feedback from the active theme. Its scan
+configuration, schedules, queue controls, filters, and secondary panels use one
+consistent flat hierarchy inside the shared workspace. Queue actions form a
+predictable three-column desktop grid, a two-column mobile grid, and a single
+column on narrow phones; filter and destructive action groups follow the same
+responsive control geometry.
+
+Scan jobs, unmatched folders, scanning filters, file types, and image queue rows
+retain normal desktop tables with one internal scroll owner. At the mobile
+breakpoint they become labeled records with wrapping paths and URLs, full status
+context, and 38 px icon actions inside 44 px control rows. Dynamically rendered
+cells carry the same labels as server-rendered rows. Folder-browser and pagination
+visibility now use the native `hidden` state consistently. The unmatched-row
+clear action no longer depends on the browser-specific global `event` object and
+always receives its trigger explicitly.
+
+Verification: 109 focused scan/filter/extension/image/unmatched route tests,
+20 UI source-contract tests, JavaScript syntax checking, and the 88-template
+accessibility audit passed. Default, Ember, and Evergreen were inspected across
+desktop and mobile Auto scan, Unmatched, File types, and Image queue views. The
+populated mobile queue rendered as labeled records without document overflow; its
+action buttons measured 44 px high. Folder browsing was exercised through the live
+API and its spinner/empty/up-state sequence completed correctly.

@@ -156,12 +156,12 @@
                             </div>
                             
                             <div class="folder-browser">
-                                <button id="upFolderBtn" type="button" class="btn btn-secondary up-btn" style="display: none;">
+                                <button id="upFolderBtn" type="button" class="btn btn-secondary up-btn" hidden>
                                     <i class="fas fa-arrow-up"></i> Up
                                 </button>
                                 <div id="folderContents" class="folder-contents"></div>
                             </div>
-                            <div id="loadingSpinner" class="loading-spinner" style="display: none;">
+                            <div id="loadingSpinner" class="loading-spinner" hidden>
                                 <div class="app-loading-indicator" role="status">
                                     <span class="app-spinner" aria-hidden="true"></span>
                                     <span>Loading folders…</span>
@@ -313,7 +313,7 @@
                         <button id="manualScanSubmitBtn" type="submit" name="submit" value="ManualScan" class="admin_manage_scanjobs-browsefolders-listgames-btn btn btn-primary">
                             <i class="fas fa-list" aria-hidden="true"></i> List Games
                         </button>
-                        <button id="upFolderBtnManual" type="button" class="admin_manage_scanjobs-browsefolders-up-btn btn btn-secondary" style="display: none;">Up</button>
+                        <button id="upFolderBtnManual" type="button" class="admin_manage_scanjobs-browsefolders-up-btn btn btn-secondary" hidden>Up</button>
                     </div>
                     <div id="manualScanProgress" class="manual-scan-progress" role="status" aria-live="polite" hidden>
                         <span class="manual-scan-spinner" aria-hidden="true"></span>
@@ -362,7 +362,7 @@
                         <h3>Resolve Unmatched Folders</h3>
                     </div>
                     <!-- spinner -->
-                    <div id="globalSpinner" class="loading-spinner" style="display: none;">
+                    <div id="globalSpinner" class="loading-spinner" hidden>
                         <div class="app-loading-indicator" role="status">
                             <span class="app-spinner" aria-hidden="true"></span>
                             <span>Updating unmatched folders…</span>
@@ -386,11 +386,11 @@
                     <div class="unmatched-filters">
                         <div class="filter-row">
                             <div class="filter-buttons">
-                                <button class="filter-btn active" data-filter="all">All</button>
-                                <button class="filter-btn" data-filter="Unmatched">Unmatched</button>
-                                <button class="filter-btn" data-filter="Duplicate">Duplicates</button>
-                                <button class="filter-btn" data-filter="Ignore">Ignored</button>
-                                <button class="filter-btn" data-filter="Pending">Pending</button>
+                                <button type="button" class="filter-btn active" data-filter="all">All</button>
+                                <button type="button" class="filter-btn" data-filter="Unmatched">Unmatched</button>
+                                <button type="button" class="filter-btn" data-filter="Duplicate">Duplicates</button>
+                                <button type="button" class="filter-btn" data-filter="Ignore">Ignored</button>
+                                <button type="button" class="filter-btn" data-filter="Pending">Pending</button>
                             </div>
                             <div class="search-container">
                                 <input type="text"
@@ -468,22 +468,22 @@
                     <div class="table-responsive"><table class="admin_manage_filters-table table table-dark table-striped table-hover">
                         <thead>
                             <tr>
-                                <th width="60%">Scanning Filter Pattern</th>
-                                <th width="20%">Case Sensitive</th>
-                                <th width="20%">Actions</th>
+                                <th>Scanning Filter Pattern</th>
+                                <th>Case Sensitive</th>
+                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                         {% for group in scanning_filters %}
                             <tr>
-                                <td>{{ group.filter_pattern }}</td>
-                                <td>
+                                <td data-label="Pattern">{{ group.filter_pattern }}</td>
+                                <td data-label="Case sensitive">
                                     <span class="badge {% if group.case_sensitive %}bg-success{% else %}bg-secondary{% endif %}">
                                         {{ 'Yes' if group.case_sensitive else 'No' }}
                                     </span>
                                 </td>
-                                <td>
-                                    <form action="" method="post" style="display: inline;">
+                                <td data-label="Actions" class="scan-row-actions">
+                                    <form action="" method="post" class="inline-form">
                                         {{ csrf_form.csrf_token }}
                                         <input type="hidden" name="submit" value="DeleteReleaseGroup">
                                         <input type="hidden" name="filter_id" value="{{ group.id }}">
@@ -531,7 +531,7 @@
                                         {% for type in allowed_file_types %}
                                         <tr data-id="{{ type.id }}" data-category="allowed">
                                                 <td class="type-value" data-label="Extension">{{ type.value }}</td>
-                                                <td data-label="Actions" class="extension-actions">
+                                                <td data-label="Actions" class="extension-actions scan-row-actions">
                                                     <button type="button" class="btn btn-sm btn-secondary" onclick="editFileType(this)" aria-label="Edit {{ type.value }} extension">
                                                     <i class="fas fa-edit"></i>
                                                 </button>
@@ -573,7 +573,7 @@
 
                     <!-- Controls -->
                     <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3 scan-queue-toolbar">
-                        <div class="d-flex flex-wrap align-items-center gap-2">
+                        <div class="d-flex flex-wrap align-items-center gap-2 scan-queue-actions">
                             <button class="btn btn-primary" onclick="downloadBatch(10)">
                                 <i class="fas fa-download me-1"></i> Download 10
                             </button>
@@ -593,7 +593,7 @@
                                 <i class="fas fa-trash-alt me-1"></i> Clear Queue
                             </button>
                         </div>
-                        <div class="d-flex align-items-center gap-2">
+                        <div class="d-flex align-items-center gap-2 scan-queue-filters">
                             <select id="status-filter" class="form-select" aria-label="Filter images by status" onchange="applyFilters()">
                                 <option value="all">All Images</option>
                                 <option value="pending">Pending Only</option>
@@ -618,7 +618,7 @@
 
                     <!-- Image Queue Table -->
                     <div class="table-responsive scan-queue-table-wrapper">
-                        <table class="table table-dark table-striped">
+                        <table class="table table-dark table-striped scan-queue-table">
                             <thead>
                                 <tr>
                                     <th>Game</th>
@@ -630,9 +630,9 @@
                                 </tr>
                             </thead>
                             <tbody id="image-table-body">
-                                <tr>
+                                <tr class="scan-empty-state-row">
                                     <td colspan="6" class="text-center">
-                                        <i class="fas fa-spinner fa-spin"></i> Loading...
+                                        <i class="fas fa-spinner fa-spin" aria-hidden="true"></i> Loading...
                                     </td>
                                 </tr>
                             </tbody>
@@ -640,7 +640,7 @@
                     </div>
 
                     <!-- Pagination -->
-                    <nav id="pagination-nav" style="display: none;">
+                    <nav id="pagination-nav" hidden>
                         <ul class="pagination justify-content-center" id="pagination">
                         </ul>
                     </nav>
@@ -682,7 +682,7 @@
         <div class="modal-content">
             <div class="modal-header bg-danger text-white">
                 <h5 class="modal-title"><i class="fa-solid fa-exclamation-triangle"></i> Write Permission Error</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 <div class="alert alert-danger">
@@ -932,7 +932,7 @@
         try {
             const tableBody = document.getElementById('image-table-body');
             if (tableBody) {
-                tableBody.innerHTML = '<tr><td colspan="6" class="text-center"><i class="fas fa-spinner fa-spin"></i> Loading...</td></tr>';
+                tableBody.innerHTML = '<tr class="scan-empty-state-row"><td colspan="6" class="text-center"><i class="fas fa-spinner fa-spin" aria-hidden="true"></i> Loading...</td></tr>';
             }
 
             const response = await fetch(`/admin/api/image_queue_list?${params}`);
@@ -951,7 +951,7 @@
             showMessage('Error loading image queue', 'danger');
             const tableBody = document.getElementById('image-table-body');
             if (tableBody) {
-                tableBody.innerHTML = '<tr><td colspan="6" class="text-center text-danger">Error loading data</td></tr>';
+                tableBody.innerHTML = '<tr class="scan-empty-state-row"><td colspan="6" class="text-center text-danger">Error loading data</td></tr>';
             }
         }
     }
@@ -987,22 +987,22 @@
 
             return `
                 <tr>
-                    <td>
+                    <td data-label="Game">
                         <strong>${image.game_name}</strong>
                         <br><small class="text-muted">${image.game_uuid}</small>
                     </td>
-                    <td>${typeBadge}</td>
-                    <td>${statusBadge}</td>
-                    <td><small>${downloadUrl}</small></td>
-                    <td><small>${image.created_at}</small></td>
-                    <td>
+                    <td data-label="Type">${typeBadge}</td>
+                    <td data-label="Status">${statusBadge}</td>
+                    <td data-label="Download URL" class="scan-queue-url"><small>${downloadUrl}</small></td>
+                    <td data-label="Created"><small>${image.created_at}</small></td>
+                    <td data-label="Actions" class="scan-row-actions">
                         ${!image.is_downloaded ? `
-                            <button class="btn btn-sm btn-primary me-1" onclick="downloadSingle(${image.id})" title="Download">
-                                <i class="fas fa-download"></i>
+                            <button type="button" class="btn btn-sm btn-primary me-1" onclick="downloadSingle(${image.id})" title="Download" aria-label="Download image">
+                                <i class="fas fa-download" aria-hidden="true"></i>
                             </button>
                         ` : ''}
-                        <button class="btn btn-sm btn-danger" onclick="deleteSingle(${image.id})" title="Delete">
-                            <i class="fas fa-trash"></i>
+                        <button type="button" class="btn btn-sm btn-danger" onclick="deleteSingle(${image.id})" title="Delete" aria-label="Delete image">
+                            <i class="fas fa-trash" aria-hidden="true"></i>
                         </button>
                     </td>
                 </tr>
@@ -1019,11 +1019,11 @@
         if (!paginationNav || !paginationUl) return;
 
         if (pagination.pages <= 1) {
-            paginationNav.style.display = 'none';
+            paginationNav.hidden = true;
             return;
         }
 
-        paginationNav.style.display = 'block';
+        paginationNav.hidden = false;
 
         let html = `
             <li class="page-item ${!pagination.has_prev ? 'disabled' : ''}">
