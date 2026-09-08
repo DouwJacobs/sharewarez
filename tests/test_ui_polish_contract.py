@@ -154,7 +154,9 @@ def test_operations_alignment_and_notification_badge_contracts():
     assert activity_links
     assert all("unread_notification_count" not in line for line in activity_links)
     assert 'class="btn btn-danger" id="clearLogsBtn"' in logs_template
-    assert "width: min(1440px, calc(100% - 2rem))" in logs_css
+    assert "width: min(1440px, calc(100% - 2rem))" not in logs_css
+    assert ".logs-table-wrap" in logs_css
+    assert 'data-label="Event"' in logs_template
     assert "width: min(1440px, calc(100% - 2rem))" in jobs_css
 
 

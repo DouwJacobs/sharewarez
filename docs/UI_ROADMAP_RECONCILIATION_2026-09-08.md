@@ -34,17 +34,19 @@ form IDs. Verification passed the 88-template accessibility audit, 19 UI contrac
 tests, and 96 focused Discord/IGDB/SMTP/filter route tests. Default and Ember were
 inspected in the disposable browser preview at desktop and mobile breakpoints.
 
-### R2 — System Logs is the clearest remaining table/theme cleanup
+### R2 — System Logs theme and mobile hierarchy (complete)
 
-The System Logs stylesheet still carries a route-local hard-coded dark palette.
-Its table owns horizontal scrolling, which prevents document overflow, but it does
-not yet prioritize the event identity/status fields as a compact mobile layout.
-Download Delivery, Download Cache, Libraries, Extensions, and Newsletter already
-have stronger mobile row/card behavior and should be treated as reference patterns.
+Completed 8 September 2026. System Logs now uses semantic theme tokens for its
+summary cards, filters, table, status badges, expanded event details, pagination,
+and clear-log dialog. The desktop table retains one internal horizontal scroll
+owner. At the mobile breakpoint, each row becomes a labeled record with Event
+promoted above Time, Level, Type, and Actor; actor identity stays in one value
+column and unknown levels receive the same neutral badge treatment.
 
-**Next package:** replace the hard-coded log palette with semantic theme tokens and
-render mobile rows from `data-label` values while retaining the desktop table and
-one internal scroll owner.
+Verification passed the 88-template accessibility audit, 19 UI contract tests,
+and all 61 System Logs/system administration route tests. Populated Default and
+Ember fixtures were inspected at desktop and mobile breakpoints, including long
+events, Debug and Information levels, actor email wrapping, filters, and summaries.
 
 ### R3 — A small semantic-shell tail remains
 
@@ -72,11 +74,10 @@ Ember, and a high-luminance palette, and keep canonical/installed theme assets e
 
 ## Recommended implementation order
 
-1. System Logs theme tokens and mobile information hierarchy.
-2. Remaining authenticated semantic page shells.
-3. Incremental route-level theme-token cleanup, starting with the pages touched
-   by steps 1–2.
-4. Metadata-provider abstraction as the next larger product feature; keep provider
+1. Remaining authenticated semantic page shells.
+2. Incremental route-level theme-token cleanup, starting with the pages touched
+   by step 1.
+3. Metadata-provider abstraction as the next larger product feature; keep provider
    integrations API-only and preserve field ownership/provenance.
 
 The current working tree was clean before this reconciliation. No application

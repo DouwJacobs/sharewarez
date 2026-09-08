@@ -44,11 +44,11 @@
                 {% for log in logs.items %}
                     {% set level = log.event_level|lower %}
                     <tr class="log-row log-level-{{ level }}">
-                        <td class="log-time"><time datetime="{{ log.timestamp.isoformat() }}">{{ log.timestamp.strftime('%Y-%m-%d') }}<span>{{ log.timestamp.strftime('%H:%M:%S') }}</span></time></td>
-                        <td><span class="log-level-badge log-level-badge--{{ level }}"><i class="fas {% if level == 'error' %}fa-circle-xmark{% elif level == 'warning' %}fa-triangle-exclamation{% else %}fa-circle-info{% endif %}" aria-hidden="true"></i>{{ log.event_level|title }}</span></td>
-                        <td><span class="log-type">{{ log.event_type|replace('_', ' ') }}</span></td>
-                        <td class="log-message"><details><summary>{{ log.event_text }}</summary><div><p>{{ log.event_text }}</p><button type="button" class="log-copy" data-copy-log="{{ log.event_text|e }}" aria-label="Copy event message"><i class="fas fa-copy" aria-hidden="true"></i> Copy</button></div></details></td>
-                        <td class="log-actor">{% if log.user %}<strong>{{ log.user.name }}</strong><span>{{ log.user.email }}</span>{% else %}<strong>System</strong><span>Background process</span>{% endif %}</td>
+                        <td class="log-time" data-label="Time"><time datetime="{{ log.timestamp.isoformat() }}">{{ log.timestamp.strftime('%Y-%m-%d') }}<span>{{ log.timestamp.strftime('%H:%M:%S') }}</span></time></td>
+                        <td data-label="Level"><span class="log-level-badge log-level-badge--{{ level }}"><i class="fas {% if level == 'error' %}fa-circle-xmark{% elif level == 'warning' %}fa-triangle-exclamation{% else %}fa-circle-info{% endif %}" aria-hidden="true"></i>{{ log.event_level|title }}</span></td>
+                        <td data-label="Type"><span class="log-type">{{ log.event_type|replace('_', ' ') }}</span></td>
+                        <td class="log-message" data-label="Event"><details><summary>{{ log.event_text }}</summary><div><p>{{ log.event_text }}</p><button type="button" class="log-copy" data-copy-log="{{ log.event_text|e }}" aria-label="Copy event message"><i class="fas fa-copy" aria-hidden="true"></i> Copy</button></div></details></td>
+                        <td class="log-actor" data-label="Actor">{% if log.user %}<strong>{{ log.user.name }}</strong><span>{{ log.user.email }}</span>{% else %}<strong>System</strong><span>Background process</span>{% endif %}</td>
                     </tr>
                 {% endfor %}
                 </tbody>
@@ -70,7 +70,7 @@
 </main>
 
 <div class="modal fade" id="clearLogsModal" tabindex="-1" aria-labelledby="clearLogsTitle" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-header"><div><p class="admin-panel-kicker">Destructive action</p><h2 class="modal-title" id="clearLogsTitle">Clear system logs?</h2></div><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button></div><div class="modal-body"><p>This permanently removes the current event history. A new audit event recording this action will remain.</p></div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button><button type="button" class="btn btn-danger" id="confirmClearLogs" data-csrf-token="{{ csrf_token() }}"><i class="fas fa-trash" aria-hidden="true"></i> Clear all logs</button></div></div></div>
+    <div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-header"><div><p class="admin-panel-kicker">Destructive action</p><h2 class="modal-title" id="clearLogsTitle">Clear system logs?</h2></div><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div><div class="modal-body"><p>This permanently removes the current event history. A new audit event recording this action will remain.</p></div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button><button type="button" class="btn btn-danger" id="confirmClearLogs" data-csrf-token="{{ csrf_token() }}"><i class="fas fa-trash" aria-hidden="true"></i> Clear all logs</button></div></div></div>
 </div>
 
 <script src="{{ 'js/admin_system_logs.js'|theme_asset }}"></script>

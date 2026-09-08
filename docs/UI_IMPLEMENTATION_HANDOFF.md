@@ -34,6 +34,7 @@ statuses describe the recorded fixtures and checks, not every possible data stat
 | UI-07 Game Edit rework | ✅ Audit fixes verified | One Boolean validator; Save/Refresh/Enter payloads and repeat-submit guard verified. Identity changes protect dirty drafts; results support keyboard activation; server errors open disclosures and focus linked fields. A1/A4/A6 resolved. |
 | UI-08 missing-cover list layout | ✅ Complete | List cards now keep a restrained monogram inside the compact cover and rely on the adjacent title, avoiding duplicated clipped text. |
 | UI-10 integration settings shell | ✅ Complete | Integrations, Discord help, legacy settings fallbacks, and scan-filter validation now share the semantic admin header/surface contract. SMTP, IGDB, and Discord actions stack consistently on mobile; Discord's generated test action stays within its own panel. |
+| UI-11 System Logs hierarchy | ✅ Complete | Route-local dark colors now use theme tokens. Desktop retains one table scroll owner; mobile rows promote Event and label Time, Level, Type, and Actor without document overflow. |
 
 ## Starting state — preserve completed work
 
@@ -438,3 +439,17 @@ tests and 96 focused Discord, IGDB, SMTP, and filter route tests passed. The liv
 disposable preview was inspected in Default and Ember at desktop and mobile
 breakpoints, including each integration tab, action wrapping, notification cards,
 and Discord help content.
+
+## UI-11 — Make System Logs theme-aware and readable on mobile (complete)
+
+System Logs now uses shared semantic variables for every route-owned surface,
+border, text role, accent, and status treatment. Desktop keeps the full table in
+one internal horizontal scroll container. Mobile replaces the table presentation
+with distinct labeled records, promotes the event message to the top, and keeps
+timestamp, level, type, and actor values aligned as a scannable definition-like
+layout. Neutral levels such as Debug have a consistent fallback badge.
+
+Verification: all 61 system administration route tests, 19 UI source-contract
+tests, and the 88-template accessibility audit passed. Populated Default and Ember
+views were inspected at desktop and mobile breakpoints, including summary cards,
+filters, long event text, actor email wrapping, and Information/Debug levels.
