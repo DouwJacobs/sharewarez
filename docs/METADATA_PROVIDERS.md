@@ -13,8 +13,9 @@ Game requests consume the adapter for search, exact-game verification, and editi
 discovery. Image import and refresh use its normalized media operation, which
 combines the game-linked artwork list with the direct IGDB artwork API so standalone
 logo records are retained. Library scan discovery and scalar metadata refresh also
-use adapter-owned full-game queries. Existing public helper names remain available
-as compatibility wrappers.
+use adapter-owned full-game queries. Image-record repair, website discovery, and
+involved-company lookup use the adapter as well. Existing public helper names remain
+available as compatibility wrappers.
 
 Provider ordering is normalized by `normalize_provider_order`. A failed or empty
 provider advances to the next configured adapter; a successful non-empty result

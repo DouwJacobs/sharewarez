@@ -93,5 +93,6 @@ Metadata-provider phase 1 is implemented: game-request discovery uses a normaliz
 provider adapter and ordered fallback runner while retaining IGDB as the sole
 configured API integration. Library scanning, scalar refresh, and image
 import/refresh now use adapter-owned operations, including direct API logo
-discovery. The item remains unchecked until the remaining work in
+discovery. Supporting image URL, website, and involved-company lookups use the same
+boundary. The item remains unchecked until the remaining work in
 `METADATA_PROVIDERS.md` is complete.

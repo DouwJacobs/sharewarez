@@ -11,6 +11,10 @@ from sharewarez.utils.game_relationships import IGDB_RELATIONSHIP_QUERY_FIELDS
 IGDB_GAMES_ENDPOINT = 'https://api.igdb.com/v4/games'
 IGDB_GAME_VERSIONS_ENDPOINT = 'https://api.igdb.com/v4/game_versions'
 IGDB_ARTWORKS_ENDPOINT = 'https://api.igdb.com/v4/artworks'
+IGDB_COVERS_ENDPOINT = 'https://api.igdb.com/v4/covers'
+IGDB_SCREENSHOTS_ENDPOINT = 'https://api.igdb.com/v4/screenshots'
+IGDB_WEBSITES_ENDPOINT = 'https://api.igdb.com/v4/websites'
+IGDB_INVOLVED_COMPANIES_ENDPOINT = 'https://api.igdb.com/v4/involved_companies'
 IGDB_REQUEST_FIELDS = (
     'fields id,name,version_parent.name,version_title,cover.image_id,summary,'
     'platforms.name,first_release_date;'
@@ -150,6 +154,56 @@ class IGDBMetadataProvider:
             'screenshots': list(game.get('screenshots') or []),
             'artworks': self.fetch_artworks(igdb_id, game.get('artworks')),
         }, None
+
+    def fetch_image_record(self, image_type, image_id):
+        """Fetch one provider image record for download or URL repair."""
+        normalized_type = str(image_type).strip().lower()
+        if normalized_type == 'cover':
+            endpoint = IGDB_COVERS_ENDPOINT
+            fields = 'url'
+        elif normalized_type == 'screenshot':
+            endpoint = IGDB_SCREENSHOTS_ENDPOINT
+            fields = 'url'
+        elif normalized_type in {
+            'artwork', 'key_art', 'key_art_logo', 'game_logo_color',
+            'game_logo_white', 'game_logo_black',
+        }:
+            endpoint = IGDB_ARTWORKS_ENDPOINT
+            fields = 'url, image_type.name, artwork_type.name'
+        else:
+            return None, 'Unsupported IGDB image type'
+        response = self.request(
+            endpoint,
+            f'fields {fields}; where id={int(image_id)};',
+        )
+        if not isinstance(response, list) or not response:
+            error = response.get('error') if isinstance(response, dict) else 'IGDB image was not found'
+            return None, error
+        return response[0], None
+
+    def fetch_websites(self, igdb_id):
+        response = self.request(
+            IGDB_WEBSITES_ENDPOINT,
+            f'fields url, category; where game={int(igdb_id)};',
+        )
+        if not isinstance(response, list):
+            error = response.get('error') if isinstance(response, dict) else 'IGDB websites lookup failed'
+            return [], error
+        return response, None
+
+    def fetch_involved_companies(self, igdb_id, company_ids):
+        ids = ','.join(str(int(value)) for value in company_ids)
+        if not ids:
+            return [], None
+        response = self.request(
+            IGDB_INVOLVED_COMPANIES_ENDPOINT,
+            'fields company.name, developer, publisher, game; '
+            f'where game={int(igdb_id)} & id=({ids});',
+        )
+        if not isinstance(response, list):
+            error = response.get('error') if isinstance(response, dict) else 'IGDB company lookup failed'
+            return [], error
+        return response, None
 
     def fetch_related_editions(self, igdb_id):
         selected = self.fetch_game(igdb_id)

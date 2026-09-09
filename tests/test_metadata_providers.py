@@ -132,3 +132,30 @@ def test_igdb_full_payload_lookup_owns_endpoint_and_query():
     assert 'screenshots.id' in calls[0][1]
     assert 'artworks.id' in calls[0][1]
     assert 'search "Dawnwalker"; where platforms = (6); limit 1;' in calls[1][1]
+
+
+def test_igdb_supporting_lookups_stay_on_documented_api_endpoints():
+    calls = []
+
+    def request(endpoint, query):
+        calls.append((endpoint, query))
+        if endpoint.endswith('/covers'):
+            return [{'url': '//images.igdb.com/cover.jpg'}]
+        if endpoint.endswith('/websites'):
+            return [{'url': 'https://example.test', 'category': 1}]
+        return [{'company': {'name': 'Studio'}, 'developer': True}]
+
+    provider = IGDBMetadataProvider(request=request)
+    image, image_error = provider.fetch_image_record('cover', 100)
+    websites, websites_error = provider.fetch_websites(282831)
+    companies, companies_error = provider.fetch_involved_companies(282831, [10, 20])
+
+    assert image_error is None and image['url'].endswith('cover.jpg')
+    assert websites_error is None and websites[0]['category'] == 1
+    assert companies_error is None and companies[0]['developer'] is True
+    assert [endpoint.rsplit('/', 1)[-1] for endpoint, _query in calls] == [
+        'covers', 'websites', 'involved_companies',
+    ]
+    assert 'where id=100' in calls[0][1]
+    assert 'where game=282831' in calls[1][1]
+    assert 'id=(10,20)' in calls[2][1]

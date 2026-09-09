@@ -56,6 +56,10 @@ status_mapping = {
     7: Status.CANCELLED
 }
 
+
+def _igdb_provider():
+    return IGDBMetadataProvider(request=make_igdb_api_request)
+
 def get_or_create_entity(model_class, name_field="name", **kwargs):
     """
     Thread-safe helper to get an existing entity or create a new one.
@@ -178,10 +182,9 @@ def store_image_url_for_download(game_uuid, image_data, image_type='cover'):
         image_id = image_data.get('id') if isinstance(image_data, dict) else image_data
         # Get the image URL from IGDB API
         if image_type == 'cover':
-            cover_query = f'fields url; where id={image_id};'
-            cover_response = make_igdb_api_request('https://api.igdb.com/v4/covers', cover_query)
-            if cover_response and 'error' not in cover_response:
-                download_url = cover_response[0].get('url')
+            record, _error = _igdb_provider().fetch_image_record('cover', image_id)
+            if record:
+                download_url = record.get('url')
                 if download_url and not download_url.startswith(('http://', 'https://')):
                     download_url = 'https:' + download_url
                 download_url = download_url.replace('/t_thumb/', '/t_original/')
@@ -190,10 +193,9 @@ def store_image_url_for_download(game_uuid, image_data, image_type='cover'):
                 return
         
         elif image_type == 'screenshot':
-            screenshot_query = f'fields url; where id={image_id};'
-            response = make_igdb_api_request('https://api.igdb.com/v4/screenshots', screenshot_query)
-            if response and 'error' not in response:
-                download_url = response[0].get('url')
+            record, _error = _igdb_provider().fetch_image_record('screenshot', image_id)
+            if record:
+                download_url = record.get('url')
                 if download_url and not download_url.startswith(('http://', 'https://')):
                     download_url = 'https:' + download_url
                 download_url = download_url.replace('/t_thumb/', '/t_original/')
@@ -203,15 +205,14 @@ def store_image_url_for_download(game_uuid, image_data, image_type='cover'):
 
         elif image_type == 'artwork':
             if isinstance(image_data, dict) and image_data.get('url'):
-                response = [image_data]
+                record = image_data
             else:
-                artwork_query = f'fields url, image_type.name, artwork_type.name; where id={image_id};'
-                response = make_igdb_api_request('https://api.igdb.com/v4/artworks', artwork_query)
-            if response and 'error' not in response:
-                download_url = response[0].get('url')
+                record, _error = _igdb_provider().fetch_image_record('artwork', image_id)
+            if record:
+                download_url = record.get('url')
                 artwork_kind = (
-                    response[0].get('image_type')
-                    or response[0].get('artwork_type')
+                    record.get('image_type')
+                    or record.get('artwork_type')
                     or {}
                 )
                 type_name = artwork_kind.get('name', '').lower()
@@ -375,10 +376,9 @@ def process_and_save_image(game_uuid, image_data, image_type='cover'):
     file_name = None
 
     if image_type == 'cover':
-        cover_query = f'fields url; where id={image_data};'
-        cover_response = make_igdb_api_request('https://api.igdb.com/v4/covers', cover_query)
-        if cover_response and 'error' not in cover_response:
-            url = cover_response[0].get('url')
+        record, _error = _igdb_provider().fetch_image_record('cover', image_data)
+        if record:
+            url = record.get('url')
             if url:
                 file_name = secure_filename(f"{game_uuid}_cover_{image_data}.jpg")
             else:
@@ -394,10 +394,9 @@ def process_and_save_image(game_uuid, image_data, image_type='cover'):
             return
 
     elif image_type == 'screenshot':
-        screenshot_query = f'fields url; where id={image_data};'
-        response = make_igdb_api_request('https://api.igdb.com/v4/screenshots', screenshot_query)
-        if response and 'error' not in response:
-            url = response[0].get('url')
+        record, _error = _igdb_provider().fetch_image_record('screenshot', image_data)
+        if record:
+            url = record.get('url')
             if url:
                 file_name = secure_filename(f"{game_uuid}_{image_data}.jpg")
             else:
@@ -426,8 +425,7 @@ def process_and_save_image(game_uuid, image_data, image_type='cover'):
     
 def fetch_and_store_game_urls(game_uuid, igdb_id):
     try:
-        website_query = f'fields url, category; where game={igdb_id};'        
-        websites_response = make_igdb_api_request('https://api.igdb.com/v4/websites', website_query)
+        websites_response, _error = _igdb_provider().fetch_websites(igdb_id)
         
         if websites_response and 'error' not in websites_response:
             for website in websites_response:
@@ -848,14 +846,9 @@ def enumerate_companies(game_instance, igdb_game_id, involved_company_ids):
         print("No company IDs provided for enumeration.")
         return
 
-    company_ids_str = ','.join(map(str, involved_company_ids))
-    # print(f"Company IDs: {company_ids_str}")
-
     try:
-        response_json = make_igdb_api_request(
-            "https://api.igdb.com/v4/involved_companies",
-            f"""fields company.name, developer, publisher, game;
-                where game={igdb_game_id} & id=({company_ids_str});"""
+        response_json, _error = _igdb_provider().fetch_involved_companies(
+            igdb_game_id, involved_company_ids,
         )
 
         if not isinstance(response_json, list):
@@ -1014,23 +1007,11 @@ def heal_image_download_url(image):
         return False
         
     try:
-        endpoint = {
-            'cover': 'https://api.igdb.com/v4/covers',
-            'screenshot': 'https://api.igdb.com/v4/screenshots',
-            'artwork': 'https://api.igdb.com/v4/artworks',
-            'key_art': 'https://api.igdb.com/v4/artworks',
-            'key_art_logo': 'https://api.igdb.com/v4/artworks',
-            'game_logo_color': 'https://api.igdb.com/v4/artworks',
-            'game_logo_white': 'https://api.igdb.com/v4/artworks',
-            'game_logo_black': 'https://api.igdb.com/v4/artworks',
-        }.get(image.image_type)
-        if endpoint is None:
-            return False
-        query = f'fields url; where id={image.igdb_image_id};'
-        response = make_igdb_api_request(endpoint, query)
-        
-        if response and isinstance(response, list) and len(response) > 0 and 'error' not in response:
-            url = response[0].get('url')
+        record, _error = _igdb_provider().fetch_image_record(
+            image.image_type, image.igdb_image_id,
+        )
+        if record:
+            url = record.get('url')
             if url:
                 if not url.startswith(('http://', 'https://')):
                     url = 'https:' + url
