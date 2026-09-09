@@ -497,3 +497,24 @@ desktop and mobile Auto scan, Unmatched, File types, and Image queue views. The
 populated mobile queue rendered as labeled records without document overflow; its
 action buttons measured 44 px high. Folder browsing was exercised through the live
 API and its spinner/empty/up-state sequence completed correctly.
+
+## UI-14 — Keep Game Details artwork and actions usable on mobile (complete)
+
+The shared mobile stylesheet's `width: 100% !important` rule was overriding the
+Game Details storefront breakpoint and expanding cover artwork to the full content
+width. The route now wins that cascade deliberately and caps the cover at 230 px,
+which keeps the 3:4 artwork at 230 × 307 px and brings Get game, Favorite, Status,
+and Issue into the first mobile viewport. Desktop artwork remains 280 px wide.
+
+Long administrator action menus now measure the space between their trigger and
+the fixed mobile navigation, scroll within that space, and retain 12 px clearance
+above the navigation. Reopening starts at the first action, resizing recomputes the
+available height, and Escape from a menu row closes the menu and restores trigger
+focus. Keyboard traversal reaches every row, including the link-styled Open IGDB
+Page action, which continues to use the same shared 44 px menu-row contract.
+
+Verification: 29 focused Game Details/template/UI route tests, 20 UI source-contract
+tests, and JavaScript syntax checking passed. Default, Ember, and Evergreen were
+inspected at desktop and mobile breakpoints. The mobile route had no document
+overflow; keyboard focus advanced through all menu actions and Open IGDB Page
+scrolled into view before Escape returned focus to the hamburger trigger.

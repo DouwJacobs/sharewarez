@@ -69,16 +69,22 @@ A conservative static scan still finds direct palette declarations across legacy
 route styles. Raw counts include intentional media overlays, shadows, fallbacks,
 and semantic warning colors, so they cannot be converted mechanically. The highest
 value route-owned targets initially included Game Details, scanning administration,
-integration settings, and System Logs. Integration settings, System Logs, and Scan
-Management are now migrated and verified. Game Details and the remaining legacy
-route families still require incremental review. Shared `base.css` and sidebar
-values require cross-theme visual regression before replacement.
+integration settings, and System Logs. Integration settings, System Logs, Scan
+Management, and the effective Game Details storefront are now verified. Remaining
+legacy route families still require incremental review. Shared `base.css` and
+sidebar values require cross-theme visual regression before replacement.
 
 Scan Management now maps its effective route layer to shared theme roles, uses one
 responsive control contract for queue/filter actions, and presents every desktop
 table as labeled mobile records. Default, Ember, and Evergreen passed responsive
 inspection without document overflow; focused regressions passed for scan status, unmatched
 folders, filters, file extensions, and the image queue.
+
+Game Details now overrides the legacy full-width mobile cover rule, keeping artwork
+compact and primary actions visible in the first viewport. Its long administrator
+menu derives an internal scroll limit from the fixed bottom navigation, so every
+shared menu row remains reachable without document overflow. Default, Ember, and
+Evergreen passed desktop/mobile inspection and keyboard traversal.
 
 **Rule for follow-up:** migrate one coherent page family at a time, compare Default,
 Ember, and a high-luminance palette, and keep canonical/installed theme assets equal.

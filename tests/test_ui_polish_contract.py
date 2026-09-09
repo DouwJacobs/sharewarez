@@ -73,6 +73,8 @@ def test_game_action_menu_rows_and_close_behavior_are_shared():
     assert "menu-button menu-button-danger delete-game" in template
     assert 'class="menu-button">Open IGDB Page</a>' in template
     assert "function closeMenu(menu, options = {})" in javascript
+    assert "function fitDetailsMenuToViewport(menu)" in javascript
+    assert "--popup-menu-max-height" in javascript
     assert "menu?.closest('.game-card') || menu?.closest('.game-card-coverimage')" in javascript
     assert "closeMenu(menu, { restoreFocus: true })" in javascript
     assert "style.backgroundColor" not in javascript
@@ -81,11 +83,14 @@ def test_game_action_menu_rows_and_close_behavior_are_shared():
 def test_game_details_mobile_favorite_uses_shared_state_contract():
     template = Path("sharewarez/templates/games/game_details.html").read_text(encoding="utf-8")
     manager = (THEME / "js/favorites_manager.js").read_text(encoding="utf-8")
+    css = (THEME / "css/games/game_details.css").read_text(encoding="utf-8")
 
     assert 'class="favorite-btn favorite-btn-mobile"' in template
     assert "favorite-btn-cover')?.click()" not in template
     assert "const setPendingAppearance" in manager
     assert "label.textContent = isFavorite ? 'Favorited' : 'Favorite'" in manager
+    assert "width: min(66vw, 230px) !important;" in css
+    assert "max-width: 230px;" in css
 
 
 def test_narrow_library_views_reserve_non_overlapping_action_space():

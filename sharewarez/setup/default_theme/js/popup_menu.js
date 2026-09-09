@@ -13,6 +13,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const trigger = document.getElementById(menu.id.replace('popupMenu-', 'menuButton-'));
         const container = getMenuContainer(menu);
         menu.style.display = 'none';
+        menu.style.removeProperty('--popup-menu-max-height');
         trigger?.setAttribute('aria-expanded', 'false');
         container?.classList.remove('menu-open');
         container?.closest('.game-card-container')?.classList.remove('menu-open');
@@ -20,6 +21,26 @@ document.addEventListener('DOMContentLoaded', function() {
         if (options.restoreFocus) trigger?.focus();
         if (options.remove) menu.remove();
     }
+
+    function fitDetailsMenuToViewport(menu) {
+        menu.style.removeProperty('--popup-menu-max-height');
+        if (!menu.closest('.game-storefront') || !window.matchMedia('(max-width: 768px)').matches) {
+            return;
+        }
+
+        const bottomNavigation = document.querySelector('.mobile-bottom-nav');
+        const bottomInset = bottomNavigation && getComputedStyle(bottomNavigation).display !== 'none'
+            ? Math.max(24, window.innerHeight - bottomNavigation.getBoundingClientRect().top + 12)
+            : 24;
+        const availableHeight = Math.max(220, window.innerHeight - menu.getBoundingClientRect().top - bottomInset);
+        menu.style.setProperty('--popup-menu-max-height', `${availableHeight}px`);
+    }
+
+    window.addEventListener('resize', () => {
+        document.querySelectorAll('.game-storefront .popup-menu').forEach(menu => {
+            if (menu.style.display === 'block') fitDetailsMenuToViewport(menu);
+        });
+    });
 
     // Adjusted for dynamic content using event delegation
     document.body.addEventListener('click', function(event) {
@@ -264,6 +285,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Hide or show the favorite button and game status elements
             if (isOpening) {
+                popupMenu.scrollTop = 0;
+                fitDetailsMenuToViewport(popupMenu);
                 hideCardButtons(parentContainer);
                 popupMenu.querySelector('button:not([disabled]), a')?.focus();
             } else {
