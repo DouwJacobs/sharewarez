@@ -19,6 +19,7 @@ from sharewarez.models import (
 )
 from sharewarez.utils.functions import read_first_nfo_content
 from sharewarez.utils.igdb_api import make_igdb_api_request
+from sharewarez.utils.metadata_provider_igdb import IGDBMetadataProvider
 from sharewarez.utils.event_logging import log_system_event
 
 
@@ -457,18 +458,13 @@ def refresh_images_in_background(
             )
 
             print(f"[IMAGE REFRESH] Fetching image IDs from IGDB API for IGDB ID: {game.igdb_id}")
-            response_json = make_igdb_api_request(
-                current_app.config['IGDB_API_ENDPOINT'],
-                f"fields id, cover, screenshots, artworks; where id = {game.igdb_id}; limit 1;"
-            )
-            print(f"[IMAGE REFRESH] IGDB API response: {response_json}")
+            media, media_error = IGDBMetadataProvider(
+                request=make_igdb_api_request,
+            ).fetch_media(game.igdb_id)
+            print(f"[IMAGE REFRESH] IGDB API media response: {media}")
 
-            if not response_json or 'error' in response_json:
-                error = (
-                    response_json.get('error')
-                    if isinstance(response_json, dict)
-                    else 'IGDB returned no matching game'
-                )
+            if media is None:
+                error = media_error or 'IGDB returned no matching game'
                 print(f"[IMAGE REFRESH] IGDB API returned an error: {error}")
                 current_app.logger.warning(
                     'IGDB media lookup failed game_uuid=%s igdb_id=%s error=%s',
@@ -533,35 +529,20 @@ def refresh_images_in_background(
             )
 
             # Queue images into DB as pending so they appear in admin image queue
-            cover_id = response_json[0].get('cover')
+            cover_id = media.get('cover')
             if cover_id:
                 if isinstance(cover_id, dict):
                     cover_id = cover_id.get('id')
                 print(f"[IMAGE REFRESH] Queuing cover ID: {cover_id}")
                 queue_if_missing(cover_id, 'cover')
 
-            screenshots_data = response_json[0].get('screenshots', [])
+            screenshots_data = media.get('screenshots', [])
             print(f"[IMAGE REFRESH] Queuing {len(screenshots_data)} screenshots.")
             for screenshot in screenshots_data:
                 screenshot_id = screenshot.get('id') if isinstance(screenshot, dict) else screenshot
                 queue_if_missing(screenshot_id, 'screenshot')
 
-            artworks_data = response_json[0].get('artworks', [])
-            # Fetch the media collection directly as well. This is the source
-            # behind IGDB's separate Logos section and is more reliable than
-            # depending solely on the nested games.artworks relationship.
-            direct_artworks = make_igdb_api_request(
-                'https://api.igdb.com/v4/artworks',
-                f'fields id, url, image_type.name, artwork_type.name; '
-                f'where game = {game.igdb_id}; limit 500;',
-            )
-            if isinstance(direct_artworks, list):
-                artwork_map = {
-                    str(item.get('id') if isinstance(item, dict) else item): item
-                    for item in artworks_data
-                }
-                artwork_map.update({str(item['id']): item for item in direct_artworks if isinstance(item, dict) and 'id' in item})
-                artworks_data = list(artwork_map.values())
+            artworks_data = media.get('artworks', [])
             current_app.logger.debug(
                 'IGDB media discovered game_uuid=%s igdb_id=%s cover=%s '
                 'screenshots=%s artworks=%s existing_images=%s',

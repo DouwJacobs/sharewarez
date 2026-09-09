@@ -91,5 +91,6 @@ desktop sidebar remains the full navigation surface.
 
 Metadata-provider phase 1 is implemented: game-request discovery uses a normalized
 provider adapter and ordered fallback runner while retaining IGDB as the sole
-configured API integration. The item remains unchecked until the remaining work in
-`METADATA_PROVIDERS.md` is complete.
+configured API integration. Image import/refresh also uses the normalized media
+operation, including direct API logo discovery. The item remains unchecked until
+the remaining work in `METADATA_PROVIDERS.md` is complete.

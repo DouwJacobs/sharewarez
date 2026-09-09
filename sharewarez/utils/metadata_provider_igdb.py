@@ -8,6 +8,7 @@ from typing import Callable
 
 IGDB_GAMES_ENDPOINT = 'https://api.igdb.com/v4/games'
 IGDB_GAME_VERSIONS_ENDPOINT = 'https://api.igdb.com/v4/game_versions'
+IGDB_ARTWORKS_ENDPOINT = 'https://api.igdb.com/v4/artworks'
 IGDB_REQUEST_FIELDS = (
     'fields id,name,version_parent.name,version_title,cover.image_id,summary,'
     'platforms.name,first_release_date;'
@@ -77,6 +78,41 @@ class IGDBMetadataProvider:
             error = response.get('error') if isinstance(response, dict) else 'IGDB search failed'
             return [], error
         return [normalize_igdb_game(item) for item in response], None
+
+    def fetch_artworks(self, igdb_id, linked_artworks=None):
+        """Return the complete artwork set, including IGDB's logo records."""
+        direct_artworks = self.request(
+            IGDB_ARTWORKS_ENDPOINT,
+            'fields id, url, image_type.name, artwork_type.name; '
+            f'where game = {int(igdb_id)}; limit 500;',
+        )
+        artwork_map = {
+            str(item.get('id') if isinstance(item, dict) else item): item
+            for item in (linked_artworks or [])
+        }
+        if isinstance(direct_artworks, list):
+            artwork_map.update({
+                str(item['id']): item
+                for item in direct_artworks
+                if isinstance(item, dict) and 'id' in item
+            })
+        return list(artwork_map.values())
+
+    def fetch_media(self, igdb_id):
+        """Return normalized cover, screenshot, and complete artwork records."""
+        response = self.request(
+            IGDB_GAMES_ENDPOINT,
+            f'fields id, cover, screenshots, artworks; where id = {int(igdb_id)}; limit 1;',
+        )
+        if not isinstance(response, list) or not response:
+            error = response.get('error') if isinstance(response, dict) else 'IGDB returned no matching game'
+            return None, error
+        game = response[0]
+        return {
+            'cover': game.get('cover'),
+            'screenshots': list(game.get('screenshots') or []),
+            'artworks': self.fetch_artworks(igdb_id, game.get('artworks')),
+        }, None
 
     def fetch_related_editions(self, igdb_id):
         selected = self.fetch_game(igdb_id)

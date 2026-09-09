@@ -9,9 +9,11 @@ The first adapter is `IGDBMetadataProvider`. It uses IGDB's documented API throu
 the existing authenticated, rate-limited request client. Website HTML and presskit
 pages are not metadata sources and must not be scraped.
 
-Game requests now consume the adapter for search, exact-game verification, and
-edition discovery. The existing public helper names remain available while other
-IGDB-specific refresh paths are migrated incrementally.
+Game requests consume the adapter for search, exact-game verification, and edition
+discovery. Image import and refresh use its normalized media operation, which
+combines the game-linked artwork list with the direct IGDB artwork API so standalone
+logo records are retained. The existing public helper names remain available while
+other IGDB-specific scalar refresh paths are migrated incrementally.
 
 Provider ordering is normalized by `normalize_provider_order`. A failed or empty
 provider advances to the next configured adapter; a successful non-empty result
@@ -22,4 +24,4 @@ include exception or credential details.
 
 The roadmap item remains open until a second API-backed provider exists, operators
 can configure provider order, external identities are stored without assuming an
-IGDB ID, and scalar/media refresh paths use normalized provider operations.
+IGDB ID, and scalar refresh paths use normalized provider operations.

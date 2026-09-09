@@ -19,6 +19,7 @@ from sharewarez.utils.functions import (
     get_folder_size_in_bytes_updates, sanitize_string_input
 )
 from sharewarez.utils.igdb_api import make_igdb_api_request
+from sharewarez.utils.metadata_provider_igdb import IGDBMetadataProvider
 from sharewarez.utils.gamenames import generate_goty_variants
 from sharewarez.utils.discord import discord_webhook
 from sharewarez.utils.scanning import log_unmatched_folder, delete_game_images
@@ -293,18 +294,9 @@ def smart_process_images_for_game(game_uuid, cover_data=None, screenshots_data=N
             # Discover the complete media collection when importing as well as refreshing.
             game = db.session.execute(select(Game).filter_by(uuid=game_uuid)).scalar_one_or_none()
             if game is not None and game.igdb_id:
-                direct_artworks = make_igdb_api_request(
-                    'https://api.igdb.com/v4/artworks',
-                    f'fields id, url, image_type.name, artwork_type.name; '
-                    f'where game = {game.igdb_id}; limit 500;',
-                )
-                if isinstance(direct_artworks, list):
-                    artwork_map = {
-                        str(item.get('id') if isinstance(item, dict) else item): item
-                        for item in (artworks_data or [])
-                    }
-                    artwork_map.update({str(item['id']): item for item in direct_artworks if isinstance(item, dict) and 'id' in item})
-                    artworks_data = list(artwork_map.values())
+                artworks_data = IGDBMetadataProvider(
+                    request=make_igdb_api_request,
+                ).fetch_artworks(game.igdb_id, artworks_data)
             if artworks_data:
                 for artwork_id in artworks_data:
                     store_image_url_for_download(game_uuid, artwork_id, 'artwork')

@@ -74,3 +74,37 @@ def test_igdb_adapter_uses_api_endpoint_and_normalizes_results():
     assert results[0]['cover_url'].endswith('/cover-id.jpg')
     assert calls[0][0] == 'https://api.igdb.com/v4/games'
     assert 'search "Dawnwalker"' in calls[0][1]
+
+
+def test_igdb_media_merges_linked_artwork_with_direct_api_logos():
+    calls = []
+
+    def request(endpoint, query):
+        calls.append((endpoint, query))
+        if endpoint.endswith('/games'):
+            return [{
+                'id': 282831,
+                'cover': 100,
+                'screenshots': [200],
+                'artworks': [300],
+            }]
+        return [{
+            'id': 400,
+            'url': '//images.igdb.com/logo.png',
+            'image_type': {'name': 'Game logo (color)'},
+        }]
+
+    media, error = IGDBMetadataProvider(request=request).fetch_media(282831)
+
+    assert error is None
+    assert media['cover'] == 100
+    assert media['screenshots'] == [200]
+    assert media['artworks'] == [300, {
+        'id': 400,
+        'url': '//images.igdb.com/logo.png',
+        'image_type': {'name': 'Game logo (color)'},
+    }]
+    assert [endpoint.rsplit('/', 1)[-1] for endpoint, _query in calls] == [
+        'games', 'artworks',
+    ]
+    assert 'where game = 282831' in calls[1][1]
