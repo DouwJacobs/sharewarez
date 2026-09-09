@@ -88,3 +88,8 @@ desktop sidebar remains the full navigation surface.
 - [x] Non-root hardened container runtime
 - [x] Central security headers and rate limiting
 - [x] Encrypted integration credentials at rest
+
+Metadata-provider phase 1 is implemented: game-request discovery uses a normalized
+provider adapter and ordered fallback runner while retaining IGDB as the sole
+configured API integration. The item remains unchecked until the remaining work in
+`METADATA_PROVIDERS.md` is complete.
