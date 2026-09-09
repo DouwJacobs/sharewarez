@@ -98,9 +98,9 @@ Ember, and a high-luminance palette, and keep canonical/installed theme assets e
 Phase 1 now provides the normalized discovery boundary, an IGDB API adapter, and
 ordered failure fallback for game-request discovery. Image import and refresh now
 use the same adapter's normalized media operation, including direct API logo
-discovery. Provider configuration, provider-neutral stored identities, a second API
-integration, and scalar refresh migration remain before the roadmap item can be
-marked complete.
+discovery. Library scan discovery and scalar refresh also use adapter-owned
+full-game queries. Provider configuration, provider-neutral stored identities, and
+a second API integration remain before the roadmap item can be marked complete.
 
 The current working tree was clean before this reconciliation. No application
 behavior, schema, deployment configuration, or published Docker tag is changed by

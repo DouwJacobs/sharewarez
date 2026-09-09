@@ -450,17 +450,10 @@ def search_igdb_for_game(search_name, platform_id):
     Helper function to search IGDB for a game with the given name and platform.
     Returns the API response or None if no match found.
     """
-    query_fields = f"""fields id, name, cover, summary, url, release_dates.date, platforms.name, genres.name, themes.name, game_modes.name,
-                      screenshots, artworks, videos.video_id, first_release_date, aggregated_rating, involved_companies, player_perspectives.name,
-                      aggregated_rating_count, rating, rating_count, slug, status, category, total_rating,
-                      total_rating_count, {IGDB_RELATIONSHIP_QUERY_FIELDS};"""
-    query_filter = f'search "{search_name}"; limit 1;'
-    if platform_id is not None:
-        query_filter += f' where platforms = ({platform_id});'
-
-    response_json = make_igdb_api_request(current_app.config['IGDB_API_ENDPOINT'], query_fields + query_filter)
-
-    if 'error' not in response_json and response_json:
+    response_json, _error = IGDBMetadataProvider(
+        request=make_igdb_api_request,
+    ).search_game_payloads(search_name, platform_id=platform_id, limit=1)
+    if response_json:
         return response_json
     return None
 
@@ -475,29 +468,15 @@ def fetch_game_by_igdb_id(igdb_id):
     Returns:
         list: IGDB API response (list with one game dict), or None on error
     """
-    from sharewarez.utils.igdb_api import make_igdb_api_request
-
     try:
-        query = f"""
-            fields name, summary, storyline, url, slug, first_release_date,
-                   aggregated_rating, aggregated_rating_count, rating, rating_count,
-                   total_rating, total_rating_count, status, category,
-                   cover.url, screenshots.url, artworks.url, videos.video_id,
-                   genres.name, themes.name, game_modes.name, platforms.name,
-                   player_perspectives.name, involved_companies,
-                   {IGDB_RELATIONSHIP_QUERY_FIELDS};
-            where id = {igdb_id};
-            limit 1;
-        """
-
-        response = make_igdb_api_request(current_app.config['IGDB_API_ENDPOINT'], query)
-
-        if response and 'error' not in response and len(response) > 0:
-            print(f"Fetched game by ID {igdb_id}: {response[0].get('name')}")
-            return response
-        else:
-            print(f"Failed to fetch game by ID {igdb_id}: {response}")
-            return None
+        payload, error = IGDBMetadataProvider(
+            request=make_igdb_api_request,
+        ).fetch_game_payload(igdb_id)
+        if payload is not None:
+            print(f"Fetched game by ID {igdb_id}: {payload.get('name')}")
+            return [payload]
+        print(f"Failed to fetch game by ID {igdb_id}: {error}")
+        return None
 
     except Exception as e:
         print(f"Error fetching game by IGDB ID {igdb_id}: {e}")

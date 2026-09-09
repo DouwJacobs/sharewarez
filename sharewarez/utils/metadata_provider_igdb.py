@@ -5,6 +5,8 @@ from datetime import datetime, timezone
 import re
 from typing import Callable
 
+from sharewarez.utils.game_relationships import IGDB_RELATIONSHIP_QUERY_FIELDS
+
 
 IGDB_GAMES_ENDPOINT = 'https://api.igdb.com/v4/games'
 IGDB_GAME_VERSIONS_ENDPOINT = 'https://api.igdb.com/v4/game_versions'
@@ -12,6 +14,14 @@ IGDB_ARTWORKS_ENDPOINT = 'https://api.igdb.com/v4/artworks'
 IGDB_REQUEST_FIELDS = (
     'fields id,name,version_parent.name,version_title,cover.image_id,summary,'
     'platforms.name,first_release_date;'
+)
+IGDB_FULL_GAME_FIELDS = (
+    'fields id,name,cover.id,summary,url,release_dates.date,platforms.name,'
+    'genres.name,themes.name,game_modes.name,screenshots.id,artworks.id,'
+    'videos.video_id,first_release_date,aggregated_rating,involved_companies,'
+    'player_perspectives.name,aggregated_rating_count,rating,rating_count,'
+    'slug,status,category,total_rating,total_rating_count,storyline,'
+    f'{IGDB_RELATIONSHIP_QUERY_FIELDS};'
 )
 
 
@@ -67,6 +77,33 @@ class IGDBMetadataProvider:
         if not isinstance(response, list) or not response:
             return None
         return normalize_igdb_game(response[0])
+
+    def fetch_game_payload(self, igdb_id):
+        """Return the complete IGDB payload consumed by import and refresh."""
+        response = self.request(
+            IGDB_GAMES_ENDPOINT,
+            f'{IGDB_FULL_GAME_FIELDS} where id = {int(igdb_id)}; limit 1;',
+        )
+        if not isinstance(response, list) or not response:
+            error = response.get('error') if isinstance(response, dict) else 'IGDB returned no matching game'
+            return None, error
+        return response[0], None
+
+    def search_game_payloads(self, term, platform_id=None, limit=1):
+        """Search IGDB for complete game payloads used during library scans."""
+        safe_term = re.sub(r"[^\w\s\-:&+().'\u00c0-\u024f]", ' ', term).strip()
+        platform_filter = ''
+        if platform_id is not None:
+            platform_filter = f' where platforms = ({int(platform_id)});'
+        response = self.request(
+            IGDB_GAMES_ENDPOINT,
+            f'{IGDB_FULL_GAME_FIELDS} search "{safe_term}";'
+            f'{platform_filter} limit {max(1, min(int(limit), 500))};',
+        )
+        if not isinstance(response, list):
+            error = response.get('error') if isinstance(response, dict) else 'IGDB search failed'
+            return [], error
+        return response, None
 
     def search_games(self, term):
         safe_term = re.sub(r"[^\w\s\-:&+().'\u00c0-\u024f]", ' ', term).strip()

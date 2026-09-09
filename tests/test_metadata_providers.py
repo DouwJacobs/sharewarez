@@ -108,3 +108,27 @@ def test_igdb_media_merges_linked_artwork_with_direct_api_logos():
         'games', 'artworks',
     ]
     assert 'where game = 282831' in calls[1][1]
+
+
+def test_igdb_full_payload_lookup_owns_endpoint_and_query():
+    calls = []
+
+    def request(endpoint, query):
+        calls.append((endpoint, query))
+        return [{'id': 282831, 'name': 'The Blood of Dawnwalker'}]
+
+    provider = IGDBMetadataProvider(request=request)
+    payload, fetch_error = provider.fetch_game_payload(282831)
+    results, search_error = provider.search_game_payloads(
+        'Dawnwalker', platform_id=6, limit=1,
+    )
+
+    assert fetch_error is None and search_error is None
+    assert payload['id'] == 282831
+    assert results[0]['name'] == 'The Blood of Dawnwalker'
+    assert all(endpoint == 'https://api.igdb.com/v4/games' for endpoint, _ in calls)
+    assert 'where id = 282831; limit 1;' in calls[0][1]
+    assert 'cover.id' in calls[0][1]
+    assert 'screenshots.id' in calls[0][1]
+    assert 'artworks.id' in calls[0][1]
+    assert 'search "Dawnwalker"; where platforms = (6); limit 1;' in calls[1][1]
