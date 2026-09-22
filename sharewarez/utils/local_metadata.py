@@ -1,7 +1,4 @@
-"""
-Local filesystem metadata persistence utilities.
-Implements Jellyfin-style metadata files for IGDB ID persistence.
-"""
+"""Local filesystem metadata persistence utilities."""
 import os
 import json
 import logging
@@ -68,11 +65,31 @@ def read_local_metadata(full_disk_path, filename='sharewarez.json'):
             logger.warning(f"Invalid metadata format in {metadata_path}: not a dict")
             return None
 
-        if 'igdb_id' not in metadata:
-            logger.warning(f"Invalid metadata in {metadata_path}: missing igdb_id")
+        identity = metadata.get('identity')
+        if isinstance(identity, dict):
+            provider = str(identity.get('provider') or '').strip().lower()
+            external_id = str(identity.get('external_id') or '').strip()
+        elif metadata.get('igdb_id') is not None:
+            provider = 'igdb'
+            external_id = str(metadata['igdb_id']).strip()
+            metadata['identity'] = {
+                'provider': provider,
+                'external_id': external_id,
+            }
+        else:
+            provider = ''
+            external_id = ''
+
+        if not provider or not external_id:
+            logger.warning(f"Invalid metadata in {metadata_path}: missing provider identity")
             return None
 
-        logger.info(f"✅ Found local metadata: IGDB ID {metadata['igdb_id']} in {metadata_path}")
+        metadata['metadata_provider'] = provider
+        metadata['provider_game_id'] = external_id
+        if provider == 'igdb' and metadata.get('igdb_id') is None and external_id.isdigit():
+            metadata['igdb_id'] = int(external_id)
+
+        logger.info("Found local metadata: %s ID %s in %s", provider.upper(), external_id, metadata_path)
         return metadata
 
     except json.JSONDecodeError as e:
@@ -83,9 +100,10 @@ def read_local_metadata(full_disk_path, filename='sharewarez.json'):
         return None
 
 
-def write_local_metadata(full_disk_path, igdb_id, game_title=None, manually_verified=False,
+def write_local_metadata(full_disk_path, igdb_id=None, game_title=None, manually_verified=False,
                          filename='sharewarez.json', install_instructions=None,
-                         game_version=None):
+                         game_version=None, *, provider=None, external_id=None,
+                         provider_url=None):
     """
     Write local metadata file to game folder.
 
@@ -100,7 +118,12 @@ def write_local_metadata(full_disk_path, igdb_id, game_title=None, manually_veri
         bool: True if successful, False otherwise
     """
     try:
-        logger.info(f"💾 [LOCAL METADATA] Starting write process for IGDB ID {igdb_id}")
+        provider = str(provider or ('igdb' if igdb_id is not None else '')).strip().lower()
+        external_id = str(external_id if external_id is not None else igdb_id or '').strip()
+        if not provider or not external_id:
+            logger.error("Cannot write local metadata without a provider identity")
+            return False
+        logger.info("[LOCAL METADATA] Writing %s ID %s", provider.upper(), external_id)
         logger.info(f"💾 [LOCAL METADATA] Target path: {full_disk_path}")
         logger.info(f"💾 [LOCAL METADATA] Filename: {filename}")
 
@@ -128,13 +151,20 @@ def write_local_metadata(full_disk_path, igdb_id, game_title=None, manually_veri
 
         # Build metadata object
         metadata = {
-            "igdb_id": int(igdb_id),
+            "identity": {
+                "provider": provider,
+                "external_id": external_id,
+            },
             "identified_at": datetime.now(timezone.utc).isoformat(),
             "manually_verified": bool(manually_verified),
-            "metadata_version": "1.0",
-            # Retained for compatibility with metadata written by older releases.
-            "version": "1.0"
+            "metadata_version": "2.0",
+            "version": "2.0"
         }
+        if provider_url:
+            metadata['identity']['provider_url'] = sanitize_string_input(provider_url, 1024)
+        # Retain the old key so older Sharewarez releases can still read IGDB files.
+        if provider == 'igdb' and external_id.isdigit():
+            metadata['igdb_id'] = int(external_id)
 
         # Add optional fields
         if game_title:
@@ -159,7 +189,7 @@ def write_local_metadata(full_disk_path, igdb_id, game_title=None, manually_veri
             file_size = os.path.getsize(metadata_path)
             logger.info(f"✅✅✅ [LOCAL METADATA] SUCCESS! File written to: {metadata_path}")
             logger.info(f"✅ [LOCAL METADATA] File size: {file_size} bytes")
-            logger.info(f"✅ [LOCAL METADATA] IGDB ID {igdb_id} saved for game: {game_title or 'Unknown'}")
+            logger.info("[LOCAL METADATA] %s ID %s saved for game: %s", provider.upper(), external_id, game_title or 'Unknown')
         else:
             logger.error(f"🚫 [LOCAL METADATA] File was not created at: {metadata_path}")
             return False
