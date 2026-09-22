@@ -177,6 +177,12 @@ class Game(db.Model):
     edition_name = db.Column(db.String(255), nullable=True)
     metadata_provenance = db.Column(db.JSON, nullable=False, default=dict)
     metadata_provider_values = db.Column(db.JSON, nullable=False, default=dict)
+    external_identities = db.relationship(
+        'GameExternalIdentity',
+        back_populates='game',
+        cascade='all, delete-orphan',
+        passive_deletes=True,
+    )
 
     # HowLongToBeat integration fields
     hltb_id = db.Column(db.Integer, nullable=True)
@@ -223,6 +229,56 @@ class Game(db.Model):
 
     def __repr__(self):
         return f"<Game id={self.id}, name={self.name}>"
+
+
+class GameExternalIdentity(db.Model):
+    __tablename__ = 'game_external_identities'
+    __table_args__ = (
+        db.UniqueConstraint(
+            'provider', 'external_id',
+            name='uq_game_external_identity_provider',
+        ),
+        db.UniqueConstraint(
+            'game_uuid', 'provider',
+            name='uq_game_external_identity_game_provider',
+        ),
+        db.Index(
+            'uq_game_external_identity_canonical',
+            'game_uuid',
+            unique=True,
+            postgresql_where=text('canonical'),
+            sqlite_where=text('canonical'),
+        ),
+        db.CheckConstraint(
+            'provider = lower(provider)',
+            name='ck_game_external_identity_provider_lowercase',
+        ),
+    )
+
+    id = db.Column(db.Integer, primary_key=True)
+    game_uuid = db.Column(
+        db.String(36),
+        db.ForeignKey('games.uuid', ondelete='CASCADE'),
+        nullable=False,
+        index=True,
+    )
+    provider = db.Column(db.String(32), nullable=False)
+    external_id = db.Column(db.String(255), nullable=False)
+    canonical = db.Column(db.Boolean, nullable=False, default=False)
+    provider_url = db.Column(db.String(1024), nullable=True)
+    created_at = db.Column(
+        db.DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+    )
+    updated_at = db.Column(
+        db.DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
+
+    game = db.relationship('Game', back_populates='external_identities')
 
 
 class GameRelationship(db.Model):
@@ -665,6 +721,18 @@ class GameRequest(db.Model):
             sqlite_where=text("request_type = 'new_game'"),
         ),
         db.Index(
+            'uq_game_requests_new_game_provider',
+            'metadata_provider', 'provider_game_id', unique=True,
+            postgresql_where=text(
+                "request_type = 'new_game' AND metadata_provider IS NOT NULL "
+                "AND provider_game_id IS NOT NULL"
+            ),
+            sqlite_where=text(
+                "request_type = 'new_game' AND metadata_provider IS NOT NULL "
+                "AND provider_game_id IS NOT NULL"
+            ),
+        ),
+        db.Index(
             'uq_game_requests_active_update', 'source_game_uuid', unique=True,
             postgresql_where=text("request_type = 'update' AND status NOT IN ('fulfilled', 'not_planned', 'cancelled')"),
             sqlite_where=text("request_type = 'update' AND status NOT IN ('fulfilled', 'not_planned', 'cancelled')"),
@@ -675,6 +743,9 @@ class GameRequest(db.Model):
     request_type = db.Column(db.String(16), nullable=False, default='new_game', index=True)
     igdb_id = db.Column(db.Integer, nullable=True, index=True)
     parent_igdb_id = db.Column(db.Integer, nullable=True, index=True)
+    metadata_provider = db.Column(db.String(32), nullable=True, index=True)
+    provider_game_id = db.Column(db.String(255), nullable=True, index=True)
+    provider_parent_id = db.Column(db.String(255), nullable=True)
     parent_game_name = db.Column(db.String(255), nullable=True)
     game_name = db.Column(db.String(255), nullable=False)
     edition_name = db.Column(db.String(255), nullable=True)

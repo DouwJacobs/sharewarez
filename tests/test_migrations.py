@@ -90,3 +90,48 @@ def test_pending_migration_creates_pre_upgrade_backup(app, db_session, monkeypat
 
     backup.assert_called_once_with(database_uri, reason='pre-upgrade')
     upgrade.assert_called_once_with(database_uri)
+
+
+def test_provider_identity_migration_backfills_existing_igdb_rows(app, db_session):
+    database_uri = app.config['SQLALCHEMY_DATABASE_URI']
+    command.downgrade(alembic_config(database_uri), '20260905_25')
+
+    db_session.execute(text(
+        "INSERT INTO libraries (uuid, name, platform, display_order) VALUES "
+        "('00000000-0000-0000-0000-000000000026', 'Migration Library', "
+        "'PCWIN', 0)"
+    ))
+    db_session.execute(text(
+        "INSERT INTO games "
+        "(uuid, igdb_id, name, url_igdb, library_uuid, size, "
+        "metadata_provenance, metadata_provider_values) VALUES "
+        "('10000000-0000-0000-0000-000000000026', 26001, 'Migrated Game', "
+        "'https://www.igdb.com/games/migrated-game', "
+        "'00000000-0000-0000-0000-000000000026', 0, '{}', '{}')"
+    ))
+    db_session.execute(text(
+        "INSERT INTO game_requests "
+        "(request_type, igdb_id, parent_igdb_id, game_name, status, "
+        "created_at, updated_at) VALUES "
+        "('new_game', 26002, 26001, 'Requested Game', 'pending', now(), now())"
+    ))
+    db_session.commit()
+
+    upgrade_database(database_uri)
+
+    identity = db_session.execute(text(
+        "SELECT provider, external_id, canonical, provider_url "
+        "FROM game_external_identities WHERE game_uuid = "
+        "'10000000-0000-0000-0000-000000000026'"
+    )).one()
+    assert identity == (
+        'igdb',
+        '26001',
+        True,
+        'https://www.igdb.com/games/migrated-game',
+    )
+    request_identity = db_session.execute(text(
+        "SELECT metadata_provider, provider_game_id, provider_parent_id "
+        "FROM game_requests WHERE igdb_id = 26002"
+    )).one()
+    assert request_identity == ('igdb', '26002', '26001')
