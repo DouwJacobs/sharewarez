@@ -30,6 +30,15 @@ class MetadataSearchOutcome:
         return '; '.join(self.errors) if self.errors else None
 
 
+@dataclass(frozen=True)
+class MetadataProviderRegistry:
+    providers: Mapping[str, MetadataSearchProvider]
+    order: tuple[str, ...]
+
+    def search_games(self, term: str) -> MetadataSearchOutcome:
+        return search_metadata_games(term, self.providers, self.order)
+
+
 def validate_provider_order(configured_order) -> tuple[str, ...]:
     """Validate an operator-supplied provider order without silently changing it."""
     if not isinstance(configured_order, (list, tuple)):
@@ -72,6 +81,32 @@ def configured_provider_order(settings, available_providers=None) -> tuple[str, 
     )
     configured = getattr(settings, 'metadata_provider_order', None)
     return normalize_provider_order(configured, available)
+
+
+def build_metadata_provider_registry(
+    settings,
+    *,
+    igdb_request=None,
+    rawg_request=None,
+) -> MetadataProviderRegistry:
+    """Build the one configured provider registry used by application workflows."""
+    from sharewarez.utils.metadata_provider_igdb import IGDBMetadataProvider
+    from sharewarez.utils.metadata_provider_rawg import RAWGMetadataProvider, RawgAPIClient
+
+    available = available_provider_names(settings)
+    providers = {}
+    if 'igdb' in available:
+        if igdb_request is None:
+            from sharewarez.utils.igdb_api import make_igdb_api_request
+            igdb_request = make_igdb_api_request
+        providers['igdb'] = IGDBMetadataProvider(request=igdb_request)
+    if 'rawg' in available:
+        request_callable = rawg_request or RawgAPIClient(
+            api_key=settings.rawg_api_key,
+        ).get
+        providers['rawg'] = RAWGMetadataProvider(request=request_callable)
+    order = configured_provider_order(settings, tuple(providers))
+    return MetadataProviderRegistry(providers=providers, order=order)
 
 
 def normalize_provider_order(

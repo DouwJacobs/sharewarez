@@ -50,9 +50,20 @@ def normalize_igdb_game(game_data):
         release_date = datetime.fromtimestamp(int(release_timestamp), tz=timezone.utc)
     parent = game_data.get('version_parent')
     parent_name = parent.get('name') if isinstance(parent, dict) else None
+    igdb_id = int(game_data['id'])
+    parent_id = _parent_id(game_data)
+    provider_url = str(game_data.get('url') or '').strip() or None
     return {
-        'igdb_id': int(game_data['id']),
-        'parent_igdb_id': _parent_id(game_data),
+        'provider': 'igdb',
+        'provider_game_id': str(igdb_id),
+        'provider_parent_id': str(parent_id),
+        'provider_url': provider_url,
+        'attribution': {
+            'name': 'IGDB',
+            'url': provider_url or 'https://www.igdb.com/',
+        },
+        'igdb_id': igdb_id,
+        'parent_igdb_id': parent_id,
         'parent_game_name': str(parent_name or game_data.get('name') or '').strip(),
         'game_name': str(game_data.get('name') or '').strip(),
         'edition_name': str(game_data.get('version_title') or '').strip() or None,
