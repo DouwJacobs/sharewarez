@@ -285,7 +285,7 @@ class GameRelationship(db.Model):
     __tablename__ = 'game_relationships'
     __table_args__ = (
         db.UniqueConstraint(
-            'game_uuid', 'related_igdb_id', 'relationship_type', 'provider',
+            'game_uuid', 'related_external_id', 'relationship_type', 'provider',
             name='uq_game_relationship_identity',
         ),
     )
@@ -293,7 +293,8 @@ class GameRelationship(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     game_uuid = db.Column(db.String(36), db.ForeignKey('games.uuid', ondelete='CASCADE'), nullable=False, index=True)
     related_game_uuid = db.Column(db.String(36), db.ForeignKey('games.uuid', ondelete='SET NULL'), nullable=True, index=True)
-    related_igdb_id = db.Column(db.Integer, nullable=False, index=True)
+    related_igdb_id = db.Column(db.Integer, nullable=True, index=True)
+    related_external_id = db.Column(db.String(255), nullable=False, index=True)
     related_name = db.Column(db.String(255), nullable=False)
     relationship_type = db.Column(db.String(40), nullable=False, index=True)
     provider = db.Column(db.String(32), nullable=False, default='igdb')
@@ -312,7 +313,7 @@ class GameGroup(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     provider = db.Column(db.String(32), nullable=False, default='igdb')
-    provider_id = db.Column(db.Integer, nullable=False)
+    provider_id = db.Column(db.String(255), nullable=False)
     name = db.Column(db.String(255), nullable=False)
     group_type = db.Column(db.String(24), nullable=False, index=True)
     games = db.relationship('Game', secondary='game_group_memberships', back_populates='groups')
@@ -389,6 +390,9 @@ class Image(db.Model):
     url = db.Column(db.String, nullable=False)
     igdb_image_id = db.Column(db.String, nullable=True)  # IGDB image ID for reference
     download_url = db.Column(db.String, nullable=True)  # Full IGDB URL to download from
+    provider = db.Column(db.String(32), nullable=False, default='igdb')
+    provider_image_id = db.Column(db.String(255), nullable=True)
+    source_url = db.Column(db.String(2048), nullable=True)
     is_downloaded = db.Column(db.Boolean, default=False, nullable=False)  # Download status
     is_default = db.Column(db.Boolean, default=False, nullable=False, index=True)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))

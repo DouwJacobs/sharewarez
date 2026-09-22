@@ -478,7 +478,10 @@ def upload_image(game_uuid):
     save_path = os.path.join(current_app.config['IMAGE_SAVE_PATH'], filename)
     file.save(save_path)
     print(f"File saved to: {save_path}")
-    new_image = Image(game_uuid=game_uuid, image_type=image_type, url=filename, is_downloaded=True)
+    new_image = Image(
+        game_uuid=game_uuid, image_type=image_type, url=filename,
+        provider='local', is_downloaded=True,
+    )
     db.session.add(new_image)
     db.session.commit()
     print(f"File saved to DB with ID: {new_image.id}")

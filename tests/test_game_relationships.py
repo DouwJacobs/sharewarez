@@ -3,7 +3,7 @@ from uuid import uuid4
 
 from sqlalchemy import select
 
-from sharewarez.models import Game, GameGroup, GameRelationship, Library
+from sharewarez.models import Game, GameExternalIdentity, GameGroup, GameRelationship, Library
 from sharewarez.platform import LibraryPlatform
 from sharewarez.utils.game_relationships import (
     IGDB_RELATIONSHIP_QUERY_FIELDS,
@@ -71,6 +71,9 @@ def test_sync_stores_relationships_and_series_memberships(db_session):
         ('parent', 'Parent Game'),
         ('remake', 'Modern Remake'),
     }
+    assert {(item.provider, item.related_external_id) for item in relationships} == {
+        ('igdb', '900002'), ('igdb', '900003'),
+    }
     assert {(group.group_type, group.name) for group in game.groups} == {
         ('series', 'Example Series'),
         ('franchise', 'Example Franchise'),
@@ -86,6 +89,9 @@ def test_new_library_game_resolves_previously_external_relationship(db_session):
     db_session.commit()
 
     target = Game(name='Base Game', igdb_id=910002, library_uuid=library.uuid)
+    target.external_identities.append(GameExternalIdentity(
+        provider='igdb', external_id='910002', canonical=True,
+    ))
     db_session.add(target)
     db_session.flush()
     sync_game_relationships(target, {})
@@ -97,6 +103,7 @@ def test_new_library_game_resolves_previously_external_relationship(db_session):
     assert relationship.related_game_uuid == target.uuid
     serialized = serialize_game_relationships(source)
     assert serialized[0]['games'][0]['game_uuid'] == target.uuid
+    assert serialized[0]['games'][0]['provider_game_id'] == '910002'
 
 
 def test_provider_refresh_replaces_old_relationships(db_session):

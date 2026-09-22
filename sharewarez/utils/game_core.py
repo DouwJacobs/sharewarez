@@ -253,6 +253,9 @@ def store_image_url_for_download(game_uuid, image_data, image_type='cover'):
             if existing_cover is not None:
                 existing_cover.igdb_image_id = str(image_id)
                 existing_cover.download_url = download_url
+                existing_cover.provider = 'igdb'
+                existing_cover.provider_image_id = str(image_id)
+                existing_cover.source_url = download_url
                 existing_cover.is_downloaded = False
                 existing_cover.created_at = datetime.now(UTC)
                 return existing_cover
@@ -264,6 +267,9 @@ def store_image_url_for_download(game_uuid, image_data, image_type='cover'):
             url=file_name,  # Local filename when downloaded
             igdb_image_id=str(image_id),
             download_url=download_url,
+            provider='igdb',
+            provider_image_id=str(image_id),
+            source_url=download_url,
             is_downloaded=False
         )
         db.session.add(image)
@@ -418,6 +424,8 @@ def process_and_save_image(game_uuid, image_data, image_type='cover'):
             image_type=image_type,
             url=file_name,
             download_url=url,
+            provider='igdb',
+            source_url=url,
             is_downloaded=True,
         )
         db.session.add(image)

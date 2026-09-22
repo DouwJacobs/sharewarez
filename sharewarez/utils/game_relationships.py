@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 from sqlalchemy import delete, select, update
 
 from sharewarez import db
-from sharewarez.models import Game, GameGroup, GameRelationship
+from sharewarez.models import Game, GameExternalIdentity, GameGroup, GameRelationship
 
 
 IGDB_RELATIONSHIP_FIELDS = {
@@ -67,20 +67,33 @@ def sync_game_relationships(game, metadata, provider='igdb'):
 
     for field, relationship_type in IGDB_RELATIONSHIP_FIELDS.items():
         for reference in _references(metadata.get(field)):
-            related_igdb_id, related_name = _reference_data(reference)
-            if not related_igdb_id or related_igdb_id == game.igdb_id:
+            related_id, related_name = _reference_data(reference)
+            related_external_id = str(related_id or '').strip()
+            if not related_external_id:
                 continue
-            related_game = db.session.execute(
-                select(Game).where(Game.igdb_id == related_igdb_id)
+            related_identity = db.session.execute(
+                select(GameExternalIdentity).where(
+                    GameExternalIdentity.provider == provider,
+                    GameExternalIdentity.external_id == related_external_id,
+                )
             ).scalar_one_or_none()
+            related_game = related_identity.game if related_identity else None
+            legacy_igdb_id = int(related_external_id) if provider == 'igdb' and related_external_id.isdigit() else None
+            if related_game is None and legacy_igdb_id is not None:
+                related_game = db.session.execute(
+                    select(Game).where(Game.igdb_id == legacy_igdb_id)
+                ).scalar_one_or_none()
+            if related_game is game:
+                continue
             if not related_name and related_game:
                 related_name = related_game.name
             if not related_name:
-                related_name = f'IGDB game {related_igdb_id}'
+                related_name = f'{provider.upper()} game {related_external_id}'
             db.session.add(GameRelationship(
                 game_uuid=game.uuid,
                 related_game_uuid=related_game.uuid if related_game else None,
-                related_igdb_id=related_igdb_id,
+                related_igdb_id=legacy_igdb_id,
+                related_external_id=related_external_id,
                 related_name=related_name,
                 relationship_type=relationship_type,
                 provider=provider,
@@ -90,6 +103,7 @@ def sync_game_relationships(game, metadata, provider='igdb'):
     for field, group_type in (('collections', 'series'), ('franchises', 'franchise')):
         for reference in _references(metadata.get(field)):
             provider_id, name = _reference_data(reference)
+            provider_id = str(provider_id or '').strip()
             if not provider_id or not name:
                 continue
             group = db.session.execute(
@@ -112,11 +126,16 @@ def sync_game_relationships(game, metadata, provider='igdb'):
             if group not in game.groups:
                 game.groups.append(group)
 
-    if game.igdb_id:
+    canonical_identity = next(
+        (identity for identity in game.external_identities if identity.canonical),
+        None,
+    )
+    if canonical_identity:
         db.session.execute(
             update(GameRelationship)
             .where(
-                GameRelationship.related_igdb_id == game.igdb_id,
+                GameRelationship.provider == canonical_identity.provider,
+                GameRelationship.related_external_id == canonical_identity.external_id,
                 GameRelationship.related_game_uuid.is_(None),
             )
             .values(related_game_uuid=game.uuid, related_name=game.name, updated_at=datetime.now(timezone.utc))
@@ -132,6 +151,11 @@ def serialize_game_relationships(game, excluded_types=None):
         grouped.setdefault(relationship.relationship_type, []).append({
             'name': relationship.related_name,
             'igdb_id': relationship.related_igdb_id,
+            'provider': getattr(relationship, 'provider', 'igdb'),
+            'provider_game_id': str(
+                getattr(relationship, 'related_external_id', None)
+                or relationship.related_igdb_id
+            ),
             'game_uuid': relationship.related_game_uuid,
         })
     return [
