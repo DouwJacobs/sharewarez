@@ -1,4 +1,5 @@
 import json
+import hashlib
 import os
 import time
 from datetime import date, datetime, timezone
@@ -20,6 +21,7 @@ from sharewarez.models import (
 from sharewarez.utils.functions import read_first_nfo_content
 from sharewarez.utils.igdb_api import make_igdb_api_request
 from sharewarez.utils.metadata_provider_igdb import IGDBMetadataProvider
+from sharewarez.utils.metadata_providers import build_metadata_provider_registry
 from sharewarez.utils.event_logging import log_system_event
 
 
@@ -417,31 +419,38 @@ def refresh_images_in_background(
                 set_progress(0, status='error', phase='error', message='Game not found.')
                 return False, 'Game not found'
 
-            print(f"[IMAGE REFRESH] Found game: {game.name} (IGDB ID: {game.igdb_id})")
-            if game.igdb_id is None:
-                print(f"[IMAGE REFRESH] Game '{game.name}' has no IGDB ID, cannot refresh images.")
+            identity = next(
+                (item for item in game.external_identities if item.canonical),
+                None,
+            )
+            provider_name = identity.provider if identity else ('igdb' if game.igdb_id else None)
+            external_id = identity.external_id if identity else (
+                str(game.igdb_id) if game.igdb_id else None
+            )
+            print(f"[IMAGE REFRESH] Found game: {game.name} ({provider_name}: {external_id})")
+            if provider_name is None or external_id is None:
                 current_app.logger.warning(
-                    'Image refresh skipped because game has no IGDB ID '
+                    'Image refresh skipped because game has no provider identity '
                     'game_uuid=%s game_name=%s', game_uuid, game.name,
                 )
                 admin_event(
-                    f'Image refresh skipped: game={game_uuid} has no IGDB ID; '
+                    f'Image refresh skipped: game={game_uuid} has no provider identity; '
                     f'{game.name[:80]}',
                     'warning',
                 )
-                set_progress(0, status='error', phase='error', message='This game has no IGDB ID.')
-                return False, 'Game has no IGDB ID'
+                set_progress(0, status='error', phase='error', message='This game has no metadata provider identity.')
+                return False, 'Game has no metadata provider identity'
 
             if (
-                expected_igdb_id is not None
-                and str(game.igdb_id) != str(expected_igdb_id)
+                expected_igdb_id is not None and provider_name == 'igdb'
+                and external_id != str(expected_igdb_id)
             ):
                 message = 'Game identity changed before the image refresh started'
                 print(f"[IMAGE REFRESH] {message}: {game_uuid}")
                 current_app.logger.warning(
                     'Stale image refresh aborted game_uuid=%s expected_igdb_id=%s '
                     'current_igdb_id=%s reason=%s',
-                    game_uuid, expected_igdb_id, game.igdb_id, refresh_reason,
+                    game_uuid, expected_igdb_id, external_id, refresh_reason,
                 )
                 admin_event(
                     f'Stale image refresh stopped: game={game_uuid} identity changed; '
@@ -454,24 +463,30 @@ def refresh_images_in_background(
             set_progress(
                 20,
                 phase='discovering',
-                message='Finding the game and its linked media in IGDB…',
+                message=f'Finding the game and its linked media in {provider_name.upper()}…',
             )
 
-            print(f"[IMAGE REFRESH] Fetching image IDs from IGDB API for IGDB ID: {game.igdb_id}")
-            media, media_error = IGDBMetadataProvider(
-                request=make_igdb_api_request,
-            ).fetch_media(game.igdb_id)
-            print(f"[IMAGE REFRESH] IGDB API media response: {media}")
+            settings = db.session.execute(
+                select(GlobalSettings).order_by(GlobalSettings.id).limit(1)
+            ).scalar_one_or_none()
+            registry = build_metadata_provider_registry(
+                settings, igdb_request=make_igdb_api_request,
+            ) if settings else None
+            adapter = registry.providers.get(provider_name) if registry else None
+            if adapter is None and provider_name == 'igdb':
+                adapter = IGDBMetadataProvider(request=make_igdb_api_request)
+            if adapter is None:
+                return False, f'{provider_name.upper()} is not configured'
+            media, media_error = adapter.fetch_media(external_id)
 
             if media is None:
-                error = media_error or 'IGDB returned no matching game'
-                print(f"[IMAGE REFRESH] IGDB API returned an error: {error}")
+                error = media_error or f'{provider_name.upper()} returned no matching game'
                 current_app.logger.warning(
-                    'IGDB media lookup failed game_uuid=%s igdb_id=%s error=%s',
-                    game_uuid, game.igdb_id, error,
+                    '%s media lookup failed game_uuid=%s external_id=%s error=%s',
+                    provider_name, game_uuid, external_id, error,
                 )
                 admin_event(
-                    f'Image refresh failed: game={game_uuid} IGDB={game.igdb_id} '
+                    f'Image refresh failed: game={game_uuid} {provider_name}={external_id} '
                     f'media lookup failed; {game.name[:72]}',
                     'warning',
                 )
@@ -479,14 +494,14 @@ def refresh_images_in_background(
                     0,
                     status='error',
                     phase='error',
-                    message=f'IGDB media lookup failed: {error}',
+                    message=f'{provider_name.upper()} media lookup failed: {error}',
                 )
                 return False, error
 
             set_progress(
                 40,
                 phase='discovering',
-                message='Comparing IGDB media with the local collection…',
+                message=f'Comparing {provider_name.upper()} media with the local collection…',
             )
 
             # Merge refreshed media into the existing set. Do not delete valid
@@ -496,10 +511,12 @@ def refresh_images_in_background(
                 select(Image).filter_by(game_uuid=game_uuid)
             ).scalars().all()
             original_image_ids = {image.id for image in existing_images}
-            existing_by_igdb_id = {}
+            existing_by_provider_id = {}
             for existing_image in existing_images:
-                existing_by_igdb_id.setdefault(
-                    str(existing_image.igdb_image_id), []
+                if existing_image.provider != provider_name:
+                    continue
+                existing_by_provider_id.setdefault(
+                    str(existing_image.provider_image_id or existing_image.igdb_image_id), []
                 ).append(existing_image)
             desired_image_ids = set()
 
@@ -508,7 +525,7 @@ def refresh_images_in_background(
                 if image_id is None:
                     return
                 desired_image_ids.add(str(image_id))
-                existing = existing_by_igdb_id.get(str(image_id), [])
+                existing = existing_by_provider_id.get(str(image_id), [])
                 # Legacy generic artwork should be queried once more so it can
                 # be reclassified as key art or a standalone game logo.
                 if existing and not (
@@ -519,8 +536,21 @@ def refresh_images_in_background(
                         image.is_downloaded = False
                         image.created_at = datetime.now(timezone.utc)
                     return
-                store_image_url_for_download(game.uuid, image_data, image_type=image_type)
-                existing_by_igdb_id.setdefault(str(image_id), []).append(None)
+                if provider_name == 'igdb':
+                    store_image_url_for_download(game.uuid, image_data, image_type=image_type)
+                else:
+                    digest = hashlib.sha256(str(image_id).encode()).hexdigest()[:16]
+                    db.session.add(Image(
+                        game_uuid=game.uuid,
+                        image_type=image_type,
+                        url=f'{game.uuid}_{provider_name}_{digest}.jpg',
+                        download_url=str(image_id),
+                        provider=provider_name,
+                        provider_image_id=str(image_id),
+                        source_url=str(image_id),
+                        is_downloaded=False,
+                    ))
+                existing_by_provider_id.setdefault(str(image_id), []).append(None)
 
             set_progress(
                 60,
@@ -544,9 +574,9 @@ def refresh_images_in_background(
 
             artworks_data = media.get('artworks', [])
             current_app.logger.debug(
-                'IGDB media discovered game_uuid=%s igdb_id=%s cover=%s '
+                '%s media discovered game_uuid=%s external_id=%s cover=%s '
                 'screenshots=%s artworks=%s existing_images=%s',
-                game_uuid, game.igdb_id, bool(cover_id),
+                provider_name, game_uuid, external_id, bool(cover_id),
                 len(screenshots_data), len(artworks_data), len(existing_images),
             )
             print(f"[IMAGE REFRESH] Queuing {len(artworks_data)} artworks.")
@@ -628,7 +658,11 @@ def refresh_images_in_background(
                 for image in refreshed_images:
                     if (
                         image.id in original_image_ids
-                        and str(image.igdb_image_id) not in desired_image_ids
+                        and (
+                            image.provider != provider_name
+                            or str(image.provider_image_id or image.igdb_image_id)
+                            not in desired_image_ids
+                        )
                     ):
                         replaced_files.append(image.url)
                         db.session.delete(image)
@@ -677,15 +711,15 @@ def refresh_images_in_background(
             duration_ms = round((time.monotonic() - started_at) * 1000, 2)
             removed_count = len(replaced_files)
             current_app.logger.info(
-                'Image refresh completed game_uuid=%s game_name=%s igdb_id=%s '
+                'Image refresh completed game_uuid=%s game_name=%s provider=%s external_id=%s '
                 'reason=%s pending=%s downloaded=%s failed=%s removed=%s '
                 'duration_ms=%s',
-                game_uuid, game.name, game.igdb_id, refresh_reason,
+                game_uuid, game.name, provider_name, external_id, refresh_reason,
                 total_pending, downloaded_count, download_failed_count,
                 removed_count, duration_ms,
             )
             admin_event(
-                f'Image refresh complete: game={game_uuid} IGDB={game.igdb_id}; '
+                f'Image refresh complete: game={game_uuid} {provider_name.upper()}={external_id}; '
                 f'downloaded={downloaded_count}/{total_pending} '
                 f'failed={download_failed_count} removed={removed_count}; '
                 f'{game.name[:64]}',
@@ -712,7 +746,7 @@ def refresh_images_in_background(
                 0,
                 status='error',
                 phase='error',
-                message='The IGDB image refresh failed. Please try again.',
+                message='The metadata image refresh failed. Please try again.',
             )
             return False, str(e)
         finally:
