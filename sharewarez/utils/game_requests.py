@@ -3,17 +3,23 @@ from datetime import datetime, timezone
 from threading import Lock
 from time import monotonic
 
-from sqlalchemy import func, select
-from sqlalchemy.orm import selectinload
+from sqlalchemy import func, or_, select, tuple_
+from sqlalchemy.orm import joinedload, selectinload
 
 from sharewarez import db
-from sharewarez.models import Game, GameRequest, GameRequestUser, GlobalSettings
+from sharewarez.models import (
+    Game,
+    GameExternalIdentity,
+    GameRequest,
+    GameRequestUser,
+    GlobalSettings,
+)
 from sharewarez.utils.igdb_api import make_igdb_api_request
 from sharewarez.utils.metadata_provider_igdb import (
     IGDBMetadataProvider,
     normalize_igdb_game,
 )
-from sharewarez.utils.metadata_providers import search_metadata_games
+from sharewarez.utils.metadata_providers import build_metadata_provider_registry
 
 
 REQUEST_STATUSES = ('pending', 'reviewing', 'planned', 'fulfilled', 'not_planned', 'cancelled')
@@ -48,22 +54,33 @@ def _igdb_provider():
     return IGDBMetadataProvider(request=make_igdb_api_request)
 
 
+def _metadata_registry():
+    settings = db.session.execute(
+        select(GlobalSettings).order_by(GlobalSettings.id).limit(1)
+    ).scalar_one_or_none()
+    if settings is None:
+        return None
+    return build_metadata_provider_registry(
+        settings,
+        igdb_request=make_igdb_api_request,
+    )
+
+
 def fetch_igdb_game(igdb_id):
     return _igdb_provider().fetch_game(igdb_id)
 
 
-def search_igdb_games(term):
-    cache_key = term.strip().casefold()
+def search_metadata_request_games(term):
+    registry = _metadata_registry()
+    if registry is None or not registry.providers:
+        return [], 'No metadata providers are configured.'
+    cache_key = (registry.order, term.strip().casefold())
     now = monotonic()
     with _search_cache_lock:
         cached = _search_cache.get(cache_key)
         if cached and cached[0] > now:
             return deepcopy(cached[1]), None
-    outcome = search_metadata_games(
-        term,
-        providers={'igdb': _igdb_provider()},
-        configured_order=('igdb',),
-    )
+    outcome = registry.search_games(term)
     results = outcome.results
     if not results and outcome.error:
         return [], outcome.error
@@ -77,25 +94,66 @@ def search_igdb_games(term):
     return results, None
 
 
+def search_igdb_games(term):
+    """Compatibility alias for provider-neutral request discovery."""
+    return search_metadata_request_games(term)
+
+
 def fetch_related_editions(igdb_id):
     return _igdb_provider().fetch_related_editions(igdb_id)
 
 
+def fetch_metadata_game(provider, external_id):
+    provider_name = str(provider).strip().lower()
+    if provider_name == 'igdb':
+        return fetch_igdb_game(int(external_id))
+    registry = _metadata_registry()
+    adapter = registry.providers.get(provider_name) if registry else None
+    return adapter.fetch_game(external_id) if adapter else None
+
+
 def enrich_request_search(results, user_id):
-    ids = [item['igdb_id'] for item in results]
-    if not ids:
+    keys = [
+        (str(item.get('provider') or 'igdb'), str(item.get('provider_game_id') or item.get('igdb_id')))
+        for item in results
+        if item.get('provider_game_id') is not None or item.get('igdb_id') is not None
+    ]
+    if not keys:
         return results
-    games = db.session.execute(select(Game).where(Game.igdb_id.in_(ids))).scalars().all()
+    identities = db.session.execute(
+        select(GameExternalIdentity)
+        .options(joinedload(GameExternalIdentity.game))
+        .where(tuple_(GameExternalIdentity.provider, GameExternalIdentity.external_id).in_(keys))
+    ).scalars().all()
     requests = db.session.execute(
         select(GameRequest)
         .options(selectinload(GameRequest.requesters))
-        .where(GameRequest.igdb_id.in_(ids))
+        .where(tuple_(GameRequest.metadata_provider, GameRequest.provider_game_id).in_(keys))
     ).scalars().all()
-    games_by_id = {game.igdb_id: game for game in games}
-    requests_by_id = {item.igdb_id: item for item in requests}
+    games_by_identity = {
+        (item.provider, item.external_id): item.game for item in identities
+    }
+    requests_by_identity = {
+        (item.metadata_provider, item.provider_game_id): item for item in requests
+    }
+    igdb_ids = [int(external_id) for provider, external_id in keys if provider == 'igdb' and external_id.isdigit()]
+    if igdb_ids:
+        for game in db.session.execute(select(Game).where(Game.igdb_id.in_(igdb_ids))).scalars():
+            games_by_identity.setdefault(('igdb', str(game.igdb_id)), game)
+        legacy_requests = db.session.execute(
+            select(GameRequest)
+            .options(selectinload(GameRequest.requesters))
+            .where(GameRequest.igdb_id.in_(igdb_ids))
+        ).scalars().all()
+        for game_request in legacy_requests:
+            requests_by_identity.setdefault(('igdb', str(game_request.igdb_id)), game_request)
     for item in results:
-        local_game = games_by_id.get(item['igdb_id'])
-        game_request = requests_by_id.get(item['igdb_id'])
+        key = (
+            str(item.get('provider') or 'igdb'),
+            str(item.get('provider_game_id') or item.get('igdb_id')),
+        )
+        local_game = games_by_identity.get(key)
+        game_request = requests_by_identity.get(key)
         item['available_game_uuid'] = local_game.uuid if local_game else None
         item['request_id'] = game_request.id if game_request else None
         item['request_status'] = game_request.status if game_request else None
@@ -107,14 +165,99 @@ def enrich_request_search(results, user_id):
     return results
 
 
+def _existing_game(provider, external_id):
+    identity = db.session.execute(
+        select(GameExternalIdentity)
+        .options(joinedload(GameExternalIdentity.game))
+        .where(
+            GameExternalIdentity.provider == provider,
+            GameExternalIdentity.external_id == external_id,
+        )
+    ).scalar_one_or_none()
+    if identity:
+        return identity.game
+    if provider == 'igdb' and external_id.isdigit():
+        return db.session.execute(
+            select(Game).filter_by(igdb_id=int(external_id))
+        ).scalar_one_or_none()
+    return None
+
+
+def find_game_request(provider, external_id):
+    filters = [
+        (
+            GameRequest.metadata_provider == provider,
+            GameRequest.provider_game_id == external_id,
+        ),
+    ]
+    conditions = [left & right for left, right in filters]
+    if provider == 'igdb' and external_id.isdigit():
+        conditions.append(GameRequest.igdb_id == int(external_id))
+    return db.session.execute(
+        select(GameRequest).where(
+            GameRequest.request_type == 'new_game',
+            or_(*conditions),
+        )
+    ).scalars().first()
+
+
+def _request_snapshot(snapshot, provider, external_id):
+    provider_parent_id = str(
+        snapshot.get('provider_parent_id')
+        or snapshot.get('parent_igdb_id')
+        or external_id
+    )
+    values = {
+        'metadata_provider': provider,
+        'provider_game_id': external_id,
+        'provider_parent_id': provider_parent_id,
+        'provider_url': snapshot.get('provider_url'),
+        'provider_attribution': snapshot.get('attribution'),
+        'parent_game_name': snapshot.get('parent_game_name'),
+        'game_name': snapshot.get('game_name'),
+        'edition_name': snapshot.get('edition_name'),
+        'cover_url': snapshot.get('cover_url'),
+        'summary': snapshot.get('summary'),
+        'platforms': snapshot.get('platforms'),
+        'first_release_date': snapshot.get('first_release_date'),
+    }
+    if provider == 'igdb' and external_id.isdigit():
+        values['igdb_id'] = int(external_id)
+        values['parent_igdb_id'] = int(provider_parent_id)
+    return values
+
+
 def create_or_join_request(user, igdb_id, note=None, accept_any_edition=False):
+    """Compatibility wrapper for existing IGDB callers."""
+    return create_or_join_metadata_request(
+        user,
+        'igdb',
+        str(int(igdb_id)),
+        note,
+        accept_any_edition,
+    )
+
+
+def create_or_join_metadata_request(
+    user,
+    provider,
+    external_id,
+    note=None,
+    accept_any_edition=False,
+):
+    provider = str(provider).strip().lower()
+    external_id = str(external_id).strip()
+    if provider not in {'igdb', 'rawg'} or not external_id or len(external_id) > 255:
+        raise ValueError('A valid metadata provider game is required.')
+    if provider == 'igdb' and not external_id.isdigit():
+        raise ValueError('A valid IGDB game is required.')
     settings = get_request_settings()
     if not settings['enableGameRequests']:
         raise ValueError('Game requests are disabled.')
-    if db.session.execute(select(Game).filter_by(igdb_id=int(igdb_id))).scalars().first():
+    if _existing_game(provider, external_id):
         raise ValueError('This game is already available in the library.')
 
-    game_request = db.session.execute(select(GameRequest).filter_by(igdb_id=int(igdb_id))).scalars().first()
+    game_request = find_game_request(provider, external_id)
     link = None
     if game_request:
         link = db.session.execute(
@@ -137,10 +280,13 @@ def create_or_join_request(user, igdb_id, note=None, accept_any_edition=False):
         raise ValueError('You have reached the active game request limit.')
 
     if not game_request:
-        snapshot = fetch_igdb_game(igdb_id)
+        snapshot = fetch_metadata_game(provider, external_id)
         if not snapshot or not snapshot['game_name']:
-            raise ValueError('The selected IGDB game could not be verified.')
-        game_request = GameRequest(request_type='new_game', **snapshot)
+            raise ValueError(f'The selected {provider.upper()} game could not be verified.')
+        game_request = GameRequest(
+            request_type='new_game',
+            **_request_snapshot(snapshot, provider, external_id),
+        )
         db.session.add(game_request)
         db.session.flush()
 

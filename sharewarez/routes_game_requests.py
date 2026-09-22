@@ -16,12 +16,13 @@ from sharewarez.utils.event_logging import log_system_event
 from sharewarez.utils.game_requests import (
     REQUEST_STATUSES,
     RESOLVED_STATUSES,
-    create_or_join_request,
+    create_or_join_metadata_request,
     create_update_request,
     enrich_request_search,
     fetch_related_editions,
+    find_game_request,
     get_request_settings,
-    search_igdb_games,
+    search_metadata_request_games,
     update_request_status,
     update_request_preferences,
     withdraw_request,
@@ -106,7 +107,7 @@ def request_search():
     term = (request.args.get('q') or '').strip()
     if len(term) < 2 or len(term) > 100:
         return jsonify({'error': 'Enter between 2 and 100 characters.'}), 400
-    results, error = search_igdb_games(term)
+    results, error = search_metadata_request_games(term)
     if error:
         return jsonify({'error': error}), 502
     return jsonify({'results': enrich_request_search(results, current_user.id)})
@@ -129,14 +130,18 @@ def submit_request():
     if limited := _rate_limit_response('submit', 10):
         return limited
     data = request.get_json(silent=True) or request.form
-    igdb_id = data.get('igdb_id')
-    if not str(igdb_id or '').isdigit():
+    provider = str(data.get('provider') or ('igdb' if data.get('igdb_id') else '')).strip().lower()
+    provider_game_id = str(data.get('provider_game_id') or data.get('igdb_id') or '').strip()
+    if provider not in {'igdb', 'rawg'} or not provider_game_id or len(provider_game_id) > 255:
+        return jsonify({'error': 'A valid metadata provider game is required.'}), 400
+    if provider == 'igdb' and not provider_game_id.isdigit():
         return jsonify({'error': 'A valid IGDB game is required.'}), 400
-    existing = db.session.execute(select(GameRequest).filter_by(igdb_id=int(igdb_id))).scalars().first()
+    existing = find_game_request(provider, provider_game_id)
     try:
-        game_request, _ = create_or_join_request(
+        game_request, _ = create_or_join_metadata_request(
             current_user,
-            int(igdb_id),
+            provider,
+            provider_game_id,
             data.get('note'),
             str(data.get('accept_any_edition', '')).lower() in {'true', '1', 'on', 'yes'},
         )
@@ -146,8 +151,8 @@ def submit_request():
     except IntegrityError:
         db.session.rollback()
         try:
-            game_request, _ = create_or_join_request(
-                current_user, int(igdb_id), data.get('note'),
+            game_request, _ = create_or_join_metadata_request(
+                current_user, provider, provider_game_id, data.get('note'),
                 str(data.get('accept_any_edition', '')).lower() in {'true', '1', 'on', 'yes'},
             )
             notify_new_request(game_request, joined_existing=True)

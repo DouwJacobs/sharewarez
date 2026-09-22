@@ -10,6 +10,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const escapeHtml = value => String(value ?? '').replace(/[&<>'"]/g, character => ({
         '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
     }[character]));
+    const safeHttpUrl = value => {
+        try {
+            const url = new URL(String(value || ''), window.location.origin);
+            return ['http:', 'https:'].includes(url.protocol) ? url.href : null;
+        } catch (_error) {
+            return null;
+        }
+    };
     let searchTimer;
     let searchController;
     let searchSequence = 0;
@@ -57,7 +65,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         ? `<button class="btn btn-secondary" disabled><i class="fas fa-ban"></i> ${escapeHtml(item.request_status === 'fulfilled' ? 'Request fulfilled' : 'Not planned')}</button>`
                         : settings.activeRequestCount >= settings.maxActiveRequestsPerUser
                             ? '<button class="btn btn-secondary" disabled><i class="fas fa-gauge-high"></i> Request limit reached</button>'
-                            : `<button class="btn btn-primary" data-request="${item.igdb_id}"><i class="fas fa-paper-plane"></i> ${item.can_join_request ? 'Join request' : 'Request game'}</button>`;
+                            : `<button class="btn btn-primary" data-request-provider="${escapeHtml(item.provider || 'igdb')}" data-request-id="${escapeHtml(item.provider_game_id || item.igdb_id)}"><i class="fas fa-paper-plane"></i> ${item.can_join_request ? 'Join request' : 'Request game'}</button>`;
             const note = settings.allowRequestNotes && !item.available_game_uuid && !item.requested_by_user
                 ? '<label class="request-note"><span>Note for the administrator <small>Optional</small></span><textarea maxlength="1000" placeholder="Edition, language, or other useful details"></textarea></label>' : '';
             const anyEdition = settings.allowRequestAnyEdition && !item.available_game_uuid && !item.requested_by_user
@@ -67,6 +75,13 @@ document.addEventListener('DOMContentLoaded', () => {
             const availableBadge = item.available_game_uuid
                 ? '<span class="request-result-availability"><i class="fas fa-circle-check"></i> Available</span>' : '';
             const platforms = (item.platforms || []).slice(0, 3).map(platform => `<span>${escapeHtml(platform)}</span>`).join('');
+            const attributionUrl = safeHttpUrl(item.attribution?.url || item.provider_url);
+            const attribution = attributionUrl
+                ? `<a class="request-result-attribution" href="${escapeHtml(attributionUrl)}" target="_blank" rel="noopener noreferrer">Metadata from ${escapeHtml(item.attribution?.name || String(item.provider || '').toUpperCase())}</a>`
+                : '';
+            const editionsAction = !editionParent && (item.provider || 'igdb') === 'igdb'
+                ? `<button class="btn btn-secondary" data-editions="${escapeHtml(item.provider_game_id || item.igdb_id)}"><i class="fas fa-layer-group"></i> Editions</button>`
+                : '';
             card.innerHTML = `
                 <div class="request-result-cover">
                     ${item.cover_url ? `<img src="${escapeHtml(item.cover_url)}" alt="Cover for ${escapeHtml(item.game_name)}" loading="lazy">` : '<span><i class="fas fa-gamepad"></i></span>'}
@@ -79,8 +94,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                     <div class="request-platforms">${platforms || '<span>Platforms not listed</span>'}</div>
                     ${item.summary ? `<p class="request-result-summary">${escapeHtml(item.summary)}</p>` : ''}
+                    ${attribution}
                     ${(note || anyEdition) ? `<details class="request-result-options"><summary>Add request details</summary>${note}${anyEdition}</details>` : ''}
-                    <div class="request-result-actions">${availability}${editionParent ? '' : `<button class="btn btn-secondary" data-editions="${item.igdb_id}"><i class="fas fa-layer-group"></i> Editions</button>`}</div>
+                    <div class="request-result-actions">${availability}${editionsAction}</div>
                 </div>`;
             results.appendChild(card);
         });
@@ -169,7 +185,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             return;
         }
-        const requestButton = event.target.closest('[data-request]');
+        const requestButton = event.target.closest('[data-request-id]');
         if (!requestButton) return;
         const card = requestButton.closest('.request-result');
         requestButton.disabled = true;
@@ -179,7 +195,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 method: 'POST',
                 headers: CSRFUtils.getHeaders({'Content-Type': 'application/json'}),
                 body: JSON.stringify({
-                    igdb_id: requestButton.dataset.request,
+                    provider: requestButton.dataset.requestProvider,
+                    provider_game_id: requestButton.dataset.requestId,
                     note: card.querySelector('textarea')?.value || '',
                     accept_any_edition: card.querySelector('.request-any-edition input')?.checked || false
                 })

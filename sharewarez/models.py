@@ -746,6 +746,8 @@ class GameRequest(db.Model):
     metadata_provider = db.Column(db.String(32), nullable=True, index=True)
     provider_game_id = db.Column(db.String(255), nullable=True, index=True)
     provider_parent_id = db.Column(db.String(255), nullable=True)
+    provider_url = db.Column(db.String(1024), nullable=True)
+    provider_attribution = db.Column(db.JSON, nullable=True)
     parent_game_name = db.Column(db.String(255), nullable=True)
     game_name = db.Column(db.String(255), nullable=False)
     edition_name = db.Column(db.String(255), nullable=True)

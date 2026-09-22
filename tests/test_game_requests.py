@@ -5,10 +5,19 @@ from uuid import uuid4
 
 import pytest
 
-from sharewarez.models import Game, GameRequest, GameRequestUser, GlobalSettings, Library, User
+from sharewarez.models import (
+    Game,
+    GameExternalIdentity,
+    GameRequest,
+    GameRequestUser,
+    GlobalSettings,
+    Library,
+    User,
+)
 from sharewarez.platform import LibraryPlatform
 from sharewarez.utils.game_requests import (
     create_or_join_request,
+    create_or_join_metadata_request,
     fetch_related_editions,
     normalize_igdb_game,
     search_igdb_games,
@@ -40,11 +49,17 @@ def ensure_settings(db_session, **overrides):
     values.update({'enableGameRequests': True, 'maxActiveRequestsPerUser': 20})
     values.update(overrides)
     settings.settings = values
+    settings.igdb_client_id = settings.igdb_client_id or 'test-client-id'
+    settings.igdb_client_secret = settings.igdb_client_secret or 'test-client-secret'
     db_session.commit()
 
 
 def snapshot(igdb_id=100, parent_id=100, edition=None):
     return {
+        'provider': 'igdb', 'provider_game_id': str(igdb_id),
+        'provider_parent_id': str(parent_id),
+        'provider_url': 'https://www.igdb.com/',
+        'attribution': {'name': 'IGDB', 'url': 'https://www.igdb.com/'},
         'igdb_id': igdb_id, 'parent_igdb_id': parent_id,
         'parent_game_name': 'Example Game',
         'game_name': 'Example Game' if not edition else f'Example Game: {edition}',
@@ -94,7 +109,8 @@ def test_related_editions_include_direct_version_children(mock_api):
 
 
 @patch('sharewarez.utils.game_requests.make_igdb_api_request')
-def test_request_search_uses_bounded_ttl_cache(mock_api):
+def test_request_search_uses_bounded_ttl_cache(mock_api, db_session):
+    ensure_settings(db_session)
     term = f'Cache Test {uuid4().hex}'
     mock_api.return_value = [{'id': unique_igdb_id(), 'name': 'Cached Game'}]
 
@@ -120,6 +136,8 @@ def test_users_join_same_exact_edition_without_duplicate_request(mock_fetch, db_
 
     assert first_request.id == second_request.id
     assert db_session.query(GameRequest).filter_by(igdb_id=edition_id).count() == 1
+    assert first_request.metadata_provider == 'igdb'
+    assert first_request.provider_game_id == str(edition_id)
     assert db_session.query(GameRequestUser).filter_by(request_id=first_request.id).count() == 2
     assert len(first_request.active_requesters) == 2
 
@@ -189,6 +207,57 @@ def test_game_already_in_library_cannot_be_requested(db_session):
 
     with pytest.raises(ValueError, match='already available'):
         create_or_join_request(user, igdb_id)
+
+
+@patch('sharewarez.utils.game_requests.fetch_metadata_game')
+def test_rawg_request_uses_provider_neutral_identity(mock_fetch, db_session):
+    ensure_settings(db_session)
+    user = make_user(db_session)
+    mock_fetch.return_value = {
+        'provider': 'rawg',
+        'provider_game_id': '3498',
+        'provider_parent_id': '3498',
+        'provider_url': 'https://rawg.io/games/grand-theft-auto-v',
+        'attribution': {
+            'name': 'RAWG',
+            'url': 'https://rawg.io/games/grand-theft-auto-v',
+        },
+        'parent_game_name': 'Grand Theft Auto V',
+        'game_name': 'Grand Theft Auto V',
+        'edition_name': None,
+        'cover_url': 'https://media.rawg.io/gta.jpg',
+        'summary': 'Summary',
+        'platforms': ['PC'],
+        'first_release_date': datetime.now(timezone.utc),
+    }
+
+    game_request, _ = create_or_join_metadata_request(user, 'rawg', '3498')
+
+    assert game_request.igdb_id is None
+    assert game_request.metadata_provider == 'rawg'
+    assert game_request.provider_game_id == '3498'
+    assert game_request.provider_parent_id == '3498'
+    assert game_request.provider_attribution['name'] == 'RAWG'
+
+
+def test_rawg_game_already_in_library_cannot_be_requested(db_session):
+    ensure_settings(db_session)
+    user = make_user(db_session)
+    library = Library(
+        uuid=str(uuid4()), name='RAWG library', platform=LibraryPlatform.PCWIN,
+    )
+    game = Game(
+        uuid=str(uuid4()), name='Already available from RAWG',
+        library_uuid=library.uuid, size=1,
+    )
+    game.external_identities.append(GameExternalIdentity(
+        provider='rawg', external_id='already-present', canonical=True,
+    ))
+    db_session.add_all([library, game])
+    db_session.commit()
+
+    with pytest.raises(ValueError, match='already available'):
+        create_or_join_metadata_request(user, 'rawg', 'already-present')
 
 
 @patch('sharewarez.utils.game_requests.fetch_igdb_game')
