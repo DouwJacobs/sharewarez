@@ -41,3 +41,8 @@ for bounded global-search candidates. Startup must complete this migration befor
 serving revised search traffic. Normal upgrades acquire index creation locks;
 allow a maintenance window on large catalogues. Downgrade retains repaired search
 objects and removes only the added distance indexes.
+
+Revisions `20260922_26` through `20260922_29` add provider-neutral game and request
+identities, encrypted RAWG configuration, request attribution, and provider-aware
+relationship/image provenance. Existing IGDB rows are backfilled in place. Legacy
+IGDB columns remain for compatibility, and old local metadata files need no rewrite.

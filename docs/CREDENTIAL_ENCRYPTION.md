@@ -1,6 +1,6 @@
 # Integration credential encryption
 
-Discord webhook URLs, SMTP passwords, and IGDB client secrets are encrypted in
+Discord webhook URLs, SMTP passwords, IGDB client secrets, and RAWG API keys are encrypted in
 PostgreSQL with authenticated Fernet encryption. Application code continues to
 read and assign plaintext values through the model; ciphertext is stored with
 an `enc:v1:` marker.
@@ -9,7 +9,8 @@ an `enc:v1:` marker.
 
 Before upgrading, keep the existing `SECRET_KEY` unchanged and take a verified
 backup. Migration `20260809_02` widens the three columns and encrypts existing
-plaintext values. Verify integrations after startup.
+plaintext values. Migration `20260922_27` adds the RAWG key through the same
+encrypted model boundary and rotation command. Verify integrations after startup.
 
 For stronger key separation, set a random `CREDENTIAL_ENCRYPTION_KEY` on the
 app before the migration. The value may be any high-entropy

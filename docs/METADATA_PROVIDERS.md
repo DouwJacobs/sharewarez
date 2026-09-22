@@ -5,7 +5,7 @@ Sharewarez separates normalized metadata discovery from provider transport.
 fallback. Each adapter returns the discovery fields consumed by Sharewarez rather
 than exposing its remote response schema to callers.
 
-The first adapter is `IGDBMetadataProvider`. It uses IGDB's documented API through
+The default adapter is `IGDBMetadataProvider`. It uses IGDB's documented API through
 the existing authenticated, rate-limited request client. Website HTML and presskit
 pages are not metadata sources and must not be scraped.
 
@@ -22,8 +22,33 @@ provider advances to the next configured adapter; a successful non-empty result
 ends the search. Errors returned to the caller name the failed provider but do not
 include exception or credential details.
 
-## Remaining work
+## Configure providers
 
-The roadmap item remains open until a second API-backed provider exists, operators
-can configure provider order, external identities are stored without assuming an
-IGDB ID, and a second API-backed adapter validates cross-provider fallback.
+Open **Administration → Integrations → Metadata**. IGDB remains the only enabled
+provider after upgrade. To add RAWG, obtain an API key from RAWG, save it, explicitly
+enable RAWG, and choose either IGDB-first or RAWG-first ordering. Saving a key does
+not enable the provider. Connection tests are read-only and never import games.
+
+RAWG access uses only `https://api.rawg.io/api`; Sharewarez does not scrape provider
+websites. RAWG-derived discovery and request records keep the provider's source URL
+and attribution. Automated tests use injected transports and never require a live
+credential.
+
+## Identity and compatibility
+
+`game_external_identities` stores provider keys and string external IDs. One identity
+per game is canonical and drives refresh. Legacy IGDB columns remain populated and
+readable for IGDB so rolling upgrades do not lose data.
+
+Local `sharewarez.json` files now use metadata version 2.0 with an `identity` object:
+
+```json
+{"metadata_version":"2.0","identity":{"provider":"rawg","external_id":"3498"}}
+```
+
+Version 1.0 files containing only `igdb_id` are still accepted. New IGDB files retain
+that legacy key as well as the provider-neutral envelope.
+
+Provider failures and empty searches advance to the next enabled provider. Exact
+refresh uses only the stored canonical identity and never assumes equal numeric IDs
+belong to the same game. Missing optional capabilities cannot erase existing media.

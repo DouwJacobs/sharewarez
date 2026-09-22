@@ -63,7 +63,7 @@ desktop sidebar remains the full navigation surface.
 - [x] Scoped API tokens
 - [x] Documented public API
 - [ ] Outbound event webhooks
-- [ ] Metadata-provider abstraction and fallback ordering
+- [x] Metadata-provider abstraction and fallback ordering
 - [ ] Library, collection, request, theme, and user-data import/export
 
 ## Experience and accessibility
@@ -89,10 +89,9 @@ desktop sidebar remains the full navigation surface.
 - [x] Central security headers and rate limiting
 - [x] Encrypted integration credentials at rest
 
-Metadata-provider phase 1 is implemented: game-request discovery uses a normalized
-provider adapter and ordered fallback runner while retaining IGDB as the sole
-configured API integration. Library scanning, scalar refresh, and image
-import/refresh now use adapter-owned operations, including direct API logo
-discovery. Supporting image URL, website, and involved-company lookups use the same
-boundary. The item remains unchecked until the remaining work in
-`METADATA_PROVIDERS.md` is complete.
+Metadata-provider support is complete: game requests, scans, local metadata, media
+refresh, external identities, relationships, and image provenance use normalized
+provider identities. Administrators can enable RAWG and choose deterministic IGDB/
+RAWG fallback order in Integrations. Legacy IGDB fields and local metadata remain
+compatible during the migration window. Operational guidance is in
+`METADATA_PROVIDERS.md`.
