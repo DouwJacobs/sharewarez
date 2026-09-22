@@ -7,7 +7,7 @@ import os, uuid
 
 from sharewarez import db
 from sharewarez.models import (
-    Game, Image, Library, GlobalSettings,
+    Game, GameExternalIdentity, Image, Library, GlobalSettings,
     Developer, Publisher, Genre, Theme, GameMode, Platform, 
     PlayerPerspective, GameURL, ScanJob, Category, Status,
     game_developer_association
@@ -20,6 +20,7 @@ from sharewarez.utils.functions import (
 )
 from sharewarez.utils.igdb_api import make_igdb_api_request
 from sharewarez.utils.metadata_provider_igdb import IGDBMetadataProvider
+from sharewarez.utils.metadata_providers import build_metadata_provider_registry
 from sharewarez.utils.gamenames import generate_goty_variants
 from sharewarez.utils.discord import discord_webhook
 from sharewarez.utils.scanning import log_unmatched_folder, delete_game_images
@@ -173,6 +174,78 @@ def create_game_instance(game_data, full_disk_path, folder_size_bytes, library_u
         print(f"create_game_instance Error during the game instance creation or URL fetching for game '{game_name}'. Error: {e}")
     
     return new_game
+
+
+def create_game_instance_from_metadata(
+    metadata, full_disk_path, folder_size_bytes, library_uuid,
+):
+    """Create a game from the normalized provider contract."""
+    provider = str(metadata.get('provider') or '').strip().lower()
+    external_id = str(metadata.get('provider_game_id') or '').strip()
+    if not provider or not external_id or not metadata.get('game_name'):
+        raise ValueError('Normalized metadata is missing its provider identity')
+
+    game = Game(
+        library_uuid=library_uuid,
+        name=metadata['game_name'],
+        summary=metadata.get('summary'),
+        first_release_date=metadata.get('first_release_date'),
+        rating=metadata.get('rating'),
+        rating_count=metadata.get('rating_count'),
+        url=metadata.get('website'),
+        full_disk_path=full_disk_path,
+        size=folder_size_bytes,
+        date_created=datetime.now(UTC),
+        date_identified=datetime.now(UTC),
+        steam_url='',
+        times_downloaded=0,
+    )
+    if provider == 'igdb' and external_id.isdigit():
+        game.igdb_id = int(external_id)
+    game.external_identities.append(GameExternalIdentity(
+        provider=provider,
+        external_id=external_id,
+        canonical=True,
+        provider_url=metadata.get('provider_url'),
+    ))
+    from sharewarez.utils.metadata_provenance import merge_provider_metadata
+    merge_provider_metadata(game, {
+        key: value for key, value in {
+            'name': game.name,
+            'summary': game.summary,
+            'first_release_date': game.first_release_date,
+            'rating': game.rating,
+            'rating_count': game.rating_count,
+            'url': game.url,
+        }.items() if value is not None
+    }, provider=provider)
+
+    db.session.add(game)
+
+    for name in metadata.get('genres') or []:
+        game.genres.append(get_or_create_entity(Genre, name=str(name)[:100]))
+    for name in metadata.get('platforms') or []:
+        game.platforms.append(get_or_create_entity(Platform, name=str(name)[:100]))
+    developers = metadata.get('developers') or []
+    publishers = metadata.get('publishers') or []
+    if developers:
+        game.developer = get_or_create_entity(Developer, name=str(developers[0])[:50])
+    if publishers:
+        game.publisher = get_or_create_entity(Publisher, name=str(publishers[0])[:50])
+
+    db.session.flush()
+    cover_url = metadata.get('cover_url')
+    if cover_url:
+        game.images.append(Image(
+            image_type='cover',
+            url=secure_filename(f'{game.uuid}_{provider}_cover.jpg'),
+            download_url=cover_url,
+            provider=provider,
+            provider_image_id=cover_url,
+            source_url=cover_url,
+            is_downloaded=False,
+        ))
+    return game
 
 
 
@@ -530,7 +603,49 @@ def retrieve_and_save_game(game_name, full_disk_path, scan_job_id=None, library_
         print(f"🔍 [LOCAL METADATA] Checking for existing metadata file in: {full_disk_path}")
         local_metadata = read_local_metadata(full_disk_path,
                                              settings.get('local_metadata_filename', 'sharewarez.json'))
-        if local_metadata and 'igdb_id' in local_metadata:
+        if local_metadata and local_metadata.get('metadata_provider') != 'igdb':
+            provider = local_metadata['metadata_provider']
+            external_id = local_metadata['provider_game_id']
+            provider_settings = db.session.execute(
+                select(GlobalSettings).order_by(GlobalSettings.id).limit(1)
+            ).scalar_one_or_none()
+            registry = (
+                build_metadata_provider_registry(
+                    provider_settings, igdb_request=make_igdb_api_request,
+                )
+                if provider_settings else None
+            )
+            adapter = registry.providers.get(provider) if registry else None
+            metadata = adapter.fetch_game(external_id) if adapter else None
+            if metadata:
+                duplicate = db.session.execute(
+                    select(GameExternalIdentity).where(
+                        GameExternalIdentity.provider == provider,
+                        GameExternalIdentity.external_id == external_id,
+                    )
+                ).scalar_one_or_none()
+                if duplicate:
+                    log_unmatched_folder(
+                        scan_job_id, full_disk_path, 'Duplicate',
+                        library_uuid=library_uuid,
+                    )
+                    return None
+                new_game = create_game_instance_from_metadata(
+                    metadata,
+                    full_disk_path,
+                    get_folder_size_in_bytes_updates(full_disk_path),
+                    library.uuid,
+                )
+                new_game.nfo_content = read_first_nfo_content(full_disk_path)
+                new_game.install_instructions = local_metadata.get('install_instructions')
+                new_game.version = local_metadata.get('game_version')
+                db.session.commit()
+                return new_game
+            log_system_event(
+                f'Failed to fetch {provider.upper()} game {external_id} from local metadata.',
+                event_type='metadata', event_level='warning',
+            )
+        elif local_metadata and 'igdb_id' in local_metadata:
             igdb_id = local_metadata['igdb_id']
             print(f"✅ LOCAL METADATA: Found IGDB ID {igdb_id} in {full_disk_path}")
 
@@ -654,26 +769,72 @@ def retrieve_and_save_game(game_name, full_disk_path, scan_job_id=None, library_
         else:
             print("📝 [LOCAL METADATA] No existing metadata file found, will attempt IGDB search")
 
-    platform_id = PLATFORM_IDS.get(library.platform.name)
-
-    # PRIORITY 2: Search IGDB API by folder name (existing code)
-    # Generate GOTY variants to try different search combinations
+    # PRIORITY 2: Search configured metadata providers by folder name.
     search_variants = generate_goty_variants(game_name)
     print(f"Generated search variants for '{game_name}': {search_variants}")
 
     response_json = None
     successful_search_name = None
 
-    # Try each variant until we find a match
+    settings_record = db.session.execute(
+        select(GlobalSettings).order_by(GlobalSettings.id).limit(1)
+    ).scalar_one_or_none()
+    registry = (
+        build_metadata_provider_registry(
+            settings_record, igdb_request=make_igdb_api_request,
+        )
+        if settings_record else None
+    )
+
     for search_name in search_variants:
-        print(f"Trying IGDB search with: '{search_name}'")
-        response_json = search_igdb_for_game(search_name, platform_id)
-        if response_json:
-            successful_search_name = search_name
-            print(f"Successfully found match with search variant: '{search_name}'")
+        if not registry or not registry.providers:
+            response_json = search_igdb_for_game(search_name, None)
+            if response_json:
+                successful_search_name = search_name
+                break
+            continue
+        outcome = registry.search_games(search_name) if registry else None
+        if not outcome or not outcome.results:
+            print(f"No metadata match found for variant: '{search_name}'")
+            continue
+        successful_search_name = search_name
+        match = outcome.results[0]
+        provider = outcome.provider
+        external_id = str(match['provider_game_id'])
+        if provider == 'igdb':
+            payload, _error = registry.providers['igdb'].fetch_game_payload(external_id)
+            response_json = [payload] if payload else None
             break
-        else:
-            print(f"No match found for variant: '{search_name}'")
+
+        detail = registry.providers[provider].fetch_game(external_id) or match
+        duplicate = db.session.execute(
+            select(GameExternalIdentity).where(
+                GameExternalIdentity.provider == provider,
+                GameExternalIdentity.external_id == external_id,
+            )
+        ).scalar_one_or_none()
+        if duplicate:
+            log_unmatched_folder(
+                scan_job_id, full_disk_path, 'Duplicate', library_uuid=library_uuid,
+            )
+            return None
+        folder_size_bytes = get_folder_size_in_bytes_updates(full_disk_path)
+        new_game = create_game_instance_from_metadata(
+            detail, full_disk_path, folder_size_bytes, library.uuid,
+        )
+        new_game.nfo_content = read_first_nfo_content(full_disk_path)
+        db.session.commit()
+        if settings and settings.get('write_local_metadata'):
+            from sharewarez.utils.local_metadata import write_local_metadata
+            write_local_metadata(
+                full_disk_path,
+                provider=provider,
+                external_id=external_id,
+                provider_url=detail.get('provider_url'),
+                game_title=new_game.name,
+                filename=settings.get('local_metadata_filename', 'sharewarez.json'),
+            )
+        return new_game
     if response_json and 'error' not in response_json:
         igdb_id = response_json[0].get('id')
         if successful_search_name != game_name:
