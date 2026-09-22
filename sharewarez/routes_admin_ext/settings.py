@@ -9,6 +9,8 @@ from . import admin2_bp
 from sharewarez.utils.event_logging import log_system_event
 from sharewarez.utils.auth import admin_required
 from sharewarez.utils.igdb_api import make_igdb_api_request
+from sharewarez.utils.metadata_provider_rawg import RawgAPIClient
+from sharewarez.utils.metadata_providers import validate_provider_order
 import logging
 
 # Configuration constants
@@ -463,3 +465,74 @@ def integrations_igdb_test():
     except Exception as e:
         logging.error(f"Error testing IGDB from integrations: {str(e)}")
         return jsonify({'status': 'error', 'message': str(e)}), 500
+
+
+@admin2_bp.route('/admin/integrations/metadata/save', methods=['POST'])
+@login_required
+@admin_required
+def integrations_metadata_save():
+    """Save provider credentials, enablement, and deterministic search order."""
+    try:
+        data = request.get_json(silent=True) or {}
+        settings = db.session.execute(select(GlobalSettings)).scalars().first()
+        if settings is None:
+            settings = GlobalSettings()
+            db.session.add(settings)
+
+        order = validate_provider_order(data.get('metadata_provider_order'))
+        client_id = str(data.get('igdb_client_id') or '').strip()
+        client_secret = str(data.get('igdb_client_secret') or '').strip()
+        if client_id:
+            settings.igdb_client_id = client_id
+        if client_secret:
+            settings.igdb_client_secret = client_secret
+        if 'igdb' in order and not (
+            settings.igdb_client_id and settings.igdb_client_secret
+        ):
+            return jsonify({
+                'status': 'error',
+                'message': 'IGDB credentials are required while IGDB is in the provider order.',
+            }), 400
+        rawg_enabled = bool(data.get('rawg_enabled'))
+        rawg_key = str(data.get('rawg_api_key') or '').strip()
+        if rawg_enabled and not (rawg_key or settings.rawg_api_key):
+            return jsonify({
+                'status': 'error',
+                'message': 'A RAWG API key is required before RAWG can be enabled.',
+            }), 400
+        if 'rawg' in order and not rawg_enabled:
+            return jsonify({
+                'status': 'error',
+                'message': 'Enable RAWG before adding it to the provider order.',
+            }), 400
+
+        if rawg_key:
+            settings.rawg_api_key = rawg_key
+        settings.rawg_enabled = rawg_enabled
+        settings.metadata_provider_order = list(order)
+        db.session.commit()
+        cache.delete('global_settings')
+        log_system_event('Metadata provider settings updated', event_type='audit')
+        return jsonify({'status': 'success', 'message': 'Metadata provider settings saved.'})
+    except ValueError as error:
+        return jsonify({'status': 'error', 'message': str(error)}), 400
+    except Exception:
+        db.session.rollback()
+        logging.exception('Error saving metadata provider settings')
+        return jsonify({'status': 'error', 'message': 'Unable to save metadata provider settings.'}), 500
+
+
+@admin2_bp.route('/admin/integrations/rawg/test', methods=['POST'])
+@login_required
+@admin_required
+def integrations_rawg_test():
+    settings = db.session.execute(select(GlobalSettings)).scalars().first()
+    if not settings or not settings.rawg_api_key:
+        return jsonify({'status': 'error', 'message': 'Save a RAWG API key first.'}), 400
+    payload = RawgAPIClient(api_key=settings.rawg_api_key).get('/games', {'page_size': 1})
+    if isinstance(payload, dict) and isinstance(payload.get('results'), list):
+        settings.rawg_last_tested = datetime.now(timezone.utc)
+        db.session.commit()
+        return jsonify({'status': 'success', 'message': 'RAWG API test successful.'})
+    message = payload.get('error') if isinstance(payload, dict) else None
+    return jsonify({'status': 'error', 'message': message or 'RAWG returned an invalid response.'}), 502

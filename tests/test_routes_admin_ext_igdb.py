@@ -9,6 +9,23 @@ from unittest.mock import patch, Mock
 from datetime import datetime, timezone
 
 
+def test_integrations_page_does_not_render_provider_secrets(
+    client, admin_user, clean_global_settings, db_session,
+):
+    clean_global_settings.igdb_client_secret = 'never-render-this-secret'
+    clean_global_settings.rawg_api_key = 'never-render-this-key'
+    db_session.commit()
+    with client.session_transaction() as session:
+        session['_user_id'] = str(admin_user.id)
+        session['_fresh'] = True
+
+    response = client.get('/admin/integrations')
+
+    assert response.status_code == 200
+    assert b'never-render-this-secret' not in response.data
+    assert b'never-render-this-key' not in response.data
+
+
 @pytest.fixture
 def admin_user(db_session):
     """Create an admin user."""
@@ -73,6 +90,59 @@ class TestIGDBSettingsRoute:
         response = client.get('/admin/igdb_settings')
         assert response.status_code == 302
         assert 'login' in response.location
+
+
+class TestMetadataProviderSettings:
+    def test_admin_can_save_rawg_and_provider_order(
+        self, client, admin_user, clean_global_settings, db_session,
+    ):
+        with client.session_transaction() as session:
+            session['_user_id'] = str(admin_user.id)
+            session['_fresh'] = True
+
+        response = client.post('/admin/integrations/metadata/save', json={
+            'metadata_provider_order': ['rawg', 'igdb'],
+            'rawg_enabled': True,
+            'rawg_api_key': 'test-rawg-key',
+        })
+
+        assert response.status_code == 200
+        db_session.refresh(clean_global_settings)
+        assert clean_global_settings.metadata_provider_order == ['rawg', 'igdb']
+        assert clean_global_settings.rawg_enabled is True
+        assert clean_global_settings.rawg_api_key == 'test-rawg-key'
+
+    def test_disabled_provider_cannot_be_in_order(
+        self, client, admin_user, clean_global_settings,
+    ):
+        with client.session_transaction() as session:
+            session['_user_id'] = str(admin_user.id)
+            session['_fresh'] = True
+
+        response = client.post('/admin/integrations/metadata/save', json={
+            'metadata_provider_order': ['igdb', 'rawg'],
+            'rawg_enabled': False,
+        })
+
+        assert response.status_code == 400
+        assert 'Enable RAWG' in response.get_json()['message']
+
+    @patch('sharewarez.routes_admin_ext.settings.RawgAPIClient.get')
+    def test_rawg_connection_test_records_timestamp(
+        self, mock_get, client, admin_user, clean_global_settings, db_session,
+    ):
+        clean_global_settings.rawg_api_key = 'test-rawg-key'
+        db_session.commit()
+        mock_get.return_value = {'results': []}
+        with client.session_transaction() as session:
+            session['_user_id'] = str(admin_user.id)
+            session['_fresh'] = True
+
+        response = client.post('/admin/integrations/rawg/test')
+
+        assert response.status_code == 200
+        db_session.refresh(clean_global_settings)
+        assert clean_global_settings.rawg_last_tested is not None
     
     def test_igdb_settings_requires_admin(self, client, regular_user):
         """Test that IGDB settings requires admin role."""

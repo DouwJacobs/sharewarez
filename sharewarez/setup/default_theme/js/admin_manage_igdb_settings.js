@@ -15,23 +15,18 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Define save settings function
-    window.saveIgdbSettings = function() {
+    window.saveMetadataSettings = function() {
         const clientId = document.getElementById('igdb_client_id').value;
         const clientSecret = document.getElementById('igdb_client_secret').value;
-
-        // Basic validation
-        if (clientId.length < 20 || clientSecret.length < 20) {
-            $.notify("Client ID and Secret must be at least 20 characters long", "error");
-            return;
-        }
-
         const data = {
             igdb_client_id: clientId,
-            igdb_client_secret: clientSecret
+            igdb_client_secret: clientSecret,
+            rawg_api_key: document.getElementById('rawg_api_key').value,
+            rawg_enabled: document.getElementById('rawg_enabled').checked,
+            metadata_provider_order: document.getElementById('metadata_provider_order').value.split(',')
         };
 
-        fetch('/admin/igdb_settings', {
+        fetch('/admin/integrations/metadata/save', {
             method: 'POST',
             headers: CSRFUtils.getHeaders({
                 'Content-Type': 'application/json'
@@ -41,19 +36,19 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(response => response.json())
         .then(data => {
             if (data.status === 'success') {
-                $.notify("IGDB settings saved successfully", "success");
+                $.notify(data.message, "success");
             } else {
-                $.notify("Error saving IGDB settings: " + data.message, "error");
+                $.notify(data.message, "error");
             }
         })
         .catch(error => {
-            $.notify("Error saving IGDB settings: " + error, "error");
+            $.notify("Error saving metadata settings: " + error, "error");
         });
     };
 
     // Define test settings function
     window.testIgdbSettings = function() {
-        const testButton = document.querySelector('button.btn-secondary');
+        const testButton = document.getElementById('testIgdbButton');
         const spinner = document.getElementById('loadingSpinner');
         spinner.style.display = 'flex';  // Changed from 'block' to 'flex'
         const originalText = testButton.textContent;
@@ -81,6 +76,24 @@ document.addEventListener('DOMContentLoaded', function() {
             testButton.disabled = false;
             spinner.style.display = 'none';
             testButton.textContent = originalText;
+        });
+    };
+
+    window.testRawgSettings = function() {
+        const testButton = document.getElementById('testRawgButton');
+        const spinner = document.getElementById('loadingSpinner');
+        spinner.style.display = 'flex';
+        testButton.disabled = true;
+        fetch('/admin/integrations/rawg/test', {
+            method: 'POST',
+            headers: CSRFUtils.getHeaders({'Content-Type': 'application/json'})
+        })
+        .then(response => response.json())
+        .then(data => $.notify(data.message, data.status === 'success' ? 'success' : 'error'))
+        .catch(error => $.notify("Error testing RAWG API: " + error, "error"))
+        .finally(() => {
+            testButton.disabled = false;
+            spinner.style.display = 'none';
         });
     };
 
