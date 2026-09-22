@@ -10,11 +10,12 @@ def _insert_credentials(db_session, key):
         'discord': encrypt_secret('https://discord.example/rotation', key),
         'smtp': encrypt_secret('smtp-rotation', key),
         'igdb': encrypt_secret('igdb-rotation', key),
+        'rawg': encrypt_secret('rawg-rotation', key),
     }
     db_session.execute(text(
         'INSERT INTO global_settings (settings, last_updated, discord_webhook_url, '
-        'smtp_password, igdb_client_secret) VALUES '
-        "('{}', now(), :discord, :smtp, :igdb)"
+        'smtp_password, igdb_client_secret, rawg_api_key) VALUES '
+        "('{}', now(), :discord, :smtp, :igdb, :rawg)"
     ), values)
     db_session.commit()
 
@@ -25,7 +26,7 @@ def test_rotate_credentials_reencrypts_every_value(app, db_session):
     assert rotate_credentials(app, 'old-key', 'new-key') == 1
 
     stored = db_session.execute(text(
-        'SELECT discord_webhook_url, smtp_password, igdb_client_secret '
+        'SELECT discord_webhook_url, smtp_password, igdb_client_secret, rawg_api_key '
         'FROM global_settings ORDER BY id DESC LIMIT 1'
     )).one()
     assert decrypt_secret(stored.discord_webhook_url, 'new-key') == (
@@ -33,6 +34,7 @@ def test_rotate_credentials_reencrypts_every_value(app, db_session):
     )
     assert decrypt_secret(stored.smtp_password, 'new-key') == 'smtp-rotation'
     assert decrypt_secret(stored.igdb_client_secret, 'new-key') == 'igdb-rotation'
+    assert decrypt_secret(stored.rawg_api_key, 'new-key') == 'rawg-rotation'
 
 
 def test_rotate_credentials_rolls_back_on_wrong_old_key(app, db_session):

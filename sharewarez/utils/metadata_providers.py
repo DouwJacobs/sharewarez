@@ -6,6 +6,7 @@ from typing import Mapping, Protocol, Sequence
 
 
 DEFAULT_METADATA_PROVIDER_ORDER = ('igdb',)
+SUPPORTED_METADATA_PROVIDERS = ('igdb', 'rawg')
 logger = logging.getLogger(__name__)
 
 
@@ -27,6 +28,50 @@ class MetadataSearchOutcome:
     @property
     def error(self) -> str | None:
         return '; '.join(self.errors) if self.errors else None
+
+
+def validate_provider_order(configured_order) -> tuple[str, ...]:
+    """Validate an operator-supplied provider order without silently changing it."""
+    if not isinstance(configured_order, (list, tuple)):
+        raise ValueError('Metadata provider order must be a list')
+    normalized = []
+    for value in configured_order:
+        name = str(value).strip().lower()
+        if name not in SUPPORTED_METADATA_PROVIDERS:
+            raise ValueError(f'Unsupported metadata provider: {name or "empty"}')
+        if name in normalized:
+            raise ValueError(f'Duplicate metadata provider: {name}')
+        normalized.append(name)
+    if not normalized:
+        raise ValueError('At least one metadata provider is required')
+    return tuple(normalized)
+
+
+def available_provider_names(settings) -> tuple[str, ...]:
+    """Return providers that are explicitly configured and available for use."""
+    available = []
+    if (
+        getattr(settings, 'igdb_client_id', None)
+        and getattr(settings, 'igdb_client_secret', None)
+    ):
+        available.append('igdb')
+    if (
+        getattr(settings, 'rawg_enabled', False)
+        and getattr(settings, 'rawg_api_key', None)
+    ):
+        available.append('rawg')
+    return tuple(available)
+
+
+def configured_provider_order(settings, available_providers=None) -> tuple[str, ...]:
+    """Resolve stored operator preference against providers usable right now."""
+    available = (
+        tuple(available_providers)
+        if available_providers is not None
+        else available_provider_names(settings)
+    )
+    configured = getattr(settings, 'metadata_provider_order', None)
+    return normalize_provider_order(configured, available)
 
 
 def normalize_provider_order(

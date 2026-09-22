@@ -8,7 +8,12 @@ from sharewarez import create_app, db
 from sharewarez.utils.secrets import decrypt_secret, encrypt_secret
 
 
-_COLUMNS = ('discord_webhook_url', 'smtp_password', 'igdb_client_secret')
+_COLUMNS = (
+    'discord_webhook_url',
+    'smtp_password',
+    'igdb_client_secret',
+    'rawg_api_key',
+)
 
 
 def rotate_credentials(app, old_key, new_key):
@@ -20,7 +25,8 @@ def rotate_credentials(app, old_key, new_key):
 
     with app.app_context(), db.engine.begin() as connection:
         rows = list(connection.execute(text(
-            'SELECT id, discord_webhook_url, smtp_password, igdb_client_secret '
+            'SELECT id, discord_webhook_url, smtp_password, igdb_client_secret, '
+            'rawg_api_key '
             'FROM global_settings'
         )).mappings())
         for row in rows:
@@ -30,7 +36,8 @@ def rotate_credentials(app, old_key, new_key):
             }
             connection.execute(text(
                 'UPDATE global_settings SET discord_webhook_url=:discord_webhook_url, '
-                'smtp_password=:smtp_password, igdb_client_secret=:igdb_client_secret '
+                'smtp_password=:smtp_password, igdb_client_secret=:igdb_client_secret, '
+                'rawg_api_key=:rawg_api_key '
                 'WHERE id=:id'
             ), {'id': row['id'], **values})
     return len(rows)

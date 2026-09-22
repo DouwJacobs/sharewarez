@@ -115,6 +115,9 @@ def test_provider_identity_migration_backfills_existing_igdb_rows(app, db_sessio
         "created_at, updated_at) VALUES "
         "('new_game', 26002, 26001, 'Requested Game', 'pending', now(), now())"
     ))
+    db_session.execute(text(
+        "INSERT INTO global_settings (settings, last_updated) VALUES ('{}', now())"
+    ))
     db_session.commit()
 
     upgrade_database(database_uri)
@@ -135,3 +138,8 @@ def test_provider_identity_migration_backfills_existing_igdb_rows(app, db_sessio
         "FROM game_requests WHERE igdb_id = 26002"
     )).one()
     assert request_identity == ('igdb', '26002', '26001')
+    provider_settings = db_session.execute(text(
+        "SELECT rawg_enabled, metadata_provider_order FROM global_settings "
+        "ORDER BY id DESC LIMIT 1"
+    )).one()
+    assert provider_settings == (False, ['igdb'])

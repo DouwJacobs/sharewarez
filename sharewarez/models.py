@@ -1085,6 +1085,20 @@ class GlobalSettings(db.Model):
     igdb_client_id = db.Column(db.String(255), nullable=True)
     igdb_client_secret = db.Column(EncryptedString(), nullable=True)
     igdb_last_tested = db.Column(db.DateTime, nullable=True)
+    rawg_api_key = db.Column(EncryptedString(), nullable=True)
+    rawg_enabled = db.Column(
+        db.Boolean,
+        nullable=False,
+        default=False,
+        server_default=text('false'),
+    )
+    rawg_last_tested = db.Column(db.DateTime, nullable=True)
+    metadata_provider_order = db.Column(
+        db.JSON,
+        nullable=False,
+        default=lambda: ['igdb'],
+        server_default=text("'[\"igdb\"]'::json"),
+    )
     enable_game_updates = db.Column(db.Boolean, default=False)
     update_folder_name = db.Column(db.String(255), default='updates')
     enable_game_extras = db.Column(db.Boolean, default=False)

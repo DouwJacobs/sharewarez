@@ -2,8 +2,11 @@ from dataclasses import dataclass
 
 from sharewarez.utils.metadata_provider_igdb import IGDBMetadataProvider
 from sharewarez.utils.metadata_providers import (
+    available_provider_names,
+    configured_provider_order,
     normalize_provider_order,
     search_metadata_games,
+    validate_provider_order,
 )
 
 
@@ -20,11 +23,55 @@ class StubProvider:
         return self.results, self.error
 
 
+@dataclass
+class StubSettings:
+    igdb_client_id: str | None = None
+    igdb_client_secret: str | None = None
+    rawg_api_key: str | None = None
+    rawg_enabled: bool = False
+    metadata_provider_order: list | None = None
+
+
 def test_provider_order_is_normalized_and_keeps_available_fallbacks():
     assert normalize_provider_order(
         [' SECONDARY ', 'unknown', 'secondary'],
         ['igdb', 'secondary'],
     ) == ('secondary', 'igdb')
+
+
+def test_operator_provider_order_validation_is_strict():
+    assert validate_provider_order([' RAWG ', 'igdb']) == ('rawg', 'igdb')
+    for invalid in (None, [], ['unknown'], ['igdb', 'IGDB']):
+        try:
+            validate_provider_order(invalid)
+        except ValueError:
+            pass
+        else:
+            raise AssertionError(f'Expected provider order rejection for {invalid!r}')
+
+
+def test_configured_order_uses_only_enabled_credentialed_providers():
+    settings = StubSettings(
+        igdb_client_id='client',
+        igdb_client_secret='secret',
+        rawg_api_key='rawg-key',
+        rawg_enabled=True,
+        metadata_provider_order=['rawg', 'igdb'],
+    )
+
+    assert available_provider_names(settings) == ('igdb', 'rawg')
+    assert configured_provider_order(settings) == ('rawg', 'igdb')
+
+
+def test_disabled_rawg_is_not_available_even_when_key_is_stored():
+    settings = StubSettings(
+        rawg_api_key='rawg-key',
+        rawg_enabled=False,
+        metadata_provider_order=['rawg', 'igdb'],
+    )
+
+    assert available_provider_names(settings) == ()
+    assert configured_provider_order(settings) == ()
 
 
 def test_search_advances_to_next_provider_after_failure():
