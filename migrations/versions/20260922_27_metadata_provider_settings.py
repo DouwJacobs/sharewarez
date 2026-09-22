@@ -15,11 +15,17 @@ depends_on = None
 
 
 def upgrade():
-    op.add_column(
+    columns = {
+        column['name']
+        for column in sa.inspect(op.get_bind()).get_columns('global_settings')
+    }
+    if 'rawg_api_key' not in columns:
+        op.add_column(
         'global_settings',
         sa.Column('rawg_api_key', sa.Text(), nullable=True),
-    )
-    op.add_column(
+        )
+    if 'rawg_enabled' not in columns:
+        op.add_column(
         'global_settings',
         sa.Column(
             'rawg_enabled',
@@ -27,12 +33,14 @@ def upgrade():
             nullable=False,
             server_default=sa.false(),
         ),
-    )
-    op.add_column(
+        )
+    if 'rawg_last_tested' not in columns:
+        op.add_column(
         'global_settings',
         sa.Column('rawg_last_tested', sa.DateTime(), nullable=True),
-    )
-    op.add_column(
+        )
+    if 'metadata_provider_order' not in columns:
+        op.add_column(
         'global_settings',
         sa.Column(
             'metadata_provider_order',
@@ -40,7 +48,7 @@ def upgrade():
             nullable=False,
             server_default=sa.text("'[\"igdb\"]'::json"),
         ),
-    )
+        )
 
 
 def downgrade():

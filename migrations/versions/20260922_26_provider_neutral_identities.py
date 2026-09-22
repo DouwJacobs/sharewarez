@@ -15,7 +15,9 @@ depends_on = None
 
 
 def upgrade():
-    op.create_table(
+    inspector = sa.inspect(op.get_bind())
+    if 'game_external_identities' not in inspector.get_table_names():
+        op.create_table(
         'game_external_identities',
         sa.Column('id', sa.Integer(), nullable=False),
         sa.Column('game_uuid', sa.String(length=36), nullable=False),
@@ -40,48 +42,35 @@ def upgrade():
             name='uq_game_external_identity_provider',
         ),
     )
-    op.create_index(
-        'ix_game_external_identities_game_uuid',
-        'game_external_identities',
-        ['game_uuid'],
-    )
-    op.create_index(
-        'uq_game_external_identity_canonical',
-        'game_external_identities',
-        ['game_uuid'],
-        unique=True,
-        postgresql_where=sa.text('canonical'),
-        sqlite_where=sa.text('canonical'),
-    )
+        op.create_index(
+            'ix_game_external_identities_game_uuid',
+            'game_external_identities', ['game_uuid'],
+        )
+        op.create_index(
+            'uq_game_external_identity_canonical',
+            'game_external_identities', ['game_uuid'], unique=True,
+            postgresql_where=sa.text('canonical'),
+            sqlite_where=sa.text('canonical'),
+        )
     op.execute(sa.text(
         "INSERT INTO game_external_identities "
         "(game_uuid, provider, external_id, canonical, provider_url) "
         "SELECT uuid, 'igdb', CAST(igdb_id AS VARCHAR(255)), true, url_igdb "
-        "FROM games WHERE igdb_id IS NOT NULL"
+        "FROM games WHERE igdb_id IS NOT NULL ON CONFLICT DO NOTHING"
     ))
 
-    op.add_column(
-        'game_requests',
-        sa.Column('metadata_provider', sa.String(length=32), nullable=True),
-    )
-    op.add_column(
-        'game_requests',
-        sa.Column('provider_game_id', sa.String(length=255), nullable=True),
-    )
-    op.add_column(
-        'game_requests',
-        sa.Column('provider_parent_id', sa.String(length=255), nullable=True),
-    )
-    op.create_index(
-        'ix_game_requests_metadata_provider',
-        'game_requests',
-        ['metadata_provider'],
-    )
-    op.create_index(
-        'ix_game_requests_provider_game_id',
-        'game_requests',
-        ['provider_game_id'],
-    )
+    request_columns = {column['name'] for column in inspector.get_columns('game_requests')}
+    if 'metadata_provider' not in request_columns:
+        op.add_column('game_requests', sa.Column('metadata_provider', sa.String(length=32)))
+    if 'provider_game_id' not in request_columns:
+        op.add_column('game_requests', sa.Column('provider_game_id', sa.String(length=255)))
+    if 'provider_parent_id' not in request_columns:
+        op.add_column('game_requests', sa.Column('provider_parent_id', sa.String(length=255)))
+    indexes = {index['name'] for index in sa.inspect(op.get_bind()).get_indexes('game_requests')}
+    if 'ix_game_requests_metadata_provider' not in indexes:
+        op.create_index('ix_game_requests_metadata_provider', 'game_requests', ['metadata_provider'])
+    if 'ix_game_requests_provider_game_id' not in indexes:
+        op.create_index('ix_game_requests_provider_game_id', 'game_requests', ['provider_game_id'])
     op.execute(sa.text(
         "UPDATE game_requests SET "
         "metadata_provider = 'igdb', "
@@ -89,20 +78,19 @@ def upgrade():
         "provider_parent_id = CAST(parent_igdb_id AS VARCHAR(255)) "
         "WHERE request_type = 'new_game' AND igdb_id IS NOT NULL"
     ))
-    op.create_index(
-        'uq_game_requests_new_game_provider',
-        'game_requests',
-        ['metadata_provider', 'provider_game_id'],
-        unique=True,
-        postgresql_where=sa.text(
-            "request_type = 'new_game' AND metadata_provider IS NOT NULL "
-            "AND provider_game_id IS NOT NULL"
-        ),
-        sqlite_where=sa.text(
-            "request_type = 'new_game' AND metadata_provider IS NOT NULL "
-            "AND provider_game_id IS NOT NULL"
-        ),
-    )
+    if 'uq_game_requests_new_game_provider' not in indexes:
+        op.create_index(
+            'uq_game_requests_new_game_provider', 'game_requests',
+            ['metadata_provider', 'provider_game_id'], unique=True,
+            postgresql_where=sa.text(
+                "request_type = 'new_game' AND metadata_provider IS NOT NULL "
+                "AND provider_game_id IS NOT NULL"
+            ),
+            sqlite_where=sa.text(
+                "request_type = 'new_game' AND metadata_provider IS NOT NULL "
+                "AND provider_game_id IS NOT NULL"
+            ),
+        )
 
 
 def downgrade():

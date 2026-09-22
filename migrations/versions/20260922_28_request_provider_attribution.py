@@ -15,14 +15,20 @@ depends_on = None
 
 
 def upgrade():
-    op.add_column(
-        'game_requests',
-        sa.Column('provider_url', sa.String(length=1024), nullable=True),
-    )
-    op.add_column(
-        'game_requests',
-        sa.Column('provider_attribution', sa.JSON(), nullable=True),
-    )
+    columns = {
+        column['name']
+        for column in sa.inspect(op.get_bind()).get_columns('game_requests')
+    }
+    if 'provider_url' not in columns:
+        op.add_column(
+            'game_requests',
+            sa.Column('provider_url', sa.String(length=1024), nullable=True),
+        )
+    if 'provider_attribution' not in columns:
+        op.add_column(
+            'game_requests',
+            sa.Column('provider_attribution', sa.JSON(), nullable=True),
+        )
     op.execute(sa.text(
         "UPDATE game_requests SET "
         "provider_url = 'https://www.igdb.com/', "

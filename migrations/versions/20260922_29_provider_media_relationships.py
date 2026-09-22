@@ -15,34 +15,46 @@ depends_on = None
 
 
 def upgrade():
-    op.add_column('game_relationships', sa.Column('related_external_id', sa.String(255)))
-    op.execute(sa.text(
-        "UPDATE game_relationships SET related_external_id = related_igdb_id::text"
-    ))
-    op.alter_column('game_relationships', 'related_external_id', nullable=False)
-    op.alter_column('game_relationships', 'related_igdb_id', nullable=True)
-    op.drop_constraint('uq_game_relationship_identity', 'game_relationships', type_='unique')
-    op.create_unique_constraint(
-        'uq_game_relationship_identity', 'game_relationships',
-        ['game_uuid', 'related_external_id', 'relationship_type', 'provider'],
-    )
-    op.create_index(
-        'ix_game_relationships_related_external_id',
-        'game_relationships', ['related_external_id'],
-    )
-    op.alter_column(
-        'game_groups', 'provider_id',
-        existing_type=sa.Integer(), type_=sa.String(255),
-        postgresql_using='provider_id::text',
-    )
+    relationship_columns = {
+        column['name'] for column in
+        sa.inspect(op.get_bind()).get_columns('game_relationships')
+    }
+    if 'related_external_id' not in relationship_columns:
+        op.add_column('game_relationships', sa.Column('related_external_id', sa.String(255)))
+        op.execute(sa.text(
+            "UPDATE game_relationships SET related_external_id = related_igdb_id::text"
+        ))
+        op.alter_column('game_relationships', 'related_external_id', nullable=False)
+        op.alter_column('game_relationships', 'related_igdb_id', nullable=True)
+        op.drop_constraint('uq_game_relationship_identity', 'game_relationships', type_='unique')
+        op.create_unique_constraint(
+            'uq_game_relationship_identity', 'game_relationships',
+            ['game_uuid', 'related_external_id', 'relationship_type', 'provider'],
+        )
+        op.create_index(
+            'ix_game_relationships_related_external_id',
+            'game_relationships', ['related_external_id'],
+        )
+        op.alter_column(
+            'game_groups', 'provider_id',
+            existing_type=sa.Integer(), type_=sa.String(255),
+            postgresql_using='provider_id::text',
+        )
 
-    op.add_column('images', sa.Column('provider', sa.String(32), nullable=False, server_default='igdb'))
-    op.add_column('images', sa.Column('provider_image_id', sa.String(255)))
-    op.add_column('images', sa.Column('source_url', sa.String(2048)))
+    image_columns = {
+        column['name'] for column in sa.inspect(op.get_bind()).get_columns('images')
+    }
+    if 'provider' not in image_columns:
+        op.add_column('images', sa.Column('provider', sa.String(32), nullable=False, server_default='igdb'))
+    if 'provider_image_id' not in image_columns:
+        op.add_column('images', sa.Column('provider_image_id', sa.String(255)))
+    if 'source_url' not in image_columns:
+        op.add_column('images', sa.Column('source_url', sa.String(2048)))
     op.execute(sa.text(
         "UPDATE images SET provider_image_id = igdb_image_id, source_url = download_url"
     ))
-    op.alter_column('images', 'provider', server_default=None)
+    if 'provider' not in image_columns:
+        op.alter_column('images', 'provider', server_default=None)
 
 
 def downgrade():
