@@ -637,3 +637,10 @@ background/foreground hooks, and native inputs expose a color-scheme token.
 Bootstrap dialogs now use explicit Tab wrapping alongside custom dialogs, closing
 the browser-chrome focus escape found during the upload-error check. These extend
 shared component ownership; no page-specific control system was introduced.
+
+## Navigation-label consistency — 23 September 2026
+
+Desktop and mobile primary-navigation labels use the same short destination
+names. In particular, the administrator shortcut is **Admin** in both the desktop
+sidebar and mobile More menu. Full **Administration** wording remains appropriate
+for document titles, section headings, breadcrumbs, and accessible descriptions.

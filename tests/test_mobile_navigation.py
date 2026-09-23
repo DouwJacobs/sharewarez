@@ -11,7 +11,11 @@ def test_mobile_navigation_is_accessible_and_theme_aware():
     assert '--theme-sidebar-top' in css
     assert '.mobile-bottom-nav > a.active' in css
     assert 'class="mobile-more"' in template
-    assert 'Administration' in template
+    desktop_admin = '<span class="link-text">Admin</span>'
+    mobile_admin = '<i class="fas fa-shield-halved" aria-hidden="true"></i><span>Admin</span>'
+    assert desktop_admin in template
+    assert mobile_admin in template
+    assert '<span>Administration</span>' not in template
     assert '#sidebarBackdrop' in css and 'display: none !important' in css
     assert '@media (min-width: 769px)' in css
 
