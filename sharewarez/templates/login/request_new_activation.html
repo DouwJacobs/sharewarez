@@ -6,7 +6,7 @@
 <link rel="stylesheet" href="{{ 'css/login/authentication.css'|theme_asset }}">
 {% endblock %}
 {% block content %}
-{% call auth_shell('Request an activation link', 'Enter your account email and we will send a new activation link if one is needed.', 'Email verification', 'fa-envelope', 'activation-request-title') %}
+{% call auth_shell('Request an activation link', 'Enter your account email and we will send a new activation link if one is needed.', 'Email verification', 'activation-request-title', brand_title='Finish setting up.', brand_description='Verify your email to unlock your new account and start using your library.') %}
   {{ auth_error_summary(form) }}
   <form action="{{ url_for('login.request_new_activation') }}" method="post" class="auth-form">
     {{ form.hidden_tag() }}
@@ -16,7 +16,7 @@
       {% if form.email.errors %}<ul class="auth-field-errors">{% for error in form.email.errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}
     </div>
     <div class="auth-actions">
-      <button class="btn btn-primary" type="submit"><i class="fas fa-paper-plane" aria-hidden="true"></i> Send activation link</button>
+      <button class="btn btn-primary" type="submit">Send activation link</button>
       <a href="{{ url_for('login.login') }}" class="btn btn-secondary">Back to sign in</a>
     </div>
   </form>

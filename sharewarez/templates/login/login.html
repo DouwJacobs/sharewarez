@@ -6,7 +6,7 @@
 <link rel="stylesheet" href="{{ 'css/login/authentication.css'|theme_asset }}">
 {% endblock %}
 {% block content %}
-{% call auth_shell('Welcome back', 'Sign in to continue to your library.', 'Account access', 'fa-right-to-bracket', 'sign-in-title') %}
+{% call auth_shell('Welcome back', 'Sign in to continue to your library.', 'Account access', 'sign-in-title', brand_title='Pick up where you left off.', brand_description='Your library, requests, downloads, and preferences are ready for you.') %}
   {{ auth_error_summary(form) }}
   <form action="{{ url_for('login.login') }}" method="post" class="auth-form">
     {{ form.hidden_tag() }}
@@ -22,7 +22,7 @@
       {% if form.password.errors %}<ul class="auth-field-errors">{% for error in form.password.errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}
     </div>
     <div class="auth-actions">
-      <button class="btn btn-primary" type="submit"><i class="fas fa-right-to-bracket" aria-hidden="true"></i> Sign in</button>
+      <button class="btn btn-primary" type="submit">Sign in</button>
     </div>
   </form>
   <nav class="auth-links" aria-label="Account help">

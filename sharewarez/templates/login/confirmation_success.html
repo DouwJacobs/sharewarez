@@ -3,10 +3,10 @@
 {% block title %}Account activated · {{ site_title }}{% endblock %}
 {% block styles %}{{ super() }}<link rel="stylesheet" href="{{ 'css/login/authentication.css'|theme_asset }}">{% endblock %}
 {% block content %}
-{% call auth_shell('Your account is ready', 'Your email address has been verified successfully.', 'Account activated', 'fa-circle-check', 'confirmation-success-title', true) %}
+{% call auth_shell('Your account is ready', 'Your email address has been verified successfully.', 'Account activated', 'confirmation-success-title', true, brand_title='You’re all set.', brand_description='Your new library is ready whenever you are.') %}
   <p class="auth-result-copy">You can now sign in and start using your library.</p>
   <div class="auth-actions">
-    <a href="{{ url_for('login.login') }}" class="btn btn-primary"><i class="fas fa-right-to-bracket" aria-hidden="true"></i> Sign in</a>
+    <a href="{{ url_for('login.login') }}" class="btn btn-primary">Sign in</a>
   </div>
 {% endcall %}
 {% endblock %}

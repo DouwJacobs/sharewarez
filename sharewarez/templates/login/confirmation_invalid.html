@@ -3,7 +3,7 @@
 {% block title %}Invalid activation link · {{ site_title }}{% endblock %}
 {% block styles %}{{ super() }}<link rel="stylesheet" href="{{ 'css/login/authentication.css'|theme_asset }}">{% endblock %}
 {% block content %}
-{% call auth_shell('This activation link is not valid', 'The link may be incomplete, expired, or already replaced.', 'Link unavailable', 'fa-link-slash', 'confirmation-invalid-title', true) %}
+{% call auth_shell('This activation link is not valid', 'The link may be incomplete, expired, or already replaced.', 'Link unavailable', 'confirmation-invalid-title', true, brand_title='Let’s get you connected.', brand_description='Request a fresh secure link and continue setting up your account.') %}
   <p class="auth-result-copy">Request a new activation email and use the most recent link you receive.</p>
   <div class="auth-actions">
     <a href="{{ url_for('login.request_new_activation') }}" class="btn btn-primary">Request a new link</a>

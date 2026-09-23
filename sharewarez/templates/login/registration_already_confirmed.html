@@ -3,10 +3,10 @@
 {% block title %}Account already active · {{ site_title }}{% endblock %}
 {% block styles %}{{ super() }}<link rel="stylesheet" href="{{ 'css/login/authentication.css'|theme_asset }}">{% endblock %}
 {% block content %}
-{% call auth_shell('Your account is already active', 'This email address has already been verified.', 'Already activated', 'fa-circle-check', 'already-confirmed-title', true) %}
+{% call auth_shell('Your account is already active', 'This email address has already been verified.', 'Already activated', 'already-confirmed-title', true, brand_title='You’re all set.', brand_description='Your library is ready whenever you are.') %}
   <p class="auth-result-copy">There is nothing else to confirm. Continue to sign in.</p>
   <div class="auth-actions">
-    <a href="{{ url_for('login.login') }}" class="btn btn-primary"><i class="fas fa-right-to-bracket" aria-hidden="true"></i> Sign in</a>
+    <a href="{{ url_for('login.login') }}" class="btn btn-primary">Sign in</a>
   </div>
 {% endcall %}
 {% endblock %}

@@ -6,7 +6,7 @@
 <link rel="stylesheet" href="{{ 'css/login/authentication.css'|theme_asset }}">
 {% endblock %}
 {% block content %}
-{% call auth_shell('Create your account', 'Use an invitation link or an email address approved by your administrator.', 'New account', 'fa-user-plus', 'registration-title') %}
+{% call auth_shell('Create your account', 'Use an invitation link or an email address approved by your administrator.', 'New account', 'registration-title', brand_title='Make it yours.', brand_description='Create your account, then start building a library around the games you care about.') %}
   {{ auth_error_summary(form) }}
   <form action="{{ url_for('login.register', token=request.args.get('token')) }}" method="post" class="auth-form">
     {{ form.hidden_tag() }}
@@ -29,7 +29,7 @@
       {% if form.password.errors %}<ul class="auth-field-errors">{% for error in form.password.errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}
     </div>
     <div class="auth-actions">
-      <button class="btn btn-primary" type="submit"><i class="fas fa-user-check" aria-hidden="true"></i> Create account</button>
+      <button class="btn btn-primary" type="submit">Create account</button>
       <a href="{{ url_for('login.login') }}" class="btn btn-secondary">Back to sign in</a>
     </div>
   </form>

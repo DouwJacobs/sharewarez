@@ -1,4 +1,4 @@
-{% macro auth_shell(title, description, eyebrow, icon, heading_id='auth-title', result=false) %}
+{% macro auth_shell(title, description, eyebrow, heading_id='auth-title', result=false, brand_title='Everything in one place.', brand_description='Your library, requests, downloads, and preferences stay together under one account.') %}
 <main class="app-page auth-page" aria-labelledby="{{ heading_id }}">
   <section class="app-surface auth-shell{% if result %} auth-shell--result{% endif %}">
     <div class="auth-brand">
@@ -10,14 +10,14 @@
         </div>
       </div>
       <div class="auth-brand-copy">
-        <p>Pick up where you left off.</p>
-        <span>One account for your library, requests, downloads, and preferences.</span>
+        <p>{{ brand_title }}</p>
+        <span>{{ brand_description }}</span>
       </div>
-      <p class="auth-brand-note"><i class="fas fa-shield-halved" aria-hidden="true"></i> Secure access to your collection</p>
+      <p class="auth-brand-note">Secure access to your collection</p>
     </div>
     <div class="auth-main">
       <header class="auth-header">
-        <p class="auth-kicker"><i class="fas {{ icon }}" aria-hidden="true"></i> {{ eyebrow }}</p>
+        <p class="auth-kicker">{{ eyebrow }}</p>
         <h1 id="{{ heading_id }}">{{ title }}</h1>
         <p>{{ description }}</p>
       </header>

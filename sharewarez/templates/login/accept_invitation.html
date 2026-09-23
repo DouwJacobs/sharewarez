@@ -3,7 +3,7 @@
 {% block title %}Create account · {{ site_title }}{% endblock %}
 {% block styles %}{{ super() }}<link rel="stylesheet" href="{{ 'css/login/authentication.css'|theme_asset }}">{% endblock %}
 {% block content %}
-{% call auth_shell('Create your account', 'Choose your own sign-in details. This invitation can be used once.', 'You are invited', 'fa-envelope-open-text', 'invitation-title') %}
+{% call auth_shell('Create your account', 'Choose your own sign-in details. This invitation can be used once.', 'You are invited', 'invitation-title', brand_title='Your library starts here.', brand_description='Choose your sign-in details and make the space your own.') %}
   {{ auth_error_summary(form) }}
   <form method="post" action="{{ url_for('login.accept_invite', token=request.view_args.token) }}" class="auth-form">
     {{ form.hidden_tag() }}
@@ -33,7 +33,7 @@
       </div>
     </div>
     <div class="auth-actions">
-      <button class="btn btn-primary" type="submit"><i class="fas fa-user-check" aria-hidden="true"></i> Create account</button>
+      <button class="btn btn-primary" type="submit">Create account</button>
       <a class="btn btn-secondary" href="{{ url_for('login.login') }}">Back to sign in</a>
     </div>
   </form>

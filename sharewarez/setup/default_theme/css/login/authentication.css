@@ -51,8 +51,7 @@
   letter-spacing: -.035em;
 }
 .auth-brand-copy span { display: block; font-size: .9rem; line-height: 1.55; }
-.auth-brand-note { margin: 0; display: flex; align-items: center; gap: 8px; }
-.auth-brand-note i { color: var(--theme-accent-color, var(--theme-primary)); }
+.auth-brand-note { margin: 0; }
 
 .auth-main { min-width: 0; align-self: center; padding: clamp(28px, 5vw, 52px); }
 .auth-header { margin-bottom: 26px; }
@@ -60,7 +59,6 @@
   margin: 0 0 8px;
   display: flex;
   align-items: center;
-  gap: 8px;
   color: var(--theme-accent-color, var(--theme-primary));
   font-size: .75rem;
   font-weight: 750;

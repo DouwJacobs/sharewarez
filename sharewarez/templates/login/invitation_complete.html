@@ -3,7 +3,7 @@
 {% block title %}Check your email · {{ site_title }}{% endblock %}
 {% block styles %}{{ super() }}<link rel="stylesheet" href="{{ 'css/login/authentication.css'|theme_asset }}">{% endblock %}
 {% block content %}
-{% call auth_shell('Check your email', 'Your account has been created and needs email verification.', 'One more step', 'fa-envelope-circle-check', 'invitation-complete-title', true) %}
+{% call auth_shell('Check your email', 'Your account has been created and needs email verification.', 'One more step', 'invitation-complete-title', true, brand_title='Almost there.', brand_description='Verify your email to finish setting up your new account.') %}
   {% if email_delivered %}
   <p class="auth-result-copy">Follow the activation link sent to <strong>{{ email }}</strong>, then sign in.</p>
   {% else %}

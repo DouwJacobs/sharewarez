@@ -52,6 +52,7 @@ def test_auth_templates_do_not_restore_legacy_page_layouts():
         assert 'css/login/authentication.css' in markup, template_name
         assert 'container-login' not in markup, template_name
         assert 'style="' not in markup, template_name
+        assert '<i ' not in markup, template_name
 
 
 def test_auth_shell_preserves_shared_surface_and_mobile_control_contracts():
@@ -61,6 +62,9 @@ def test_auth_shell_preserves_shared_surface_and_mobile_control_contracts():
     ).read_text(encoding='utf-8')
 
     assert layout.count('app-surface') == 1
+    assert '<i ' not in layout
+    assert '{{ brand_title }}' in layout
+    assert '{{ brand_description }}' in layout
     assert '@media (max-width: 760px)' in stylesheet
     assert '.auth-shell { grid-template-columns: 1fr; }' in stylesheet
     assert 'flex-basis: var(--app-control-height)' in stylesheet

@@ -671,7 +671,13 @@ public authentication shell. The shell uses a single `.app-surface` split into
 a quiet product context area and a flat form/result area; it does not nest cards
 or introduce a second control system. Labels, help text, validation summaries,
 primary actions, and secondary navigation use the shared control and semantic
-color contracts.
+color contracts. The product-context headline and description vary by journey:
+returning-user language belongs only on sign in, while registration, invitation,
+recovery, and verification pages use copy appropriate to those states.
+
+Authentication kickers and actions deliberately avoid decorative icons. Button
+labels carry the action clearly on their own, reducing visual noise while the
+brand mark remains the single graphic anchor for the shell.
 
 At 760 px and below the shell becomes one column. The brand context compresses
 to a short header, password pairs stack, and ordinary actions occupy the full
