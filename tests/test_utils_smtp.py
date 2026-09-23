@@ -762,7 +762,7 @@ class TestSendInviteEmail:
             'inviter_name': 'A user',
             'recipient_email': 'newuser@example.com',
             'invite_url': invite_url,
-            'expires_in': '48 hours',
+            'expires_in': '7 days',
         })
         
         # Verify send_email was called

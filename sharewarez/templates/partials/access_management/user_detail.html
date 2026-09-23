@@ -199,7 +199,7 @@
                         {% for invite in user.recent_invites %}
                         <div class="invite-item">
                             <div class="invite-info">
-                                <span class="invite-token">{{ invite.token }}</span>
+                                <span class="invite-token">Invitation #{{ invite.id }}</span>
                                 {% if invite.recipient_email %}
                                 <span class="invite-recipient">→ {{ invite.recipient_email }}</span>
                                 {% endif %}

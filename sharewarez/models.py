@@ -1249,20 +1249,27 @@ class InviteToken(db.Model):
     __tablename__ = 'invite_tokens'
 
     id = db.Column(db.Integer, primary_key=True)
-    token = db.Column(db.String(256), nullable=False, unique=True)
+    token_digest = db.Column(db.String(64), nullable=False, unique=True, index=True)
     creator_user_id = db.Column(db.String(36), db.ForeignKey('users.user_id'), nullable=False)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
-    expires_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc) + timedelta(days=2), nullable=False)
+    expires_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc) + timedelta(days=7), nullable=False)
     used = db.Column(db.Boolean, default=False, nullable=False)
     recipient_email = db.Column(db.String(120), nullable=True)
     used_by = db.Column(db.String(36), db.ForeignKey('users.user_id'), nullable=True)
     used_at = db.Column(db.DateTime, nullable=True)
+    revoked_at = db.Column(db.DateTime(timezone=True), nullable=True)
+    revoked_by_user_id = db.Column(
+        db.String(36),
+        db.ForeignKey('users.user_id', ondelete='SET NULL'),
+        nullable=True,
+    )
 
     creator = db.relationship('User', foreign_keys=[creator_user_id], backref='created_invites')
     used_by_user = db.relationship('User', foreign_keys=[used_by], backref='used_invites')
+    revoked_by_user = db.relationship('User', foreign_keys=[revoked_by_user_id])
 
     def __repr__(self):
-        return f'<InviteToken {self.token}, Creator: {self.creator_user_id}, Expires: {self.expires_at}, Used: {self.used}>'
+        return f'<InviteToken {self.id}, Creator: {self.creator_user_id}, Expires: {self.expires_at}, Used: {self.used}>'
 
 
 class UserAttractModeSettings(db.Model):

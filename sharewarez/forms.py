@@ -126,6 +126,34 @@ class InviteForm(FlaskForm):
     email = StringField('Email', validators=[DataRequired(), Email(message='Invalid email.')], render_kw={"placeholder": "Enter email to invite"})
     submit = SubmitField('Send Invite')
 
+
+class AdminInviteForm(FlaskForm):
+    email = StringField(
+        'Recipient email (optional)',
+        validators=[Optional(), Email(message='Enter a valid email address.'), Length(max=120)],
+    )
+    expires_days = IntegerField(
+        'Expires after',
+        validators=[DataRequired(), NumberRange(min=1, max=30)],
+        default=7,
+    )
+
+
+class InvitationAcceptanceForm(FlaskForm):
+    username = StringField('Username', validators=[DataRequired(), Length(min=3, max=64)])
+    email = StringField('Email', validators=[DataRequired(), Email(), Length(max=120)])
+    password = PasswordField('Password', validators=[DataRequired(), Length(min=8)])
+    confirm_password = PasswordField(
+        'Confirm password',
+        validators=[DataRequired(), EqualTo('password', message='Passwords must match')],
+    )
+
+    def validate_username(self, field):
+        if field.data.lower() == 'system':
+            raise ValidationError("'system' is a reserved username and cannot be used.")
+        if not re.match(r'^[\w.]+$', field.data):
+            raise ValidationError('Username can only contain letters, numbers, dots and underscores')
+
 class UserDetailForm(FlaskForm):
     submit = SubmitField('Save')
     cancel = SubmitField('Cancel')

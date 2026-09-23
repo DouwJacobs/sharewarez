@@ -17,7 +17,7 @@
             <div>
                 <p class="user-invites-eyebrow">Grow your community</p>
                 <h1>Invite friends</h1>
-                <p>Invites expire after 48 hours and are returned to your quota if unused.</p>
+                <p>Invites expire after 7 days and are returned to your quota when expired or revoked.</p>
             </div>
             <div class="invite-quota" aria-label="Available invites">
                 <span>{{ remaining_invites }}</span>
@@ -41,6 +41,14 @@
             {{ form.submit(class="btn btn-primary") }}
         </form>
 
+        {% if created_invite_url %}
+        <div class="alert alert-warning" role="status">
+            <strong>Copy this link now.</strong> It will not be shown again.
+            <code class="invite-url" id="created-invitation-url">{{ created_invite_url }}</code>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="copyToClipboard('{{ created_invite_url }}', this)"><i class="fas fa-copy"></i> Copy link</button>
+        </div>
+        {% endif %}
+
         <section class="invite-history" aria-labelledby="invite-history-heading">
             <div class="invite-history-header">
                 <h2 id="invite-history-heading">Your invitations</h2>
@@ -48,18 +56,20 @@
             </div>
             <div class="invite-list">
                 {% for invite in invites %}
-                <article class="invite-card {% if invite.used %}invite-card-used{% endif %}">
+                {% set status = invitation_statuses[invite.id] %}
+                <article class="invite-card {% if status != 'pending' %}invite-card-used{% endif %}">
                     <div class="invite-card-details">
                         <div class="invite-card-recipient">
                             <i class="fas fa-envelope"></i>
                             <strong>{{ invite.recipient_email }}</strong>
-                            <span class="invite-status {% if invite.used %}invite-status-used{% else %}invite-status-pending{% endif %}">
-                                {{ "Used" if invite.used else "Pending" }}
+                            <span class="invite-status {% if status == 'accepted' %}invite-status-used{% else %}invite-status-pending{% endif %}">
+                                {{ status|capitalize }}
                             </span>
                         </div>
-                        <code class="invite-url" id="invite-link-{{ invite.token }}">{{ site_url }}/register?token={{ invite.token }}</code>
                         {% if invite.used %}
                             <p>Used by <strong>{{ invite.used_by_user.name }}</strong> on {{ invite.used_at.strftime('%Y-%m-%d %H:%M') }}</p>
+                        {% elif status == 'revoked' %}
+                            <p>Revoked on {{ invite.revoked_at.strftime('%Y-%m-%d %H:%M') }}</p>
                         {% else %}
                             {% if invite.expires_at.tzinfo %}
                                 {% set seconds_remaining = (invite.expires_at - current_datetime).total_seconds() %}
@@ -71,12 +81,7 @@
                         {% endif %}
                     </div>
                     <div class="invite-card-actions">
-                        <button type="button" class="btn btn-secondary btn-sm" {% if invite.used %}disabled{% endif %} onclick="copyToClipboard('{{ site_url }}/register?token={{ invite.token }}', this)">
-                            <i class="fas fa-copy"></i> Copy link
-                        </button>
-                        <button type="button" class="btn btn-danger btn-sm" onclick="deleteInvite('{{ invite.token }}')">
-                            <i class="fas fa-trash"></i><span class="visually-hidden">Delete invitation</span>
-                        </button>
+                        {% if status == 'pending' %}<button type="button" class="btn btn-danger btn-sm" onclick="deleteInvite('{{ invite.id }}')"><i class="fas fa-ban"></i> Revoke</button>{% endif %}
                     </div>
                 </article>
                 {% else %}

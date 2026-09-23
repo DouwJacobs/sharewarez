@@ -706,7 +706,7 @@ class TestInviteTokenModel:
         db_session.flush()
         
         invite_token = InviteToken(
-            token='abc123def456',
+            token_digest='a' * 64,
             creator_user_id=creator.user_id,
             recipient_email='newuser@example.com'
         )
@@ -715,7 +715,7 @@ class TestInviteTokenModel:
         db_session.flush()
         
         assert invite_token.id is not None
-        assert invite_token.token == 'abc123def456'
+        assert invite_token.token_digest == 'a' * 64
         assert invite_token.creator_user_id == creator.user_id
         assert invite_token.used is False  # Default value
         assert invite_token.expires_at > datetime.now(timezone.utc)

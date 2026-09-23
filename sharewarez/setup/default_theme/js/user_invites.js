@@ -16,10 +16,10 @@ function copyToClipboard(textToCopy, buttonElement) {
     });
 }
 
-function deleteInvite(token) {
-    if (confirm('Are you sure you want to delete this invite?')) {
+function deleteInvite(invitationId) {
+    if (confirm('Revoke this invitation? The existing link will stop working.')) {
         const csrfToken = CSRFUtils.getToken();
-        fetch('/delete_invite/' + token, {
+        fetch('/delete_invite/' + invitationId, {
             method: 'POST',
             headers: CSRFUtils.getHeaders({ 'Content-Type': 'application/json' }),
             credentials: 'same-origin'

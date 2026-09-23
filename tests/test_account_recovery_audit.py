@@ -6,6 +6,7 @@ import pytest
 from sqlalchemy import select, func
 from sharewarez.models import User, InviteToken
 from sharewarez.routes_login import get_serializer
+from sharewarez.utils.invitations import digest_invitation_credential
 
 
 def make_user(session, **values):
@@ -64,15 +65,20 @@ def test_public_mail_response_independent_of_account(client, db_session, path):
 def test_concurrent_invitation_consumed_once_without_mail(app, db_session):
     creator = make_user(db_session)
     token = uuid4().hex
-    invite = InviteToken(token=token, creator_user_id=creator.user_id)
+    invite = InviteToken(token_digest=digest_invitation_credential(token), creator_user_id=creator.user_id)
     db_session.add(invite)
     db_session.commit()
     names = [uuid4().hex, uuid4().hex]
     def register(name):
         with app.test_client() as client:
-            return client.post('/register?token=' + token, data={'username': name, 'email': name + '@example.com', 'password': 'new-test-password'}).status_code
+            return client.post('/join/' + token, data={
+                'username': name,
+                'email': name + '@example.com',
+                'password': 'new-test-password',
+                'confirm_password': 'new-test-password',
+            }).status_code
     with patch('sharewarez.routes_login.send_email', return_value=False), ThreadPoolExecutor(max_workers=2) as pool:
-        assert list(pool.map(register, names)) == [302, 302]
+        assert sorted(pool.map(register, names)) == [200, 302]
     db_session.expire_all()
     assert db_session.scalar(select(func.count(User.id)).where(User.name.in_(names))) == 1
     db_session.refresh(invite)

@@ -86,8 +86,8 @@ TEMPLATE_DEFINITIONS = {
         sample_context={
             'inviter_name': 'Morgan',
             'recipient_email': 'alex@example.com',
-            'invite_url': 'https://games.example/register?token=sample-token',
-            'expires_in': '48 hours',
+            'invite_url': 'https://games.example/join/sample-token',
+            'expires_in': '7 days',
         },
     ),
     'admin_new_request': EmailTemplateDefinition(

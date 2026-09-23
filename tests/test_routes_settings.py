@@ -75,7 +75,7 @@ def invite_tokens(db_session, test_user):
     # Create some used and unused tokens
     for i in range(3):
         token = InviteToken(
-            token=f'token_{i}_{uuid4().hex[:8]}',
+            token_digest=uuid4().hex + uuid4().hex,
             creator_user_id=test_user.user_id,
             used=(i == 0)  # First token is used
         )

@@ -13,6 +13,7 @@ from sharewarez import cache
 from sharewarez import db
 from sharewarez.utils.api_tokens import API_TOKEN_SCOPES, create_api_token
 from sharewarez.utils.event_logging import log_system_event
+from sharewarez.utils.invitations import active_invitation_clause
 from sharewarez.utils.user_preferences import get_experience_settings, update_experience_settings
 from datetime import datetime, timezone
 
@@ -155,10 +156,9 @@ def settings_profile_edit():
 def settings_profile_view():
     print("Route: Settings profile view")
     unused_invites = db.session.execute(
-        select(func.count(InviteToken.id)).filter_by(
-            creator_user_id=current_user.user_id, 
-            used=False
-        )
+        select(func.count(InviteToken.id))
+        .where(InviteToken.creator_user_id == current_user.user_id)
+        .where(active_invitation_clause())
     ).scalar()
     remaining_invites = max(0, current_user.invite_quota - unused_invites)
     

@@ -6,37 +6,136 @@
 {% endblock %}
 {% block content %}
 <main class="app-page app-page--narrow admin-invites-page" aria-labelledby="admin-invites-title">
-  {{ admin_page_header('Invitations', 'Allocate invitation capacity to the people who can invite new members.', 'People', 'fa-envelope-open-text', title_id='admin-invites-title') }}
+  {{ admin_page_header('Invitations', 'Let people create their own account without handling their password.', 'People', 'fa-envelope-open-text', title_id='admin-invites-title') }}
 
-  <section class="app-surface admin-invites-surface" aria-label="Invitation allocations">
-    <div class="admin-invites-summary">
-      <div><strong>{{ users|length }}</strong><span>accounts</span></div>
-      <p>Increasing a quota adds new invitations without changing invitations already issued.</p>
-    </div>
-    <div class="admin_manage_invites-table-div table-responsive">
-      <table class="admin_manage_invites-table table">
-        <thead><tr><th scope="col">User</th><th scope="col">Available</th><th scope="col">Add invitations</th></tr></thead>
-        <tbody>
-          {% for user in users %}
-          {% set unused_invites = user_unused_invites.get(user.user_id, 0) %}
-          <tr>
-            <td><strong>{{ user.name }}</strong><small>{{ user.email }}</small></td>
-            <td><strong>{{ user.invite_quota - unused_invites }}</strong><small>of {{ user.invite_quota }} remaining</small></td>
-            <td>
-              <form action="{{ url_for('admin2.manage_invites') }}" method="POST">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <input type="hidden" name="user_id" value="{{ user.user_id }}">
-                <input type="number" name="invites_number" min="1" value="1" class="form-control" aria-label="Invitations to add for {{ user.name }}">
-                <button type="submit" class="btn btn-primary">Add</button>
-              </form>
-            </td>
-          </tr>
+  <div class="app-stack">
+    <section class="app-surface admin-invite-create" aria-labelledby="create-invitation-title">
+      <div class="admin-invite-section-heading">
+        <div>
+          <h2 id="create-invitation-title">Invite a user</h2>
+          <p>Leave the email blank for a shareable link, or enter an address to reserve and email the invitation.</p>
+        </div>
+      </div>
+      {% if site_url == 'http://127.0.0.1' %}
+      <div class="alert alert-warning" role="alert">Set the public site URL in Application Settings before sharing an invitation outside this device.</div>
+      {% endif %}
+      <form action="{{ url_for('admin2.create_invitation') }}" method="post" class="admin-invite-create-form">
+        {{ form.hidden_tag() }}
+        <div class="admin-invite-email-field">
+          {{ form.email.label }}
+          {{ form.email(class='form-control', autocomplete='email', placeholder='person@example.com', aria_describedby='invite-email-help') }}
+          <small id="invite-email-help">Optional for a copied link; required when sending by email.</small>
+        </div>
+        <div>
+          {{ form.expires_days.label }}
+          <div class="admin-invite-expiry-control">
+            {{ form.expires_days(class='form-control', min='1', max='30', inputmode='numeric') }}
+            <span>days</span>
+          </div>
+        </div>
+        <div class="admin-invite-create-actions">
+          <button class="btn btn-primary" type="submit" name="delivery" value="link"><i class="fas fa-link" aria-hidden="true"></i> Create share link</button>
+          <button class="btn btn-secondary" type="submit" name="delivery" value="email"><i class="fas fa-paper-plane" aria-hidden="true"></i> Send by email</button>
+        </div>
+      </form>
+      {% if created_invite_url %}
+      <div class="admin-invite-created" role="status">
+        <div>
+          <strong>Copy this link now</strong>
+          <p>For security, it will not be shown again after you leave this response.</p>
+        </div>
+        <code id="created-invitation-url">{{ created_invite_url }}</code>
+        <button class="btn btn-secondary" type="button" data-copy-invitation data-copy-target="created-invitation-url"><i class="fas fa-copy" aria-hidden="true"></i> Copy link</button>
+      </div>
+      {% endif %}
+    </section>
+
+    <section class="app-surface admin-invite-history" aria-labelledby="invitation-history-title">
+      <div class="admin-invite-section-heading">
+        <div>
+          <h2 id="invitation-history-title">Invitation history</h2>
+          <p>The latest 100 invitations. Raw invitation credentials are never stored.</p>
+        </div>
+        <span>{{ invitations|length }} shown</span>
+      </div>
+      <div class="admin-invite-table-wrap">
+        <table class="table admin-invite-table">
+          <thead><tr><th scope="col">Invitation</th><th scope="col">Created</th><th scope="col">Status</th><th scope="col">Actions</th></tr></thead>
+          <tbody>
+          {% for invitation in invitations %}
+            {% set status = invitation_statuses[invitation.id] %}
+            <tr>
+              <td data-label="Invitation">
+                <strong>{{ invitation.recipient_email or 'Shareable link' }}</strong>
+                <small>Created by {{ invitation.creator.name }}</small>
+                {% if invitation.used_by_user %}<small>Accepted by {{ invitation.used_by_user.name }}</small>{% endif %}
+              </td>
+              <td data-label="Created"><span>{{ invitation.created_at.strftime('%Y-%m-%d %H:%M') }}</span><small>Expires {{ invitation.expires_at.strftime('%Y-%m-%d %H:%M') }}</small></td>
+              <td data-label="Status"><span class="ui-status invitation-status invitation-status--{{ status }}">{{ status|capitalize }}</span></td>
+              <td data-label="Actions">
+                <div class="admin-invite-row-actions">
+                  {% if status == 'pending' %}
+                  <form action="{{ url_for('admin2.revoke_invitation', invitation_id=invitation.id) }}" method="post">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button class="btn btn-danger btn-sm" type="submit">Revoke</button>
+                  </form>
+                  <form action="{{ url_for('admin2.replace_invitation', invitation_id=invitation.id) }}" method="post">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button class="btn btn-secondary btn-sm" type="submit" name="delivery" value="link">New link</button>
+                    {% if invitation.recipient_email %}<button class="btn btn-secondary btn-sm" type="submit" name="delivery" value="email">Resend</button>{% endif %}
+                  </form>
+                  {% elif status in ['expired', 'revoked'] %}
+                  <form action="{{ url_for('admin2.replace_invitation', invitation_id=invitation.id) }}" method="post">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button class="btn btn-secondary btn-sm" type="submit" name="delivery" value="link">New link</button>
+                    {% if invitation.recipient_email %}<button class="btn btn-secondary btn-sm" type="submit" name="delivery" value="email">Resend</button>{% endif %}
+                  </form>
+                  {% else %}<span class="admin-invite-no-action">Complete</span>{% endif %}
+                </div>
+              </td>
+            </tr>
           {% else %}
-          <tr><td colspan="3" class="admin-invites-empty">No eligible accounts found.</td></tr>
+            <tr><td colspan="4" class="admin-invites-empty">No invitations have been created yet.</td></tr>
           {% endfor %}
-        </tbody>
-      </table>
-    </div>
-  </section>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <details class="app-surface admin-invite-allowances">
+      <summary><span><strong>Member invitation allowances</strong><small>Control how many active invitations each existing member may issue.</small></span><i class="fas fa-chevron-down" aria-hidden="true"></i></summary>
+      <div class="admin-invite-allowance-list">
+        {% for user in users %}
+        {% set active_invites = user_active_invites.get(user.user_id, 0) %}
+        <form action="{{ url_for('admin2.manage_invites') }}" method="post" class="admin-invite-allowance-row">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="user_id" value="{{ user.user_id }}">
+          <div><strong>{{ user.name }}</strong><small>{{ user.invite_quota - active_invites }} of {{ user.invite_quota }} available</small></div>
+          <label class="visually-hidden" for="allowance-{{ user.id }}">Invitations to add for {{ user.name }}</label>
+          <input id="allowance-{{ user.id }}" type="number" name="invites_number" min="0" max="1000" value="1" class="form-control">
+          <button type="submit" class="btn btn-secondary">Add</button>
+        </form>
+        {% else %}<p class="admin-invites-empty">No eligible accounts found.</p>{% endfor %}
+      </div>
+    </details>
+  </div>
 </main>
+<script>
+document.querySelectorAll('[data-copy-invitation]').forEach((button) => {
+  button.addEventListener('click', async () => {
+    const target = document.getElementById(button.dataset.copyTarget);
+    if (!target) return;
+    try {
+      await navigator.clipboard.writeText(target.textContent.trim());
+      button.innerHTML = '<i class="fas fa-check" aria-hidden="true"></i> Copied';
+    } catch (_error) {
+      const selection = window.getSelection();
+      const range = document.createRange();
+      range.selectNodeContents(target);
+      selection.removeAllRanges();
+      selection.addRange(range);
+    }
+  });
+});
+</script>
 {% endblock %}

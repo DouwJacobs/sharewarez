@@ -71,7 +71,7 @@ def admin_user(db_session):
 def invite_token_unused(db_session, regular_user):
     """Create an unused invite token."""
     token = InviteToken(
-        token='test_unused_token_123',
+        token_digest='a' * 64,
         creator_user_id=regular_user.user_id,
         used=False,
         recipient_email='recipient@example.com'
@@ -85,7 +85,7 @@ def invite_token_unused(db_session, regular_user):
 def invite_token_used(db_session, regular_user, admin_user):
     """Create a used invite token."""
     token = InviteToken(
-        token='test_used_token_456',
+        token_digest='b' * 64,
         creator_user_id=regular_user.user_id,
         used=True,
         used_by=admin_user.user_id,
@@ -153,14 +153,14 @@ class TestManageInvitesGet:
 
         response = client.get('/admin/manage_invites')
         
-        assert response.status_code == 200  # Renders template after processing
+        assert response.status_code == 200  # Renders the invitation workspace
         mock_render.assert_called_once()
         args, kwargs = mock_render.call_args
         assert args[0] == 'admin/admin_manage_invites.html'
         assert 'users' in kwargs
-        assert 'user_unused_invites' in kwargs
+        assert 'user_active_invites' in kwargs
         assert len(kwargs['users']) == 1  # Only the admin user
-        assert kwargs['user_unused_invites'] == {admin_user.user_id: 0}
+        assert kwargs['user_active_invites'] == {}
 
     @patch('sharewarez.routes_admin_ext.invites.render_template')
     def test_admin_can_access_with_multiple_users(self, mock_render, client, admin_user, regular_user):
@@ -173,12 +173,12 @@ class TestManageInvitesGet:
 
         response = client.get('/admin/manage_invites')
         
-        assert response.status_code == 200  # Renders template after processing
+        assert response.status_code == 200
         mock_render.assert_called_once()
         args, kwargs = mock_render.call_args
         assert len(kwargs['users']) == 2
-        assert kwargs['user_unused_invites'][admin_user.user_id] == 0
-        assert kwargs['user_unused_invites'][regular_user.user_id] == 0
+        assert kwargs['user_active_invites'].get(admin_user.user_id, 0) == 0
+        assert kwargs['user_active_invites'].get(regular_user.user_id, 0) == 0
 
     @patch('sharewarez.routes_admin_ext.invites.render_template')
     def test_admin_sees_correct_unused_invite_count(self, mock_render, client, admin_user, regular_user, invite_token_unused, invite_token_used):
@@ -194,8 +194,8 @@ class TestManageInvitesGet:
         assert response.status_code == 200  # Renders template after processing
         args, kwargs = mock_render.call_args
         # Regular user should have 1 unused invite (invite_token_used is used, invite_token_unused is not)
-        assert kwargs['user_unused_invites'][regular_user.user_id] == 1
-        assert kwargs['user_unused_invites'][admin_user.user_id] == 0
+        assert kwargs['user_active_invites'][regular_user.user_id] == 1
+        assert kwargs['user_active_invites'].get(admin_user.user_id, 0) == 0
 
     @patch('sharewarez.routes_admin_ext.invites.render_template')
     def test_admin_sees_multiple_unused_invites(self, mock_render, client, admin_user, regular_user, db_session):
@@ -203,7 +203,7 @@ class TestManageInvitesGet:
         # Create multiple unused invite tokens for regular user
         for i in range(3):
             token = InviteToken(
-                token=f'unused_token_{i}',
+                token_digest=f'{i:064d}',
                 creator_user_id=regular_user.user_id,
                 used=False,
                 recipient_email=f'recipient{i}@example.com'
@@ -221,7 +221,7 @@ class TestManageInvitesGet:
         
         assert response.status_code == 200  # Renders template after processing
         args, kwargs = mock_render.call_args
-        assert kwargs['user_unused_invites'][regular_user.user_id] == 3
+        assert kwargs['user_active_invites'][regular_user.user_id] == 3
 
 
 class TestManageInvitesPost:
@@ -240,14 +240,14 @@ class TestManageInvitesPost:
             'invites_number': '10'
         })
         
-        assert response.status_code == 200  # Renders template after processing
+        assert response.status_code == 302
         
         # Check that the user's invite quota was updated
         db_session.refresh(regular_user)
         assert regular_user.invite_quota == original_quota + 10
 
-    def test_admin_can_add_negative_invites(self, client, admin_user, regular_user, db_session):
-        """Test admin can reduce invite quota with negative numbers."""
+    def test_admin_cannot_add_negative_invites(self, client, admin_user, regular_user, db_session):
+        """Invitation allowances cannot be reduced below the established total."""
         regular_user.invite_quota = 20
         db_session.commit()
         
@@ -260,10 +260,10 @@ class TestManageInvitesPost:
             'invites_number': '-5'
         })
         
-        assert response.status_code == 200  # Renders template after processing
+        assert response.status_code == 302
         
         db_session.refresh(regular_user)
-        assert regular_user.invite_quota == 15
+        assert regular_user.invite_quota == 20
 
     def test_admin_can_add_zero_invites(self, client, admin_user, regular_user, db_session):
         """Test admin can submit zero invites without changing quota."""
@@ -278,7 +278,7 @@ class TestManageInvitesPost:
             'invites_number': '0'
         })
         
-        assert response.status_code == 200  # Renders template after processing
+        assert response.status_code == 302
         
         db_session.refresh(regular_user)
         assert regular_user.invite_quota == original_quota
@@ -296,7 +296,7 @@ class TestManageInvitesPost:
             'invites_number': '5'
         })
         
-        assert response.status_code == 200  # Renders template with error message
+        assert response.status_code == 302
 
     def test_admin_can_add_large_number_invites(self, client, admin_user, regular_user, db_session):
         """Test admin can add large number of invites up to limit."""
@@ -311,7 +311,7 @@ class TestManageInvitesPost:
             'invites_number': '1000'  # Maximum allowed
         })
         
-        assert response.status_code == 200  # Renders template after processing
+        assert response.status_code == 302
         
         db_session.refresh(regular_user)
         assert regular_user.invite_quota == original_quota + 1000
@@ -390,7 +390,7 @@ class TestManageInvitesEdgeCases:
             'user_id': regular_user.user_id
         })
         
-        assert response.status_code == 200  # Renders template after processingful update
+        assert response.status_code == 302
         # User quota should remain unchanged (added 0)
         from sharewarez import db
         db.session.refresh(regular_user)
@@ -425,7 +425,7 @@ class TestManageInvitesEdgeCases:
             'invites_number': ''
         })
         
-        assert response.status_code == 200  # Renders template after processingful update
+        assert response.status_code == 302
         # User quota should remain unchanged (added 0)
         from sharewarez import db
         db.session.refresh(regular_user)
@@ -452,7 +452,7 @@ class TestManageInvitesEdgeCases:
             mock_render.assert_called_once()
             args, kwargs = mock_render.call_args
             assert kwargs['users'] == []
-            assert kwargs['user_unused_invites'] == {}
+            assert kwargs['user_active_invites'] == {}
 
     def test_database_error_handling_post(self, client, admin_user, regular_user, monkeypatch):
         """Test that database errors in POST request are handled gracefully."""

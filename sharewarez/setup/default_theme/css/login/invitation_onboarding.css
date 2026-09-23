@@ -1,0 +1,35 @@
+.invitation-onboarding { max-width: 760px; }
+.invitation-onboarding-header { margin-bottom: 18px; }
+.invitation-eyebrow {
+  margin: 0 0 6px;
+  color: var(--theme-accent, var(--theme-primary));
+  font-size: .75rem;
+  font-weight: 750;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+.invitation-onboarding-surface { padding: clamp(20px, 4vw, 32px); }
+.invitation-onboarding-form { display: grid; gap: 18px; }
+.invitation-onboarding-form label {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--theme-text-secondary, var(--text-light));
+  font-size: .8rem;
+  font-weight: 650;
+}
+.invitation-onboarding-form small {
+  display: block;
+  margin-top: 6px;
+  color: var(--theme-text-muted, var(--text-muted));
+}
+.invitation-password-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.invitation-onboarding-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.invitation-result { padding: clamp(28px, 7vw, 56px); text-align: center; }
+.invitation-result > i { color: var(--theme-accent, var(--theme-primary)); font-size: 2rem; }
+.invitation-result h1 { margin: 14px 0 8px; }
+.invitation-result p { max-width: 560px; margin: 0 auto 20px; color: var(--theme-text-secondary, var(--text-light)); }
+.invitation-result .invitation-onboarding-actions { justify-content: center; }
+@media (max-width: 640px) {
+  .invitation-password-grid { grid-template-columns: 1fr; }
+  .invitation-onboarding-actions > .btn { width: 100%; }
+}

@@ -10,7 +10,7 @@
             <h1>User Management</h1>
             <p>Manage user access, roles, and account status.</p>
         </div>
-        <button class="btn btn-primary" id="addNewUserBtn"><i class="fas fa-user-plus" aria-hidden="true"></i> Add User</button>
+        <a class="btn btn-primary" href="{{ url_for('admin2.manage_invites') }}"><i class="fas fa-user-plus" aria-hidden="true"></i> Invite user</a>
     </header>
 <section class="app-surface users-management-panel">
     <form class="users-management-filters" method="get" role="search">
@@ -158,43 +158,6 @@
             </div>
         </div>
     </div>
-    </div>
-    
-    <!-- Add New User Modal -->
-    <div class="modal fade" id="addUserModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Add New User</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <form id="addUserForm">
-                        <div class="mb-3">
-                            <label for="newUsername" class="form-label">Username</label>
-                            <input type="text" class="form-control" id="newUsername" required>
-                            <small id="usernameAvailabilityFeedback" class="form-text"></small>
-                        </div>
-                        <div class="mb-3">
-                            <label for="newEmail" class="form-label">Email</label>
-                            <input type="email" class="form-control" id="newEmail" required autocomplete="email">
-                        </div>
-                        <div class="mb-3">
-                            <label for="newPassword" class="form-label">Password</label>
-                            <input type="password" class="form-control" id="newPassword" required autocomplete="new-password">
-                        </div>
-                        <div class="mb-3">
-                            <label for="newConfirmPassword" class="form-label">Confirm Password</label>
-                            <input type="password" class="form-control" id="newConfirmPassword" required autocomplete="new-password">
-                        </div>
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="button" class="btn btn-primary" id="saveNewUser">Create User</button>
-                </div>
-            </div>
-        </div>
     </div>
     
     <!-- Delete Confirmation Modal -->

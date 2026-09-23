@@ -234,6 +234,6 @@ def send_invite_email(email, invite_url, inviter_name='A user'):
         'inviter_name': inviter_name,
         'recipient_email': email,
         'invite_url': invite_url,
-        'expires_in': '48 hours',
+        'expires_in': '7 days',
     })
     return send_email(email, subject, html_content, show_feedback=False)

@@ -1,3 +1,4 @@
+import hashlib
 from unittest.mock import patch
 
 import pytest
@@ -143,3 +144,28 @@ def test_provider_identity_migration_backfills_existing_igdb_rows(app, db_sessio
         "ORDER BY id DESC LIMIT 1"
     )).one()
     assert provider_settings == (False, ['igdb'])
+
+
+def test_secure_invitation_migration_preserves_existing_links(app, db_session):
+    database_uri = app.config['SQLALCHEMY_DATABASE_URI']
+    command.downgrade(alembic_config(database_uri), '20260922_29')
+    raw_token = 'legacy-link-that-was-already-delivered'
+    creator_id = '00000000-0000-0000-0000-000000000030'
+    db_session.execute(text(
+        "INSERT INTO users (name, email, password_hash, role, state, user_id) VALUES "
+        "('migration_admin', 'migration-admin@example.com', 'hash', 'admin', true, :user_id)"
+    ), {'user_id': creator_id})
+    db_session.execute(text(
+        "INSERT INTO invite_tokens (token, creator_user_id, created_at, expires_at, used) "
+        "VALUES (:token, :creator, now(), now() + interval '7 days', false)"
+    ), {'token': raw_token, 'creator': creator_id})
+    db_session.commit()
+
+    upgrade_database(database_uri)
+
+    stored = db_session.execute(text(
+        'SELECT token_digest, revoked_at, revoked_by_user_id FROM invite_tokens'
+    )).one()
+    assert stored.token_digest == hashlib.sha256(raw_token.encode()).hexdigest()
+    assert stored.revoked_at is None
+    assert stored.revoked_by_user_id is None
