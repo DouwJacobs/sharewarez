@@ -49,6 +49,11 @@ Local `sharewarez.json` files now use metadata version 2.0 with an `identity` ob
 Version 1.0 files containing only `igdb_id` are still accepted. New IGDB files retain
 that legacy key as well as the provider-neutral envelope.
 
+Games created with **Custom game** receive a canonical `local` identity whose
+external ID is the game's UUID. They no longer consume synthetic high-number IGDB
+IDs. Editing and local-metadata writes preserve that local identity, while legacy
+custom IDs remain readable during the compatibility window.
+
 Provider failures and empty searches advance to the next enabled provider. Exact
 refresh uses only the stored canonical identity and never assumes equal numeric IDs
 belong to the same game. Missing optional capabilities cannot erase existing media.

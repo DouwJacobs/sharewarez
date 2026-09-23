@@ -88,11 +88,10 @@ assert(base && uuid, 'Use an explicitly disposable preview URL and game UUID');
 
         // Custom identity must protect a dirty draft and mark a clean form dirty.
         await edit();
-        await page.route('**/api/get_next_custom_igdb_id', r => r.fulfill({json: {next_id: 2000000450}}));
         await page.locator('.game-edit-identification > summary').click();
         await page.locator('#add-non-existing-game').click();
-        await page.waitForFunction(() => document.querySelector('#igdb_id').value === '2000000450');
-        assert.equal(await page.locator('#igdb_id').inputValue(), '2000000450');
+        assert.equal(await page.locator('#igdb_id').inputValue(), '');
+        assert.equal(await page.locator('#manual_identity').inputValue(), '1');
         assert(await page.evaluate(() => {
             const e = new Event('beforeunload', {cancelable: true});
             window.dispatchEvent(e); return e.defaultPrevented;

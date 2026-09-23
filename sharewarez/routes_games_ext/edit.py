@@ -1,7 +1,9 @@
 from flask import render_template, redirect, url_for, flash, copy_current_request_context, request, abort, current_app
 from flask_login import login_required, current_user
 from sharewarez.forms import AddGameForm
-from sharewarez.models import Game, Library, Category, Developer, Publisher, Status
+from sharewarez.models import (
+    Game, GameExternalIdentity, Library, Category, Developer, Publisher, Status,
+)
 from sharewarez.utils.functions import read_first_nfo_content, get_folder_size_in_bytes_updates, format_size, PLATFORM_IDS
 from sharewarez.utils.auth import admin_required
 from sharewarez.utils.scanning import is_scan_job_running, refresh_images_in_background
@@ -38,6 +40,13 @@ def game_edit(game_uuid):
         form.developer.data = game.developer.name if game.developer else ''
         form.publisher.data = game.publisher.name if game.publisher else ''
         form.tags.data = ', '.join(tag.name for tag in game.tags)
+        canonical_identity = next(
+            (identity for identity in game.external_identities if identity.canonical),
+            None,
+        )
+        form.manual_identity.data = (
+            '1' if canonical_identity and canonical_identity.provider == 'local' else '0'
+        )
     form.library_uuid.choices = [(str(lib.uuid), lib.name) for lib in db.session.execute(select(Library).order_by(Library.name)).scalars().all()]
     platform_id = PLATFORM_IDS.get(game.library.platform.value.upper(), None)
     platform_name = game.library.platform.value
@@ -54,6 +63,10 @@ def game_edit(game_uuid):
 
     current_app.logger.debug(f"game_edit1 Platform ID: {platform_id}, Platform Name: {platform_name} Library Name: {library_name}")
     if form.validate_on_submit():
+        is_manual_game = form.manual_identity.data == '1'
+        if not is_manual_game and form.igdb_id.data is None:
+            form.igdb_id.errors.append('Choose an IGDB game or use Custom game.')
+            return render_editor()
         if is_scan_job_running():
             flash('Cannot edit the game while a scan job is running. Please try again later.', 'error')
             current_app.logger.warning(f"Attempt to edit a game while a scan job is running by user: {current_user.name}")
@@ -95,11 +108,32 @@ def game_edit(game_uuid):
             return render_editor()
         
         previous_igdb_id = game.igdb_id
-        igdb_id_changed = previous_igdb_id != form.igdb_id.data
+        updated_igdb_id = None if is_manual_game else form.igdb_id.data
+        igdb_id_changed = previous_igdb_id != updated_igdb_id
         
         # Validate and truncate field lengths
         game.library_uuid = form.library_uuid.data
-        game.igdb_id = form.igdb_id.data
+        game.igdb_id = updated_igdb_id
+        identity_provider = 'local' if is_manual_game else 'igdb'
+        identity_external_id = game.uuid if is_manual_game else str(updated_igdb_id)
+        for identity in game.external_identities:
+            identity.canonical = False
+        provider_identity = next(
+            (
+                identity for identity in game.external_identities
+                if identity.provider == identity_provider
+            ),
+            None,
+        )
+        if provider_identity is None:
+            provider_identity = GameExternalIdentity(
+                provider=identity_provider,
+                external_id=identity_external_id,
+            )
+            game.external_identities.append(provider_identity)
+        else:
+            provider_identity.external_id = identity_external_id
+        provider_identity.canonical = True
         
         # Validate name length (max 255)
         name = form.name.data or ""
@@ -316,12 +350,13 @@ def game_edit(game_uuid):
                 metadata_filename = settings.local_metadata_filename or 'sharewarez.json'
                 write_local_metadata(
                     full_disk_path=game.full_disk_path,
-                    igdb_id=game.igdb_id,
                     game_title=game.name,
                     manually_verified=True,
                     filename=metadata_filename,
                     install_instructions=game.install_instructions,
-                    game_version=game.version
+                    game_version=game.version,
+                    provider=identity_provider,
+                    external_id=identity_external_id,
                 )
 
             def start_reidentified_image_refresh():

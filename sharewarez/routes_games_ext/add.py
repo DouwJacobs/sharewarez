@@ -2,7 +2,7 @@ import os
 from flask import render_template, redirect, url_for, flash, copy_current_request_context, session, request, current_app
 from flask_login import login_required, current_user
 from sharewarez.forms import AddGameForm
-from sharewarez.models import Game, Library, UnmatchedFolder, Category, Developer, Publisher
+from sharewarez.models import Game, GameExternalIdentity, Library, UnmatchedFolder, Category, Developer, Publisher
 from sharewarez.utils.functions import read_first_nfo_content, PLATFORM_IDS
 from sharewarez.utils.auth import admin_required
 from sharewarez.utils.scanning import is_scan_job_running, refresh_images_in_background
@@ -15,6 +15,7 @@ from sharewarez import db
 from threading import Thread
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import select
+from uuid import uuid4
 
 from . import games_bp
 
@@ -89,16 +90,22 @@ def add_game_manual():
             flash(f"Access denied: {error_message}", 'error')
             return render_template('admin/admin_game_identify.html', form=form, library_uuid=library_uuid, library_name=library_name, platform_name=platform_name, platform_id=platform_id)
 
-        # Check if this is a custom IGDB ID (above 2,000,000,420)
-        is_custom_game = int(form.igdb_id.data) >= 2000000420
+        is_custom_game = form.manual_identity.data == '1'
+        if not is_custom_game and form.igdb_id.data is None:
+            form.igdb_id.errors.append('Choose an IGDB game or use Custom game.')
+            return render_template('admin/admin_game_identify.html', form=form, library_uuid=library_uuid, library_name=library_name, platform_name=platform_name, platform_id=platform_id)
         
         # For custom games, skip IGDB ID check
         if not is_custom_game and check_existing_game_by_igdb_id(form.igdb_id.data):
             flash('A game with this IGDB ID already exists.', 'error')
             return render_template('admin/admin_game_identify.html', form=form, library_uuid=library_uuid, library_name=library_name, platform_name=platform_name, platform_id=platform_id)
         
+        game_uuid = str(uuid4())
+        identity_provider = 'local' if is_custom_game else 'igdb'
+        identity_external_id = game_uuid if is_custom_game else str(form.igdb_id.data)
         new_game = Game(
-            igdb_id=form.igdb_id.data,
+            uuid=game_uuid,
+            igdb_id=None if is_custom_game else form.igdb_id.data,
             name=form.name.data,
             summary=form.summary.data,
             storyline=form.storyline.data,
@@ -116,6 +123,11 @@ def add_game_manual():
             video_urls=form.video_urls.data,
             library_uuid=form.library_uuid.data
         )
+        new_game.external_identities.append(GameExternalIdentity(
+            provider=identity_provider,
+            external_id=identity_external_id,
+            canonical=True,
+        ))
         new_game.genres = form.genres.data
         new_game.game_modes = form.game_modes.data
         new_game.themes = form.themes.data
@@ -175,12 +187,13 @@ def add_game_manual():
                 metadata_filename = settings.local_metadata_filename or 'sharewarez.json'
                 success = write_local_metadata(
                     full_disk_path=form.full_disk_path.data,
-                    igdb_id=form.igdb_id.data,
                     game_title=form.name.data,
                     manually_verified=True,
                     filename=metadata_filename,
                     install_instructions=form.install_instructions.data,
-                    game_version=(form.version.data or '').strip() or None
+                    game_version=(form.version.data or '').strip() or None,
+                    provider=identity_provider,
+                    external_id=identity_external_id,
                 )
 
                 if success:

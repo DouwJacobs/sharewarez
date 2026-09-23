@@ -206,7 +206,8 @@ class IGDBApiForm(FlaskForm):
 
 class AddGameForm(FlaskForm):
     # Existing fields
-    igdb_id = IntegerField('IGDB ID', validators=[DataRequired(), NumberRange(min=1, max=9999999999)], widget=TextInput())
+    igdb_id = IntegerField('IGDB ID', validators=[Optional(), NumberRange(min=1, max=9999999999)], widget=TextInput())
+    manual_identity = HiddenField(default='0')
     name = StringField('Name', validators=[DataRequired()])
     summary = TextAreaField('Summary', validators=[Optional()])
     storyline = TextAreaField('Storyline', validators=[Optional()])

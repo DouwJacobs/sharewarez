@@ -10,6 +10,7 @@ document.addEventListener('DOMContentLoaded', function() {
     var platformDisplay = document.querySelector('#platform_display');
     const platformId = document.querySelector('#platform_id').textContent; 
     const igdbIdInput = document.querySelector('#igdb_id');
+    const manualIdentityInput = document.querySelector('#manual_identity');
     const fullPathInput = document.querySelector('#full_disk_path');
     const nameInput = document.querySelector('#name');
     const urlInput = document.querySelector('#url');
@@ -55,36 +56,17 @@ document.addEventListener('DOMContentLoaded', function() {
         statusElement.classList.remove('is-loading');
     }
 
-    // Function to fetch the next available custom IGDB ID
-    async function fetchNextCustomIgdbId() {
-        try {
-            const response = await fetch('/api/get_next_custom_igdb_id');
-            const data = await response.json();
-            if (data.error) {
-                console.error('Error fetching next custom IGDB ID:', data.error);
-                return 2000000420; // Fallback to base value if API fails
-            }
-            return data.next_id;
-        } catch (error) {
-            console.error('Error fetching next custom IGDB ID:', error);
-            return 2000000420; // Fallback to base value if API fails
-        }
-    }
-
     // Add Non-Existing Game button handler
-    document.querySelector('#add-non-existing-game').addEventListener('click', async function() {
-        this.disabled = true;
-        this.setAttribute('aria-busy', 'true');
-        const nextId = await fetchNextCustomIgdbId();
-        this.disabled = false;
-        this.removeAttribute('aria-busy');
+    document.querySelector('#add-non-existing-game').addEventListener('click', function() {
         if (!allowIdentityReplacement()) return;
         formIsDirty = true;
         // Disable IGDB search functionality
         document.querySelector('#search-igdb-btn').disabled = true;
         document.querySelector('#search-igdb').disabled = true;
-        igdbIdInput.value = nextId;
+        igdbIdInput.value = '';
         igdbIdInput.readOnly = true;
+        manualIdentityInput.value = '1';
+        showFeedback(igdbIdFeedback, 'A local identity will be created when you save.', true);
 
         // Clear and enable name field
         nameInput.value = '';
@@ -124,7 +106,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function checkFieldsAndToggleSubmit() {
-        const igdbIdIsValid = igdbIdInput.value.trim().length > 0 && /^\d+$/.test(igdbIdInput.value);
+        const igdbIdIsValid = manualIdentityInput.value === '1' || (igdbIdInput.value.trim().length > 0 && /^\d+$/.test(igdbIdInput.value));
         const fullPathIsValid = fullPathInput.value.trim().length > 0;
         const nameIsValid = nameInput.value.trim().length > 0;
         const libraryUuidIsValid = libraryUuidInput.value.trim().length > 0;
@@ -284,6 +266,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         setTimeout(() => {
                             if (!allowIdentityReplacement()) return;
                             formIsDirty = true;
+                            manualIdentityInput.value = '0';
                             // Update form fields
                             nameInput.value = data.name;
                             document.querySelector('#summary').value = data.summary || '';
@@ -359,6 +342,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             resultItem.addEventListener('click', function() {
                                 if (!allowIdentityReplacement()) return;
                                 formIsDirty = true;
+                                manualIdentityInput.value = '0';
                                 // Update form with game data upon selection
                                 updateFormWithGameData(game);
     
@@ -412,11 +396,6 @@ document.addEventListener('DOMContentLoaded', function() {
     igdbIdInput.addEventListener('blur', function() {
         const igdbId = this.value.trim();
         if (igdbId.length > 0) {
-            // Skip validation for custom IDs
-            if (parseInt(igdbId) >= 2000000420) {
-                showFeedback(igdbIdFeedback, 'Custom game ID', true);
-                return;
-            }
             fetch(`/api/check_igdb_id?igdb_id=${igdbId}`)
                 .then(response => response.json())
                 .then(data => {

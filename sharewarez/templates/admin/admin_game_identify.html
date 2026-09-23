@@ -44,7 +44,7 @@
   {% endif %}
 
   <form method="post" action="" class="game_edit-form app-surface" novalidate>
-    {{ form.hidden_tag() }}{{ form.library_uuid(class="form-control", hidden=true) }}
+    {{ form.hidden_tag() }}{{ form.library_uuid(class="form-control", hidden=true) }}{{ form.manual_identity() }}
     {% if form.errors %}<section class="game-edit-error-summary" role="alert" aria-labelledby="game-edit-errors-title"><h2 id="game-edit-errors-title">Check the highlighted fields</h2><ul>{% for field_name, field_errors in form.errors.items() %}{% if field_name != 'csrf_token' %}<li><a href="#{{ field_name }}">{{ form[field_name].label.text }}: {{ field_errors[0] }}</a></li>{% endif %}{% endfor %}</ul></section>{% endif %}
     {{ actions('top') }}
 
@@ -85,7 +85,7 @@
 
     <details class="game-edit-identification"{% if action != 'edit' %} open{% endif %}>
       <summary><span><i class="fas fa-database" aria-hidden="true"></i> IGDB identification</span><i class="fas fa-chevron-down" aria-hidden="true"></i></summary>
-      <div class="game-edit-identification-body"><p>Changing the identity can repopulate provider fields and queues replacement images when you save.</p><div class="form-group"><label for="igdb_id">IGDB ID</label>{{ form.igdb_id(class="form-control", id="igdb_id") }}{{ errors(form.igdb_id) }}<small id="igdb_id_feedback" class="form-text-muted">Use the numeric IGDB game ID, or create a custom identity.</small><div class="field-actions"><button type="button" class="btn btn-secondary" id="search-igdb-btn"><i class="fas fa-magnifying-glass" aria-hidden="true"></i> Look up ID</button><button type="button" class="btn btn-secondary" id="add-non-existing-game"><i class="fas fa-plus" aria-hidden="true"></i> Custom game</button></div><p id="igdb-id-search-status" class="search-status" role="status" aria-live="polite"></p></div></div>
+      <div class="game-edit-identification-body"><p>Changing the identity can repopulate provider fields and queues replacement images when you save.</p><div class="form-group"><label for="igdb_id">IGDB ID</label>{{ form.igdb_id(class="form-control", id="igdb_id") }}{{ errors(form.igdb_id) }}<small id="igdb_id_feedback" class="form-text-muted">Use the numeric IGDB game ID, or create a provider-neutral local identity.</small><div class="field-actions"><button type="button" class="btn btn-secondary" id="search-igdb-btn"><i class="fas fa-magnifying-glass" aria-hidden="true"></i> Look up ID</button><button type="button" class="btn btn-secondary" id="add-non-existing-game"><i class="fas fa-plus" aria-hidden="true"></i> Custom game</button></div><p id="igdb-id-search-status" class="search-status" role="status" aria-live="polite"></p></div></div>
     </details>
 
     <div class="game-edit-save-note"><i class="fas fa-shield-heart" aria-hidden="true"></i><span>Refresh keeps manually edited values when the provider differs and records conflicts for review.</span></div>
