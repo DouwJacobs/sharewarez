@@ -1,56 +1,41 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
+{% from 'partials/auth_layout.html' import auth_shell, auth_error_summary with context %}
 {% block title %}Create account · {{ site_title }}{% endblock %}
-{% block styles %}
-{{ super() }}
-<link rel="stylesheet" href="{{ 'css/login/invitation_onboarding.css'|theme_asset }}">
-{% endblock %}
+{% block styles %}{{ super() }}<link rel="stylesheet" href="{{ 'css/login/authentication.css'|theme_asset }}">{% endblock %}
 {% block content %}
-<main class="app-page app-page--narrow invitation-onboarding" aria-labelledby="invitation-title">
-  <header class="app-page-header invitation-onboarding-header">
-    <div>
-      <p class="invitation-eyebrow">You are invited</p>
-      <h1 id="invitation-title">Create your account</h1>
-      <p>Choose your own sign-in details. This invitation can be used once.</p>
+{% call auth_shell('Create your account', 'Choose your own sign-in details. This invitation can be used once.', 'You are invited', 'fa-envelope-open-text', 'invitation-title') %}
+  {{ auth_error_summary(form) }}
+  <form method="post" action="{{ url_for('login.accept_invite', token=request.view_args.token) }}" class="auth-form">
+    {{ form.hidden_tag() }}
+    <div class="auth-field">
+      {{ form.username.label }}
+      {{ form.username(class='form-control', autocomplete='username', autofocus=true, aria_describedby='username-help') }}
+      <small id="username-help">3–64 characters; letters, numbers, dots, and underscores.</small>
+      {% if form.username.errors %}<ul class="auth-field-errors">{% for error in form.username.errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}
     </div>
-  </header>
-
-  <section class="app-surface invitation-onboarding-surface">
-    {% if form.errors %}
-    <div class="alert alert-danger" role="alert" tabindex="-1" id="invitation-error-summary">
-      <strong>Check the highlighted fields.</strong>
-      <ul>
-        {% for field_errors in form.errors.values() %}{% for error in field_errors %}<li>{{ error }}</li>{% endfor %}{% endfor %}
-      </ul>
+    <div class="auth-field">
+      {{ form.email.label }}
+      {{ form.email(class='form-control', type='email', autocomplete='email', readonly=email_locked, aria_describedby='email-help') }}
+      <small id="email-help">{% if email_locked %}This invitation is reserved for this address.{% else %}We will send an activation link to this address.{% endif %}</small>
+      {% if form.email.errors %}<ul class="auth-field-errors">{% for error in form.email.errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}
     </div>
-    {% endif %}
-    <form method="post" action="{{ url_for('login.accept_invite', token=request.view_args.token) }}" class="invitation-onboarding-form">
-      {{ form.hidden_tag() }}
-      <div>
-        {{ form.username.label }}
-        {{ form.username(class='form-control', autocomplete='username', autofocus=true, aria_describedby='username-help') }}
-        <small id="username-help">3–64 characters; letters, numbers, dots, and underscores.</small>
+    <div class="auth-password-grid">
+      <div class="auth-field">
+        {{ form.password.label }}
+        {{ form.password(class='form-control', autocomplete='new-password', aria_describedby='password-help') }}
+        <small id="password-help">Use at least 8 characters.</small>
+        {% if form.password.errors %}<ul class="auth-field-errors">{% for error in form.password.errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}
       </div>
-      <div>
-        {{ form.email.label }}
-        {{ form.email(class='form-control', autocomplete='email', readonly=email_locked, aria_describedby='email-help') }}
-        <small id="email-help">{% if email_locked %}This invitation is reserved for this address.{% else %}We will send an activation link to this address.{% endif %}</small>
+      <div class="auth-field">
+        {{ form.confirm_password.label }}
+        {{ form.confirm_password(class='form-control', autocomplete='new-password') }}
+        {% if form.confirm_password.errors %}<ul class="auth-field-errors">{% for error in form.confirm_password.errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}
       </div>
-      <div class="invitation-password-grid">
-        <div>
-          {{ form.password.label }}
-          {{ form.password(class='form-control', autocomplete='new-password', aria_describedby='password-help') }}
-          <small id="password-help">Use at least 8 characters.</small>
-        </div>
-        <div>
-          {{ form.confirm_password.label }}
-          {{ form.confirm_password(class='form-control', autocomplete='new-password') }}
-        </div>
-      </div>
-      <div class="invitation-onboarding-actions">
-        <button class="btn btn-primary" type="submit"><i class="fas fa-user-check" aria-hidden="true"></i> Create account</button>
-        <a class="btn btn-secondary" href="{{ url_for('login.login') }}">Back to sign in</a>
-      </div>
-    </form>
-  </section>
-</main>
+    </div>
+    <div class="auth-actions">
+      <button class="btn btn-primary" type="submit"><i class="fas fa-user-check" aria-hidden="true"></i> Create account</button>
+      <a class="btn btn-secondary" href="{{ url_for('login.login') }}">Back to sign in</a>
+    </div>
+  </form>
+{% endcall %}
 {% endblock %}

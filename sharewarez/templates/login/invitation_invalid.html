@@ -1,16 +1,12 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
+{% from 'partials/auth_layout.html' import auth_shell with context %}
 {% block title %}Invitation unavailable · {{ site_title }}{% endblock %}
-{% block styles %}
-{{ super() }}
-<link rel="stylesheet" href="{{ 'css/login/invitation_onboarding.css'|theme_asset }}">
-{% endblock %}
+{% block styles %}{{ super() }}<link rel="stylesheet" href="{{ 'css/login/authentication.css'|theme_asset }}">{% endblock %}
 {% block content %}
-<main class="app-page app-page--narrow invitation-onboarding" aria-labelledby="invitation-invalid-title">
-  <section class="app-surface invitation-result">
-    <i class="fas fa-link-slash" aria-hidden="true"></i>
-    <h1 id="invitation-invalid-title">This invitation is no longer available</h1>
-    <p>It may have expired, been revoked, or already been used. Ask an administrator for a new invitation.</p>
+{% call auth_shell('This invitation is no longer available', 'It may have expired, been revoked, or already been used.', 'Invitation unavailable', 'fa-link-slash', 'invitation-invalid-title', true) %}
+  <p class="auth-result-copy">Ask an administrator for a new invitation when you are ready to join.</p>
+  <div class="auth-actions">
     <a class="btn btn-secondary" href="{{ url_for('login.login') }}">Back to sign in</a>
-  </section>
-</main>
+  </div>
+{% endcall %}
 {% endblock %}

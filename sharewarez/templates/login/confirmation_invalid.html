@@ -1,17 +1,13 @@
-{% extends "base.html" %}
-{% block styles %}
-{{ super() }}
-<link rel="stylesheet" href="{{ 'css/login/confirmation_invalid.css'|theme_asset }}">
-{% endblock %}
+{% extends 'base.html' %}
+{% from 'partials/auth_layout.html' import auth_shell with context %}
+{% block title %}Invalid activation link · {{ site_title }}{% endblock %}
+{% block styles %}{{ super() }}<link rel="stylesheet" href="{{ 'css/login/authentication.css'|theme_asset }}">{% endblock %}
 {% block content %}
-<div class="container-login">
-    <div class="content-login">
-        <img src="{{ url_for('static', filename=brand_logo_path) }}" alt="{{ site_title }} logo" class="login-logo">
-        <h1 class="logo">Invalid Link</h1>
-        <p>The link you've sailed upon is marooned. Check your map (email) for the rightful path or signal (request) a new voyage (activation link).</p>
-        <div class="container-buttons-login">
-            <a href="{{ url_for('login.request_new_activation') }}" class="btn btn-primary button-login">Request New Link</a>
-        </div>
-    </div>
-</div>
+{% call auth_shell('This activation link is not valid', 'The link may be incomplete, expired, or already replaced.', 'Link unavailable', 'fa-link-slash', 'confirmation-invalid-title', true) %}
+  <p class="auth-result-copy">Request a new activation email and use the most recent link you receive.</p>
+  <div class="auth-actions">
+    <a href="{{ url_for('login.request_new_activation') }}" class="btn btn-primary">Request a new link</a>
+    <a href="{{ url_for('login.login') }}" class="btn btn-secondary">Back to sign in</a>
+  </div>
+{% endcall %}
 {% endblock %}

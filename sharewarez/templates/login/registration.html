@@ -1,39 +1,37 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
+{% from 'partials/auth_layout.html' import auth_shell, auth_error_summary with context %}
+{% block title %}Create account · {{ site_title }}{% endblock %}
+{% block styles %}
+{{ super() }}
+<link rel="stylesheet" href="{{ 'css/login/authentication.css'|theme_asset }}">
+{% endblock %}
 {% block content %}
-
-<div class="container-login">
-    <div class="content-login">
-        <div class="container-base">
-            <div class="container">
-                <img src="{{ url_for('static', filename=brand_logo_path) }}" alt="{{ site_title }} logo" class="login-logo">
-            </div>
-        </div>
-        
-        <h1 style="text-align: center; margin-top: 5px;">Register now!</h1>
-        <p style="text-align: center; font-size: 14px; opacity: 0.8; margin-bottom: 20px;">
-            (You can only register if your email has been whitelisted)
-        </p>
-
-        <div class="container-content">
-            <form action="{{ url_for('login.register', token=request.args.get('token')) }}" method="post">
-                {{ form.csrf_token }}
-                
-                <label for="username" class="label-large-text">Username</label><br>
-                {{ form.username(class_="input-glass", placeholder="Username") }}<br>
-                
-                <label for="email" class="label-large-text">Email</label><br>
-                {{ form.email(class_="input-glass", placeholder="Email") }}<br>
-                
-                <label for="password" class="label-large-text">Password</label><br>
-                {{ form.password(class_="input-glass", placeholder="Password") }}<br>
-                
-                <div class="container-buttons-login registration-actions">
-                    <input type="submit" value="Register" class="btn btn-primary button-login">
-                    <a href="/login" class="btn btn-secondary button-login">Back to Login</a>
-                </div>
-            </form>
-        </div>
+{% call auth_shell('Create your account', 'Use an invitation link or an email address approved by your administrator.', 'New account', 'fa-user-plus', 'registration-title') %}
+  {{ auth_error_summary(form) }}
+  <form action="{{ url_for('login.register', token=request.args.get('token')) }}" method="post" class="auth-form">
+    {{ form.hidden_tag() }}
+    <div class="auth-field">
+      {{ form.username.label }}
+      {{ form.username(class='form-control', autocomplete='username', autofocus=true, aria_describedby='registration-username-help') }}
+      <small id="registration-username-help">3–64 characters; letters, numbers, dots, and underscores.</small>
+      {% if form.username.errors %}<ul class="auth-field-errors">{% for error in form.username.errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}
     </div>
-</div>
-
+    <div class="auth-field">
+      {{ form.email.label }}
+      {{ form.email(class='form-control', type='email', autocomplete='email', aria_describedby='registration-email-help') }}
+      <small id="registration-email-help">Use the address your administrator approved.</small>
+      {% if form.email.errors %}<ul class="auth-field-errors">{% for error in form.email.errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}
+    </div>
+    <div class="auth-field">
+      {{ form.password.label }}
+      {{ form.password(class='form-control', autocomplete='new-password', aria_describedby='registration-password-help') }}
+      <small id="registration-password-help">Use at least 8 characters.</small>
+      {% if form.password.errors %}<ul class="auth-field-errors">{% for error in form.password.errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}
+    </div>
+    <div class="auth-actions">
+      <button class="btn btn-primary" type="submit"><i class="fas fa-user-check" aria-hidden="true"></i> Create account</button>
+      <a href="{{ url_for('login.login') }}" class="btn btn-secondary">Back to sign in</a>
+    </div>
+  </form>
+{% endcall %}
 {% endblock %}

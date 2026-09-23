@@ -1,15 +1,13 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
+{% from 'partials/auth_layout.html' import auth_shell with context %}
+{% block title %}Activation link expired · {{ site_title }}{% endblock %}
+{% block styles %}{{ super() }}<link rel="stylesheet" href="{{ 'css/login/authentication.css'|theme_asset }}">{% endblock %}
 {% block content %}
-
-<div class="container-login">
-    <div class="content-login">
-        <img src="{{ url_for('static', filename=brand_logo_path) }}" alt="{{ site_title }} logo" class="login-logo">
-        <h1>Link Expired</h1>
-        <p>The confirmation link is invalid or has expired. Please request a new activation link.</p>
-        <div class="container-buttons-login">
-            <a href="{{ url_for('login.request_new_activation') }}" class="btn btn-primary button-login">Request New Link</a>
-            <a href="{{ url_for('login.login') }}" class="btn btn-secondary button-login">Back to Login</a>
-        </div>
-    </div>
-</div>
+{% call auth_shell('This activation link has expired', 'Request a fresh link to finish activating your account.', 'Link expired', 'fa-clock', 'confirmation-expired-title', true) %}
+  <p class="auth-result-copy">For your security, activation links are time-limited and cannot be reused.</p>
+  <div class="auth-actions">
+    <a href="{{ url_for('login.request_new_activation') }}" class="btn btn-primary">Request a new link</a>
+    <a href="{{ url_for('login.login') }}" class="btn btn-secondary">Back to sign in</a>
+  </div>
+{% endcall %}
 {% endblock %}

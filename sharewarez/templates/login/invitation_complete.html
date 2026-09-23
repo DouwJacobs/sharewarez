@@ -1,23 +1,17 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
+{% from 'partials/auth_layout.html' import auth_shell with context %}
 {% block title %}Check your email · {{ site_title }}{% endblock %}
-{% block styles %}
-{{ super() }}
-<link rel="stylesheet" href="{{ 'css/login/invitation_onboarding.css'|theme_asset }}">
-{% endblock %}
+{% block styles %}{{ super() }}<link rel="stylesheet" href="{{ 'css/login/authentication.css'|theme_asset }}">{% endblock %}
 {% block content %}
-<main class="app-page app-page--narrow invitation-onboarding" aria-labelledby="invitation-complete-title">
-  <section class="app-surface invitation-result">
-    <i class="fas fa-envelope-circle-check" aria-hidden="true"></i>
-    <h1 id="invitation-complete-title">Check your email</h1>
-    {% if email_delivered %}
-    <p>Your account has been created. Follow the activation link sent to <strong>{{ email }}</strong>, then sign in.</p>
-    {% else %}
-    <p>Your account has been created, but the activation email could not be delivered. Request a new activation link or contact an administrator.</p>
-    {% endif %}
-    <div class="invitation-onboarding-actions">
-      {% if not email_delivered %}<a class="btn btn-primary" href="{{ url_for('login.request_new_activation') }}">Request activation link</a>{% endif %}
-      <a class="btn btn-secondary" href="{{ url_for('login.login') }}">Go to sign in</a>
-    </div>
-  </section>
-</main>
+{% call auth_shell('Check your email', 'Your account has been created and needs email verification.', 'One more step', 'fa-envelope-circle-check', 'invitation-complete-title', true) %}
+  {% if email_delivered %}
+  <p class="auth-result-copy">Follow the activation link sent to <strong>{{ email }}</strong>, then sign in.</p>
+  {% else %}
+  <p class="auth-result-copy">The activation email could not be delivered. Request a new link or contact an administrator.</p>
+  {% endif %}
+  <div class="auth-actions">
+    {% if not email_delivered %}<a class="btn btn-primary" href="{{ url_for('login.request_new_activation') }}">Request activation link</a>{% endif %}
+    <a class="btn btn-secondary" href="{{ url_for('login.login') }}">Go to sign in</a>
+  </div>
+{% endcall %}
 {% endblock %}

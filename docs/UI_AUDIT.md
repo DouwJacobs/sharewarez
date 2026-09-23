@@ -662,3 +662,21 @@ claims end on a specific activation-email screen. All ordinary fields and action
 use the shared control geometry; canonical and installed default-theme assets
 remain synchronized. The security and lifecycle contract is recorded in
 `INVITATIONS.md`.
+
+## Public authentication shell — 23 September 2026
+
+Sign in, approved-email registration, password recovery, activation recovery,
+invitation acceptance, and their confirmation/result states now share one
+public authentication shell. The shell uses a single `.app-surface` split into
+a quiet product context area and a flat form/result area; it does not nest cards
+or introduce a second control system. Labels, help text, validation summaries,
+primary actions, and secondary navigation use the shared control and semantic
+color contracts.
+
+At 760 px and below the shell becomes one column. The brand context compresses
+to a short header, password pairs stack, and ordinary actions occupy the full
+available width at the shared 44 px mobile height. `#content` continues to own
+the sole mobile gutter. Canonical styling lives in
+`css/login/authentication.css`; the installed default-theme copy must remain
+synchronized. The former confirmation and invitation-specific stylesheets are
+retired so all public account states remain visually consistent.

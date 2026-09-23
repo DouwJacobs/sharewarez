@@ -1,33 +1,24 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
+{% from 'partials/auth_layout.html' import auth_shell, auth_error_summary with context %}
+{% block title %}Request activation link · {{ site_title }}{% endblock %}
+{% block styles %}
+{{ super() }}
+<link rel="stylesheet" href="{{ 'css/login/authentication.css'|theme_asset }}">
+{% endblock %}
 {% block content %}
-
-<div class="container-login">
-    <div class="content-login">
-        <div class="container-base">
-            <div class="container">
-                <img src="{{ url_for('static', filename=brand_logo_path) }}" alt="{{ site_title }} logo" class="login-logo">
-            </div>
-        </div>
-        
-        <h1 style="text-align: center; margin-top: 5px;">Request Activation Link</h1>
-        <p style="text-align: center; font-size: 14px; opacity: 0.8; margin-bottom: 20px;">
-            Please enter your email address to receive a link to activate your account.
-        </p>
-
-        <div class="container-content">
-            <form action="{{ url_for('login.request_new_activation') }}" method="post">
-                {{ form.hidden_tag() }}
-                
-                <label for="email" class="label-large-text">Email</label><br>
-                <input type="email" class="input-glass" id="email" name="email" placeholder="Enter your email" autocomplete="email" required value="{{ form.email.data or '' }}">{% for error in form.email.errors %}<p role="alert">{{ error }}</p>{% endfor %}<br>
-                
-                <div class="container-buttons-login">
-                    <input type="submit" value="Request Activation Link" class="btn btn-primary button-login">
-                    <a href="/login" class="btn btn-secondary button-login">Back to Login</a>
-                </div>
-            </form>
-        </div>
+{% call auth_shell('Request an activation link', 'Enter your account email and we will send a new activation link if one is needed.', 'Email verification', 'fa-envelope', 'activation-request-title') %}
+  {{ auth_error_summary(form) }}
+  <form action="{{ url_for('login.request_new_activation') }}" method="post" class="auth-form">
+    {{ form.hidden_tag() }}
+    <div class="auth-field">
+      {{ form.email.label }}
+      {{ form.email(class='form-control', type='email', autocomplete='email', autofocus=true, placeholder='you@example.com') }}
+      {% if form.email.errors %}<ul class="auth-field-errors">{% for error in form.email.errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}
     </div>
-</div>
-
+    <div class="auth-actions">
+      <button class="btn btn-primary" type="submit"><i class="fas fa-paper-plane" aria-hidden="true"></i> Send activation link</button>
+      <a href="{{ url_for('login.login') }}" class="btn btn-secondary">Back to sign in</a>
+    </div>
+  </form>
+{% endcall %}
 {% endblock %}
