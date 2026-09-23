@@ -22,8 +22,8 @@ or paths.
 ## Rate limiting
 
 The default policy is 300 requests per minute per client. Login is limited to
-10 POSTs per minute; registration and password-reset requests to 5; confirmation
-links to 20. Limits return HTTP 429.
+10 POSTs per minute; registration, invitation acceptance, and password-reset
+requests to 5; confirmation links to 20. Limits return HTTP 429.
 
 `memory://` requires no extra service and is suitable for one host, but each web
 application instance maintains independent counters. Multi-host deployments should configure
@@ -45,3 +45,8 @@ All maintained launchers disable Uvicorn's separate raw access log with
 `--no-access-log`; the redacted application request logger is authoritative.
 A custom launcher must preserve this flag to avoid recording recovery tokens in
 raw request paths or query strings.
+
+Invitation credentials follow the same diagnostic boundary as recovery tokens.
+Only a SHA-256 digest is stored, the raw credential is shown in its creation
+response only, and `/join/<token>` must remain represented by its route pattern
+in application logs. See `docs/INVITATIONS.md` for the lifecycle contract.

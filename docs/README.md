@@ -17,6 +17,7 @@ operator references by purpose.
 ## APIs and downloads
 
 - [Scoped API tokens](API_TOKENS.md)
+- [Invitation-led onboarding](INVITATIONS.md)
 - [Public API](PUBLIC_API.md)
 - [Download delivery](DOWNLOADS.md)
 

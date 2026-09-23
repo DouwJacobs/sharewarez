@@ -644,3 +644,21 @@ Desktop and mobile primary-navigation labels use the same short destination
 names. In particular, the administrator shortcut is **Admin** in both the desktop
 sidebar and mobile More menu. Full **Administration** wording remains appropriate
 for document titles, section headings, breadcrumbs, and accessible descriptions.
+
+## Invitation-led onboarding — 23 September 2026
+
+User Management now directs administrators to **Invite user** instead of opening
+a credential-creation dialog. The Invitations workspace owns share-link and
+email-bound creation, one-time copy feedback, pending/accepted/expired/revoked
+history, revocation, replacement, resend, and the secondary member-allowance
+controls. Its three major regions are sibling `.app-surface` sections; history
+becomes flat labelled records at mobile width rather than introducing a nested
+card system.
+
+Invitees use a dedicated public account-setup page and choose their own username,
+email, password, and password confirmation. Email-bound invitations display a
+locked address. Invalid lifecycle states share one public result, and successful
+claims end on a specific activation-email screen. All ordinary fields and actions
+use the shared control geometry; canonical and installed default-theme assets
+remain synchronized. The security and lifecycle contract is recorded in
+`INVITATIONS.md`.
