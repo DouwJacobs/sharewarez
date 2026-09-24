@@ -16,10 +16,13 @@ cleanup() {
 trap cleanup EXIT INT TERM
 
 echo "==> Validating locked dependencies"
+cp requirements.txt /tmp/gamelibrary-requirements.txt
 "$PYTHON_BIN" -m piptools compile --quiet --strip-extras --no-header --no-annotate \
     requirements.in --output-file /tmp/gamelibrary-requirements.txt
 grep -E '^[A-Za-z0-9_.-]+==' requirements.txt | tr -d '\r' > /tmp/gamelibrary-locked-pins.txt
-cmp --silent /tmp/gamelibrary-locked-pins.txt /tmp/gamelibrary-requirements.txt || {
+grep -E '^[A-Za-z0-9_.-]+==' /tmp/gamelibrary-requirements.txt | tr -d '\r' \
+    > /tmp/gamelibrary-compiled-pins.txt
+cmp --silent /tmp/gamelibrary-locked-pins.txt /tmp/gamelibrary-compiled-pins.txt || {
     echo "requirements.txt is stale; run ./scripts/lock-dependencies.sh"
     exit 1
 }

@@ -3,6 +3,6 @@
 pytest
 pytest-cov
 pip-audit
-pip-tools
+pip-tools>=7.6.1
 ruff
 mypy

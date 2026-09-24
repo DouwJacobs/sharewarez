@@ -8,7 +8,8 @@ python -m pip install -r requirements-dev.txt
 ./scripts/quality-gate.sh
 ```
 
-The gate verifies that the production lockfile is current, audits dependencies,
+The gate verifies that the production lockfile still resolves exactly from the
+committed pins and input constraints, audits dependencies,
 runs correctness lint and focused static typing, compiles Python sources, starts
 an isolated PostgreSQL 17.6 database, runs every test module against a freshly
 recreated database to prevent legacy state leakage, applies migrations to a
@@ -24,6 +25,11 @@ upgrade path for existing installations that were stamped at the baseline.
 Set `SKIP_CONTAINER_BUILD=true` only for fast development feedback. It is not a
 valid release result. `TEST_DB_PORT` and `QUALITY_IMAGE_TAG` may be overridden
 when their defaults conflict with local services.
+
+Lock validation is intentionally reproducible: newly published package versions
+do not invalidate a previously reviewed lockfile. Use
+`./scripts/lock-dependencies.sh` when intentionally refreshing dependencies; the
+gate still fails when an input change requires the committed pins to change.
 
 ## Updating dependencies
 
