@@ -20,30 +20,75 @@ depends_on = None
 
 
 def upgrade():
-    op.add_column('invite_tokens', sa.Column('token_digest', sa.String(length=64), nullable=True))
-    op.add_column('invite_tokens', sa.Column('revoked_at', sa.DateTime(timezone=True), nullable=True))
-    op.add_column('invite_tokens', sa.Column('revoked_by_user_id', sa.String(length=36), nullable=True))
-    op.create_foreign_key(
-        'fk_invite_tokens_revoked_by_user_id_users',
-        'invite_tokens',
-        'users',
-        ['revoked_by_user_id'],
-        ['user_id'],
-        ondelete='SET NULL',
-    )
-
     connection = op.get_bind()
-    invitations = connection.execute(sa.text('SELECT id, token FROM invite_tokens')).mappings()
-    for invitation in invitations:
-        digest = hashlib.sha256(invitation['token'].encode('utf-8')).hexdigest()
-        connection.execute(
-            sa.text('UPDATE invite_tokens SET token_digest = :digest WHERE id = :id'),
-            {'digest': digest, 'id': invitation['id']},
+    columns = {
+        column['name']
+        for column in sa.inspect(connection).get_columns('invite_tokens')
+    }
+    if 'token_digest' not in columns:
+        op.add_column(
+            'invite_tokens',
+            sa.Column('token_digest', sa.String(length=64), nullable=True),
+        )
+    if 'revoked_at' not in columns:
+        op.add_column(
+            'invite_tokens',
+            sa.Column('revoked_at', sa.DateTime(timezone=True), nullable=True),
+        )
+    if 'revoked_by_user_id' not in columns:
+        op.add_column(
+            'invite_tokens',
+            sa.Column('revoked_by_user_id', sa.String(length=36), nullable=True),
         )
 
-    op.alter_column('invite_tokens', 'token_digest', nullable=False)
-    op.create_index('ix_invite_tokens_token_digest', 'invite_tokens', ['token_digest'], unique=True)
-    op.drop_column('invite_tokens', 'token')
+    foreign_keys = sa.inspect(connection).get_foreign_keys('invite_tokens')
+    has_revocation_foreign_key = any(
+        key['constrained_columns'] == ['revoked_by_user_id']
+        for key in foreign_keys
+    )
+    if not has_revocation_foreign_key:
+        op.create_foreign_key(
+            'fk_invite_tokens_revoked_by_user_id_users',
+            'invite_tokens',
+            'users',
+            ['revoked_by_user_id'],
+            ['user_id'],
+            ondelete='SET NULL',
+        )
+
+    if 'token' in columns:
+        invitations = connection.execute(
+            sa.text(
+                'SELECT id, token FROM invite_tokens '
+                'WHERE token_digest IS NULL'
+            )
+        ).mappings()
+        for invitation in invitations:
+            digest = hashlib.sha256(
+                invitation['token'].encode('utf-8')
+            ).hexdigest()
+            connection.execute(
+                sa.text(
+                    'UPDATE invite_tokens SET token_digest = :digest '
+                    'WHERE id = :id'
+                ),
+                {'digest': digest, 'id': invitation['id']},
+            )
+        op.alter_column('invite_tokens', 'token_digest', nullable=False)
+
+    indexes = {
+        index['name']
+        for index in sa.inspect(connection).get_indexes('invite_tokens')
+    }
+    if 'ix_invite_tokens_token_digest' not in indexes:
+        op.create_index(
+            'ix_invite_tokens_token_digest',
+            'invite_tokens',
+            ['token_digest'],
+            unique=True,
+        )
+    if 'token' in columns:
+        op.drop_column('invite_tokens', 'token')
 
 
 def downgrade():
