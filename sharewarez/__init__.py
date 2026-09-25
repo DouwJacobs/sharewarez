@@ -19,6 +19,7 @@ from sharewarez.utils.db import check_postgres_port_open
 from sharewarez.version import __version__
 from sharewarez.security import init_http_security
 from sharewarez.observability import init_observability
+from sharewarez.environment import product_env_enabled
 
 db = SQLAlchemy()
 migrate = Migrate(compare_type=True)
@@ -53,7 +54,7 @@ def create_app():
     # The default theme is authored under setup/default_theme but served from
     # static/library/themes/default. Refresh it whenever Uvicorn recreates the
     # development app so CSS/JS edits participate in hot reload as expected.
-    if os.getenv('SHAREWAREZ_HOT_RELOAD', 'false').lower() == 'true':
+    if product_env_enabled('HOT_RELOAD'):
         default_theme_source = os.path.join(
             os.path.dirname(__file__), 'setup', 'default_theme'
         )
@@ -235,7 +236,7 @@ def create_app():
         # Database initialization is handled by the InitializationManager before workers start
         # Worker processes skip initialization entirely since it's already done
         if ('pytest' not in sys.modules and 'PYTEST_CURRENT_TEST' not in os.environ and
-            os.getenv('SHAREWAREZ_INITIALIZATION_COMPLETE') != 'true'):
+            not product_env_enabled('INITIALIZATION_COMPLETE')):
             # This should only happen in development or if initialization wasn't run
             print("⚠️  Initialization not completed - this may cause issues")
 

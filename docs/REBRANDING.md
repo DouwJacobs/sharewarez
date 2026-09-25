@@ -46,6 +46,11 @@ GameLibrary.
 6. Rename the Python package last. Treat it as an application migration with import,
    CLI, Alembic, container-entrypoint, plugin, and operator compatibility coverage.
 
+Environment-prefix migration is now active: `GAMELIBRARY_HOT_RELOAD`,
+`GAMELIBRARY_INITIALIZATION_COMPLETE`, and `GAMELIBRARY_MIGRATIONS_COMPLETE`
+take precedence over their `SHAREWAREZ_*` aliases. Launchers currently export both
+names so older deployment integrations continue to work.
+
 Each stage should be independently releasable and reversible. Remove a legacy name
 only after its replacement has shipped for a documented compatibility window.
 

@@ -56,6 +56,8 @@ print('✅ Initialization completed - starting workers...')
 "
 
 # Ensure environment variables are set for worker processes
+export GAMELIBRARY_MIGRATIONS_COMPLETE=true
+export GAMELIBRARY_INITIALIZATION_COMPLETE=true
 export SHAREWAREZ_MIGRATIONS_COMPLETE=true
 export SHAREWAREZ_INITIALIZATION_COMPLETE=true
 

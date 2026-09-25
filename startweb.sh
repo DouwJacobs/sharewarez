@@ -91,6 +91,8 @@ print('✅ Initialization completed - starting workers...')
 "
 
 # Ensure environment variables are set for worker processes
+export GAMELIBRARY_MIGRATIONS_COMPLETE=true
+export GAMELIBRARY_INITIALIZATION_COMPLETE=true
 export SHAREWAREZ_MIGRATIONS_COMPLETE=true
 export SHAREWAREZ_INITIALIZATION_COMPLETE=true
 
@@ -102,6 +104,7 @@ export PORT=${PORT:-5006}
 # keeps the multi-worker configuration and can be selected with --no-reload.
 if [[ "$RELOAD_MODE" == "true" || "$RELOAD_MODE" == "1" || "$RELOAD_MODE" == "yes" ]]; then
     echo "🔥 Hot reload enabled (single development worker)"
+    export GAMELIBRARY_HOT_RELOAD=true
     export SHAREWAREZ_HOT_RELOAD=true
     uvicorn asgi:asgi_app --no-access-log \
         --host 0.0.0.0 \

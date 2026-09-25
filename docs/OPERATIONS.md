@@ -2,8 +2,11 @@
 
 ## Development theme reloads
 
-When `SHAREWAREZ_HOT_RELOAD=true`, application startup synchronizes the authored
+When `GAMELIBRARY_HOT_RELOAD=true`, application startup synchronizes the authored
 `sharewarez/setup/default_theme` tree into the served default-theme directory.
+The legacy `SHAREWAREZ_HOT_RELOAD` name remains accepted; when both are present,
+the `GAMELIBRARY_*` value takes precedence. The initialization and migration
+completion flags follow the same compatibility rule.
 The synchronizer compares file contents and writes only new or changed assets.
 This prevents Uvicorn's watcher from repeatedly reloading on unchanged copied
 files and interrupting application startup during development.

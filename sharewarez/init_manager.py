@@ -10,6 +10,8 @@ from sqlalchemy import create_engine, inspect, select
 from sqlalchemy.orm import sessionmaker
 from dotenv import load_dotenv
 
+from sharewarez.environment import product_env_enabled, set_product_env
+
 
 class InitializationManager:
     """Central coordinator for all application initialization tasks."""
@@ -482,7 +484,7 @@ def run_complete_initialization():
 def is_initialization_complete():
     """Check if initialization has been completed."""
     # First check environment variable (set after successful init)
-    if os.getenv('SHAREWAREZ_INITIALIZATION_COMPLETE') == 'true':
+    if product_env_enabled('INITIALIZATION_COMPLETE'):
         return True
 
     # Check manager state if available
@@ -494,8 +496,8 @@ def is_initialization_complete():
 
 def mark_initialization_complete():
     """Mark initialization as complete in environment."""
-    os.environ['SHAREWAREZ_INITIALIZATION_COMPLETE'] = 'true'
-    os.environ['SHAREWAREZ_MIGRATIONS_COMPLETE'] = 'true'
+    set_product_env('INITIALIZATION_COMPLETE', 'true')
+    set_product_env('MIGRATIONS_COMPLETE', 'true')
 
 
 def run_complete_startup_initialization():
