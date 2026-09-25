@@ -2,6 +2,14 @@
 
 Transactional email content is rendered through `sharewarez.utils.email_templates`. Five built-in definitions provide safe defaults, while optional administrator overrides are stored in `system_email_templates`. Rendering uses a sandboxed Jinja environment with strict variable validation and a shared branded HTML shell. See `docs/EMAIL_TEMPLATES.md`.
 
+## Global settings
+
+`sharewarez.settings_defaults` is the authoritative registry for application-wide
+setting defaults. Admin settings views and public template context must merge
+stored values through this module instead of maintaining route-local default
+dictionaries. The merge helper returns a deep copy so callers cannot mutate
+nested defaults such as mobile navigation order.
+
 ## Frontend strategy
 
 GameLibrary remains a Flask/Jinja server-rendered application for production.

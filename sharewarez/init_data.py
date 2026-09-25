@@ -8,6 +8,7 @@ from sqlalchemy import select
 DEFAULT_ALLOWED_FILE_TYPES = ['zip', 'rar', '7z', 'iso', 'nfo', 'nes', 'sfc', 'smc', 'sms', '32x', 'gen', 'gg', 'gba', 'gb', 'gbc', 'ndc', 'prg', 'dat', 'tap', 'z64', 'd64', 'dsk', 'img', 'bin', 'st', 'stx', 'j64', 'jag', 'lnx', 'adf', 'ngc', 'gz', 'm2v', 'ogg', 'fpt', 'fpl', 'vec', 'pce', 'a78', 'rom']
 
 from sharewarez.models import ReleaseGroup, GlobalSettings
+from sharewarez.settings_defaults import default_settings
 from sharewarez.utils.event_logging import log_system_event
 
 def initialize_default_settings():
@@ -16,17 +17,7 @@ def initialize_default_settings():
     settings_record = db.session.execute(select(GlobalSettings)).scalars().first()
     if not settings_record:
         try:
-            default_settings = {
-                'showSystemLogo': True,
-                'showHelpButton': True,
-                'allowUsersToInviteOthers': True,
-                'enableWebLinksOnDetailsPage': True,
-                'enableServerStatusFeature': True,
-                'enableNewsletterFeature': True,
-                'showVersion': True,
-                'defaultTheme': 'default'
-            }
-            settings_record = GlobalSettings(settings=default_settings)
+            settings_record = GlobalSettings(settings=default_settings())
             db.session.add(settings_record)
             db.session.commit()
             print("Created default global settings")
@@ -37,17 +28,7 @@ def initialize_default_settings():
         # Settings exist, update only if settings field is empty
         if not settings_record.settings:
             try:
-                default_settings = {
-                    'showSystemLogo': True,
-                    'showHelpButton': True,
-                    'allowUsersToInviteOthers': True,
-                    'enableWebLinksOnDetailsPage': True,
-                    'enableServerStatusFeature': True,
-                    'enableNewsletterFeature': True,
-                    'showVersion': True,
-                    'defaultTheme': 'default'
-                }
-                settings_record.settings = default_settings
+                settings_record.settings = default_settings()
                 db.session.commit()
                 print("Updated existing global settings with default values")
             except Exception as e:

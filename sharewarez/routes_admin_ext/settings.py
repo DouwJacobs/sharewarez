@@ -1,8 +1,14 @@
 # /sharewarez/routes_admin_ext/settings.py
 from flask import render_template, request, jsonify, abort
 from flask_login import login_required, current_user
-from sharewarez.branding import DEFAULT_BRAND_LOGO, DEFAULT_SITE_TITLE
 from sharewarez.models import GlobalSettings, WebhookDelivery, WebhookEndpoint
+from sharewarez.settings_defaults import (
+    DEFAULT_DOWNLOAD_BATCH_SIZE,
+    DEFAULT_DOWNLOAD_THREADS,
+    DEFAULT_SETTINGS,
+    MOBILE_NAV_ITEMS,
+    merge_settings,
+)
 from sharewarez import db, cache
 from sqlalchemy import select
 from datetime import datetime, timezone
@@ -22,71 +28,7 @@ MIN_DOWNLOAD_THREADS = 1
 MAX_DOWNLOAD_THREADS = 20
 MIN_BATCH_SIZE = 10
 MAX_BATCH_SIZE = 1000
-DEFAULT_BATCH_SIZE = 200
-DEFAULT_DOWNLOAD_THREADS = 8
-MOBILE_NAV_ITEMS = ('discover', 'library', 'requests', 'downloads', 'favorites')
-
-# Default settings configuration
-DEFAULT_SETTINGS = {
-    'siteTitle': DEFAULT_SITE_TITLE,
-    'brandLogoPath': DEFAULT_BRAND_LOGO,
-    'showSystemLogo': True,
-    'showHelpButton': True,
-    'enableWebLinksOnDetailsPage': True,
-    'enableServerStatusFeature': True,
-    'enableNewsletterFeature': True,
-    'enableGameRequests': True,
-    'enableGameIssues': True,
-    'allowRequestNotes': True,
-    'allowRequestAnyEdition': True,
-    'maxActiveRequestsPerUser': 20,
-    'notifyRequesterRequestEmail': True,
-    'notifyAdminRequestEmail': False,
-    'notifyDiscordNewRequests': False,
-    'notifyDiscordRequestUpdates': False,
-    'notifyAdminIssueEmail': True,
-    'notifyReporterIssueEmail': True,
-    'notifyAdminDownloadCancellations': False,
-    'notifyAdminRepeatDownloads': False,
-    'showVersion': True,
-    'showDiscovery': True,
-    'showFavorites': True,
-    'showTrailers': True,
-    'showPlayStatus': True,
-    'mobileNavOrder': list(MOBILE_NAV_ITEMS),
-    'enableDeleteGameOnDisk': True,
-    'enableGameUpdates': True,
-    'enableGameExtras': True,
-    'siteUrl': 'http://127.0.0.1',
-    'discordNotifyNewGames': False,
-    'discordNotifyGameUpdates': False,
-    'discordNotifyGameExtras': False,
-    'discordNotifyDownloads': False,
-    'discordNotifyManualTrigger': False,
-    'updateFolderName': 'updates',
-    'extrasFolderName': 'extras',
-    'useTurboImageDownloads': True,
-    'turboDownloadThreads': DEFAULT_DOWNLOAD_THREADS,
-    'turboDownloadBatchSize': DEFAULT_BATCH_SIZE,
-    'maxConcurrentDownloadsPerUser': 2,
-    'downloadBandwidthLimitMbps': 0,
-    'downloadQueueWaitSeconds': 10,
-    'downloadRequestExpirationHours': 168,
-    'defaultMonthlyDownloadQuotaGb': 0,
-    'archiveCacheMode': 'prefer',
-    'archiveCacheMaxGb': 100,
-    'archiveCacheMinFreeGb': 10,
-    'archiveCacheRetentionDays': 7,
-    'archiveCacheBuildConcurrency': 1,
-    'archiveCacheFallbackEnabled': True,
-    'scanThreadCount': 1,
-    'enableHltbIntegration': True,
-    'hltbRateLimitDelay': 2.0,
-    'useLocalMetadata': False,
-    'writeLocalMetadata': False,
-    'useLocalImages': False,
-    'localMetadataFilename': 'sharewarez.json'
-}
+DEFAULT_BATCH_SIZE = DEFAULT_DOWNLOAD_BATCH_SIZE
 
 # Field mappings for database columns
 FIELD_MAPPINGS = {
@@ -307,16 +249,12 @@ def update_settings_fields(settings_record, new_settings):
 
 def build_current_settings(settings_record):
     """Build current settings dictionary from database record."""
+    current_settings = merge_settings(
+        settings_record.settings if settings_record else None
+    )
+
     if not settings_record:
-        return DEFAULT_SETTINGS.copy()
-    
-    # Start with stored JSON settings
-    current_settings = settings_record.settings.copy() if settings_record.settings else {}
-    
-    # Merge with default settings for any missing keys
-    for key, default_value in DEFAULT_SETTINGS.items():
-        if key not in current_settings:
-            current_settings[key] = default_value
+        return current_settings
     
     # Override with individual database field values
     for json_field, db_field in FIELD_MAPPINGS.items():

@@ -225,6 +225,8 @@ class TestBuildCurrentSettings:
         """Test building settings when no record exists."""
         settings = build_current_settings(None)
         assert settings == DEFAULT_SETTINGS
+        assert settings is not DEFAULT_SETTINGS
+        assert settings['mobileNavOrder'] is not DEFAULT_SETTINGS['mobileNavOrder']
 
     def test_build_current_settings_with_record(self, global_settings):
         """Test building settings with existing record."""

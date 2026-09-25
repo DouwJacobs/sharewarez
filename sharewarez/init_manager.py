@@ -268,19 +268,11 @@ class InitializationManager:
     def _init_default_settings(self, session):
         """Initialize default global settings."""
         from sharewarez.models import GlobalSettings
+        from sharewarez.settings_defaults import default_settings
 
         settings_record = session.execute(select(GlobalSettings)).scalars().first()
         if not settings_record:
-            default_settings = {
-                'showSystemLogo': True,
-                'showHelpButton': True,
-                'allowUsersToInviteOthers': True,
-                'enableWebLinksOnDetailsPage': True,
-                'enableServerStatusFeature': True,
-                'enableNewsletterFeature': True,
-                'showVersion': True
-            }
-            settings_record = GlobalSettings(settings=default_settings)
+            settings_record = GlobalSettings(settings=default_settings())
             session.add(settings_record)
             print("✅ Created default global settings")
         else:

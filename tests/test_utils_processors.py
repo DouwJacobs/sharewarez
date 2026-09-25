@@ -176,12 +176,13 @@ class TestGetGlobalSettings:
             
             result = get_global_settings()
         
-        # Should merge partial settings with defaults based on function behavior
-        assert result['show_logo'] is False  # From partial settings via settings.get()
-        assert result['enable_web_links'] is False  # From partial settings via settings.get()
-        assert result['enable_server_status'] is False  # From partial settings via settings_record.settings.get()
-        assert result['show_help_button'] is True  # From defaults (not overridden) via settings.get()
-        assert result['enable_newsletter'] is False  # Default from settings_record.settings.get() since not in partial_settings
+        # Stored values override the canonical defaults; omitted values inherit them.
+        assert result['show_logo'] is False
+        assert result['enable_web_links'] is False
+        assert result['enable_server_status'] is False
+        assert result['show_help_button'] is True
+        assert result['enable_newsletter'] is True
+        assert result['show_version'] is True
         assert result['app_version'] == app_version
     
     def test_get_global_settings_complete_settings(self, app, db_session):
@@ -277,10 +278,8 @@ class TestGetGlobalSettings:
 
         assert set(result.keys()) == expected_keys
     
-    def test_get_global_settings_duplicate_defaults_handling(self, app, db_session):
-        """Test that duplicate keys in default_settings are handled correctly."""
-        # The function has duplicate keys in default_settings dict
-        # This test ensures the function handles this gracefully
+    def test_get_global_settings_exposes_expected_context(self, app, db_session):
+        """The template context remains stable when using canonical defaults."""
         with app.app_context():
             # Clear existing settings first
             db_session.execute(delete(GlobalSettings))
