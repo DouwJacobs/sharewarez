@@ -63,7 +63,7 @@ Dynamic routes were exercised with existing representative records: one game, on
 | `/settings_password` | Change password | Desktop and mobile inspected |
 | `/user/invites` | Invite friends | Desktop and mobile inspected |
 | `/scan_management` | Scan management alias | Desktop and mobile inspected |
-| `/play_game/<game_uuid>` | Webretro player | Format/data-dependent; route inventory only |
+| `/play_game/<game_uuid>` | Browser play placeholder | Route inventory only; redirects with a coming-soon message |
 | `/playromtest` | Webretro test player | Route inventory only |
 
 ### Administration
@@ -361,8 +361,9 @@ indeterminate animation explicitly honor reduced motion.
 
 `download_live.js` owns SSE, reconnect/watchdog handling, non-overlapping polling
 fallback, visibility pause/resume and back-forward-cache restoration. The admin
-monitor is its first consumer; user Downloads and archive inventory integration
-remain pending. The setup-theme and installed default-theme copies are synchronized.
+monitor was its first consumer; the later sections below record the completed user
+Downloads and archive-inventory integrations. The setup-theme and installed
+default-theme copies are synchronized.
 
 A disposable PostgreSQL-backed preview (`python -m tests.preview_download_live`,
 with an empty `TEST_DATABASE_URL`) simulated an 8 MiB/s transfer through real
@@ -708,3 +709,20 @@ the integration workspace. The mobile endpoint name and URL controls measured
 44 px high. This pass also moved the administrator workspace navigation to its
 wrapped layout at 1200 px, preventing the Configure group from widening the page
 when the desktop sidebar leaves a narrower content column.
+
+## Shared naming and component cleanup — 25 September 2026
+
+Default display branding now comes from `sharewarez.branding`; runtime site-title
+settings still take precedence. User-facing cache, metadata-provider, webhook-test,
+and generic-notification copy no longer hard-codes the historical Sharewarez name.
+Compatibility identifiers—including the Python package, environment variables,
+local metadata filename, legacy logo path, and signed webhook headers—remain stable
+and are governed by `REBRANDING.md`.
+
+The reusable `page_header` macro now exposes generic `ui-page-*` hooks and accepts
+a route-owned heading ID. Its existing download-specific classes remain as a
+compatibility bridge, so this semantic cleanup does not alter layout. Download
+cache, delivery, member downloads, and the browser-play placeholder now connect
+their `<main aria-labelledby>` attributes to specific H1 IDs instead of sharing the
+download-only identifier. The browser-play placeholder also has a specific document
+title instead of falling back to the site title alone.

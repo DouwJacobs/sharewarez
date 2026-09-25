@@ -1,8 +1,8 @@
 # Metadata providers
 
-Sharewarez separates normalized metadata discovery from provider transport.
+GameLibrary separates normalized metadata discovery from provider transport.
 `sharewarez.utils.metadata_providers` owns ordered provider selection and failure
-fallback. Each adapter returns the discovery fields consumed by Sharewarez rather
+fallback. Each adapter returns the discovery fields consumed by GameLibrary rather
 than exposing its remote response schema to callers.
 
 The default adapter is `IGDBMetadataProvider`. It uses IGDB's documented API through
@@ -29,7 +29,7 @@ provider after upgrade. To add RAWG, obtain an API key from RAWG, save it, expli
 enable RAWG, and choose either IGDB-first or RAWG-first ordering. Saving a key does
 not enable the provider. Connection tests are read-only and never import games.
 
-RAWG access uses only `https://api.rawg.io/api`; Sharewarez does not scrape provider
+RAWG access uses only `https://api.rawg.io/api`; GameLibrary does not scrape provider
 websites. RAWG-derived discovery and request records keep the provider's source URL
 and attribution. Automated tests use injected transports and never require a live
 credential.

@@ -1,6 +1,7 @@
 # /sharewarez/routes_admin_ext/settings.py
 from flask import render_template, request, jsonify, abort
 from flask_login import login_required, current_user
+from sharewarez.branding import DEFAULT_BRAND_LOGO, DEFAULT_SITE_TITLE
 from sharewarez.models import GlobalSettings, WebhookDelivery, WebhookEndpoint
 from sharewarez import db, cache
 from sqlalchemy import select
@@ -27,8 +28,8 @@ MOBILE_NAV_ITEMS = ('discover', 'library', 'requests', 'downloads', 'favorites')
 
 # Default settings configuration
 DEFAULT_SETTINGS = {
-    'siteTitle': 'Game Library',
-    'brandLogoPath': 'newstyle/sharewarez_logo.png',
+    'siteTitle': DEFAULT_SITE_TITLE,
+    'brandLogoPath': DEFAULT_BRAND_LOGO,
     'showSystemLogo': True,
     'showHelpButton': True,
     'enableWebLinksOnDetailsPage': True,

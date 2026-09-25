@@ -6,14 +6,13 @@ from flask_login import current_user, login_required
 from sqlalchemy import select
 
 from sharewarez import cache, db
+from sharewarez.branding import DEFAULT_BRAND_LOGO, DEFAULT_SITE_TITLE
 from sharewarez.models import GlobalSettings
 from sharewarez.utils.auth import admin_required
 from sharewarez.utils.event_logging import log_system_event
 from . import admin2_bp
 
 
-DEFAULT_TITLE = 'Game Library'
-DEFAULT_LOGO = 'newstyle/sharewarez_logo.png'
 MAX_LOGO_SIZE = 5 * 1024 * 1024
 IMAGE_SIGNATURES = {
     '.png': (b'\x89PNG\r\n\x1a\n',),
@@ -72,7 +71,7 @@ def branding():
             extension = _validate_logo(logo)
             old_logo = saved.get('brandLogoPath')
             if request.form.get('reset_logo') == '1':
-                saved['brandLogoPath'] = DEFAULT_LOGO
+                saved['brandLogoPath'] = DEFAULT_BRAND_LOGO
             elif extension:
                 branding_dir = Path(current_app.static_folder) / 'library' / 'branding'
                 branding_dir.mkdir(parents=True, exist_ok=True)
@@ -85,7 +84,7 @@ def branding():
             db.session.commit()
             cache.clear()
 
-            new_logo = saved.get('brandLogoPath', DEFAULT_LOGO)
+            new_logo = saved.get('brandLogoPath', DEFAULT_BRAND_LOGO)
             if old_logo and old_logo != new_logo and old_logo.startswith('library/branding/'):
                 old_path = Path(current_app.static_folder) / old_logo
                 try:
@@ -109,7 +108,7 @@ def branding():
 
     return render_template(
         'admin/admin_branding.html',
-        branding_title=saved.get('siteTitle', DEFAULT_TITLE),
-        branding_logo=saved.get('brandLogoPath', DEFAULT_LOGO),
-        default_logo=DEFAULT_LOGO,
+        branding_title=saved.get('siteTitle', DEFAULT_SITE_TITLE),
+        branding_logo=saved.get('brandLogoPath', DEFAULT_BRAND_LOGO),
+        default_logo=DEFAULT_BRAND_LOGO,
     )

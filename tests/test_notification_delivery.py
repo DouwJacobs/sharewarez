@@ -9,7 +9,7 @@ from sharewarez import db
 from sharewarez.models import (
     GlobalSettings, Notification, NotificationEvent, User, WebhookDelivery, WebhookEndpoint,
 )
-from sharewarez.utils.notification_events import personal_preferences, publish_event
+from sharewarez.utils.notification_events import _generic_email, personal_preferences, publish_event
 from sharewarez.utils.outbound_webhooks import deliver_webhook, sign_payload, validate_webhook_url
 from sharewarez.utils.user_preferences import update_experience_settings
 
@@ -131,6 +131,24 @@ def test_webhook_payload_uses_privacy_safe_message(db_session):
     assert payload['data']['message'] == 'A public issue reply was added.'
     assert payload['data']['status'] == 'open'
     assert '_webhook_message' not in payload['data']
+
+
+def test_generic_email_uses_configured_site_title(db_session, delivery_user):
+    settings = db_session.execute(select(GlobalSettings)).scalars().first()
+    if settings is None:
+        settings = GlobalSettings(settings={})
+        db_session.add(settings)
+    settings.settings = {**(settings.settings or {}), 'siteTitle': 'Arcade Shelf'}
+    db_session.commit()
+    event = NotificationEvent(
+        event_type='new_game', title='New game', message='Available', event_data={},
+        link_url='/library',
+    )
+
+    html = _generic_email(delivery_user, event)
+
+    assert 'View in Arcade Shelf' in html
+    assert 'Sharewarez' not in html
 
 
 def test_webhook_url_blocks_private_targets(monkeypatch):

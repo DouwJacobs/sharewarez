@@ -43,7 +43,7 @@ def _parent_id(game_data):
 
 
 def normalize_igdb_game(game_data):
-    """Translate an IGDB game response into Sharewarez discovery fields."""
+    """Translate an IGDB game response into application discovery fields."""
     release_timestamp = game_data.get('first_release_date')
     release_date = None
     if release_timestamp:

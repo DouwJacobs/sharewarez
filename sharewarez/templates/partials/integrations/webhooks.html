@@ -25,7 +25,7 @@
             <div class="webhook-actions"><button class="btn btn-secondary" type="button" data-webhook-edit>Edit</button><button class="btn btn-secondary" type="button" data-webhook-test>Send test</button><button class="btn btn-secondary" type="button" data-webhook-rotate>Rotate secret</button><button class="btn btn-danger" type="button" data-webhook-delete>Delete</button></div>
         </div>
         {% else %}
-        <div class="app-empty-state"><h5>No outbound webhooks</h5><p>Add an endpoint when an external service needs Sharewarez events.</p></div>
+        <div class="app-empty-state"><h5>No outbound webhooks</h5><p>Add an endpoint when an external service needs {{ site_title }} events.</p></div>
         {% endfor %}
     </div>
 

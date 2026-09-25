@@ -1,12 +1,8 @@
-import os
-import uuid
-from flask import redirect, url_for, flash, jsonify, render_template, current_app
+from flask import flash, jsonify, redirect, render_template, url_for
 from flask_login import login_required
-from sharewarez import db
-from sharewarez.models import Game
-from sqlalchemy import select
+
 from sharewarez.utils.event_logging import log_system_event
-from sharewarez.utils.security import is_safe_path, get_allowed_base_directories
+
 from . import download_bp
 
 @download_bp.route('/play_game/<game_uuid>', methods=['GET'])

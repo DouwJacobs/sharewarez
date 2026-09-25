@@ -7,6 +7,7 @@ from html import escape
 from sqlalchemy import select
 
 from sharewarez import db
+from sharewarez.branding import resolve_site_title
 from sharewarez.models import (
     GlobalSettings, Notification, NotificationEvent, User, WebhookDelivery,
     WebhookEndpoint,
@@ -159,9 +160,11 @@ def _payload(event):
 
 def _generic_email(user, event):
     url = _absolute_url(event.link_url)
+    settings = _settings_record()
+    site_title = resolve_site_title(settings.settings if settings else None)
     return (
         f'<p>Hello {escape(user.name)},</p><h1>{escape(event.title)}</h1>'
-        f'<p>{escape(event.message)}</p><p><a href="{escape(url)}">View in Sharewarez</a></p>'
+        f'<p>{escape(event.message)}</p><p><a href="{escape(url)}">View in {escape(site_title)}</a></p>'
     )
 
 

@@ -1,11 +1,11 @@
-{% macro page_header(title, description='', eyebrow='', icon='', count=None, count_label='item') %}
-<header class="app-page-header downloads-page-header">
+{% macro page_header(title, description='', eyebrow='', icon='', count=None, count_label='item', title_id='page-title') %}
+<header class="app-page-header ui-page-header downloads-page-header">
     <div>
-        {% if eyebrow %}<p class="downloads-page-eyebrow">{% if icon %}<i class="fas {{ icon }}" aria-hidden="true"></i>{% endif %} {{ eyebrow }}</p>{% endif %}
-        <h1 id="downloads-page-title">{{ title }}</h1>
+        {% if eyebrow %}<p class="ui-page-eyebrow downloads-page-eyebrow">{% if icon %}<i class="fas {{ icon }}" aria-hidden="true"></i>{% endif %} {{ eyebrow }}</p>{% endif %}
+        <h1 id="{{ title_id }}">{{ title }}</h1>
         {% if description %}<p>{{ description }}</p>{% endif %}
     </div>
-    {% if count is not none %}<span class="downloads-count">{{ count }} {{ count_label }}{% if count != 1 %}s{% endif %}</span>{% endif %}
+    {% if count is not none %}<span class="ui-page-count downloads-count">{{ count }} {{ count_label }}{% if count != 1 %}s{% endif %}</span>{% endif %}
 </header>
 {% endmacro %}
 

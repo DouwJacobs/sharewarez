@@ -3,7 +3,7 @@ from uuid import uuid4
 
 from sqlalchemy import select, text
 
-from sharewarez.models import BackgroundJob, User, WebhookDelivery, WebhookEndpoint
+from sharewarez.models import BackgroundJob, GlobalSettings, User, WebhookDelivery, WebhookEndpoint
 
 
 def make_admin(db_session):
@@ -78,6 +78,11 @@ def test_webhook_test_and_retry_are_queued(client, db_session):
         signing_secret='secret', subscribed_events=['new_game'], is_enabled=True,
     )
     db_session.add(endpoint)
+    settings = db_session.execute(select(GlobalSettings)).scalars().first()
+    if settings is None:
+        settings = GlobalSettings(settings={})
+        db_session.add(settings)
+    settings.settings = {**(settings.settings or {}), 'siteTitle': 'Arcade Shelf'}
     db_session.commit()
 
     response = client.post(f'/admin/integrations/webhooks/{endpoint.id}/test')
@@ -86,6 +91,7 @@ def test_webhook_test_and_retry_are_queued(client, db_session):
         WebhookDelivery.endpoint_id == endpoint.id,
     )).scalar_one()
     assert delivery.event.is_test is True
+    assert delivery.event.title == 'Arcade Shelf webhook test'
     jobs = db_session.execute(select(BackgroundJob).where(
         BackgroundJob.task_name == 'notifications.send_webhook',
     )).scalars()

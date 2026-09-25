@@ -11,6 +11,7 @@ operator references by purpose.
 - [Game relationships](GAME_RELATIONSHIPS.md)
 - [Metadata provenance](METADATA_PROVENANCE.md)
 - [Notifications](NOTIFICATIONS.md)
+- [Rebranding and compatibility](REBRANDING.md)
 - [System email templates](EMAIL_TEMPLATES.md)
 - [UI audit and visual contracts](UI_AUDIT.md)
 

@@ -7,6 +7,7 @@ from sharewarez import _sync_changed_theme_files
 THEME_SOURCE = Path("sharewarez/setup/default_theme/css/components.css")
 REQUESTS_SOURCE = Path("sharewarez/setup/default_theme/css/requests.css")
 CACHE_ADMIN_SOURCE = Path("sharewarez/setup/default_theme/css/admin/admin_download_cache.css")
+UI_COMPONENTS = Path("sharewarez/templates/partials/ui_components.html")
 
 
 @pytest.fixture
@@ -88,3 +89,27 @@ def test_favorites_uses_library_card_markup_and_interactions():
     assert 'removeFavoriteModal' not in template
     css = Path('sharewarez/setup/default_theme/css/mobile.css').read_text()
     assert '#content .favorites-page {' not in css
+
+
+def test_shared_page_header_has_generic_hooks_and_route_owned_title_ids():
+    components = UI_COMPONENTS.read_text(encoding="utf-8")
+
+    assert 'class="app-page-header ui-page-header downloads-page-header"' in components
+    assert 'class="ui-page-eyebrow downloads-page-eyebrow"' in components
+    assert 'class="ui-page-count downloads-count"' in components
+    assert 'title_id=\'page-title\'' in components
+    assert 'id="downloads-page-title"' not in components
+
+    expected_ids = {
+        "sharewarez/templates/admin/admin_download_cache.html": "download-cache-title",
+        "sharewarez/templates/admin/admin_manage_downloads.html": "download-delivery-title",
+        "sharewarez/templates/games/manage_downloads.html": "my-downloads-title",
+        "sharewarez/templates/games/playrom.html": "browser-emulator-title",
+    }
+    for template_path, title_id in expected_ids.items():
+        template = Path(template_path).read_text(encoding="utf-8")
+        assert f'aria-labelledby="{title_id}"' in template
+        assert title_id in template
+
+    base = Path("sharewarez/templates/base.html").read_text(encoding="utf-8")
+    assert "'/playromtest': 'Browser emulator'" in base

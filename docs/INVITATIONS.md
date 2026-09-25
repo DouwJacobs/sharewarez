@@ -1,6 +1,6 @@
 # Invitation-led onboarding
 
-Sharewarez provisions ordinary accounts through one-time invitations. The
+GameLibrary provisions ordinary accounts through one-time invitations. The
 normal administrator workflow never asks an administrator to choose or handle a
 member's password.
 

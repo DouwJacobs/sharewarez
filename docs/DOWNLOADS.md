@@ -2,7 +2,7 @@
 
 The Download button on a game detail page creates or refreshes the user's
 reusable download request. A single file is served immediately. A multi-file
-directory is prepared once as an immutable ZIP in Sharewarez's private managed
+directory is prepared once as an immutable ZIP in GameLibrary's private managed
 cache, then delivered through the same ASGI file path. The user's **Downloads**
 page shows preparation progress, readiness, failures, and retry controls.
 

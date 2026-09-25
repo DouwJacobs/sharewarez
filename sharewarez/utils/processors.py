@@ -1,4 +1,5 @@
 from sharewarez import db
+from sharewarez.branding import DEFAULT_BRAND_LOGO, DEFAULT_SITE_TITLE, resolve_site_title
 from sharewarez.models import GlobalSettings
 from sqlalchemy import select
 from sharewarez import app_version
@@ -24,8 +25,8 @@ def get_global_settings():
     """Helper function to get global settings with defaults"""
     settings_record = db.session.execute(select(GlobalSettings)).scalars().first()
     default_settings = {
-        'siteTitle': 'Game Library',
-        'brandLogoPath': 'newstyle/sharewarez_logo.png',
+        'siteTitle': DEFAULT_SITE_TITLE,
+        'brandLogoPath': DEFAULT_BRAND_LOGO,
         'showSystemLogo': True,
         'showHelpButton': True,
         'allowUsersToInviteOthers': False,
@@ -38,8 +39,6 @@ def get_global_settings():
         'discordNotifyGameExtras': False,
         'discordNotifyDownloads': False,
         'siteUrl': 'http://127.0.0.1',
-        'showSystemLogo': True,
-        'showHelpButton': True,
         'enableWebLinksOnDetailsPage': True,
         'enableServerStatusFeature': True,
         'enableNewsletterFeature': True,
@@ -49,9 +48,6 @@ def get_global_settings():
         'showVersion': True,
         'defaultTheme': 'default',
         'enableDeleteGameOnDisk': True,
-        'enableGameUpdates': True,
-        'enableGameExtras': True,
-        'siteUrl': 'http://127.0.0.1'
     }
     
     settings = default_settings.copy()
@@ -59,8 +55,8 @@ def get_global_settings():
     if settings_record and settings_record.settings:
         settings.update(settings_record.settings)
         return {
-            'site_title': settings.get('siteTitle') or 'Game Library',
-            'brand_logo_path': settings.get('brandLogoPath') or 'newstyle/sharewarez_logo.png',
+            'site_title': resolve_site_title(settings),
+            'brand_logo_path': settings.get('brandLogoPath') or DEFAULT_BRAND_LOGO,
             'show_logo': settings.get('showSystemLogo'),
             'show_help_button': settings.get('showHelpButton'),
             'enable_web_links': settings.get('enableWebLinksOnDetailsPage'),
@@ -84,8 +80,8 @@ def get_global_settings():
     
     # Return default values if no settings_record is found
     return {
-        'site_title': 'Game Library',
-        'brand_logo_path': 'newstyle/sharewarez_logo.png',
+        'site_title': DEFAULT_SITE_TITLE,
+        'brand_logo_path': DEFAULT_BRAND_LOGO,
         'show_logo': True,
         'show_help_button': True,
         'enable_web_links': True,

@@ -15,6 +15,7 @@ from sharewarez.utils.background_jobs import enqueue
 from sharewarez.utils.event_logging import log_system_event
 from sharewarez.utils.notification_events import event_catalog, publish_event
 from sharewarez.utils.outbound_webhooks import validate_webhook_url
+from sharewarez.utils.processors import get_global_settings
 from . import admin2_bp
 
 
@@ -104,8 +105,9 @@ def test_webhook_endpoint(endpoint_id):
     if not endpoint.is_enabled:
         return jsonify({'error': 'Enable this endpoint before sending a test.'}), 409
     event_type = (endpoint.subscribed_events or ['new_game'])[0]
+    site_title = get_global_settings()['site_title']
     event = publish_event(
-        [], event_type, 'Sharewarez webhook test',
+        [], event_type, f'{site_title} webhook test',
         'This signed test confirms that outbound delivery is configured.',
         link_url='/admin/integrations', dedupe_key=None, is_test=True,
         endpoint_ids=[endpoint.id],

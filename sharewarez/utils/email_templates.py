@@ -8,6 +8,7 @@ from jinja2.sandbox import SandboxedEnvironment
 from sqlalchemy import select
 
 from sharewarez import db
+from sharewarez.branding import resolve_site_title
 from sharewarez.models import GlobalSettings, SystemEmailTemplate
 
 
@@ -233,7 +234,7 @@ def _global_context() -> dict[str, str]:
     settings = db.session.execute(select(GlobalSettings)).scalars().first()
     values = settings.settings if settings and isinstance(settings.settings, dict) else {}
     return {
-        'site_title': str(values.get('siteTitle') or 'Game Library'),
+        'site_title': resolve_site_title(values),
         'site_url': str((settings.site_url if settings else None) or 'http://127.0.0.1:5006').rstrip('/'),
     }
 
