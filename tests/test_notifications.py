@@ -26,13 +26,14 @@ def admin_user(db_session):
 
 
 def test_notification_delivery_is_idempotent(db_session, user):
+    dedupe_key = f'new-game:{uuid4()}'
     assert create_notifications(
         [user.id], 'new_game', 'New game', 'A game arrived.',
-        '/game_details/game-uuid', 'new-game:game-uuid',
+        '/game_details/game-uuid', dedupe_key,
     ) == 1
     assert create_notifications(
         [user.id], 'new_game', 'New game', 'A game arrived.',
-        '/game_details/game-uuid', 'new-game:game-uuid',
+        '/game_details/game-uuid', dedupe_key,
     ) == 0
 
     assert db_session.query(Notification).filter_by(user_id=user.id).count() == 1

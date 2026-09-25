@@ -124,3 +124,12 @@ Do not delete the staging directory until installed themes have been verified.
 Tests of theme reset use explicit `THEME_SOURCE_ROOT` and `THEME_INSTALL_ROOT`
 paths beneath a temporary directory. These are fixture overrides; normal
 operation resolves source and installed assets from the application root.
+
+## Outbound webhook operations
+
+Webhook delivery uses the default background-job queue and therefore depends on
+the bundled job-worker process. Failed deliveries and sanitized response status
+are visible under Integrations. Delivery history older than 30 days is removed by
+the maintenance thread. Keep `ALLOW_PRIVATE_WEBHOOK_TARGETS=false` unless trusted
+administrators intentionally need access to an internal automation endpoint; see
+`docs/OUTBOUND_WEBHOOKS.md` for signing and target-validation details.

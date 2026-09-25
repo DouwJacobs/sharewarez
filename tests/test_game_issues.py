@@ -261,8 +261,7 @@ def test_admin_can_delete_issue_and_comments(mock_notify, client, db_session, is
     mock_notify.assert_called_once()
 
 
-@patch('sharewarez.utils.issue_notifications._send_issue_email')
-def test_issue_notifications_reach_admin_and_reporter(mock_email, db_session, issue_records):
+def test_issue_notifications_reach_admin_and_reporter(db_session, issue_records):
     issue = make_issue(db_session, issue_records)
     notify_issue_created(issue)
     admin_notification = db_session.query(Notification).filter_by(
@@ -284,7 +283,6 @@ def test_issue_notifications_reach_admin_and_reporter(mock_email, db_session, is
         event_type='issue_comment',
     ).one()
     assert reporter_notification.link_url == f'/issues/{issue.id}'
-    assert mock_email.call_count == 0
 
 
 def test_internal_issue_comment_does_not_notify_reporter(db_session, issue_records):
@@ -305,7 +303,7 @@ def test_internal_issue_comment_does_not_notify_reporter(db_session, issue_recor
     ).count() == 0
 
 
-@patch('sharewarez.utils.issue_notifications.enqueue')
+@patch('sharewarez.utils.notification_events.enqueue')
 def test_enabled_issue_email_is_queued(mock_enqueue, db_session, issue_records):
     settings = db_session.query(GlobalSettings).first()
     values = dict(settings.settings or {})
@@ -323,3 +321,4 @@ def test_enabled_issue_email_is_queued(mock_enqueue, db_session, issue_records):
     ]
     assert len(matching_calls) == 1
     assert matching_calls[0].kwargs['max_attempts'] == 3
+    assert matching_calls[0].kwargs['commit'] is False

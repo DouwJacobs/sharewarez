@@ -3,11 +3,11 @@
 from sqlalchemy import select
 
 from sharewarez import db
-from sharewarez.models import GlobalSettings, User
+from sharewarez.models import GlobalSettings
 from sharewarez.utils.email_templates import render_system_email
-from sharewarez.utils.background_jobs import enqueue
 from sharewarez.utils.event_logging import log_system_event
-from sharewarez.utils.notifications import active_user_ids, create_notifications
+from sharewarez.utils.notifications import active_user_ids
+from sharewarez.utils.notification_events import publish_event
 
 
 def _settings():
@@ -20,10 +20,10 @@ def _base_url(record):
     return ((record.site_url if record else None) or 'http://127.0.0.1:5006').rstrip('/')
 
 
-def _send_issue_email(user, issue, heading, message, admin=False):
+def _render_issue_email(user, issue, heading, message, admin=False):
     settings, _ = _settings()
     path = f'/admin/issues/{issue.id}' if admin else f'/issues/{issue.id}'
-    subject, body = render_system_email('issue_activity', {
+    _subject, body = render_system_email('issue_activity', {
         'user_name': user.name,
         'heading': heading,
         'game_name': issue.game.name,
@@ -31,39 +31,29 @@ def _send_issue_email(user, issue, heading, message, admin=False):
         'message': message,
         'issue_url': f'{_base_url(settings)}{path}',
     })
-    enqueue(
-        'notifications.send_email',
-        {'recipient': user.email, 'subject': subject, 'html': body},
-        max_attempts=3,
-    )
-    return True
+    return body
 
 
 def notify_issue_created(issue):
     """Notify every active administrator about a new issue."""
     try:
         admin_ids = active_user_ids(role='admin')
-        create_notifications(
+        _, values = _settings()
+        publish_event(
             admin_ids,
             'issue_created',
             f'New issue: {issue.game.name}',
             f'{issue.reporter.name}: {issue.title}',
             link_url=f'/admin/issues/{issue.id}',
             dedupe_key=f'issue:{issue.id}:created',
+            resource_type='game_issue', resource_id=issue.id,
+            event_data={'_webhook_message': 'A new game issue needs review.'},
+            enable_email=values.get('notifyAdminIssueEmail', True),
+            email_renderer=lambda user: _render_issue_email(
+                user, issue, 'A new game issue needs review',
+                f'{issue.reporter.name} reported: {issue.description}', admin=True,
+            ),
         )
-        _, values = _settings()
-        if values.get('notifyAdminIssueEmail', True):
-            admins = db.session.execute(
-                select(User).where(User.id.in_(admin_ids))
-            ).scalars()
-            for admin in admins:
-                _send_issue_email(
-                    admin,
-                    issue,
-                    'A new game issue needs review',
-                    f'{issue.reporter.name} reported: {issue.description}',
-                    admin=True,
-                )
     except Exception as error:
         db.session.rollback()
         log_system_event(
@@ -82,7 +72,6 @@ def notify_issue_comment(issue, comment):
             recipient_ids = [issue.reporter_id]
             link_url = f'/issues/{issue.id}'
             title = f'Admin replied: {issue.game.name}'
-            email_recipients = [issue.reporter]
             admin_link = False
         else:
             recipient_ids = [
@@ -91,29 +80,23 @@ def notify_issue_comment(issue, comment):
             ]
             link_url = f'/admin/issues/{issue.id}'
             title = f'User replied: {issue.game.name}'
-            email_recipients = list(db.session.execute(
-                select(User).where(User.id.in_(recipient_ids))
-            ).scalars())
             admin_link = True
-        create_notifications(
+        _, values = _settings()
+        setting_key = 'notifyReporterIssueEmail' if author_is_admin else 'notifyAdminIssueEmail'
+        publish_event(
             recipient_ids,
             'issue_comment',
             title,
             comment.body[:240],
             link_url=link_url,
             dedupe_key=f'issue:{issue.id}:comment:{comment.id}',
+            resource_type='game_issue', resource_id=issue.id,
+            event_data={'_webhook_message': 'A public issue reply was added.'},
+            enable_email=values.get(setting_key, True),
+            email_renderer=lambda user: _render_issue_email(
+                user, issue, title, comment.body, admin=admin_link,
+            ),
         )
-        _, values = _settings()
-        setting_key = 'notifyReporterIssueEmail' if author_is_admin else 'notifyAdminIssueEmail'
-        if values.get(setting_key, True):
-            for recipient in email_recipients:
-                _send_issue_email(
-                    recipient,
-                    issue,
-                    title,
-                    comment.body,
-                    admin=admin_link,
-                )
     except Exception as error:
         db.session.rollback()
         log_system_event(
@@ -128,37 +111,31 @@ def notify_issue_status(issue, previous_status, activity):
         actor_is_admin = activity.author and activity.author.role == 'admin'
         if actor_is_admin:
             recipient_ids = [issue.reporter_id]
-            recipients = [issue.reporter]
             link_url = f'/issues/{issue.id}'
             admin_link = False
         else:
             recipient_ids = active_user_ids(role='admin')
-            recipients = list(db.session.execute(
-                select(User).where(User.id.in_(recipient_ids))
-            ).scalars())
             link_url = f'/admin/issues/{issue.id}'
             admin_link = True
         status_label = issue.status.replace('_', ' ').title()
         message = f'Status changed from {previous_status.replace("_", " ").title()} to {status_label}.'
-        create_notifications(
+        _, values = _settings()
+        setting_key = 'notifyReporterIssueEmail' if actor_is_admin else 'notifyAdminIssueEmail'
+        publish_event(
             recipient_ids,
             'issue_status',
             f'Issue {status_label}: {issue.game.name}',
             message,
             link_url=link_url,
             dedupe_key=f'issue:{issue.id}:status:{activity.id}',
+            resource_type='game_issue', resource_id=issue.id,
+            event_data={'status': issue.status, '_webhook_message': message},
+            enable_email=values.get(setting_key, True),
+            email_renderer=lambda user: _render_issue_email(
+                user, issue, f'Issue status changed to {status_label}',
+                message, admin=admin_link,
+            ),
         )
-        _, values = _settings()
-        setting_key = 'notifyReporterIssueEmail' if actor_is_admin else 'notifyAdminIssueEmail'
-        if values.get(setting_key, True):
-            for recipient in recipients:
-                _send_issue_email(
-                    recipient,
-                    issue,
-                    f'Issue status changed to {status_label}',
-                    message,
-                    admin=admin_link,
-                )
     except Exception as error:
         db.session.rollback()
         log_system_event(
@@ -169,13 +146,15 @@ def notify_issue_status(issue, previous_status, activity):
 
 def notify_issue_deleted(issue, actor_name):
     try:
-        create_notifications(
+        publish_event(
             [issue.reporter_id],
             'issue_deleted',
             f'Issue removed: {issue.game.name}',
             f'{actor_name} removed “{issue.title}”.',
             link_url='/issues',
             dedupe_key=f'issue:{issue.id}:deleted',
+            resource_type='game_issue', resource_id=issue.id,
+            event_data={'_webhook_message': 'A game issue was removed.'},
         )
     except Exception as error:
         db.session.rollback()

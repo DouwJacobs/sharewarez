@@ -3,7 +3,7 @@
 This checklist tracks planned product work. A checked item is implemented and
 committed; release version bumps are managed separately.
 
-Last reconciled against the source and test suite on 8 September 2026. Library
+Last reconciled against the source and test suite on 24 September 2026. Library
 layout and persistence entries were corrected during that review; remaining
 unchecked entries still require substantive product work.
 
@@ -41,7 +41,7 @@ desktop sidebar remains the full navigation surface.
 
 - [x] In-app notification center
 - [x] Game issue reporting with grouped admin queues, comments, and lifecycle tracking
-- [ ] Per-event email, Discord, webhook, and in-app preferences
+- [x] Per-event email, Discord, webhook, and in-app preferences
 - [x] Admin-managed templates for account confirmation, invitations, password resets, and request notifications
 - [ ] Play history and time played
 - [ ] Personal ratings, reviews, notes, tags, completion dates, and backlog priority
@@ -62,14 +62,14 @@ desktop sidebar remains the full navigation surface.
 
 - [x] Scoped API tokens
 - [x] Documented public API
-- [ ] Outbound event webhooks
+- [x] Outbound event webhooks
 - [x] Metadata-provider abstraction and fallback ordering
 - [ ] Library, collection, request, theme, and user-data import/export
 
 ## Experience and accessibility
 
-- [ ] Offline-capable PWA library browsing
-- [ ] Push notifications and update-available prompt
+- [x] Offline-capable PWA library browsing
+- [x] Push notifications and update-available prompt
 - [x] Complete keyboard navigation and dialog focus management
 - [x] Reduced-motion and theme contrast validation
 - [x] Automated accessibility testing

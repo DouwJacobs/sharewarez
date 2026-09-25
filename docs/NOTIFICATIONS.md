@@ -4,7 +4,7 @@ The notification center at `/notifications` is a durable per-user inbox. It
 supports unread filtering, individual read actions, mark-all-read, pagination,
 and safe links back to related application pages.
 
-Initial event producers are new games, newly discovered update files, new or
+Canonical event producers are new games, newly discovered update files, new or
 joined game requests for administrators, request status changes for active
 requesters, and the standalone game-issue workflow. New issues and reporter
 replies notify active administrators; public administrator replies and status
@@ -12,20 +12,26 @@ changes notify the reporter. Internal issue notes never notify the reporter.
 Administrators can also opt into alerts when users cancel download
 requests and when the same download request starts a second or later transfer.
 Repeat-download alerts are based on transfer records, not basket creation, and
-are deduplicated per request and attempt. `notifications.dedupe_key` is unique per user so scan retries and
-background-job retries cannot redeliver the same logical event.
+are deduplicated per request and attempt. Each logical event is stored once in
+`notification_events`; inbox rows retain a per-user dedupe constraint.
 
-Issue email delivery is controlled by `notifyAdminIssueEmail` and
-`notifyReporterIssueEmail`. Email bodies are rendered before a
-`notifications.send_email` database-backed background job is queued, so SMTP
-latency does not block the issue form or conversation UI. The durable in-app
-notification is committed before optional email delivery and remains the
-authoritative record if SMTP is unavailable.
+`publish_event()` is the only fan-out boundary. It stages the canonical event,
+inbox rows, rendered email jobs, browser-push jobs, Discord jobs, and subscribed
+generic webhook deliveries in one transaction. Callers that pass `commit=False`
+can include that staging in their surrounding source transaction. Network work
+is owned by the existing background worker.
+
+Administrators configure event/channel availability in **Application Settings →
+Notification rules**. Members choose per-event inbox, email, and browser delivery
+in **Settings**. Administrator policy is authoritative; a disabled channel cannot
+be enabled by an account. Existing category and global settings are migrated to
+explicit values without enabling a new delivery path.
 
 The PWA is installable and provides offline fallback caching, an app-update
 prompt, and standards-based Web Push. Push subscriptions and VAPID credentials
-are stored locally; no hosted notification service is required. Push delivery
-is best-effort and is emitted from newly created in-app notification records.
+are stored locally; no hosted notification service is required. Push delivery is
+best-effort and independent of whether the inbox channel is enabled. Generic
+webhooks are documented in [OUTBOUND_WEBHOOKS.md](OUTBOUND_WEBHOOKS.md).
 
 ## Game issue workflow
 

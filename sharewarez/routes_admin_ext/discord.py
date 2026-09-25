@@ -134,10 +134,6 @@ def save_discord_notifications():
 
     try:
         # Update notification settings
-        settings.discord_notify_new_games = data.get('discordNotifyNewGames', False)
-        settings.discord_notify_game_updates = data.get('discordNotifyGameUpdates', False)
-        settings.discord_notify_game_extras = data.get('discordNotifyGameExtras', False)
-        settings.discord_notify_downloads = data.get('discordNotifyDownloads', False)
         settings.discord_notify_manual_trigger = data.get('discordNotifyManualTrigger', False)
 
         db.session.commit()

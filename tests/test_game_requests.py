@@ -329,8 +329,8 @@ def test_requests_page_requires_authentication(client):
 
 
 @patch('sharewarez.utils.request_notifications.get_request_settings')
-@patch('sharewarez.utils.request_notifications.send_email')
-def test_request_update_email_deduplicates_users(mock_send, mock_settings, app, db_session):
+@patch('sharewarez.utils.notification_events.enqueue')
+def test_request_update_email_deduplicates_users(mock_enqueue, mock_settings, app, db_session):
     mock_settings.return_value = {
         'notifyDiscordRequestUpdates': False,
         'notifyRequesterRequestEmail': True,
@@ -346,4 +346,8 @@ def test_request_update_email_deduplicates_users(mock_send, mock_settings, app, 
     with app.app_context():
         notify_request_updated(record, [first, second])
 
-    mock_send.assert_called_once()
+    email_calls = [
+        call for call in mock_enqueue.call_args_list
+        if call.args[0] == 'notifications.send_email'
+    ]
+    assert len(email_calls) == 1

@@ -9,6 +9,7 @@
 <link rel="stylesheet" href="{{ 'css/admin/admin_manage_igdb_settings.css'|theme_asset }}">
 <link rel="stylesheet" href="{{ 'css/admin/admin_manage_discord_settings.css'|theme_asset }}">
 <link rel="stylesheet" href="{{ 'css/admin/integrations_tabs.css'|theme_asset }}">
+<link rel="stylesheet" href="{{ 'css/admin/outbound_webhooks.css'|theme_asset }}">
 
 
 <main class="app-page admin-page integrations-page" aria-labelledby="integrations-title">
@@ -20,6 +21,11 @@
             <li class="integrations-nav-item nav-item" role="presentation">
                 <button class="integrations-nav-link admin-tab-link nav-link" id="email-tab" data-bs-toggle="tab" data-bs-target="#email" type="button" role="tab" aria-controls="email" aria-selected="false">
                     <i class="fas fa-envelope" aria-hidden="true"></i><span><strong>Email</strong><small>SMTP delivery and sender</small></span>
+                </button>
+            </li>
+            <li class="integrations-nav-item nav-item" role="presentation">
+                <button class="integrations-nav-link admin-tab-link nav-link" id="webhooks-tab" data-bs-toggle="tab" data-bs-target="#webhooks" type="button" role="tab" aria-controls="webhooks" aria-selected="false">
+                    <i class="fas fa-diagram-project" aria-hidden="true"></i><span><strong>Webhooks</strong><small>Signed outbound events</small></span>
                 </button>
             </li>
             <li class="integrations-nav-item nav-item" role="presentation">
@@ -79,6 +85,10 @@
                 </div>
             </div>
 
+            <div class="integrations-tab-pane tab-pane fade" id="webhooks" role="tabpanel" aria-labelledby="webhooks-tab">
+                {% include 'partials/integrations/webhooks.html' %}
+            </div>
+
         </div>
     </section>
 </main>
@@ -93,6 +103,7 @@
 <script src="{{ 'js/admin_manage_discord_settings.js'|theme_asset }}"></script>
 <script src="{{ 'js/discord_notifications.js'|theme_asset }}"></script>
 <script src="{{ 'js/integrations_tabs.js'|theme_asset }}"></script>
+<script src="{{ 'js/outbound_webhooks.js'|theme_asset }}"></script>
 
 <script>
 // Auto-activate Discord tab if there are Discord-related messages

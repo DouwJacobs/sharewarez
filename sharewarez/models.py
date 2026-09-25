@@ -495,6 +495,12 @@ class Notification(db.Model):
     )
 
     id = db.Column(db.Integer, primary_key=True)
+    event_id = db.Column(
+        db.String(36),
+        db.ForeignKey('notification_events.id', ondelete='SET NULL'),
+        nullable=True,
+        index=True,
+    )
     user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False, index=True)
     event_type = db.Column(db.String(64), nullable=False, index=True)
     title = db.Column(db.String(255), nullable=False)
@@ -505,6 +511,96 @@ class Notification(db.Model):
     read_at = db.Column(db.DateTime(timezone=True), nullable=True, index=True)
 
     user = db.relationship('User', back_populates='notifications')
+    event = db.relationship('NotificationEvent', back_populates='notifications')
+
+
+class NotificationEvent(db.Model):
+    """Canonical, deduplicated application event used for channel fan-out."""
+
+    __tablename__ = 'notification_events'
+    __table_args__ = (
+        db.UniqueConstraint('event_type', 'dedupe_key', name='uq_notification_event_key'),
+    )
+
+    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid4()))
+    event_type = db.Column(db.String(64), nullable=False, index=True)
+    title = db.Column(db.String(255), nullable=False)
+    message = db.Column(db.Text, nullable=False)
+    link_url = db.Column(db.String(1024), nullable=True)
+    resource_type = db.Column(db.String(64), nullable=True)
+    resource_id = db.Column(db.String(255), nullable=True)
+    event_data = db.Column(JSONEncodedDict, nullable=False, default=dict)
+    dedupe_key = db.Column(db.String(255), nullable=True)
+    is_test = db.Column(db.Boolean, nullable=False, default=False)
+    created_at = db.Column(
+        db.DateTime(timezone=True), nullable=False,
+        default=lambda: datetime.now(timezone.utc), index=True,
+    )
+
+    notifications = db.relationship('Notification', back_populates='event')
+    webhook_deliveries = db.relationship(
+        'WebhookDelivery', back_populates='event', cascade='all, delete-orphan'
+    )
+
+
+class WebhookEndpoint(db.Model):
+    """Administrator-managed generic outbound webhook destination."""
+
+    __tablename__ = 'webhook_endpoints'
+
+    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid4()))
+    name = db.Column(db.String(100), nullable=False, unique=True)
+    url = db.Column(EncryptedString(), nullable=False)
+    signing_secret = db.Column(EncryptedString(), nullable=False)
+    subscribed_events = db.Column(JSONEncodedDict, nullable=False, default=list)
+    is_enabled = db.Column(db.Boolean, nullable=False, default=True, index=True)
+    created_at = db.Column(
+        db.DateTime(timezone=True), nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+    )
+    updated_at = db.Column(
+        db.DateTime(timezone=True), nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
+
+    deliveries = db.relationship(
+        'WebhookDelivery', back_populates='endpoint', cascade='all, delete-orphan'
+    )
+
+
+class WebhookDelivery(db.Model):
+    """Immutable webhook payload plus observable delivery state."""
+
+    __tablename__ = 'webhook_deliveries'
+    __table_args__ = (
+        db.UniqueConstraint('endpoint_id', 'event_id', name='uq_webhook_endpoint_event'),
+        db.Index('ix_webhook_deliveries_recent', 'endpoint_id', 'created_at'),
+    )
+
+    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid4()))
+    endpoint_id = db.Column(
+        db.String(36), db.ForeignKey('webhook_endpoints.id', ondelete='CASCADE'),
+        nullable=False, index=True,
+    )
+    event_id = db.Column(
+        db.String(36), db.ForeignKey('notification_events.id', ondelete='CASCADE'),
+        nullable=False, index=True,
+    )
+    payload = db.Column(JSONEncodedDict, nullable=False)
+    status = db.Column(db.String(20), nullable=False, default='queued', index=True)
+    attempts = db.Column(db.Integer, nullable=False, default=0)
+    response_status = db.Column(db.Integer, nullable=True)
+    response_excerpt = db.Column(db.String(2048), nullable=True)
+    error_message = db.Column(db.String(2048), nullable=True)
+    created_at = db.Column(
+        db.DateTime(timezone=True), nullable=False,
+        default=lambda: datetime.now(timezone.utc), index=True,
+    )
+    delivered_at = db.Column(db.DateTime(timezone=True), nullable=True)
+
+    endpoint = db.relationship('WebhookEndpoint', back_populates='deliveries')
+    event = db.relationship('NotificationEvent', back_populates='webhook_deliveries')
 
 
 class PushSubscription(db.Model):

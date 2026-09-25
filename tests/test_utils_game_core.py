@@ -528,13 +528,13 @@ class TestDownloadFunctions:
 class TestGameDataFunctions:
     """Test game data retrieval and URL processing functions."""
     
-    @patch('sharewarez.utils.game_core.discord_webhook')
+    @patch('sharewarez.utils.notification_events.publish_event')
     @patch('sharewarez.utils.game_core.smart_process_images_for_game')
     @patch('sharewarez.utils.game_core.get_folder_size_in_bytes_updates')
     @patch('sharewarez.utils.game_core.read_first_nfo_content')
     @patch('sharewarez.utils.game_core.make_igdb_api_request')
     @patch('sharewarez.utils.game_core.create_game_instance')
-    def test_retrieve_and_save_game_success(self, mock_create_game, mock_api, mock_nfo, mock_folder_size, mock_smart_images, mock_discord, app, db_session, sample_library, sample_global_settings):
+    def test_retrieve_and_save_game_success(self, mock_create_game, mock_api, mock_nfo, mock_folder_size, mock_smart_images, mock_publish_event, app, db_session, sample_library, sample_global_settings):
         """Test successful game retrieval and saving."""
         mock_api.return_value = [{'id': 12345, 'name': 'Test Game'}]
         
@@ -566,6 +566,7 @@ class TestGameDataFunctions:
         assert result == mock_game
         mock_api.assert_called_once()
         mock_create_game.assert_called_once()
+        mock_publish_event.assert_called_once()
     
     @patch('sharewarez.utils.game_core.make_igdb_api_request')
     def test_retrieve_and_save_game_api_failure(self, mock_api, app, db_session, sample_library, sample_global_settings):

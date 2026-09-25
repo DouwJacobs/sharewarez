@@ -1,4 +1,5 @@
 import hashlib
+import json
 from unittest.mock import patch
 
 import pytest
@@ -169,3 +170,73 @@ def test_secure_invitation_migration_preserves_existing_links(app, db_session):
     assert stored.token_digest == hashlib.sha256(raw_token.encode()).hexdigest()
     assert stored.revoked_at is None
     assert stored.revoked_by_user_id is None
+
+
+def test_notification_delivery_migration_preserves_effective_preferences(app, db_session):
+    database_uri = app.config['SQLALCHEMY_DATABASE_URI']
+    command.downgrade(alembic_config(database_uri), '20260923_30')
+    db_session.execute(text(
+        "INSERT INTO users (name, email, password_hash, role, state, user_id) VALUES "
+        "('notification_migration', 'notification-migration@example.com', 'hash', "
+        "'user', true, '00000000-0000-0000-0000-000000000031')"
+    ))
+    user_id = db_session.execute(text(
+        "SELECT id FROM users WHERE name = 'notification_migration'"
+    )).scalar_one()
+    db_session.execute(text(
+        'INSERT INTO user_preferences '
+        '(user_id, saved_searches, sidebar_collapsed, experience_settings) '
+        "VALUES (:user_id, '[]', false, :settings)"
+    ), {
+        'user_id': user_id,
+        'settings': json.dumps({'notifications': {
+            'requests': False, 'issues': True, 'downloads': True,
+            'games': True, 'browser': False,
+        }}),
+    })
+    db_session.execute(text(
+        "INSERT INTO global_settings "
+        "(settings, last_updated, discord_notify_new_games, "
+        "discord_notify_game_updates, discord_notify_downloads) VALUES "
+        "(:settings, now(), true, false, false)"
+    ), {'settings': json.dumps({
+        'notifyRequesterRequestEmail': True,
+        'notifyAdminRequestEmail': False,
+        'notifyAdminIssueEmail': True,
+        'notifyReporterIssueEmail': False,
+        'notifyAdminDownloadCancellations': False,
+        'notifyAdminRepeatDownloads': True,
+    })})
+    db_session.commit()
+
+    upgrade_database(database_uri)
+
+    experience = json.loads(db_session.execute(text(
+        'SELECT experience_settings FROM user_preferences WHERE user_id = :user_id'
+    ), {'user_id': user_id}).scalar_one())
+    events = experience['notifications']['events']
+    assert events['request_updated'] == {'in_app': False, 'email': True, 'push': False}
+    assert events['issue_comment'] == {'in_app': True, 'email': True, 'push': False}
+    values = json.loads(db_session.execute(text(
+        'SELECT settings FROM global_settings ORDER BY id DESC LIMIT 1'
+    )).scalar_one())
+    policy = values['notificationPolicy']
+    assert policy['new_game']['discord'] is True
+    assert policy['request_updated']['email'] is True
+    assert policy['download_cancelled']['in_app'] is False
+    assert policy['download_repeated']['in_app'] is True
+
+
+def test_notification_delivery_upgrade_reconciles_metadata_created_schema(app, db_session):
+    """A current metadata schema may legitimately carry the preceding stamp."""
+    database_uri = app.config['SQLALCHEMY_DATABASE_URI']
+    command.stamp(alembic_config(database_uri), '20260923_30', purge=True)
+
+    upgrade_database(database_uri)
+
+    assert current_revision(database_uri) == '20260924_31'
+    tables = set(db_session.execute(text(
+        "SELECT table_name FROM information_schema.tables "
+        "WHERE table_schema = 'public'"
+    )).scalars())
+    assert {'notification_events', 'webhook_endpoints', 'webhook_deliveries'} <= tables

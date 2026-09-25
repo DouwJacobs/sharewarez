@@ -1,0 +1,35 @@
+<div class="tab-content-wrapper webhook-workspace">
+    <div class="webhook-heading">
+        <div><h4><i class="fas fa-diagram-project" aria-hidden="true"></i> Outbound webhooks</h4><p>Send privacy-aware, signed event summaries to external automation.</p></div>
+        <button class="btn btn-primary" type="button" data-webhook-new>Add endpoint</button>
+    </div>
+
+    <div class="webhook-editor" data-webhook-editor hidden>
+        <h5 data-webhook-editor-title>Add endpoint</h5>
+        <input type="hidden" data-webhook-id>
+        <div class="webhook-fields">
+            <div><label class="form-label" for="webhook-name">Name</label><input class="form-control" id="webhook-name" maxlength="100" data-webhook-name></div>
+            <div><label class="form-label" for="webhook-url">HTTPS URL</label><input class="form-control" id="webhook-url" type="url" maxlength="2048" data-webhook-url placeholder="https://example.com/hooks/sharewarez"></div>
+        </div>
+        <fieldset><legend>Subscribed events</legend><div class="webhook-event-grid">{% for event_type, definition in notification_events.items() %}<label class="settings-check-row"><input type="checkbox" value="{{ event_type }}" data-webhook-event><span><strong>{{ definition.label }}</strong><small>{{ definition.description }}</small></span></label>{% endfor %}</div></fieldset>
+        <label class="settings-check-row webhook-enabled"><input type="checkbox" data-webhook-enabled checked><span>Endpoint enabled</span></label>
+        <div class="webhook-actions"><button class="btn btn-secondary" type="button" data-webhook-cancel>Cancel</button><button class="btn btn-primary" type="button" data-webhook-save>Save endpoint</button></div>
+    </div>
+
+    <div class="webhook-secret" data-webhook-secret hidden role="status"><strong>Copy this signing secret now.</strong><code data-webhook-secret-value></code><p>It will not be shown again.</p></div>
+
+    <div class="webhook-endpoints" aria-label="Configured webhook endpoints">
+        {% for endpoint in webhook_endpoints %}
+        <div class="webhook-endpoint" data-webhook-record data-id="{{ endpoint.id }}" data-name="{{ endpoint.name }}" data-enabled="{{ 'true' if endpoint.is_enabled else 'false' }}" data-events='{{ endpoint.subscribed_events|tojson }}'>
+            <div><strong>{{ endpoint.name }}</strong><span class="webhook-status{% if endpoint.is_enabled %} is-enabled{% endif %}">{{ 'Enabled' if endpoint.is_enabled else 'Disabled' }}</span><small>{{ endpoint.subscribed_events|length }} subscribed events</small></div>
+            <div class="webhook-actions"><button class="btn btn-secondary" type="button" data-webhook-edit>Edit</button><button class="btn btn-secondary" type="button" data-webhook-test>Send test</button><button class="btn btn-secondary" type="button" data-webhook-rotate>Rotate secret</button><button class="btn btn-danger" type="button" data-webhook-delete>Delete</button></div>
+        </div>
+        {% else %}
+        <div class="app-empty-state"><h5>No outbound webhooks</h5><p>Add an endpoint when an external service needs Sharewarez events.</p></div>
+        {% endfor %}
+    </div>
+
+    <section class="webhook-history" aria-labelledby="webhook-history-title"><h5 id="webhook-history-title">Recent deliveries</h5>
+        <div class="table-responsive"><table><thead><tr><th>Endpoint</th><th>Event</th><th>Status</th><th>Attempts</th><th>Response</th><th>Created</th><th>Action</th></tr></thead><tbody>{% for delivery in webhook_deliveries %}<tr><td>{{ delivery.endpoint.name }}</td><td>{{ delivery.event.event_type }}</td><td>{{ delivery.status }}</td><td>{{ delivery.attempts }}</td><td>{{ delivery.response_status or '—' }}</td><td>{{ delivery.created_at|friendly_datetime }}</td><td>{% if delivery.status in ['failed', 'cancelled'] %}<button class="btn btn-secondary" type="button" data-webhook-retry="{{ delivery.id }}">Retry</button>{% else %}—{% endif %}</td></tr>{% else %}<tr><td colspan="7">No deliveries yet.</td></tr>{% endfor %}</tbody></table></div>
+    </section>
+</div>

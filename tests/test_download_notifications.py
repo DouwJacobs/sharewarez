@@ -1,5 +1,5 @@
 from types import SimpleNamespace
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 from sharewarez.utils.download_notifications import (
     notify_admin_download_cancelled,
@@ -7,10 +7,9 @@ from sharewarez.utils.download_notifications import (
 )
 
 
-@patch('sharewarez.utils.download_notifications.create_notifications')
+@patch('sharewarez.utils.download_notifications.publish_event')
 @patch('sharewarez.utils.download_notifications.active_user_ids', return_value=[1, 2])
-@patch('sharewarez.utils.download_notifications._enabled', return_value=True)
-def test_cancelled_download_notifies_admins(_enabled, _admins, create):
+def test_cancelled_download_notifies_admins(_admins, publish):
     request = SimpleNamespace(
         id=42,
         content_title='Example Game',
@@ -19,19 +18,20 @@ def test_cancelled_download_notifies_admins(_enabled, _admins, create):
 
     notify_admin_download_cancelled(request, 'Alice')
 
-    create.assert_called_once_with(
+    publish.assert_called_once_with(
         [1, 2], 'download_cancelled', 'Download cancelled: Example Game',
         'Alice cancelled download request 42.',
         link_url='/admin/manage-downloads',
         dedupe_key='download-cancelled:42',
+        resource_type='download_request', resource_id=42,
+        event_data={'_webhook_message': 'A download request was cancelled.'},
     )
 
 
-@patch('sharewarez.utils.download_notifications.create_notifications')
+@patch('sharewarez.utils.download_notifications.publish_event')
 @patch('sharewarez.utils.download_notifications.active_user_ids', return_value=[1])
-@patch('sharewarez.utils.download_notifications._enabled', return_value=True)
 @patch('sharewarez.utils.download_notifications.db')
-def test_second_transfer_notifies_admin(db, _enabled, _admins, create):
+def test_second_transfer_notifies_admin(db, _admins, publish):
     db.session.execute.return_value.scalar_one.return_value = 2
     db.session.get.return_value = SimpleNamespace(content_title='Example Game')
     transfer = SimpleNamespace(
@@ -43,16 +43,19 @@ def test_second_transfer_notifies_admin(db, _enabled, _admins, create):
 
     notify_admin_repeat_download(transfer)
 
-    create.assert_called_once_with(
+    publish.assert_called_once_with(
         [1], 'download_repeated', 'Repeated download: Example Game',
         'Alice started download attempt 2 for the same request.',
         link_url='/admin/manage-downloads',
         dedupe_key='download-repeat:42:2',
+        resource_type='download_request', resource_id=42,
+        event_data={'attempt': 2, '_webhook_message': 'A download request started another transfer.'},
     )
 
 
-@patch('sharewarez.utils.download_notifications.create_notifications', MagicMock())
-@patch('sharewarez.utils.download_notifications._enabled', return_value=False)
-def test_download_notifications_are_opt_in(_enabled):
-    request = SimpleNamespace(id=42, content_title='Example Game')
-    assert notify_admin_download_cancelled(request, 'Alice') == 0
+@patch('sharewarez.utils.download_notifications.publish_event', return_value='event')
+@patch('sharewarez.utils.download_notifications.active_user_ids', return_value=[])
+def test_download_event_is_published_for_non_inbox_channels(_admins, publish):
+    request = SimpleNamespace(id=42, content_title='Example Game', game=SimpleNamespace(name='Example Game'))
+    assert notify_admin_download_cancelled(request, 'Alice') == 'event'
+    publish.assert_called_once()

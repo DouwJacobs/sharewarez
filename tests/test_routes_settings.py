@@ -619,6 +619,56 @@ class TestSettingsPanel:
             'browser': True,
         }
 
+    def test_notification_matrix_preserves_legacy_and_role_irrelevant_values(
+        self, client, test_user, test_user_preference, db_session
+    ):
+        """Matrix saves only alter events displayed for the current role."""
+        from sharewarez.utils.notification_events import event_catalog
+        from sharewarez.utils.user_preferences import get_experience_settings
+
+        events = {
+            event_type: {'in_app': True, 'email': True, 'push': True}
+            for event_type in event_catalog()
+        }
+        test_user_preference.experience_settings = {
+            'library_view': 'grid',
+            'notifications': {
+                'requests': True, 'issues': False, 'downloads': True,
+                'games': False, 'browser': True, 'version': 2,
+                'events': events,
+            },
+        }
+        db_session.commit()
+        with client.session_transaction() as sess:
+            sess['_user_id'] = str(test_user.id)
+            sess['_fresh'] = True
+
+        response = client.post('/settings_panel', data={
+            'notification_matrix': '1',
+            'items_per_page': '20',
+            'default_sort': 'name',
+            'default_sort_order': 'asc',
+            'library_view': 'grid',
+            'theme': 'default',
+            'notify__request_updated__in_app': 'on',
+        })
+
+        assert response.status_code == 200
+        db_session.refresh(test_user_preference)
+        notifications = get_experience_settings(test_user)['notifications']
+        assert {key: notifications[key] for key in (
+            'requests', 'issues', 'downloads', 'games', 'browser'
+        )} == {
+            'requests': True, 'issues': False, 'downloads': True,
+            'games': False, 'browser': True,
+        }
+        assert notifications['events']['request_created'] == {
+            'in_app': True, 'email': True, 'push': True,
+        }
+        assert notifications['events']['request_updated'] == {
+            'in_app': True, 'email': False, 'push': False,
+        }
+
     def test_post_settings_panel_database_error(self, client, test_user, db_session):
         """Test POST request with database error."""
         with client.session_transaction() as sess:

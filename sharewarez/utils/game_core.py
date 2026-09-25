@@ -22,7 +22,6 @@ from sharewarez.utils.igdb_api import make_igdb_api_request
 from sharewarez.utils.metadata_provider_igdb import IGDBMetadataProvider
 from sharewarez.utils.metadata_providers import build_metadata_provider_registry
 from sharewarez.utils.gamenames import generate_goty_variants
-from sharewarez.utils.discord import discord_webhook
 from sharewarez.utils.scanning import log_unmatched_folder, delete_game_images
 from sharewarez.utils.event_logging import log_system_event
 from sharewarez.utils.game_relationships import IGDB_RELATIONSHIP_QUERY_FIELDS, sync_game_relationships
@@ -932,19 +931,15 @@ def retrieve_and_save_game(game_name, full_disk_path, scan_job_id=None, library_
                     else:
                         print(f"⚠️ [LOCAL METADATA] Failed to write metadata file for '{new_game.name}'")
 
-                # Move Discord notification here, after everything is saved successfully
-                # Load settings for Discord notification (separate from local metadata settings)
-                discord_settings = db.session.execute(select(GlobalSettings)).scalar_one_or_none()
-                if discord_settings and discord_settings.discord_webhook_url and discord_settings.discord_notify_new_games:
-                    print(f"Sending Discord notification for new game '{new_game.name}'.")
-                    discord_webhook(new_game.uuid)
-
-                from sharewarez.utils.notifications import active_user_ids, create_notifications
-                create_notifications(
+                from sharewarez.utils.notifications import active_user_ids
+                from sharewarez.utils.notification_events import publish_event
+                publish_event(
                     active_user_ids(), 'new_game', f'New game: {new_game.name}',
                     f'{new_game.name} is now available in {new_game.library.name}.',
                     link_url=f'/game_details/{new_game.uuid}',
                     dedupe_key=f'new-game:{new_game.uuid}',
+                    resource_type='game', resource_id=new_game.uuid,
+                    event_data={'library': new_game.library.name},
                 )
 
                 # Fetch HowLongToBeat data if enabled

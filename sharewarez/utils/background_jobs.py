@@ -22,6 +22,9 @@ JOB_DISPLAY_NAMES = {
     'library.bulk_metadata_refresh': 'Bulk metadata refresh',
     'library.bulk_image_refresh': 'Bulk image refresh',
     'notifications.send_email': 'Send notification email',
+    'notifications.send_push': 'Send browser notification',
+    'notifications.send_discord': 'Send Discord notification',
+    'notifications.send_webhook': 'Send outbound webhook',
     'download.archive.build': 'Prepare resumable download',
 }
 
@@ -295,6 +298,49 @@ def send_notification_email_task(context, payload):
     sent = send_email(recipient, subject, html, show_feedback=False)
     context.heartbeat(100, 'Email sent' if sent else 'Email delivery skipped')
     return {'sent': bool(sent)}
+
+
+@register_task('notifications.send_push')
+def send_notification_push_task(context, payload):
+    from sharewarez.utils.web_push import send_push_notifications
+
+    context.heartbeat(20, 'Sending browser notification')
+    delivered = send_push_notifications(
+        payload.get('user_ids') or [], payload.get('title') or '',
+        payload.get('message') or '', payload.get('link_url'),
+    )
+    return {'delivered': delivered}
+
+
+@register_task('notifications.send_discord')
+def send_notification_discord_task(context, payload):
+    from discord_webhook import DiscordEmbed, DiscordWebhook
+    from sharewarez.models import GlobalSettings, NotificationEvent
+
+    event = db.session.get(NotificationEvent, payload.get('event_id'))
+    settings = db.session.execute(select(GlobalSettings)).scalars().first()
+    if event is None or settings is None or not settings.discord_webhook_url:
+        return {'sent': False}
+    context.heartbeat(20, 'Sending Discord notification')
+    webhook = DiscordWebhook(url=settings.discord_webhook_url, rate_limit_retry=True)
+    webhook.add_embed(DiscordEmbed(
+        title=event.title, description=event.message,
+        url=((settings.site_url or '').rstrip('/') + (event.link_url or '')),
+        color='03b2f8',
+    ))
+    webhook.execute()
+    return {'sent': True}
+
+
+@register_task('notifications.send_webhook')
+def send_outbound_webhook_task(context, payload):
+    from sharewarez.utils.outbound_webhooks import deliver_webhook
+
+    job = context._job(refresh=True)
+    context.heartbeat(20, 'Sending outbound webhook')
+    return deliver_webhook(
+        payload.get('delivery_id'), final_attempt=job.attempts >= job.max_attempts,
+    )
 
 
 @register_task('download.archive.build')

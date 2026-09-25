@@ -75,6 +75,11 @@ def notification_category(event_type):
 
 
 def notification_enabled(user, event_type, *, browser=False):
+    from sharewarez.utils.notification_events import EVENTS, personal_preferences
+
+    if event_type in EVENTS:
+        channel = 'push' if browser else 'in_app'
+        return personal_preferences(user)[event_type][channel]
     settings = get_experience_settings(user)['notifications']
     category = notification_category(event_type)
     return bool(settings.get(category, True)) and (

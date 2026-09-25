@@ -110,7 +110,7 @@
 .admin-workspace-menu strong { font-size: .84rem; }
 .admin-workspace-menu small { margin-top: 2px; color: var(--theme-text-muted, var(--text-muted)); font-size: .71rem; font-weight: 500; line-height: 1.3; }
 
-@media (max-width: 900px) {
+@media (max-width: 1200px) {
     .admin-workspace-nav {
         flex-wrap: wrap;
         justify-content: flex-start;

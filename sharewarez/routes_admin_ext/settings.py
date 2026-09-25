@@ -1,7 +1,7 @@
 # /sharewarez/routes_admin_ext/settings.py
 from flask import render_template, request, jsonify, abort
 from flask_login import login_required, current_user
-from sharewarez.models import GlobalSettings
+from sharewarez.models import GlobalSettings, WebhookDelivery, WebhookEndpoint
 from sharewarez import db, cache
 from sqlalchemy import select
 from datetime import datetime, timezone
@@ -12,6 +12,7 @@ from sharewarez.utils.igdb_api import make_igdb_api_request
 from sharewarez.utils.metadata_provider_rawg import RawgAPIClient
 from sharewarez.utils.metadata_providers import validate_provider_order
 import logging
+from sharewarez.utils.notification_events import event_catalog, notification_policy
 
 # Configuration constants
 MIN_SCAN_THREADS = 1
@@ -119,6 +120,18 @@ def validate_settings_data(settings_data):
     if not isinstance(settings_data, dict):
         errors.append("Settings data must be a JSON object")
         return errors
+    policy = settings_data.get('notificationPolicy')
+    if policy is not None:
+        if not isinstance(policy, dict) or set(policy) - set(event_catalog()):
+            errors.append('Notification policy contains an unknown event.')
+        else:
+            for channels in policy.values():
+                if not isinstance(channels, dict) or set(channels) - {'in_app', 'email', 'push', 'discord'}:
+                    errors.append('Notification policy contains an unknown channel.')
+                    break
+                if any(not isinstance(value, bool) for value in channels.values()):
+                    errors.append('Notification channel values must be enabled or disabled.')
+                    break
     
     # Validate scan thread count
     scan_threads = settings_data.get('scanThreadCount')
@@ -265,6 +278,28 @@ def update_settings_fields(settings_record, new_settings):
     # Update the settings JSON field and timestamp
     merged_settings = dict(settings_record.settings or {})
     merged_settings.update(new_settings)
+    policy = new_settings.get('notificationPolicy')
+    if isinstance(policy, dict):
+        def enabled(event_type, channel):
+            return bool((policy.get(event_type) or {}).get(channel, False))
+
+        merged_settings.update({
+            'notifyAdminRequestEmail': enabled('request_created', 'email'),
+            'notifyRequesterRequestEmail': enabled('request_updated', 'email'),
+            'notifyAdminIssueEmail': any(enabled(key, 'email') for key in (
+                'issue_created', 'issue_comment', 'issue_status',
+            )),
+            'notifyReporterIssueEmail': any(enabled(key, 'email') for key in (
+                'issue_comment', 'issue_status', 'issue_deleted',
+            )),
+            'notifyDiscordNewRequests': enabled('request_created', 'discord'),
+            'notifyDiscordRequestUpdates': enabled('request_updated', 'discord'),
+            'notifyAdminDownloadCancellations': enabled('download_cancelled', 'in_app'),
+            'notifyAdminRepeatDownloads': enabled('download_repeated', 'in_app'),
+        })
+        settings_record.discord_notify_new_games = enabled('new_game', 'discord')
+        settings_record.discord_notify_game_updates = enabled('game_update', 'discord')
+        settings_record.discord_notify_downloads = enabled('download_archive_ready', 'discord')
     settings_record.settings = merged_settings
     settings_record.last_updated = datetime.now(timezone.utc)
 
@@ -358,6 +393,8 @@ def settings():
                 'admin/new_server_settings.html',
                 current_settings=current_settings,
                 initial_section=initial_section,
+                notification_events=event_catalog(),
+                notification_policy=notification_policy(),
             )
         except Exception as e:
             logging.error(f"Error retrieving settings: {str(e)}")
@@ -391,7 +428,20 @@ def integrations():
         # Build current settings for JavaScript consumption
         current_settings = build_current_settings(settings_record)
 
-        return render_template('admin/integrations.html', settings=settings_record, current_settings=current_settings)
+        webhook_endpoints = list(db.session.execute(
+            select(WebhookEndpoint).order_by(WebhookEndpoint.name)
+        ).scalars())
+        webhook_deliveries = list(db.session.execute(
+            select(WebhookDelivery)
+            .order_by(WebhookDelivery.created_at.desc())
+            .limit(50)
+        ).scalars())
+        return render_template(
+            'admin/integrations.html', settings=settings_record,
+            current_settings=current_settings, webhook_endpoints=webhook_endpoints,
+            webhook_deliveries=webhook_deliveries,
+            notification_events=event_catalog(),
+        )
     except Exception as e:
         logging.error(f"Error retrieving integrations: {str(e)}")
         abort(500)

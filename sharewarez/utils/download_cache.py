@@ -460,11 +460,12 @@ def build_archive(context, archive_id: str) -> dict:
             download_request.completion_time = now
         db.session.commit()
         if requests:
-            from sharewarez.utils.notifications import create_notifications
-            create_notifications(
+            from sharewarez.utils.notification_events import publish_event
+            publish_event(
                 [item.user_id for item in requests], 'download_archive_ready',
                 'Resumable download ready', f'{archive.display_name} is ready to download.',
                 link_url='/downloads', dedupe_key=f'download-archive-ready:{archive.id}',
+                resource_type='download_archive', resource_id=archive.id,
             )
         context.heartbeat(100, 'Resumable archive ready')
         return {'archive_id': archive.id, 'archive_bytes': archive.archive_bytes, 'reused': False}

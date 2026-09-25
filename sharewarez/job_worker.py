@@ -15,11 +15,17 @@ from sharewarez.utils.background_jobs import claim_next, execute, recover_stale_
 def maintain_downloads(app, stopping, interval=15):
     """Independent maintenance cannot be delayed by a long scan or cache build."""
     from sharewarez.utils.download_limits import expire_download_requests, mark_stale_transfers
+    last_notification_cleanup = 0.0
     while not stopping.is_set():
         with app.app_context():
             try:
                 mark_stale_transfers()
                 expire_download_requests()
+                monotonic_now = time.monotonic()
+                if monotonic_now - last_notification_cleanup >= 86400:
+                    from sharewarez.utils.notification_events import cleanup_webhook_deliveries
+                    cleanup_webhook_deliveries()
+                    last_notification_cleanup = monotonic_now
             except Exception:
                 db.session.rollback()
                 app.logger.exception("Download transfer maintenance failed")

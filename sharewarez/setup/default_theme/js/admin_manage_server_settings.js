@@ -104,14 +104,10 @@ document.addEventListener('DOMContentLoaded', function() {
             allowRequestNotes: document.getElementById('allowRequestNotes').checked,
             allowRequestAnyEdition: document.getElementById('allowRequestAnyEdition').checked,
             maxActiveRequestsPerUser: parseInt(document.getElementById('maxActiveRequestsPerUser').value),
-            notifyRequesterRequestEmail: document.getElementById('notifyRequesterRequestEmail').checked,
-            notifyAdminRequestEmail: document.getElementById('notifyAdminRequestEmail').checked,
-            notifyDiscordNewRequests: document.getElementById('notifyDiscordNewRequests').checked,
-            notifyDiscordRequestUpdates: document.getElementById('notifyDiscordRequestUpdates').checked,
-            notifyAdminIssueEmail: document.getElementById('notifyAdminIssueEmail').checked,
-            notifyReporterIssueEmail: document.getElementById('notifyReporterIssueEmail').checked,
-            notifyAdminDownloadCancellations: document.getElementById('notifyAdminDownloadCancellations').checked,
-            notifyAdminRepeatDownloads: document.getElementById('notifyAdminRepeatDownloads').checked,
+            notificationPolicy: Object.fromEntries(Array.from(document.querySelectorAll('[data-notification-event]')).map(row => [
+                row.dataset.notificationEvent,
+                Object.fromEntries(Array.from(row.querySelectorAll('[data-notification-channel]')).map(input => [input.dataset.notificationChannel, input.checked]))
+            ])),
             mobileNavOrder: (function() {
                 const pinned = mobileNavSlots.map(select => select.value);
                 return pinned.concat(mobileNavItems.filter(item => !pinned.includes(item)));

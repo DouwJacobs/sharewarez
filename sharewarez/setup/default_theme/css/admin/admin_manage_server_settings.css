@@ -363,3 +363,11 @@
         grid-template-columns: 1fr;
     }
 }
+.notification-policy-matrix { contain: inline-size paint; width: 100%; max-width: 100%; min-width: 0; overflow-x: auto; overflow-y: hidden; }
+.notification-policy-row { display: grid; grid-template-columns: minmax(220px, 1fr) repeat(4, 72px); align-items: center; min-width: 520px; border-bottom: 1px solid var(--theme-border-color, var(--border-light)); }
+.notification-policy-row > * { padding: 10px; }
+.notification-policy-row > span { display: grid; gap: 3px; }
+.notification-policy-row > span small { color: var(--theme-text-muted, var(--text-muted)); font-size: .75rem; font-weight: 400; }
+.notification-policy-row > label { display: grid; min-height: 44px; place-items: center; margin: 0; cursor: pointer; }
+.notification-policy-row input { width: 18px; height: 18px; accent-color: var(--theme-accent-color); }
+.notification-policy-row--head { color: var(--theme-text-muted, var(--text-muted)); font-size: .75rem; font-weight: 700; text-transform: uppercase; }

@@ -208,13 +208,15 @@ def process_game_updates(game_name, full_disk_path, updates_folder, library_uuid
         db.session.commit()
         print("Successfully committed GameUpdate records to database")
         if new_updates:
-            from sharewarez.utils.notifications import active_user_ids, create_notifications
+            from sharewarez.utils.notifications import active_user_ids
+            from sharewarez.utils.notification_events import publish_event
             for update_title, update_path in new_updates:
-                create_notifications(
+                publish_event(
                     active_user_ids(), 'game_update', f'Update available: {game.name}',
                     f'{update_title} was added for {game.name}.',
                     link_url=f'/game_details/{game.uuid}',
                     dedupe_key=f'game-update:{game.uuid}:{update_path}',
+                    resource_type='game', resource_id=game.uuid,
                 )
     except SQLAlchemyError as e:
         print(f"Error committing GameUpdate records to database: {str(e)}")

@@ -22,10 +22,6 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log("Discord notification form submit event triggered.");
 
         const notificationSettings = {
-            discordNotifyNewGames: document.getElementById('discordNotifyNewGames').checked,
-            discordNotifyGameUpdates: document.getElementById('discordNotifyGameUpdates').checked,
-            discordNotifyGameExtras: document.getElementById('discordNotifyGameExtras').checked,
-            discordNotifyDownloads: document.getElementById('discordNotifyDownloads').checked,
             discordNotifyManualTrigger: document.getElementById('discordNotifyManualTrigger').checked
         };
 
@@ -89,18 +85,6 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log("Loaded notification settings from embedded data:", settings);
 
             // Apply settings to checkboxes
-            if (settings.discordNotifyNewGames !== undefined) {
-                document.getElementById('discordNotifyNewGames').checked = settings.discordNotifyNewGames;
-            }
-            if (settings.discordNotifyGameUpdates !== undefined) {
-                document.getElementById('discordNotifyGameUpdates').checked = settings.discordNotifyGameUpdates;
-            }
-            if (settings.discordNotifyGameExtras !== undefined) {
-                document.getElementById('discordNotifyGameExtras').checked = settings.discordNotifyGameExtras;
-            }
-            if (settings.discordNotifyDownloads !== undefined) {
-                document.getElementById('discordNotifyDownloads').checked = settings.discordNotifyDownloads;
-            }
             if (settings.discordNotifyManualTrigger !== undefined) {
                 document.getElementById('discordNotifyManualTrigger').checked = settings.discordNotifyManualTrigger;
             }

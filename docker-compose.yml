@@ -50,6 +50,7 @@ services:
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
       - LOG_FORMAT=${LOG_FORMAT:-json}
       - JOB_POLL_SECONDS=${JOB_POLL_SECONDS:-1}
+      - ALLOW_PRIVATE_WEBHOOK_TARGETS=${ALLOW_PRIVATE_WEBHOOK_TARGETS:-false}
     volumes:
       - "${DATA_FOLDER_WAREZ}:/storage:ro"
       - "${LIBRARY_HOST_PATH:-./data/library}:/app/sharewarez/static/library"

@@ -686,3 +686,25 @@ the sole mobile gutter. Canonical styling lives in
 `css/login/authentication.css`; the installed default-theme copy must remain
 synchronized. The former confirmation and invitation-specific stylesheets are
 retired so all public account states remain visually consistent.
+
+## Notification delivery preferences and webhooks — 24 September 2026
+
+Account Settings uses a flat, horizontally bounded event/channel matrix inside
+its existing Notifications surface. Administrator Notification rules owns the
+corresponding instance policy matrix. Disabled personal cells explain that the
+administrator owns availability; browser permission remains a separate device
+action. Integrations adds Webhooks as a peer workspace tab with one flat endpoint
+list, an inline editor, one-time secret disclosure, and internally scrollable
+delivery history. Canonical and installed default-theme CSS/JavaScript copies
+must remain synchronized.
+
+Rendered verification on 25 September covered Account Settings, administrator
+Notification rules, and Integrations > Webhooks in the default theme at the
+normal desktop viewport and at 390 × 844. Both event matrices keep their wider
+channel rows inside a local horizontal scroller; the document itself measured
+equal `clientWidth` and `scrollWidth` in every checked state. The webhook list,
+empty state, inline endpoint editor, and delivery history likewise remain inside
+the integration workspace. The mobile endpoint name and URL controls measured
+44 px high. This pass also moved the administrator workspace navigation to its
+wrapped layout at 1200 px, preventing the Configure group from widening the page
+when the desktop sidebar leaves a narrower content column.
