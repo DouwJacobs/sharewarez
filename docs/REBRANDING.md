@@ -51,6 +51,10 @@ Environment-prefix migration is now active: `GAMELIBRARY_HOT_RELOAD`,
 take precedence over their `SHAREWAREZ_*` aliases. Launchers currently export both
 names so older deployment integrations continue to work.
 
+Webhook-prefix migration is also active. Version 1 deliveries send matching
+`X-GameLibrary-*` and `X-Sharewarez-*` header values from the same signature. The
+legacy user agent remains stable until a versioned protocol migration.
+
 Each stage should be independently releasable and reversible. Remove a legacy name
 only after its replacement has shipped for a documented compatibility window.
 

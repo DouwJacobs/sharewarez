@@ -15,11 +15,17 @@ not included. Version 1 is stable; incompatible changes require a new version.
 
 Headers include:
 
-- `X-Sharewarez-Delivery`: unique delivery UUID
-- `X-Sharewarez-Event`: canonical event key
-- `X-Sharewarez-Timestamp`: Unix timestamp used for replay checks
-- `X-Sharewarez-Signature`: `sha256=` plus the hexadecimal HMAC-SHA256 of
+- `X-GameLibrary-Delivery`: unique delivery UUID
+- `X-GameLibrary-Event`: canonical event key
+- `X-GameLibrary-Timestamp`: Unix timestamp used for replay checks
+- `X-GameLibrary-Signature`: `sha256=` plus the hexadecimal HMAC-SHA256 of
   `<timestamp>.<raw request body>` using the endpoint secret
+
+Version 1 also sends the equivalent `X-Sharewarez-*` headers with identical
+values and retains the `Sharewarez-Webhook/1` user agent for receiver
+compatibility. New integrations should consume `X-GameLibrary-*`. Changing or
+removing the compatibility headers or user agent requires a separately versioned
+protocol migration.
 
 Receivers should reject stale timestamps, calculate the HMAC over the unmodified
 body, and compare signatures with a constant-time comparison.

@@ -16,6 +16,7 @@ from sharewarez.models import WebhookDelivery
 
 
 RETRYABLE_STATUS = {408, 425, 429}
+WEBHOOK_HEADER_PREFIXES = ('GameLibrary', 'Sharewarez')
 
 
 def validate_webhook_url(value):
@@ -44,6 +45,25 @@ def validate_webhook_url(value):
 def sign_payload(secret, timestamp, body):
     material = f'{timestamp}.'.encode() + body
     return 'sha256=' + hmac.new(secret.encode(), material, hashlib.sha256).hexdigest()
+
+
+def build_webhook_headers(delivery, timestamp, body):
+    """Build current and compatibility headers from one signed payload."""
+    signature = sign_payload(delivery.endpoint.signing_secret, timestamp, body)
+    headers = {
+        'Content-Type': 'application/json',
+        # Retain the version-one user agent until a separately versioned protocol change.
+        'User-Agent': 'Sharewarez-Webhook/1',
+    }
+    values = {
+        'Delivery': delivery.id,
+        'Event': delivery.event.event_type,
+        'Timestamp': timestamp,
+        'Signature': signature,
+    }
+    for prefix in WEBHOOK_HEADER_PREFIXES:
+        headers.update({f'X-{prefix}-{name}': value for name, value in values.items()})
+    return headers
 
 
 def deliver_webhook(delivery_id, *, final_attempt=False):
@@ -77,14 +97,7 @@ def deliver_webhook(delivery_id, *, final_attempt=False):
         response = requests.post(
             url,
             data=body,
-            headers={
-                'Content-Type': 'application/json',
-                'User-Agent': 'Sharewarez-Webhook/1',
-                'X-Sharewarez-Delivery': delivery.id,
-                'X-Sharewarez-Event': delivery.event.event_type,
-                'X-Sharewarez-Timestamp': timestamp,
-                'X-Sharewarez-Signature': sign_payload(endpoint.signing_secret, timestamp, body),
-            },
+            headers=build_webhook_headers(delivery, timestamp, body),
             timeout=10,
             allow_redirects=False,
         )

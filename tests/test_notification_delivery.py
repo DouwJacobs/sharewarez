@@ -216,6 +216,11 @@ def test_webhook_delivery_uses_signed_snapshot(mock_post, monkeypatch, db_sessio
     assert result == {'delivered': True, 'status_code': 204}
     assert delivery.status == 'delivered'
     headers = mock_post.call_args.kwargs['headers']
-    assert headers['X-Sharewarez-Delivery'] == delivery.id
-    assert headers['X-Sharewarez-Signature'].startswith('sha256=')
+    assert headers['X-GameLibrary-Delivery'] == delivery.id
+    assert headers['X-GameLibrary-Event'] == 'new_game'
+    assert headers['X-GameLibrary-Timestamp'] == headers['X-Sharewarez-Timestamp']
+    assert headers['X-GameLibrary-Signature'].startswith('sha256=')
+    for name in ('Delivery', 'Event', 'Timestamp', 'Signature'):
+        assert headers[f'X-GameLibrary-{name}'] == headers[f'X-Sharewarez-{name}']
+    assert headers['User-Agent'] == 'Sharewarez-Webhook/1'
     assert mock_post.call_args.kwargs['allow_redirects'] is False
