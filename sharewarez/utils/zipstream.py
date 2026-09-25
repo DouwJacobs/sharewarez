@@ -7,6 +7,7 @@ import os
 import asyncio
 from typing import AsyncGenerator, Tuple, Optional, Dict, Any
 import zipstream
+from sharewarez.metadata_files import is_local_metadata_filename
 from sharewarez.utils.security import is_safe_path
 from sharewarez.utils.event_logging import log_system_event
 
@@ -32,7 +33,7 @@ def _build_zipstream(
         for root, dirs, files in os.walk(source_path):
             dirs[:] = [directory for directory in dirs if directory.lower() not in excluded]
             for file_name in files:
-                if file_name.lower() == 'sharewarez.json':
+                if is_local_metadata_filename(file_name):
                     continue
                 file_path = os.path.join(root, file_name)
                 archive.write(file_path, arcname=os.path.relpath(file_path, source_path))
@@ -176,7 +177,7 @@ def estimate_zip_size(source_path: str) -> Optional[int]:
                 dirs[:] = [d for d in dirs if d.lower() not in ['updates', 'extras']]
                 
                 for file in files:
-                    if file.lower() == 'sharewarez.json':
+                    if is_local_metadata_filename(file):
                         continue
                     file_path = os.path.join(root, file)
                     try:

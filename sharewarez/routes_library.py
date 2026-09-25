@@ -8,6 +8,7 @@ from sharewarez.forms import CsrfForm, CsrfProtectForm
 from sqlalchemy.orm import selectinload
 from sqlalchemy import select, func, and_
 from sharewarez.utils.processors import get_global_settings
+from sharewarez.metadata_files import DEFAULT_LOCAL_METADATA_FILENAME
 from sharewarez import cache
 from sharewarez.utils.pagination import normalize_library_pagination
 from sharewarez.utils.user_preferences import get_experience_settings, update_experience_settings
@@ -311,7 +312,7 @@ def serialize_library_cards(games, current_user_id):
         from sharewarez.utils.local_metadata import has_local_metadata, has_local_images
         has_local_override = False
         if settings:
-            if (settings.use_local_metadata and has_local_metadata(game.full_disk_path, settings.local_metadata_filename or 'sharewarez.json')) or \
+            if (settings.use_local_metadata and has_local_metadata(game.full_disk_path, settings.local_metadata_filename or DEFAULT_LOCAL_METADATA_FILENAME)) or \
                (settings.use_local_images and has_local_images(game.full_disk_path)):
                 has_local_override = True
 

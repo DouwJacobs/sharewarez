@@ -4,6 +4,7 @@ from copy import deepcopy
 from typing import Any, Mapping
 
 from sharewarez.branding import DEFAULT_BRAND_LOGO, DEFAULT_SITE_TITLE
+from sharewarez.metadata_files import DEFAULT_LOCAL_METADATA_FILENAME
 
 
 MOBILE_NAV_ITEMS = ('discover', 'library', 'requests', 'downloads', 'favorites')
@@ -68,7 +69,7 @@ DEFAULT_SETTINGS = {
     'useLocalMetadata': False,
     'writeLocalMetadata': False,
     'useLocalImages': False,
-    'localMetadataFilename': 'sharewarez.json',
+    'localMetadataFilename': DEFAULT_LOCAL_METADATA_FILENAME,
 }
 
 

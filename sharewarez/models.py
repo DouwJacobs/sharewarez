@@ -6,6 +6,7 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.types import TypeDecorator, TEXT
 from argon2 import PasswordHasher
 from sharewarez.utils.secrets import EncryptedString
+from sharewarez.metadata_files import DEFAULT_LOCAL_METADATA_FILENAME
 from argon2.exceptions import VerifyMismatchError
 import uuid, json
 from uuid import uuid4
@@ -1232,7 +1233,9 @@ class GlobalSettings(db.Model):
     use_local_metadata = db.Column(db.Boolean, default=False)
     write_local_metadata = db.Column(db.Boolean, default=False)
     use_local_images = db.Column(db.Boolean, default=False)
-    local_metadata_filename = db.Column(db.String(50), default='sharewarez.json')
+    local_metadata_filename = db.Column(
+        db.String(50), default=DEFAULT_LOCAL_METADATA_FILENAME
+    )
 
     def __repr__(self):
         return f'<GlobalSettings id={self.id}, last_updated={self.last_updated}>'

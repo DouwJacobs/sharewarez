@@ -18,6 +18,10 @@ from sharewarez.models import (
     GlobalSettings,
     ScanJob
 )
+from sharewarez.metadata_files import (
+    DEFAULT_LOCAL_METADATA_FILENAME,
+    metadata_filename_candidates,
+)
 from sharewarez.utils.functions import read_first_nfo_content
 from sharewarez.utils.igdb_api import make_igdb_api_request
 from sharewarez.utils.metadata_provider_igdb import IGDBMetadataProvider
@@ -137,7 +141,9 @@ def process_game_updates(game_name, full_disk_path, updates_folder, library_uuid
             print("No update folder configuration found in database")
             return
         update_folder_name = settings.update_folder_name
-    metadata_filename = (settings.local_metadata_filename if settings else None) or 'sharewarez.json'
+    metadata_filename = (
+        settings.local_metadata_filename if settings else None
+    ) or DEFAULT_LOCAL_METADATA_FILENAME
 
     print(f"Processing updates for game: {game_name}")
     print(f"Full disk path: {full_disk_path}")
@@ -225,11 +231,19 @@ def process_game_updates(game_name, full_disk_path, updates_folder, library_uuid
     print(f"Finished processing updates for game: {game_name}")
 
 
-def _read_update_metadata(update_path, metadata_filename='sharewarez.json'):
+def _read_update_metadata(update_path, metadata_filename=DEFAULT_LOCAL_METADATA_FILENAME):
     """Read optional metadata from an update directory or a file sidecar."""
-    metadata_path = (os.path.join(update_path, metadata_filename) if os.path.isdir(update_path)
-                     else f"{update_path}.{metadata_filename}")
-    if not os.path.isfile(metadata_path):
+    is_directory = os.path.isdir(update_path)
+    metadata_path = next((
+        os.path.join(update_path, candidate) if is_directory
+        else f"{update_path}.{candidate}"
+        for candidate in metadata_filename_candidates(metadata_filename)
+        if os.path.isfile(
+            os.path.join(update_path, candidate) if is_directory
+            else f"{update_path}.{candidate}"
+        )
+    ), None)
+    if metadata_path is None:
         return {}
     try:
         with open(metadata_path, 'r', encoding='utf-8') as metadata_file:

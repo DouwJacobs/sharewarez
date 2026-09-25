@@ -16,6 +16,7 @@ from sharewarez.models import (
     Game, Library, AllowedFileType, ScanJob, GlobalSettings, UnmatchedFolder,
     Genre, Theme, GameMode, Platform, PlayerPerspective,
 )
+from sharewarez.metadata_files import DEFAULT_LOCAL_METADATA_FILENAME
 from sharewarez import db
 from sharewarez.utils.game_core import (
     remove_from_lib, fetch_game_by_igdb_id, enumerate_companies,
@@ -200,7 +201,10 @@ def scan_and_add_games(folder_path, scan_mode='folders', library_uuid=None, remo
         'use_local_metadata': settings_obj.use_local_metadata if settings_obj else False,
         'write_local_metadata': settings_obj.write_local_metadata if settings_obj else False,
         'use_local_images': settings_obj.use_local_images if settings_obj else False,
-        'local_metadata_filename': settings_obj.local_metadata_filename if settings_obj else 'sharewarez.json'
+        'local_metadata_filename': (
+            settings_obj.local_metadata_filename if settings_obj
+            else DEFAULT_LOCAL_METADATA_FILENAME
+        )
     }
 
     # Log local metadata settings once at scan start

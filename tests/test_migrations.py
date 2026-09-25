@@ -227,14 +227,27 @@ def test_notification_delivery_migration_preserves_effective_preferences(app, db
     assert policy['download_repeated']['in_app'] is True
 
 
-def test_notification_delivery_upgrade_reconciles_metadata_created_schema(app, db_session):
-    """A current metadata schema may legitimately carry the preceding stamp."""
+def test_latest_upgrades_reconcile_metadata_created_schema(app, db_session):
+    """A metadata-created schema may carry an older compatible stamp."""
     database_uri = app.config['SQLALCHEMY_DATABASE_URI']
+    settings = GlobalSettings(
+        settings={}, local_metadata_filename='sharewarez.json'
+    )
+    db_session.add(settings)
+    db_session.commit()
     command.stamp(alembic_config(database_uri), '20260923_30', purge=True)
 
     upgrade_database(database_uri)
 
-    assert current_revision(database_uri) == '20260924_31'
+    assert current_revision(database_uri) == head_revision()
+    db_session.refresh(settings)
+    assert settings.local_metadata_filename == 'sharewarez.json'
+    column_default = db_session.execute(text(
+        "SELECT column_default FROM information_schema.columns "
+        "WHERE table_schema = 'public' AND table_name = 'global_settings' "
+        "AND column_name = 'local_metadata_filename'"
+    )).scalar_one()
+    assert 'gamelibrary.json' in column_default
     tables = set(db_session.execute(text(
         "SELECT table_name FROM information_schema.tables "
         "WHERE table_schema = 'public'"

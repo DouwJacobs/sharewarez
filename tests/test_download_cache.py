@@ -36,6 +36,7 @@ def test_manifest_is_deterministic_and_excludes_metadata(tmp_path):
     (source / 'part2.rar').write_bytes(b'two')
     (source / 'part1.rar').write_bytes(b'one')
     (source / 'sharewarez.json').write_text('{}', encoding='utf-8')
+    (source / 'gamelibrary.json').write_text('{}', encoding='utf-8')
     updates = source / 'Updates'
     updates.mkdir()
     (updates / 'patch.zip').write_bytes(b'patch')

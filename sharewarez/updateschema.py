@@ -513,7 +513,7 @@ class DatabaseManager:
         ADD COLUMN IF NOT EXISTS use_local_images BOOLEAN DEFAULT FALSE;
 
         ALTER TABLE global_settings
-        ADD COLUMN IF NOT EXISTS local_metadata_filename VARCHAR(50) DEFAULT 'sharewarez.json';
+        ADD COLUMN IF NOT EXISTS local_metadata_filename VARCHAR(50) DEFAULT 'gamelibrary.json';
 
         -- Remove unused library_name column from games table (replaced by library relationship via library_uuid)
         DO $$

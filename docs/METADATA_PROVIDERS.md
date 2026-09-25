@@ -40,7 +40,9 @@ credential.
 per game is canonical and drives refresh. Legacy IGDB columns remain populated and
 readable for IGDB so rolling upgrades do not lose data.
 
-Local `sharewarez.json` files now use metadata version 2.0 with an `identity` object:
+New local metadata is written to `gamelibrary.json` by default and uses metadata
+version 2.0 with an `identity` object. Existing `sharewarez.json` files remain
+readable; when both standard filenames exist, `gamelibrary.json` takes precedence:
 
 ```json
 {"metadata_version":"2.0","identity":{"provider":"rawg","external_id":"3498"}}

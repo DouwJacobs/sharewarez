@@ -3,6 +3,7 @@ from flask import render_template, redirect, url_for, flash, copy_current_reques
 from flask_login import login_required, current_user
 from sharewarez.forms import AddGameForm
 from sharewarez.models import Game, GameExternalIdentity, Library, UnmatchedFolder, Category, Developer, Publisher
+from sharewarez.metadata_files import DEFAULT_LOCAL_METADATA_FILENAME
 from sharewarez.utils.functions import read_first_nfo_content, PLATFORM_IDS
 from sharewarez.utils.auth import admin_required
 from sharewarez.utils.scanning import is_scan_job_running, refresh_images_in_background
@@ -184,7 +185,9 @@ def add_game_manual():
             print(f"[LOCAL METADATA] Settings check - settings exists: {settings is not None}, write_local_metadata: {settings.write_local_metadata if settings else 'N/A'}")
 
             if settings and settings.write_local_metadata:
-                metadata_filename = settings.local_metadata_filename or 'sharewarez.json'
+                metadata_filename = (
+                    settings.local_metadata_filename or DEFAULT_LOCAL_METADATA_FILENAME
+                )
                 success = write_local_metadata(
                     full_disk_path=form.full_disk_path.data,
                     game_title=form.name.data,

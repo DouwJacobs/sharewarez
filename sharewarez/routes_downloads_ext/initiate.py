@@ -6,6 +6,7 @@ from flask_login import login_required, current_user
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import select
 from sharewarez.models import Game, DownloadRequest, GameUpdate, GameExtra, GlobalSettings
+from sharewarez.metadata_files import is_local_metadata_filename
 from sharewarez.utils.game_core import get_game_by_uuid
 from sharewarez.utils.security import is_safe_path, get_allowed_base_directories
 from sharewarez.utils.filename import sanitize_filename
@@ -86,10 +87,11 @@ def download_game(game_uuid):
                 if os.path.isfile(full_path):
                     files_in_directory.append(f)
             
-            # Filter out .nfo, .sfv, file_id.diz, sharewarez.json files - these don't count as significant
+            # Metadata and release-note files do not make a folder a multi-file download.
             significant_files = [f for f in files_in_directory
                                if not f.lower().endswith(('.nfo', '.sfv'))
-                               and not f.lower() in ('file_id.diz', 'sharewarez.json')]
+                               and f.lower() != 'file_id.diz'
+                               and not is_local_metadata_filename(f)]
             
             if len(significant_files) == 1:
                 # Single significant file - direct download (no zipping)

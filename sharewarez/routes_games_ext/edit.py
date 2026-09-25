@@ -4,6 +4,7 @@ from sharewarez.forms import AddGameForm
 from sharewarez.models import (
     Game, GameExternalIdentity, Library, Category, Developer, Publisher, Status,
 )
+from sharewarez.metadata_files import DEFAULT_LOCAL_METADATA_FILENAME
 from sharewarez.utils.functions import read_first_nfo_content, get_folder_size_in_bytes_updates, format_size, PLATFORM_IDS
 from sharewarez.utils.auth import admin_required
 from sharewarez.utils.scanning import is_scan_job_running, refresh_images_in_background
@@ -347,7 +348,9 @@ def game_edit(game_uuid):
                 select(GlobalSettings).order_by(GlobalSettings.id).limit(1)
             ).scalar_one_or_none()
             if settings and settings.write_local_metadata:
-                metadata_filename = settings.local_metadata_filename or 'sharewarez.json'
+                metadata_filename = (
+                    settings.local_metadata_filename or DEFAULT_LOCAL_METADATA_FILENAME
+                )
                 write_local_metadata(
                     full_disk_path=game.full_disk_path,
                     game_title=game.name,

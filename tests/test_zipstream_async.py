@@ -15,6 +15,7 @@ async def _collect(source_path):
 def test_streamed_archive_is_valid_and_applies_exclusions(tmp_path):
     (tmp_path / 'game.bin').write_bytes(b'game data')
     (tmp_path / 'sharewarez.json').write_text('{}')
+    (tmp_path / 'gamelibrary.json').write_text('{}')
     excluded = tmp_path / 'updates'
     excluded.mkdir()
     (excluded / 'patch.bin').write_bytes(b'patch data')

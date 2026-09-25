@@ -37,6 +37,7 @@ def test_provider_neutral_metadata_round_trip(app, tmp_path):
         )
         metadata = read_local_metadata(str(tmp_path))
 
+    assert (tmp_path / 'gamelibrary.json').is_file()
     assert metadata['metadata_version'] == '2.0'
     assert metadata['identity'] == {
         'provider': 'rawg',
@@ -50,6 +51,20 @@ def test_new_igdb_metadata_keeps_legacy_key(app, tmp_path):
     with app.app_context(), _allow_local_path():
         assert write_local_metadata(str(tmp_path), igdb_id=7331)
 
-    payload = json.loads((tmp_path / 'sharewarez.json').read_text(encoding='utf-8'))
+    payload = json.loads((tmp_path / 'gamelibrary.json').read_text(encoding='utf-8'))
     assert payload['identity'] == {'provider': 'igdb', 'external_id': '7331'}
     assert payload['igdb_id'] == 7331
+
+
+def test_current_metadata_filename_takes_precedence_over_legacy(app, tmp_path):
+    (tmp_path / 'gamelibrary.json').write_text(
+        json.dumps({'igdb_id': 7331}), encoding='utf-8'
+    )
+    (tmp_path / 'sharewarez.json').write_text(
+        json.dumps({'igdb_id': 9999}), encoding='utf-8'
+    )
+
+    with app.app_context(), _allow_local_path():
+        metadata = read_local_metadata(str(tmp_path))
+
+    assert metadata['igdb_id'] == 7331

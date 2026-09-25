@@ -17,6 +17,7 @@ from sqlalchemy.exc import IntegrityError
 from werkzeug.utils import secure_filename
 
 from sharewarez import db
+from sharewarez.metadata_files import is_local_metadata_filename
 from sharewarez.models import DownloadArchive, DownloadRequest, DownloadTransfer, GlobalSettings
 from sharewarez.utils.security import get_allowed_base_directories, is_safe_path
 
@@ -198,7 +199,7 @@ def build_source_manifest(source_path: str, settings_record=None) -> tuple[str, 
             if name.lower() not in excluded and not (root_path / name).is_symlink()
         )
         for name in sorted(files):
-            if name.lower() == 'sharewarez.json':
+            if is_local_metadata_filename(name):
                 continue
             path = root_path / name
             if path.is_symlink() or not path.is_file():

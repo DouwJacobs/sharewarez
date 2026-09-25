@@ -55,6 +55,11 @@ Webhook-prefix migration is also active. Version 1 deliveries send matching
 `X-GameLibrary-*` and `X-Sharewarez-*` header values from the same signature. The
 legacy user agent remains stable until a versioned protocol migration.
 
+New installations and uncustomized settings now prefer `gamelibrary.json` for
+local metadata. Readers accept both standard filenames, preferring the configured
+name and falling back to its compatibility counterpart. Existing persisted
+`sharewarez.json` settings are intentionally not rewritten.
+
 Each stage should be independently releasable and reversible. Remove a legacy name
 only after its replacement has shipped for a documented compatibility window.
 

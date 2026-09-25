@@ -35,6 +35,15 @@ def test_reads_archive_sidecar_metadata(tmp_path):
     assert _path_size(str(archive)) == 6
 
 
+def test_current_update_metadata_takes_precedence_over_legacy(tmp_path):
+    update = tmp_path / 'Update 3'
+    update.mkdir()
+    (update / 'gamelibrary.json').write_text('{"version": "3.0"}', encoding='utf-8')
+    (update / 'sharewarez.json').write_text('{"version": "2.0"}', encoding='utf-8')
+
+    assert _read_update_metadata(str(update))['version'] == '3.0'
+
+
 def test_reads_configured_metadata_filename(tmp_path):
     update = tmp_path / 'Patch'
     update.mkdir()

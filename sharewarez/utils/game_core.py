@@ -12,6 +12,7 @@ from sharewarez.models import (
     PlayerPerspective, GameURL, ScanJob, Category, Status,
     game_developer_association
 )
+from sharewarez.metadata_files import DEFAULT_LOCAL_METADATA_FILENAME
 from sharewarez.utils.functions import (
     read_first_nfo_content, delete_associations_for_game,
     website_category_to_string,
@@ -586,7 +587,10 @@ def retrieve_and_save_game(game_name, full_disk_path, scan_job_id=None, library_
             'use_local_metadata': settings_obj.use_local_metadata if settings_obj else False,
             'write_local_metadata': settings_obj.write_local_metadata if settings_obj else False,
             'use_local_images': settings_obj.use_local_images if settings_obj else False,
-            'local_metadata_filename': settings_obj.local_metadata_filename if settings_obj else 'sharewarez.json'
+            'local_metadata_filename': (
+                settings_obj.local_metadata_filename if settings_obj
+                else DEFAULT_LOCAL_METADATA_FILENAME
+            )
         }
     elif not isinstance(settings, dict):
         # If it's a SQLAlchemy object, convert to dict
@@ -594,14 +598,18 @@ def retrieve_and_save_game(game_name, full_disk_path, scan_job_id=None, library_
             'use_local_metadata': settings.use_local_metadata,
             'write_local_metadata': settings.write_local_metadata,
             'use_local_images': settings.use_local_images,
-            'local_metadata_filename': settings.local_metadata_filename or 'sharewarez.json'
+            'local_metadata_filename': (
+                settings.local_metadata_filename or DEFAULT_LOCAL_METADATA_FILENAME
+            )
         }
 
     # PRIORITY 1: Check for local metadata file (NEW!)
     if settings and settings.get('use_local_metadata'):
         print(f"🔍 [LOCAL METADATA] Checking for existing metadata file in: {full_disk_path}")
-        local_metadata = read_local_metadata(full_disk_path,
-                                             settings.get('local_metadata_filename', 'sharewarez.json'))
+        local_metadata = read_local_metadata(
+            full_disk_path,
+            settings.get('local_metadata_filename', DEFAULT_LOCAL_METADATA_FILENAME),
+        )
         if local_metadata and local_metadata.get('metadata_provider') != 'igdb':
             provider = local_metadata['metadata_provider']
             external_id = local_metadata['provider_game_id']
@@ -749,7 +757,9 @@ def retrieve_and_save_game(game_name, full_disk_path, scan_job_id=None, library_
                         igdb_id=igdb_id,
                         game_title=new_game.name,
                         manually_verified=True,
-                        filename=settings.get('local_metadata_filename', 'sharewarez.json')
+                        filename=settings.get(
+                            'local_metadata_filename', DEFAULT_LOCAL_METADATA_FILENAME
+                        )
                     )
                     if not write_success:
                         print("⚠️ [LOCAL METADATA] Failed to write metadata file (already exists or permission issue)")
@@ -831,7 +841,9 @@ def retrieve_and_save_game(game_name, full_disk_path, scan_job_id=None, library_
                 external_id=external_id,
                 provider_url=detail.get('provider_url'),
                 game_title=new_game.name,
-                filename=settings.get('local_metadata_filename', 'sharewarez.json'),
+                filename=settings.get(
+                    'local_metadata_filename', DEFAULT_LOCAL_METADATA_FILENAME
+                ),
             )
         return new_game
     if response_json and 'error' not in response_json:
@@ -924,7 +936,9 @@ def retrieve_and_save_game(game_name, full_disk_path, scan_job_id=None, library_
                         igdb_id=new_game.igdb_id,
                         game_title=new_game.name,
                         manually_verified=False,  # Auto-identified during scan
-                        filename=settings.get('local_metadata_filename', 'sharewarez.json')
+                        filename=settings.get(
+                            'local_metadata_filename', DEFAULT_LOCAL_METADATA_FILENAME
+                        )
                     )
                     if write_success:
                         print(f"✅ [LOCAL METADATA] Successfully wrote metadata file for '{new_game.name}'")
