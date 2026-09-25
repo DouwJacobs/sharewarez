@@ -1,7 +1,7 @@
 #!/bin/bash
 set -Eeuo pipefail
 
-echo "🚀 SharewareZ container starting up..."
+echo "🚀 GameLibrary container starting up..."
 
 
 # Extract database connection info from DATABASE_URL if available
@@ -64,7 +64,7 @@ except Exception as e:
 # Wait for PostgreSQL to come online
 wait_for_postgres
 
-echo "🎮 Starting SharewareZ Docker container..."
+echo "🎮 Starting GameLibrary Docker container..."
 
 # Pass all arguments through to startweb-docker.sh
 exec /app/startweb-docker.sh "$@"

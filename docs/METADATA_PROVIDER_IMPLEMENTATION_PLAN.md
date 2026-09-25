@@ -122,7 +122,7 @@ provider.
 1. Use only `https://api.rawg.io/api` endpoints with the operator's API key.
 2. Normalize search and detail results into the shared contract. Map dates,
    platforms, genres, developers, publishers, ratings, website, cover, and
-   screenshots only where semantics match Sharewarez fields.
+   screenshots only where semantics match GameLibrary fields.
 3. Preserve RAWG IDs as strings at the domain boundary.
 4. Provide a stable RAWG source URL and attribution text for any stored/displayed
    RAWG-derived metadata or media. Game Details and request discovery results

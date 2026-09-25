@@ -6,9 +6,9 @@ Scope: resumable delivery for games, updates, and extras whose source is a direc
 
 ## Outcome
 
-Sharewarez will turn a directory into one stable, reusable ZIP in an application-managed
+GameLibrary will turn a directory into one stable, reusable ZIP in an application-managed
 cache and deliver that file through the existing HTTP byte-range path. Administrators do
-not create, name, move, or remove these ZIPs manually. Sharewarez builds, validates,
+not create, name, move, or remove these ZIPs manually. GameLibrary builds, validates,
 reuses, expires, and evicts them.
 
 This closes the current gap:
@@ -20,7 +20,7 @@ This closes the current gap:
   worker, so a slow disk or large release cannot block normal web requests.
 
 The first implementation is deliberately an HTTP download cache, not a torrent client.
-It provides restart tolerance from one Sharewarez server; it does not provide swarm
+It provides restart tolerance from one GameLibrary server; it does not provide swarm
 delivery, piece hashes, or repair corrupted local files.
 
 ## Product rules
@@ -41,7 +41,7 @@ delivery, piece hashes, or repair corrupted local files.
 8. A cached archive is never served from a public static directory.
 9. Failed cache preparation cannot make the underlying game unavailable. Depending on
    policy, the user can retry preparation or use the existing non-resumable stream.
-10. Sharewarez must never claim that a new browser download can append to an arbitrary
+10. GameLibrary must never claim that a new browser download can append to an arbitrary
     partial file. Only the browser or download manager knows what it retained locally.
 
 ## User experience
@@ -55,7 +55,7 @@ file response. The Downloads page labels the link **Resumable**.
 
 1. The user selects **Download**.
 2. If a matching ready archive exists, delivery begins immediately.
-3. Otherwise Sharewarez creates or joins one preparation job and redirects to the
+3. Otherwise GameLibrary creates or joins one preparation job and redirects to the
    Downloads page.
 4. The row shows **Preparing resumable download**, file count, estimated size, progress,
    and queue position when available.
@@ -63,7 +63,7 @@ file response. The Downloads page labels the link **Resumable**.
    **Download** action. The application may notify through the in-app notification
    center, but must not repeatedly send external notifications.
 6. If the connection drops, the page explains: **Open your browser's Downloads panel
-   and choose Resume.** The same Sharewarez download URL remains reusable until the
+   and choose Resume.** The same GameLibrary download URL remains reusable until the
    download request expires.
 
 Do not auto-start a download after a long background job. Browsers can block delayed
@@ -295,7 +295,7 @@ precise skipped counts.
 Add `/admin/download-cache` under **Operations**, linked from the shared admin navigation, and
 register it in the centralized administrator navigation/search registry.
 
-Use the established Sharewarez structure: `.app-page.app-page--wide`, one
+Use the established GameLibrary structure: `.app-page.app-page--wide`, one
 `.app-page-header`, and a small number of sibling `.app-surface` sections. Do not nest
 card surfaces. Reuse theme variables, shared 42/44 px controls, status badges, buttons,
 pagination, and internal overflow ownership.

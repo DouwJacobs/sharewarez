@@ -1,5 +1,5 @@
 """
-ASGI config for SharewareZ production deployment.
+ASGI config for GameLibrary production deployment.
 This file wraps the Flask app to be compatible with ASGI servers like uvicorn
 and provides async file streaming for downloads.
 """
