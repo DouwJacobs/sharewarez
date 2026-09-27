@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "partials/ui_components.html" import form_field %}
 
 {% block content %}
 <link rel="stylesheet" href="{{ 'css/settings/settings_profile_view.css'|theme_asset }}">
@@ -84,24 +85,19 @@
                 {{ preferences_form.hidden_tag() }}
                 <input type="hidden" name="preferences_scope" value="profile">
                 <div class="preferences-field">
-                    {{ preferences_form.items_per_page.label(class="form-label") }}
-                    {{ preferences_form.items_per_page(class="form-select") }}
+                    {{ form_field(preferences_form.items_per_page, 'form-select') }}
                 </div>
                 <div class="preferences-field">
-                    {{ preferences_form.default_sort.label(class="form-label") }}
-                    {{ preferences_form.default_sort(class="form-select") }}
+                    {{ form_field(preferences_form.default_sort, 'form-select') }}
                 </div>
                 <div class="preferences-field">
-                    {{ preferences_form.default_sort_order.label(class="form-label") }}
-                    {{ preferences_form.default_sort_order(class="form-select") }}
+                    {{ form_field(preferences_form.default_sort_order, 'form-select') }}
                 </div>
                 <div class="preferences-field">
-                    {{ preferences_form.library_view.label(class="form-label") }}
-                    {{ preferences_form.library_view(class="form-select") }}
+                    {{ form_field(preferences_form.library_view, 'form-select') }}
                 </div>
                 <div class="preferences-field">
-                    {{ preferences_form.theme.label(class="form-label") }}
-                    {{ preferences_form.theme(class="form-select") }}
+                    {{ form_field(preferences_form.theme, 'form-select') }}
                 </div>
                 <div class="profile-preferences-submit">
                     <button type="submit" class="btn btn-primary"><i class="fas fa-check" aria-hidden="true"></i>Save Preferences</button>

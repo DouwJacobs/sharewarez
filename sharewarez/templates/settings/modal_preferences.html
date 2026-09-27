@@ -1,3 +1,4 @@
+{% from "partials/ui_components.html" import form_field %}
 <div class="modal fade" id="preferencesModal" tabindex="-1" aria-labelledby="preferencesModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered preferences-modal-dialog">
         <div class="modal-content preferences-modal-content">
@@ -14,39 +15,19 @@
                     {{ form.hidden_tag() }}
                     <input type="hidden" name="preferences_scope" value="modal">
                     <div class="preferences-field">
-                        {{ form.items_per_page.label(class="form-label") }}
-                        {{ form.items_per_page(class="form-control") }}
-                        {% for error in form.items_per_page.errors %}
-                            <div class="invalid-feedback">{{ error }}</div>
-                        {% endfor %}
+                        {{ form_field(form.items_per_page, 'form-control') }}
                     </div>
                     <div class="preferences-field">
-                        {{ form.default_sort.label(class="form-label") }}
-                        {{ form.default_sort(class="form-select") }}
-                        {% for error in form.default_sort.errors %}
-                            <div class="invalid-feedback">{{ error }}</div>
-                        {% endfor %}
+                        {{ form_field(form.default_sort, 'form-select') }}
                     </div>
                     <div class="preferences-field">
-                        {{ form.default_sort_order.label(class="form-label") }}
-                        {{ form.default_sort_order(class="form-select") }}
-                        {% for error in form.default_sort_order.errors %}
-                            <div class="invalid-feedback">{{ error }}</div>
-                        {% endfor %}
+                        {{ form_field(form.default_sort_order, 'form-select') }}
                     </div>
                     <div class="preferences-field">
-                        {{ form.library_view.label(class="form-label") }}
-                        {{ form.library_view(class="form-select") }}
-                        {% for error in form.library_view.errors %}
-                            <div class="invalid-feedback">{{ error }}</div>
-                        {% endfor %}
+                        {{ form_field(form.library_view, 'form-select') }}
                     </div>
                     <div class="preferences-field">
-                        {{ form.theme.label(class="form-label") }}
-                        {{ form.theme(class="form-select") }}
-                        {% for error in form.theme.errors %}
-                            <div class="invalid-feedback">{{ error }}</div>
-                        {% endfor %}
+                        {{ form_field(form.theme, 'form-select') }}
                     </div>
                 </form>
             </div>

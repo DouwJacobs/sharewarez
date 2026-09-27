@@ -36,6 +36,24 @@
 </div>
 {% endmacro %}
 
+{% macro form_field(field, control_class='form-control', help_text='') %}
+{% set help_id = field.id ~ '-help' %}
+{% set error_id = field.id ~ '-errors' %}
+{% set described_by = (help_id if help_text else '') ~ (' ' if help_text and field.errors else '') ~ (error_id if field.errors else '') %}
+{{ field.label(class='form-label') }}
+{{ field(
+    class=control_class ~ (' is-invalid' if field.errors else ''),
+    aria_invalid='true' if field.errors else 'false',
+    aria_describedby=described_by or none,
+) }}
+{% if help_text %}<small id="{{ help_id }}">{{ help_text }}</small>{% endif %}
+{% if field.errors %}
+<div id="{{ error_id }}" class="invalid-feedback" role="alert">
+    {% for error in field.errors %}<span class="d-block">{{ error }}</span>{% endfor %}
+</div>
+{% endif %}
+{% endmacro %}
+
 {% macro pagination(pager, endpoint, query_args={}) %}
 {% if pager.pages > 1 %}
 <nav class="sw-pagination" aria-label="Pagination">

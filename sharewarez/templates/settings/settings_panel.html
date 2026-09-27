@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "partials/ui_components.html" import form_field %}
 {% block styles %}
 {{ super() }}
 <link rel="stylesheet" href="{{ 'css/settings/settings_panel.css'|theme_asset }}">
@@ -10,7 +11,7 @@
         <div>
             <p class="settings-eyebrow">Personalization</p>
             <h1 id="settings-page-title">Settings</h1>
-            <p>Choose how your library behaves and how GameStack looks for your account.</p>
+            <p>Choose how your library behaves and how {{ site_title }} looks for your account.</p>
         </div>
         <a class="btn btn-secondary" href="{{ url_for('settings.settings_profile_view') }}"><i class="fas fa-user" aria-hidden="true"></i> Account</a>
     </header>
@@ -24,32 +25,17 @@
             </div>
             <div class="settings-fields-grid">
             <div class="settings-field">
-                {{ form.items_per_page.label(class="form-label") }}
-                {{ form.items_per_page(class="form-select") }}
-                <small>More items reduce pagination but increase page length.</small>
-                {% for error in form.items_per_page.errors %}
-                <div class="invalid-feedback">{{ error }}</div>
-                {% endfor %}
+                {{ form_field(form.items_per_page, 'form-select', 'More items reduce pagination but increase page length.') }}
             </div>
             <div class="settings-field">
-                {{ form.default_sort.label(class="form-label") }}
-                {{ form.default_sort(class="form-select") }}
-                {% for error in form.default_sort.errors %}
-                <div class="invalid-feedback">{{ error }}</div>
-                {% endfor %}
+                {{ form_field(form.default_sort, 'form-select') }}
             </div>
             
             <div class="settings-field">
-                {{ form.default_sort_order.label(class="form-label") }}
-                {{ form.default_sort_order(class="form-select") }}
-                {% for error in form.default_sort_order.errors %}
-                <div class="invalid-feedback">{{ error }}</div>
-                {% endfor %}
+                {{ form_field(form.default_sort_order, 'form-select') }}
             </div>
             <div class="settings-field">
-                {{ form.library_view.label(class="form-label") }}
-                {{ form.library_view(class="form-select") }}
-                <small>Choose the default layout used when opening your Library.</small>
+                {{ form_field(form.library_view, 'form-select', 'Choose the default layout used when opening your library.') }}
             </div>
             </div>
         </section>
@@ -93,11 +79,7 @@
                 <div><p class="settings-section-kicker">Appearance</p><h2 id="appearance-title">Theme</h2><p>Use the site default or choose a personal color theme.</p></div>
             </div>
             <div class="settings-field settings-theme-field">
-                {{ form.theme.label(class="form-label") }}
-                {{ form.theme(class="form-select") }}
-                {% for error in form.theme.errors %}
-                <div class="invalid-feedback">{{ error }}</div>
-                {% endfor %}
+                {{ form_field(form.theme, 'form-select') }}
             </div>
             <div class="settings-actions">
                 <p><i class="fas fa-circle-info" aria-hidden="true"></i> These preferences apply only to your account.</p>

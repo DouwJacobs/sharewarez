@@ -134,6 +134,9 @@ def test_ui_consistency_feature_uses_shared_theme_and_navigation_patterns():
 
     assert settings.count('app-surface settings-section') >= 3
     assert 'settings-panel-page' in settings
+    assert 'import form_field' in settings
+    assert 'form_field(form.library_view' in settings
+    assert 'GameStack' not in settings
     assert '@media (max-width: 768px)' in settings_css
     assert 'grid-template-columns: repeat(2, minmax(0, 1fr))' in settings_css
 
