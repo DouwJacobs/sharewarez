@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "partials/ui_components.html" import form_field %}
+{% from "partials/ui_components.html" import form_field, page_header %}
 {% block styles %}
 {{ super() }}
 <link rel="stylesheet" href="{{ 'css/settings/settings_panel.css'|theme_asset }}">
@@ -7,14 +7,9 @@
 
 {% block content %}
 <main class="app-page settings-panel-page" aria-labelledby="settings-page-title">
-    <header class="app-page-header settings-page-header">
-        <div>
-            <p class="settings-eyebrow">Personalization</p>
-            <h1 id="settings-page-title">Settings</h1>
-            <p>Choose how your library behaves and how {{ site_title }} looks for your account.</p>
-        </div>
+    {% call page_header('Settings', 'Choose how your library behaves and how ' ~ site_title ~ ' looks for your account.', 'Personalization', title_id='settings-page-title', class_name='settings-page-header', eyebrow_class='settings-eyebrow') %}
         <a class="btn btn-secondary" href="{{ url_for('settings.settings_profile_view') }}"><i class="fas fa-user" aria-hidden="true"></i> Account</a>
-    </header>
+    {% endcall %}
 
     <form id="preferencesForm" method="POST" action="{{ url_for('settings.settings_panel') }}" class="settings-form app-stack">
             {{ form.hidden_tag() }}
