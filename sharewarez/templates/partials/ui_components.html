@@ -23,8 +23,8 @@
 
 {% macro status_badge(status) %}
 {% set normalized = status|lower|replace(' ', '-') %}
-<span class="ui-status download-status download-status--{{ normalized }}">
-    <span class="download-status-dot" aria-hidden="true"></span>{{ status|replace('_', ' ')|title }}
+<span class="ui-status ui-status--{{ normalized }} download-status download-status--{{ normalized }}">
+    <span class="ui-status-dot download-status-dot" aria-hidden="true"></span>{{ status|replace('_', ' ')|title }}
 </span>
 {% endmacro %}
 

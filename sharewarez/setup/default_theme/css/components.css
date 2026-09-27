@@ -130,13 +130,25 @@
     justify-content: center;
     gap: 6px;
     padding: 4px 10px;
-    border: 1px solid transparent;
+    border: 1px solid rgba(255, 255, 255, 0.13);
     border-radius: 999px;
+    background: rgba(255, 255, 255, 0.07);
+    color: var(--theme-text-secondary, var(--text-light));
     font-size: .72rem;
     font-weight: 750;
     line-height: 1.1;
     white-space: nowrap;
 }
+
+.ui-status-dot { width: .5rem; height: .5rem; border-radius: 50%; background: currentColor; }
+.ui-status--available, .ui-status--completed, .ui-status--ready { color: var(--semantic-success); background: color-mix(in srgb, var(--semantic-success) 12%, transparent); border-color: color-mix(in srgb, var(--semantic-success) 34%, transparent); }
+.ui-status--failed, .ui-status--expired, .ui-status--cancelled { color: var(--semantic-danger); background: color-mix(in srgb, var(--semantic-danger) 12%, transparent); border-color: color-mix(in srgb, var(--semantic-danger) 34%, transparent); }
+.ui-status--pending, .ui-status--processing, .ui-status--queued, .ui-status--preparing, .ui-status--expiring-soon { color: var(--semantic-warning); background: color-mix(in srgb, var(--semantic-warning) 12%, transparent); border-color: color-mix(in srgb, var(--semantic-warning) 34%, transparent); }
+.ui-status--pending .ui-status-dot, .ui-status--processing .ui-status-dot, .ui-status--queued .ui-status-dot, .ui-status--preparing .ui-status-dot { animation: uiStatusPulse 1.6s infinite; }
+
+@keyframes uiStatusPulse { 50% { opacity: .35; transform: scale(.75); } }
+
+@media (prefers-reduced-motion: reduce) { .ui-status-dot { animation: none; transition: none; } }
 
 .error-container {
     border-color: color-mix(in srgb, var(--semantic-danger, var(--btn-danger)) 42%, transparent);

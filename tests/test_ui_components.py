@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from jinja2 import Environment, FileSystemLoader
 from wtforms import Form, SelectField
 from wtforms.validators import DataRequired
@@ -65,6 +67,29 @@ def test_admin_page_header_accepts_route_hooks_and_actions():
     assert 'admin-page-eyebrow email-eyebrow' in rendered
     assert 'id="email-title"' in rendered
     assert 'admin-page-actions email-actions' in rendered
+
+
+def test_status_badge_uses_shared_semantic_contract():
+    environment = Environment(
+        loader=FileSystemLoader('sharewarez/templates'),
+        autoescape=True,
+    )
+    template = environment.from_string(
+        "{% from 'partials/ui_components.html' import status_badge %}"
+        "{{ status_badge('Expiring Soon') }}"
+    )
+
+    rendered = template.render()
+    components = Path('sharewarez/setup/default_theme/css/components.css').read_text()
+    downloads = Path(
+        'sharewarez/setup/default_theme/css/admin/admin_manage_downloads.css'
+    ).read_text()
+
+    assert 'ui-status--expiring-soon' in rendered
+    assert 'ui-status-dot' in rendered
+    assert '.ui-status--expiring-soon' in components
+    assert '@keyframes uiStatusPulse' in components
+    assert '.download-status--available' not in downloads
 
 
 def test_form_field_links_help_text_to_valid_control():

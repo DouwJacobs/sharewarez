@@ -113,7 +113,7 @@
     text-underline-offset: 3px;
 }
 
-:is(.table, .table-dark) :is(.badge, [class*="status-badge"], .download-status) {
+:is(.table, .table-dark) :is(.badge, [class*="status-badge"], .ui-status, .download-status) {
     border-width: 1px;
     border-style: solid;
     border-color: rgba(255, 255, 255, 0.1);

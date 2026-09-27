@@ -94,9 +94,10 @@ def test_favorites_uses_library_card_markup_and_interactions():
 def test_shared_page_header_has_generic_hooks_and_route_owned_title_ids():
     components = UI_COMPONENTS.read_text(encoding="utf-8")
 
-    assert 'class="app-page-header ui-page-header downloads-page-header"' in components
-    assert 'class="ui-page-eyebrow downloads-page-eyebrow"' in components
-    assert 'class="ui-page-count downloads-count"' in components
+    assert 'class="app-page-header ui-page-header{% if class_name %}' in components
+    assert 'class="ui-page-eyebrow{% if eyebrow_class %}' in components
+    assert 'class="ui-page-count{% if count_class %}' in components
+    assert 'class="app-page-actions"' in components
     assert 'title_id=\'page-title\'' in components
     assert 'id="downloads-page-title"' not in components
 
@@ -110,6 +111,7 @@ def test_shared_page_header_has_generic_hooks_and_route_owned_title_ids():
         template = Path(template_path).read_text(encoding="utf-8")
         assert f'aria-labelledby="{title_id}"' in template
         assert title_id in template
+        assert "class_name='downloads-page-header'" in template
 
     base = Path("sharewarez/templates/base.html").read_text(encoding="utf-8")
     assert "'/playromtest': 'Browser emulator'" in base

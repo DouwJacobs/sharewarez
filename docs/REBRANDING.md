@@ -70,13 +70,17 @@ authentication layout lives in `partials/auth_layout.html`; repeated integration
 forms are already partials. Migrate one coherent page family at a time instead of
 building a second component system.
 
+The shared primitives now include route-neutral user and administrator page
+headers, accessible labelled form fields with help and error feedback, semantic
+status badges, empty states, and pagination. Legacy download-specific status
+classes remain in the rendered markup as compatibility hooks, but their styling
+is owned by the shared component layer.
+
 Near-term candidates are:
 
-- finish moving manual page headers to `page_header` or `admin_page_header` while
+- continue moving coherent manual page-header families to `page_header` or
+  `admin_page_header` while
   preserving route-specific actions and heading IDs;
-- move generic status styling out of download-specific CSS after every current
-  status consumer has regression coverage;
-- consolidate repeated labelled form errors and field help into a small macro;
 - keep route-specific tables and complex workspaces local until their data and
   interaction contracts genuinely match.
 
