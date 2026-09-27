@@ -1,13 +1,12 @@
 {% extends "base.html" %}
-{% from "partials/ui_components.html" import status_badge, empty_state %}
+{% from "partials/ui_components.html" import page_header %}
 {% block title %}My activity · {{ site_title }}{% endblock %}
 {% block styles %}{{ super() }}<link rel="stylesheet" href="{{ 'css/site/activity.css'|theme_asset }}">{% endblock %}
 {% block content %}
-<main class="app-page activity-page">
-    <header class="app-page-header">
-        <div><p class="activity-eyebrow">Your account</p><h1>My activity</h1><p>Requests, issues, downloads, and replies that may need your attention.</p></div>
+<main class="app-page activity-page" aria-labelledby="activity-page-title">
+    {% call page_header('My activity', 'Requests, issues, downloads, and replies that may need your attention.', 'Your account', title_id='activity-page-title', eyebrow_class='activity-eyebrow') %}
         <a class="btn btn-secondary" href="{{ url_for('notifications.notification_center') }}"><i class="fas fa-bell" aria-hidden="true"></i> Notification inbox</a>
-    </header>
+    {% endcall %}
 
     {% if replies %}
     <section class="app-surface activity-attention" aria-labelledby="attention-title">

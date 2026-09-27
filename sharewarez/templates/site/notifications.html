@@ -1,17 +1,12 @@
 {% extends "base.html" %}
+{% from "partials/ui_components.html" import page_header %}
 {% block styles %}
 {{ super() }}
 <link rel="stylesheet" href="{{ 'css/site/notifications.css'|theme_asset }}">
 {% endblock %}
 {% block content %}
-<main class="app-page notification-page">
-    <header class="app-page-header">
-        <div>
-            <p class="notification-eyebrow">Activity inbox</p>
-            <h1>Notifications</h1>
-            <p>New games, available updates, requests, and issue activity appear here.</p>
-        </div>
-        <div class="app-page-actions">
+<main class="app-page notification-page" aria-labelledby="notifications-page-title">
+    {% call page_header('Notifications', 'New games, available updates, requests, and issue activity appear here.', 'Activity inbox', title_id='notifications-page-title', eyebrow_class='notification-eyebrow') %}
             <button class="btn btn-secondary" type="button" data-push-toggle hidden>Enable browser alerts</button>
             <a class="btn btn-secondary" href="{{ url_for('settings.settings_panel') }}#notification-settings-title"><i class="fas fa-sliders" aria-hidden="true"></i> Preferences</a>
             <a class="btn {{ 'btn-primary' if not unread_only else 'btn-secondary' }}" href="{{ url_for('notifications.notification_center') }}">All</a>
@@ -22,8 +17,7 @@
                 <button class="btn btn-secondary" type="submit">Mark all read</button>
             </form>
             {% endif %}
-        </div>
-    </header>
+    {% endcall %}
 
     <section class="app-surface notification-surface" aria-label="Notification list">
     {% if notification_groups %}

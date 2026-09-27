@@ -3,7 +3,7 @@
 {% block styles %}{{ super() }}<link rel="stylesheet" href="{{ 'css/admin/admin_manage_downloads.css'|theme_asset }}"><link rel="stylesheet" href="{{ 'css/admin/admin_download_cache.css'|theme_asset }}">{% endblock %}
 {% block content %}
 <main class="app-page app-page--wide archive-cache-page" aria-labelledby="download-cache-title">
-    {{ page_header('Download cache', 'Prepare, retain, and automatically clean resumable archives for directory-based downloads.', 'Operations', 'fa-box-archive', pagination.total, 'archive', 'download-cache-title') }}
+    {{ page_header('Download cache', 'Prepare, retain, and automatically clean resumable archives for directory-based downloads.', 'Operations', 'fa-box-archive', pagination.total, 'archive', 'download-cache-title', class_name='downloads-page-header', eyebrow_class='downloads-page-eyebrow', count_class='downloads-count') }}
     <div class="app-stack">
         <section class="app-surface cache-health{% if not summary.health.healthy %} cache-health--degraded{% endif %}" aria-labelledby="cache-health-title">
             <div class="cache-section-heading"><div><p class="cache-eyebrow">Storage health</p><h2 id="cache-health-title">{{ 'Cache ready' if summary.health.healthy else 'Cache needs attention' }}</h2><p>{{ summary.health.message }}</p></div><span class="download-status download-status--{{ 'ready' if summary.health.healthy else 'failed' }}"><span class="download-status-dot" aria-hidden="true"></span>{{ policy.archiveCacheMode|title }}</span></div>

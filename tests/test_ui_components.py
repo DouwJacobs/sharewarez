@@ -23,6 +23,28 @@ def _render_form_field(form: ExampleForm) -> str:
     return template.render(form=form)
 
 
+def test_page_header_accepts_route_hooks_and_actions():
+    environment = Environment(
+        loader=FileSystemLoader('sharewarez/templates'),
+        autoescape=True,
+    )
+    template = environment.from_string(
+        "{% from 'partials/ui_components.html' import page_header %}"
+        "{% call page_header('Activity', 'Recent events.', 'Account', "
+        "title_id='activity-title', class_name='activity-header', "
+        "eyebrow_class='activity-eyebrow') %}"
+        "<a href='/inbox'>Inbox</a>"
+        "{% endcall %}"
+    )
+
+    rendered = template.render()
+
+    assert 'app-page-header ui-page-header activity-header' in rendered
+    assert 'ui-page-eyebrow activity-eyebrow' in rendered
+    assert 'id="activity-title"' in rendered
+    assert '<div class="app-page-actions"><a href=' in rendered
+
+
 def test_form_field_links_help_text_to_valid_control():
     form = ExampleForm(data={'theme': 'light'})
 
