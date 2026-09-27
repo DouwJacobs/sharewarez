@@ -91,6 +91,9 @@ def test_help_accordion_is_scoped_keyboard_accessible_and_theme_aware():
     assert "querySelectorAll('.help-card > .card-header')" in template
     assert "event.key === 'Enter' || event.key === ' '" in template
     assert 'Auto-expand all cards' not in template
+    assert "checklistStorageKey = 'gamelibrary-help-checklist'" in template
+    assert "legacyChecklistStorageKey = 'sharewarez-help-checklist'" in template
+    assert 'localStorage.getItem(legacyChecklistStorageKey)' in template
     assert '.help-card > .card-header' in css
     assert 'var(--theme-card-background' in css
     assert '.help-card kbd' in css

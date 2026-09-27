@@ -201,13 +201,22 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const checklist = document.querySelector('[data-help-checklist]');
     if (checklist) {
+        const checklistStorageKey = 'gamelibrary-help-checklist';
+        const legacyChecklistStorageKey = 'sharewarez-help-checklist';
         let state = {};
-        try { state = JSON.parse(localStorage.getItem('sharewarez-help-checklist') || '{}'); } catch (_error) {}
+        try {
+            const storedState = localStorage.getItem(checklistStorageKey)
+                ?? localStorage.getItem(legacyChecklistStorageKey);
+            state = JSON.parse(storedState || '{}');
+            if (storedState && !localStorage.getItem(checklistStorageKey)) {
+                localStorage.setItem(checklistStorageKey, storedState);
+            }
+        } catch (_error) {}
         checklist.querySelectorAll('[data-check]').forEach(input => {
             input.checked = Boolean(state[input.dataset.check]);
             input.addEventListener('change', () => {
                 state[input.dataset.check] = input.checked;
-                localStorage.setItem('sharewarez-help-checklist', JSON.stringify(state));
+                try { localStorage.setItem(checklistStorageKey, JSON.stringify(state)); } catch (_error) {}
             });
         });
     }

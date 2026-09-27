@@ -9,7 +9,7 @@
         <input type="hidden" data-webhook-id>
         <div class="webhook-fields">
             <div><label class="form-label" for="webhook-name">Name</label><input class="form-control" id="webhook-name" maxlength="100" data-webhook-name></div>
-            <div><label class="form-label" for="webhook-url">HTTPS URL</label><input class="form-control" id="webhook-url" type="url" maxlength="2048" data-webhook-url placeholder="https://example.com/hooks/sharewarez"></div>
+            <div><label class="form-label" for="webhook-url">HTTPS URL</label><input class="form-control" id="webhook-url" type="url" maxlength="2048" data-webhook-url placeholder="https://example.com/hooks/gamelibrary"></div>
         </div>
         <fieldset><legend>Subscribed events</legend><div class="webhook-event-grid">{% for event_type, definition in notification_events.items() %}<label class="settings-check-row"><input type="checkbox" value="{{ event_type }}" data-webhook-event><span><strong>{{ definition.label }}</strong><small>{{ definition.description }}</small></span></label>{% endfor %}</div></fieldset>
         <label class="settings-check-row webhook-enabled"><input type="checkbox" data-webhook-enabled checked><span>Endpoint enabled</span></label>
