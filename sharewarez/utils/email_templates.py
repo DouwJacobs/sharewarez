@@ -8,7 +8,7 @@ from jinja2.sandbox import SandboxedEnvironment
 from sqlalchemy import select
 
 from sharewarez import db
-from sharewarez.branding import resolve_site_title
+from sharewarez.branding import DEFAULT_SITE_TITLE, resolve_site_title
 from sharewarez.models import GlobalSettings, SystemEmailTemplate
 
 
@@ -273,7 +273,10 @@ def render_system_email(template_key: str, context: dict[str, object] | None = N
 def render_preview(template_key: str, subject: str, html: str) -> tuple[str, str]:
     definition = get_template_definition(template_key)
     validate_template_source(template_key, subject, html)
-    values: dict[str, object] = {'site_title': 'GameStack', 'site_url': 'https://games.example'}
+    values: dict[str, object] = {
+        'site_title': DEFAULT_SITE_TITLE,
+        'site_url': 'https://games.example',
+    }
     values.update(definition.sample_context)
     try:
         rendered_subject = _environment.from_string(subject).render(values).strip()

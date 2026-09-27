@@ -31,7 +31,7 @@ def test_default_system_email_templates_render_preview(template_key):
 
     assert subject
     assert '<!doctype html>' in html
-    assert 'GameStack' in html
+    assert 'Game Library' in html
     assert '{{' not in subject
 
 
@@ -54,7 +54,7 @@ def test_runtime_context_is_html_escaped(monkeypatch):
     )
     monkeypatch.setattr(
         'sharewarez.utils.email_templates._global_context',
-        lambda: {'site_title': 'GameStack', 'site_url': 'https://games.example'},
+        lambda: {'site_title': 'My Games', 'site_url': 'https://games.example'},
     )
 
     subject, html = render_system_email('password_reset', {

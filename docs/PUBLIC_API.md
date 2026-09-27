@@ -1,6 +1,6 @@
 # Public API
 
-GameStack exposes a read-only, versioned JSON API at `/api/v1`. Authenticate
+Game Library exposes a read-only, versioned JSON API at `/api/v1`. Authenticate
 with a personal API token from **Profile → API tokens**:
 
 ```http
@@ -43,10 +43,10 @@ accept an exact `status` filter.
 ## Examples
 
 ```bash
-curl -H "Authorization: Bearer $GAMESTACK_TOKEN" \
+curl -H "Authorization: Bearer $GAME_LIBRARY_TOKEN" \
   "https://games.example.com/api/v1/games?q=witcher&per_page=10"
 
-curl -H "Authorization: Bearer $GAMESTACK_TOKEN" \
+curl -H "Authorization: Bearer $GAME_LIBRARY_TOKEN" \
   "https://games.example.com/api/v1/downloads?status=available"
 ```
 

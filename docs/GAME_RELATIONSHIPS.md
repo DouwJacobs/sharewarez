@@ -1,6 +1,6 @@
 # Game relationships
 
-GameStack imports release relationships and series membership from IGDB during
+Game Library imports release relationships and series membership from IGDB during
 game identification and metadata refresh. The game-details storefront displays
 the information in one flat **Related releases** section. Identical series and
 franchise names are shown once and link to `/library?family=...`, which filters
@@ -12,7 +12,7 @@ the library to locally owned games in that family.
 expansions, standalone expansions, remakes, remasters, expanded releases,
 platform ports, and bundles. The related IGDB ID and display name are retained
 even when the related title is not in the local library. When that title is
-added later, GameStack automatically resolves the stored record to its local
+added later, Game Library automatically resolves the stored record to its local
 game UUID and makes the relationship navigable.
 
 `game_groups` and `game_group_memberships` normalize IGDB collections (series)
