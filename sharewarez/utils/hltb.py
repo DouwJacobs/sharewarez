@@ -1,5 +1,4 @@
-# File: /sharewarez/utils/hltb.py
-# This file contains functions for interacting with HowLongToBeat API
+"""HowLongToBeat integration helpers."""
 
 import time
 import threading

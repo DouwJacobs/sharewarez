@@ -1,4 +1,3 @@
-#/sharewarez/__init__.py
 import sys, os
 import filecmp
 import shutil

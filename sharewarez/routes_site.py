@@ -1,4 +1,3 @@
-# sharewarez/routes_site.py
 from flask import Blueprint, render_template, redirect, url_for, current_app, send_from_directory, jsonify, request, send_file
 from flask_login import login_required, logout_user, current_user
 

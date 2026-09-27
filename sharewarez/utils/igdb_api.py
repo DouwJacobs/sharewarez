@@ -1,5 +1,4 @@
-# File: /sharewarez/igdb_api.py
-# This file contains functions for interacting with the IGDB API extracted from routes.py
+"""IGDB integration helpers."""
 
 import requests
 import hashlib

@@ -1,4 +1,3 @@
-#/sharewarez/utilities.py
 import os
 import re
 from dataclasses import dataclass

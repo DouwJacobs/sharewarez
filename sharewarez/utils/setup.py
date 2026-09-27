@@ -1,4 +1,3 @@
-# sharewarez/utils/setup.py
 from sharewarez import db
 from sharewarez.models import User, GlobalSettings
 from sqlalchemy import select

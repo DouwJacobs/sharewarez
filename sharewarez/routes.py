@@ -1,4 +1,3 @@
-# sharewarez/routes.py
 import hashlib
 import uuid, json, os, shutil
 from functools import lru_cache

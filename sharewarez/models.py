@@ -1,4 +1,3 @@
-# sharewarez/models.py
 from sharewarez import db
 from sqlalchemy import ForeignKey, select, text
 from sqlalchemy.dialects.sqlite import JSON

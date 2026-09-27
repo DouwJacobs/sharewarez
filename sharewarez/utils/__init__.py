@@ -1,1 +1,1 @@
-# sharewarez/utils - utility modules
+"""Application utility modules."""
