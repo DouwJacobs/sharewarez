@@ -1,19 +1,15 @@
 {% extends "base.html" %}
+{% from "partials/ui_components.html" import admin_page_header %}
 {% block content %}
 <link rel="stylesheet" href="{{ 'css/admin/admin_email_templates.css'|theme_asset }}">
 <meta name="csrf-token" content="{{ csrf_token() }}">
 
-<main class="app-page app-page--wide email-templates-page">
-    <header class="app-page-header email-templates-header">
-        <div>
-            <p class="email-templates-eyebrow">Communication</p>
-            <h1>System email templates</h1>
-            <p>Customize the transactional emails sent by {{ site_title }}.</p>
-        </div>
+<main class="app-page app-page--wide email-templates-page" aria-labelledby="email-templates-page-title">
+    {% call admin_page_header('System email templates', 'Customize the transactional emails sent by ' ~ site_title ~ '.', 'Communication', 'fa-envelope-open-text', title_id='email-templates-page-title', class_name='email-templates-header', eyebrow_class='email-templates-eyebrow') %}
         <a class="btn btn-secondary" href="{{ url_for('admin2.integrations') }}#email">
             <i class="fas fa-server" aria-hidden="true"></i> SMTP settings
         </a>
-    </header>
+    {% endcall %}
 
     <div class="email-templates-layout">
         <nav class="app-surface email-template-list" aria-label="System email templates">

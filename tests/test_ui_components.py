@@ -45,6 +45,28 @@ def test_page_header_accepts_route_hooks_and_actions():
     assert '<div class="app-page-actions"><a href=' in rendered
 
 
+def test_admin_page_header_accepts_route_hooks_and_actions():
+    environment = Environment(
+        loader=FileSystemLoader('sharewarez/templates'),
+        autoescape=True,
+    )
+    template = environment.from_string(
+        "{% from 'partials/ui_components.html' import admin_page_header %}"
+        "{% call admin_page_header('Email', 'Manage messages.', 'Communication', "
+        "'fa-envelope', title_id='email-title', class_name='email-header', "
+        "eyebrow_class='email-eyebrow', actions_class='email-actions') %}"
+        "<a href='/smtp'>SMTP</a>"
+        "{% endcall %}"
+    )
+
+    rendered = template.render()
+
+    assert 'admin-page-header email-header' in rendered
+    assert 'admin-page-eyebrow email-eyebrow' in rendered
+    assert 'id="email-title"' in rendered
+    assert 'admin-page-actions email-actions' in rendered
+
+
 def test_form_field_links_help_text_to_valid_control():
     form = ExampleForm(data={'theme': 'light'})
 

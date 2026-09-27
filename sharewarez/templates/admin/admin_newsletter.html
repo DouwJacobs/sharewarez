@@ -1,6 +1,5 @@
-<!-- in templates/admin/admin_newsletter.html -->
 {% extends "base.html" %}
-{% from "partials/ui_components.html" import pagination as render_pagination %}
+{% from "partials/ui_components.html" import admin_page_header, pagination as render_pagination %}
 {% block styles %}
 {{ super() }}
 <link rel="stylesheet" href="{{ 'css/admin/admin_newsletter.css'|theme_asset }}">
@@ -9,8 +8,8 @@
 <script src="https://cdn.ckeditor.com/ckeditor5/39.0.1/classic/ckeditor.js"></script>
 {% endblock %}
 {% block content %}
-<main class="app-page newsletter-page">
-        <header class="app-page-header"><p class="admin-panel-kicker">Communication</p><h1>Newsletter</h1><p>Compose a message and review previous deliveries.</p></header>
+<main class="app-page newsletter-page" aria-labelledby="newsletter-page-title">
+        {{ admin_page_header('Newsletter', 'Compose a message and review previous deliveries.', 'Communication', 'fa-envelope', title_id='newsletter-page-title') }}
         <section class="app-surface newsletter-compose-panel" aria-labelledby="newsletter-compose-title">
         <div class="newsletter-section-heading"><div><p class="admin-panel-kicker">New delivery</p><h2 id="newsletter-compose-title">Compose newsletter</h2></div><p>Choose recipients, write the message, and confirm before sending.</p></div>
         <form id="newsletterForm" action="" method="post" novalidate>
