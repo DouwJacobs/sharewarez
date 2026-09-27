@@ -66,6 +66,9 @@ class TestAdminHelpRoute:
         
         response = client.get('/admin/help')
         assert response.status_code == 200
+        response_data = response.get_data(as_text=True)
+        assert '<code>gamelibrary.json</code>' in response_data
+        assert '<code>sharewarez.json</code>' in response_data
     
     def test_admin_help_renders_template(self, client, admin_user):
         """Test that admin help page renders the correct template."""

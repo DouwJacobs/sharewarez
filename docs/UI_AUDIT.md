@@ -726,3 +726,8 @@ cache, delivery, member downloads, and the browser-play placeholder now connect
 their `<main aria-labelledby>` attributes to specific H1 IDs instead of sharing the
 download-only identifier. The browser-play placeholder also has a specific document
 title instead of falling back to the site title alone.
+
+The administrator guide now presents `gamelibrary.json` as the current local
+metadata filename and identifies `sharewarez.json` only as its supported legacy
+alias. Both names come from the shared metadata-file registry rather than template
+literals.
