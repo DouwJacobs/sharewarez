@@ -8,7 +8,7 @@ flask_limiter
 flask_caching
 argon2_cffi
 cryptography
-pillow
+pillow>=13.0.0
 WTForms_SQLAlchemy
 requests
 pywebpush
@@ -23,3 +23,10 @@ asgiref
 aiofiles
 zipstream_new
 howlongtobeatpy
+
+# Minimum fixed versions for security advisories found during release validation.
+aiohttp>=3.14.4
+multidict>=6.9.1
+certifi>=2026.10.19
+urllib3>=2.8.0
+werkzeug>=3.1.9
