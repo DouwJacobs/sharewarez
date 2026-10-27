@@ -5,6 +5,7 @@ import json
 
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import ec
+from py_vapid import Vapid
 from pywebpush import WebPushException, webpush
 from sqlalchemy import select
 
@@ -44,6 +45,9 @@ def send_push_notifications(user_ids, title, message, link_url=None):
     if not subscriptions:
         return 0
     private_key, _ = get_or_create_vapid_keys()
+    # String arguments to webpush are interpreted as base64 DER/raw keys,
+    # whereas our encrypted database field contains a complete PEM document.
+    vapid = Vapid.from_pem(private_key.encode('utf-8'))
     settings = db.session.execute(select(GlobalSettings)).scalars().first()
     subject = (settings.site_url or '').strip() if settings else ''
     if not subject.startswith('https://'):
@@ -59,7 +63,7 @@ def send_push_notifications(user_ids, title, message, link_url=None):
                     'keys': {'p256dh': subscription.p256dh, 'auth': subscription.auth},
                 },
                 data=payload,
-                vapid_private_key=private_key,
+                vapid_private_key=vapid,
                 vapid_claims={'sub': subject},
                 timeout=10,
             )

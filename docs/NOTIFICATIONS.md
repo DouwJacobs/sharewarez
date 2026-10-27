@@ -33,6 +33,12 @@ are stored locally; no hosted notification service is required. Push delivery is
 best-effort and independent of whether the inbox channel is enabled. Generic
 webhooks are documented in [OUTBOUND_WEBHOOKS.md](OUTBOUND_WEBHOOKS.md).
 
+The VAPID private key is stored as an encrypted PEM document. Delivery loads it
+with `Vapid.from_pem()` before passing the VAPID instance to `pywebpush`;
+passing PEM text directly makes the library interpret it as base64 DER and fail
+with an ASN.1 deserialization error. This fix reuses existing keys and browser
+subscriptions; no key rotation or resubscription is required.
+
 ## Game issue workflow
 
 Game issues are separate from game requests and live at `/issues` for reporters
