@@ -423,8 +423,10 @@ def check_library_write_permissions(library_path):
     # Try to check a few subdirectories (first level only)
     try:
         if os.path.isdir(library_path):
-            subdirs = [d for d in os.listdir(library_path)
-                      if os.path.isdir(os.path.join(library_path, d))]
+            root = os.path.realpath(library_path)
+            subdirs = [d for d in os.listdir(root)
+                       if not os.path.islink(os.path.join(root, d))
+                       and os.path.isdir(os.path.join(root, d))]
 
             # Test up to 3 subdirectories as a sample
             for subdir in subdirs[:3]:

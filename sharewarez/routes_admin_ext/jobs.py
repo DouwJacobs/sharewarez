@@ -1,5 +1,4 @@
 from datetime import datetime, timedelta, timezone
-import os
 
 from flask import abort, current_app, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
@@ -7,12 +6,12 @@ from sqlalchemy import func, or_, select
 
 from sharewarez import db
 from sharewarez.forms import CsrfProtectForm
-from sharewarez.models import BackgroundJob, Library, LibraryScanSchedule
+from sharewarez.models import BackgroundJob, Library, LibraryScanSchedule, AllowedFileType
 from sharewarez.utils.auth import admin_required
 from sharewarez.utils.background_jobs import cancel_job, job_display_name, retry_job
 from sharewarez.utils.event_logging import log_system_event
 from sharewarez.utils.incremental_scanning import SCHEDULE_INTERVALS, enqueue_scheduled_scan
-from sharewarez.utils.security import get_allowed_base_directories, is_safe_path
+from sharewarez.utils.scan_targets import resolve_scan_target, SCAN_OPTIONS, validate_scan_options
 
 from . import admin2_bp
 
@@ -73,25 +72,13 @@ def create_scan_schedule():
         flash('Select a valid library.', 'error')
         return redirect(url_for('main.admin_scan_management', active_tab='auto'))
 
-    folder_input = (request.form.get('folder_path') or '').strip()
-    if os.path.isabs(folder_input):
-        folder_path = os.path.realpath(folder_input)
-    else:
-        base_dir = current_app.config.get(
-            'BASE_FOLDER_WINDOWS' if os.name == 'nt' else 'BASE_FOLDER_POSIX'
-        )
-        folder_path = os.path.realpath(os.path.join(base_dir or '', folder_input))
-    safe, message = is_safe_path(folder_path, get_allowed_base_directories(current_app))
-    if not safe:
-        flash(f'Cannot schedule this folder: {message}', 'error')
-        return redirect(url_for('main.admin_scan_management', active_tab='auto'))
-    if not os.path.isdir(folder_path) or not os.access(folder_path, os.R_OK):
-        flash('The scan folder does not exist or is not readable.', 'error')
-        return redirect(url_for('main.admin_scan_management', active_tab='auto'))
-
     scan_mode = request.form.get('scan_mode', 'folders')
-    if scan_mode not in {'folders', 'files'}:
-        abort(400)
+    try:
+        extensions = db.session.execute(select(AllowedFileType.value)).scalars().all()
+        folder_path = resolve_scan_target(request.form.get('folder_path'), scan_mode, extensions=extensions).path
+    except (ValueError, OSError) as exc:
+        flash(f'Cannot schedule this folder: {exc}', 'error')
+        return redirect(url_for('main.admin_scan_management', active_tab='auto'))
     try:
         interval = int(request.form.get('interval_minutes', 1440))
     except (TypeError, ValueError):
@@ -112,13 +99,7 @@ def create_scan_schedule():
         flash('The first run must be in the future.', 'error')
         return redirect(url_for('main.admin_scan_management', active_tab='auto'))
 
-    options = {
-        name: request.form.get(name) == 'on'
-        for name in (
-            'remove_missing', 'download_missing_images', 'force_updates_extras_scan',
-            'fetch_hltb', 'force_hltb_refetch',
-        )
-    }
+    options = validate_scan_options({name: request.form.get(name) == 'on' for name in SCAN_OPTIONS})
     schedule = LibraryScanSchedule(
         library_uuid=library.uuid, folder_path=folder_path, scan_mode=scan_mode,
         interval_minutes=interval, options=options, next_run=next_run,
@@ -178,7 +159,11 @@ def run_scan_schedule(schedule_id):
     if schedule.last_job and schedule.last_job.status in {'queued', 'running'}:
         flash('This scheduled scan is already queued or running.', 'info')
         return redirect(url_for('main.admin_scan_management', active_tab='auto'))
-    job = enqueue_scheduled_scan(schedule, created_by_id=current_user.id)
+    try:
+        job = enqueue_scheduled_scan(schedule, created_by_id=current_user.id)
+    except (ValueError, OSError) as exc:
+        flash(f'Cannot run this scan: {exc}', 'error')
+        return redirect(url_for('main.admin_scan_management', active_tab='auto'))
     schedule.last_run = datetime.now(timezone.utc)
     schedule.last_job_id = job.id
     db.session.commit()

@@ -26,6 +26,8 @@ from sharewarez.utils.scanning import process_game_with_fallback, process_game_u
 from sharewarez.utils.igdb_api import IGDBRateLimiter
 from sharewarez.utils.security import is_safe_path, get_allowed_base_directories
 from sharewarez.utils.background_jobs import enqueue
+from sharewarez.utils.scan_targets import resolve_scan_target, enumerate_scan_target, validate_scan_candidate
+from sharewarez.utils.incremental_scanning import filesystem_fingerprint
 from sharewarez.utils.metadata_provenance import merge_provider_metadata
 
 
@@ -274,39 +276,28 @@ def scan_and_add_games(folder_path, scan_mode='folders', library_uuid=None, remo
             print(f"Database error when adding ScanJob: {str(e)}")
             return  # cannot proceed without ScanJob
 
-    # Check access perm
-    if not os.path.exists(folder_path) or not os.access(folder_path, os.R_OK):
-        error_message = f"Cannot access folder at path {folder_path}. Check permissions."
-        print(error_message)
-        scan_job_entry.status = 'Failed'
-        scan_job_entry.error_message = error_message
-        try:
-            db.session.commit()
-        except SQLAlchemyError as e:
-            print(f"Database error when updating ScanJob with error: {str(e)}")
-        return
-
-    # Load patterns before they are used
+    # Validate in the executor as well as in every submission route.
     insensitive_patterns, sensitive_patterns = load_scanning_filter_patterns()
-
     try:
-        # Use database-stored allowed extensions
-        if scan_mode == 'folders':
-            game_names_with_paths = get_game_names_from_folder(folder_path, insensitive_patterns, sensitive_patterns)
-        elif scan_mode == 'files':
-            game_names_with_paths = get_game_names_from_files(folder_path, allowed_extensions, insensitive_patterns, sensitive_patterns)
-
+        target = resolve_scan_target(folder_path, scan_mode, extensions=allowed_extensions)
+        folder_path = target.path
+        game_names_with_paths, complete_enumeration = enumerate_scan_target(
+            target, allowed_extensions, insensitive_patterns, sensitive_patterns,
+        )
+        if not complete_enumeration:
+            scan_job_entry.status = 'Failed'
+            scan_job_entry.error_message = 'Incomplete filesystem enumeration. '
         scan_job_entry.total_folders = len(game_names_with_paths)
         db.session.commit()
         if not game_names_with_paths:
             print(f"No games found in folder: {folder_path}")
-            scan_job_entry.status = 'Completed'
-            scan_job_entry.error_message = "No games found."
+            scan_job_entry.status = 'Completed' if complete_enumeration else 'Failed'
+            scan_job_entry.error_message = 'No games found. No removals performed: empty or incomplete candidate listing.'
             db.session.commit()
             return
     except Exception as e:
         scan_job_entry.status = 'Failed'
-        scan_job_entry.error_message = str(e)
+        scan_job_entry.error_message = f"{e}. No removals performed: scan target could not be enumerated."
         db.session.commit()
         print(f"Error during pattern loading or game name extraction: {str(e)}")
         return
@@ -316,6 +307,11 @@ def scan_and_add_games(folder_path, scan_mode='folders', library_uuid=None, remo
         game_name = game_info['name']
         full_disk_path = game_info['full_path']
         result = {'game_name': game_name, 'success': False, 'error': None}
+        try:
+            validate_scan_candidate(target, full_disk_path)
+        except (ValueError, OSError) as exc:
+            return {**result, 'error': str(exc)}
+
         
         # Existing games still need their enabled supplemental content checked.
         # This is intentionally independent of the legacy per-scan force flag:
@@ -423,8 +419,8 @@ def scan_and_add_games(folder_path, scan_mode='folders', library_uuid=None, remo
                     # Cancel remaining tasks
                     for f in future_to_game:
                         f.cancel()
-                    scan_job_entry.status = 'Cancelled'
-                    scan_job_entry.error_message = 'Scan cancelled due to application shutdown'
+                    scan_job_entry.status = 'Failed'
+                    scan_job_entry.error_message = 'Scan cancelled due to application shutdown. No removals performed: scan cancelled.'
                     db.session.commit()
                     return
                 
@@ -434,8 +430,8 @@ def scan_and_add_games(folder_path, scan_mode='folders', library_uuid=None, remo
                     # Cancel remaining tasks
                     for f in future_to_game:
                         f.cancel()
-                    scan_job_entry.status = 'Cancelled'
-                    scan_job_entry.error_message = 'Scan cancelled by user'
+                    scan_job_entry.status = 'Failed'
+                    scan_job_entry.error_message = 'Scan cancelled by user. No removals performed: scan cancelled.'
                     scan_job_entry.current_processing = None
                     db.session.commit()
                     return
@@ -454,6 +450,7 @@ def scan_and_add_games(folder_path, scan_mode='folders', library_uuid=None, remo
                         
                     # Only add actual errors to error_message, not unmatched games
                     if result.get('error') and not result.get('unmatched'):
+                        scan_job_entry.status = 'Failed'
                         error_line = f"Failed to process '{result['game_name']}': {result['error']}"
                         scan_job_entry.error_message = (scan_job_entry.error_message or "") + f"{error_line}\n"
                         print(f"[SCAN ERROR] {error_line}")
@@ -461,6 +458,7 @@ def scan_and_add_games(folder_path, scan_mode='folders', library_uuid=None, remo
                         print(f"[SCAN ERROR] Full result: {result}")
                         
                 except Exception as e:
+                    scan_job_entry.status = 'Failed'
                     scan_job_entry.folders_failed += 1
                     error_line = f"Exception processing '{game_info['name']}': {str(e)}"
                     scan_job_entry.error_message = (scan_job_entry.error_message or "") + f"{error_line}\n"
@@ -485,8 +483,8 @@ def scan_and_add_games(folder_path, scan_mode='folders', library_uuid=None, remo
         for game_info in game_names_with_paths:
             db.session.refresh(scan_job_entry)  # Check if the job is still enabled
             if not scan_job_entry.is_enabled:
-                scan_job_entry.status = 'Cancelled'
-                scan_job_entry.error_message = 'Scan cancelled by user'
+                scan_job_entry.status = 'Failed'
+                scan_job_entry.error_message = 'Scan cancelled by user. No removals performed: scan cancelled.'
                 scan_job_entry.current_processing = None
                 db.session.commit()
                 return  # Stop processing if cancelled
@@ -494,6 +492,15 @@ def scan_and_add_games(folder_path, scan_mode='folders', library_uuid=None, remo
             game_name = game_info['name']
             full_disk_path = game_info['full_path']
             processed_count += 1
+            try:
+                validate_scan_candidate(target, full_disk_path)
+            except (ValueError, OSError) as exc:
+                scan_job_entry.folders_failed += 1
+                scan_job_entry.status = 'Failed'
+                scan_job_entry.error_message = (scan_job_entry.error_message or '') + f'{exc}\n'
+                db.session.commit()
+                continue
+
             
             # Fast path - check cached sets BEFORE database queries
             if existing_game_paths and full_disk_path in existing_game_paths:
@@ -570,20 +577,6 @@ def scan_and_add_games(folder_path, scan_mode='folders', library_uuid=None, remo
     if scan_job_entry.status != 'Failed':
         scan_job_entry.status = 'Completed'
     
-    # If remove_missing is enabled, check for games that no longer exist
-    if remove_missing:
-        print("Checking for missing games...")
-        games_in_library = db.session.execute(select(Game).filter_by(library_uuid=library_uuid)).scalars().all()
-        for game in games_in_library:
-            if not os.path.exists(game.full_disk_path):
-                print(f"Game no longer found at path: {game.full_disk_path}")
-                try:
-                    remove_from_lib(game.uuid)
-                    scan_job_entry.removed_count += 1
-                    print(f"Removed game {game.name} as it no longer exists at {game.full_disk_path}")
-                except Exception as e:
-                    print(f"Error removing game {game.name}: {e}")
-
     # If download_missing_images is enabled, check for and queue missing images
     if download_missing_images:
         print("🔍 Download missing images option enabled - checking for missing images...")
@@ -602,14 +595,81 @@ def scan_and_add_games(folder_path, scan_mode='folders', library_uuid=None, remo
                     scan_job_entry.error_message = message
                     
             else:
+                scan_job_entry.status = 'Failed'
                 error_message = f"Missing images scan failed: {result.get('error', 'Unknown error')}"
                 print(error_message)
                 scan_job_entry.error_message += f" | {error_message}"
                 
         except Exception as e:
+            scan_job_entry.status = 'Failed'
             error_message = f"Error during missing images processing: {str(e)}"
             print(error_message)
             scan_job_entry.error_message += f" | {error_message}"
+
+    if remove_missing:
+        from sharewarez.utils.shutdown import should_continue_processing
+        db.session.flush()
+        db.session.refresh(scan_job_entry)
+        no_removals = None
+        if not complete_enumeration:
+            no_removals = 'incomplete filesystem enumeration'
+        elif not scan_job_entry.is_enabled or not should_continue_processing():
+            scan_job_entry.status = 'Failed'
+            no_removals = 'scan cancelled'
+        elif scan_job_entry.status != 'Completed':
+            no_removals = 'scan did not complete successfully'
+        else:
+            try:
+                # A mount may disappear after enumeration. Recheck its identity,
+                # traversal completeness and nonempty eligible listing before
+                # making any destructive decision.
+                fresh = resolve_scan_target(folder_path, scan_mode, extensions=allowed_extensions)
+                if (fresh.device, fresh.inode) != (target.device, target.inode):
+                    raise OSError('scan target changed during processing')
+                current_candidates, current_complete = enumerate_scan_target(
+                    fresh, allowed_extensions, insensitive_patterns, sensitive_patterns,
+                )
+                if not current_complete or not current_candidates:
+                    raise OSError('empty or incomplete candidate listing')
+                if {item['full_path'] for item in current_candidates} != {item['full_path'] for item in game_names_with_paths}:
+                    raise OSError('candidate listing changed during processing')
+                filesystem_fingerprint(target.path)
+            except (OSError, ValueError) as exc:
+                no_removals = str(exc)
+                scan_job_entry.status = 'Failed'
+        if no_removals:
+            scan_job_entry.error_message = f'No removals performed: {no_removals}. ' + (scan_job_entry.error_message or '')
+        else:
+            games_in_library = db.session.execute(select(Game).filter_by(library_uuid=library_uuid)).scalars().all()
+            for game in games_in_library:
+                if not target.owns_stored_path(game.full_disk_path):
+                    continue
+                extension = os.path.splitext(game.full_disk_path)[1][1:].lower()
+                if scan_mode == 'files' and extension not in allowed_extensions:
+                    continue
+                if scan_mode == 'folders' and (game.file_type or extension in allowed_extensions):
+                    # Retain ambiguous legacy paths that look like file games.
+                    continue
+                # Only absence proves a missing game. Permission or I/O errors
+                # never authorize deleting a library record.
+                try:
+                    os.stat(game.full_disk_path)
+                except (FileNotFoundError, NotADirectoryError):
+                    db.session.flush()
+                    db.session.refresh(scan_job_entry)
+                    try:
+                        root_info = os.stat(target.path)
+                        same_target = (root_info.st_dev, root_info.st_ino) == (target.device, target.inode)
+                    except OSError:
+                        same_target = False
+                    if not scan_job_entry.is_enabled or not should_continue_processing() or not same_target:
+                        scan_job_entry.error_message = 'No further removals performed: target changed or scan cancelled. ' + (scan_job_entry.error_message or '')
+                        scan_job_entry.status = 'Failed'
+                        break
+                    if remove_from_lib(game.uuid):
+                        scan_job_entry.removed_count += 1
+                except OSError:
+                    current_app.logger.warning('Missing-game check could not inspect game %s; retained', game.uuid)
 
     try:
         # Truncate error message if it's too long
@@ -653,27 +713,11 @@ def handle_auto_scan(auto_form):
         scan_mode = auto_form.scan_mode.data        
         print(f"Auto-scan form submitted. Library: {library.name}, Folder: {folder_path}, Scan mode: {scan_mode}, Download missing images: {download_missing_images}")
         
-        # Validate folder path security
-        allowed_bases = get_allowed_base_directories(current_app)
-        if not allowed_bases:
-            flash('Service configuration error: No allowed base directories configured.', 'error')
-            return redirect(url_for('main.admin_scan_management', active_tab='auto'))
-        
-        # Prepend the base path
-        base_dir = current_app.config.get('BASE_FOLDER_WINDOWS') if os.name == 'nt' else current_app.config.get('BASE_FOLDER_POSIX')
-        full_path = os.path.join(base_dir, folder_path)
-        
-        # Security validation: ensure the constructed path is within allowed directories
-        is_safe, error_message = is_safe_path(full_path, allowed_bases)
-        if not is_safe:
-            print(f"Security error: Auto-scan path validation failed for {full_path}: {error_message}")
-            flash(f"Access denied: {error_message}", 'error')
-            return redirect(url_for('main.admin_scan_management', active_tab='auto'))
-        
-        if not os.path.exists(full_path) or not os.access(full_path, os.R_OK):
-            flash(f"Cannot access folder: {full_path}. Please check the path and permissions.", 'error')
-            print(f"Cannot access folder: {full_path}. Please check the path and permissions.", 'error')
-            session['active_tab'] = 'auto'
+        try:
+            extensions = db.session.execute(select(AllowedFileType.value)).scalars().all()
+            full_path = resolve_scan_target(folder_path, scan_mode, extensions=extensions).path
+        except (ValueError, OSError) as exc:
+            flash(f'Cannot scan this target: {exc}', 'error')
             return redirect(url_for('main.admin_scan_management', active_tab='auto'))
 
         background_job = enqueue(
@@ -707,33 +751,6 @@ def handle_auto_scan(auto_form):
 def handle_manual_scan(manual_form):
     session['active_tab'] = 'manual'
     library_uuid = manual_form.library_uuid.data
-    if manual_form.validate_on_submit():
-        # check job status
-        running_job = db.session.execute(select(ScanJob).filter_by(status='Running')).scalars().first()
-        if running_job:
-            flash('A scan is already in progress. Please wait until the current scan completes.', 'error')
-            session['active_tab'] = 'manual'
-            return redirect(url_for('main.admin_scan_management', active_tab='manual'))
-        
-        folder_path = manual_form.folder_path.data
-        scan_mode = manual_form.scan_mode.data
-        force_updates_extras_scan = manual_form.force_updates_extras_scan.data
-        fetch_hltb = manual_form.fetch_hltb.data
-        force_hltb_refetch = manual_form.force_hltb_refetch.data
-        
-        if not library_uuid:
-            flash('Please select a library.', 'error')
-            return redirect(url_for('main.admin_scan_management', active_tab='manual'))
-        
-        # Store library_uuid in session for use in identify page
-        session['selected_library_uuid'] = library_uuid
-        print(f"Manual scan: Selected library UUID: {library_uuid}")
-
-        # Validate folder path security
-        allowed_bases = get_allowed_base_directories(current_app)
-def handle_manual_scan(manual_form):
-    session['active_tab'] = 'manual'
-    library_uuid = manual_form.library_uuid.data
     try:
         if manual_form.validate_on_submit():
             # check job status
@@ -757,21 +774,12 @@ def handle_manual_scan(manual_form):
             session['selected_library_uuid'] = library_uuid
             print(f"Manual scan: Selected library UUID: {library_uuid}")
 
-            # Validate folder path security
-            allowed_bases = get_allowed_base_directories(current_app)
-            if not allowed_bases:
-                flash('Service configuration error: No allowed base directories configured.', 'error')
-                return redirect(url_for('main.admin_scan_management', active_tab='manual'))
-
-            base_dir = current_app.config.get('BASE_FOLDER_WINDOWS') if os.name == 'nt' else current_app.config.get('BASE_FOLDER_POSIX')
-            full_path = os.path.abspath(os.path.join(base_dir or '', folder_path))
-            print(f"Manual scan form submitted. Full path: {full_path}, Library UUID: {library_uuid}")
-            
-            # Security validation: ensure the constructed path is within allowed directories
-            is_safe, error_message = is_safe_path(full_path, allowed_bases)
-            if not is_safe:
-                print(f"Security error: Manual scan path validation failed for {full_path}: {error_message}")
-                flash(f"Access denied: {error_message}", 'error')
+            try:
+                extensions = db.session.execute(select(AllowedFileType.value)).scalars().all()
+                target = resolve_scan_target(folder_path, scan_mode, extensions=extensions)
+                full_path = target.path
+            except (ValueError, OSError) as exc:
+                flash(f'Cannot scan this target: {exc}', 'error')
                 return redirect(url_for('main.admin_scan_management', active_tab='manual'))
 
             # Check write permissions if local metadata writing is enabled
@@ -780,7 +788,7 @@ def handle_manual_scan(manual_form):
 
             if settings and settings.write_local_metadata:
                 print(f"🔍 [PERMISSIONS] Checking write permissions for library path: {full_path}")
-                all_ok, failed_paths = check_library_write_permissions(full_path)
+                all_ok, failed_paths = check_library_write_permissions(os.path.dirname(full_path) if target.is_file else full_path)
 
                 if not all_ok:
                     print(f"🚫 [PERMISSIONS] Write permission check failed for {len(failed_paths)} path(s)")
@@ -794,17 +802,11 @@ def handle_manual_scan(manual_form):
             if os.path.exists(full_path) and os.access(full_path, os.R_OK):
                 print("Folder or file exists and can be accessed.")
                 insensitive_patterns, sensitive_patterns = load_scanning_filter_patterns()
-                if scan_mode == 'folders':
-                    games_with_paths = get_game_names_from_folder(full_path, insensitive_patterns, sensitive_patterns)
-                else:  # files mode
-                    # Load allowed file types from database
-                    allowed_file_types = db.session.execute(select(AllowedFileType)).scalars().all()
-                    supported_extensions = [file_type.value for file_type in allowed_file_types]
-                    if not supported_extensions:
-                        flash("No allowed file types defined in the database.", "error")
-                        return redirect(url_for('main.admin_scan_management', active_tab='manual'))
-                    
-                    games_with_paths = get_game_names_from_files(full_path, supported_extensions, insensitive_patterns, sensitive_patterns)
+                games_with_paths, complete = enumerate_scan_target(
+                    target, extensions, insensitive_patterns, sensitive_patterns,
+                )
+                if not complete:
+                    flash('Some scan entries could not be read or were outside the selected target and were skipped.', 'warning')
                 session['game_paths'] = {game['name']: game['full_path'] for game in games_with_paths}
                 session['force_updates_extras_scan'] = force_updates_extras_scan
                 session['fetch_hltb'] = fetch_hltb

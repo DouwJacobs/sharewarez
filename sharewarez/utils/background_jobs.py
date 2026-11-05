@@ -356,7 +356,8 @@ def build_download_archive_task(context, payload):
 @register_task('library.scan')
 def library_scan_task(context, payload):
     """Run the existing scanner in the persistent worker process."""
-    from sharewarez.models import Library
+    from sharewarez.models import Library, AllowedFileType
+    from sharewarez.utils.scan_targets import resolve_scan_target, validate_scan_options, SCAN_OPTIONS
     from sharewarez.utilities import scan_and_add_games
     from sharewarez.utils.incremental_scanning import (
         filesystem_fingerprint, has_changed, save_scan_state,
@@ -366,11 +367,16 @@ def library_scan_task(context, payload):
     library = db.session.get(Library, library_uuid)
     if library is None:
         raise ValueError(f"Library not found: {library_uuid}")
-    scan_mode = payload.get('scan_mode', 'folders')
+    validate_scan_options({key: payload[key] for key in SCAN_OPTIONS if key in payload})
+    extensions = db.session.execute(select(AllowedFileType.value)).scalars().all()
+    target = resolve_scan_target(payload['folder_path'], payload.get('scan_mode', 'folders'), extensions=extensions)
+    payload = {**payload, 'folder_path': target.path}
+    scan_mode = target.mode
     context.heartbeat(1, f"Indexing {library.name}")
     fingerprint, entry_count, total_size = filesystem_fingerprint(payload['folder_path'], context)
     force_scan = any(payload.get(key) for key in (
         'force_updates_extras_scan', 'fetch_hltb', 'force_hltb_refetch',
+        'remove_missing', 'download_missing_images',
     ))
     if not force_scan and not has_changed(
         library_uuid, payload['folder_path'], scan_mode, fingerprint,

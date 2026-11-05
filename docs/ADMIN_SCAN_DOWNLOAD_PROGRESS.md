@@ -51,7 +51,7 @@ were reset. Light theme, production mounts, no-JS browser interaction and full
 worker journeys remain unverified. The real server-side form POST without a
 submitter is covered; it does not substitute for a no-JS browser run.
 
-### Continue with T02
+### Next ticket at the T01 checkpoint
 
 T02–T11 remain open. Next implement the shared mode-aware target resolver,
 restricted cleanup boundary, incomplete-enumeration handling and typed schedule
@@ -60,3 +60,83 @@ Manual candidate identity/session size belongs to T04; worker outcomes and
 restart/cancellation ownership belong to T03. Do not infer those are fixed by T01.
 
 No release, deployment, production SQL or proxy changes were performed.
+
+## 5 November 2026 — T02 scan authority and cleanup boundary
+
+Implemented after `6bfaf586` on the same branch. No model or migration change.
+
+- Browser, Auto/Manual, legacy manual, schedule create/edit/dispatch, worker and
+  legacy restart execution share `utils/scan_targets.py`. Relative inputs use the
+  active configured root; legacy absolute inputs must remain under a configured
+  storage root. Worker validation happens before fingerprinting or scanning.
+- Directory scans enumerate direct eligible children with resolved containment
+  checks. Inaccessible/broken/escaping children make enumeration incomplete. Each
+  candidate is checked again before processing. Single supported files work in
+  Files mode, including fingerprinting; Folders mode rejects them with guidance.
+- Removal checks are restricted by library, normalized stored path, selected
+  target and mode. Root B, nested records, missing historical paths and ambiguous
+  file-like folder records are retained. Actual database deletion coverage proves
+  that root B and its related update record survive while the missing direct
+  entry under A and its update are removed.
+- Cleanup requires successful, complete, nonempty enumeration. It rechecks
+  candidate membership, target identity, traversal completeness and cancellation.
+  Failed processing, late cancellation, shutdown and failed missing-image work
+  block cleanup. Skipped cleanup records “No removals performed” and its reason.
+  Failed stats/walks cannot silently produce a successful fingerprint.
+- Schedule JSON writes accept only the five supported boolean options. PATCH
+  validates before mutating. Dispatch drops unsupported legacy keys/values and
+  records an admin warning; options cannot override target/library/mode. Invalid
+  due targets queue no job, record a warning and retry on the normal cadence.
+- Manual permission probes skip child symlinks and use a selected file's parent.
+  The legacy manual route delegates to the shared handler and redirects to its
+  normal result workspace. Operator rules are in `OPERATIONS.md` and local
+  `AGENTS.md`.
+
+### Verification
+
+The initial new cleanup regressions failed against the prior scanner. Final
+PostgreSQL runs used a fresh `gamelibrary_t02_test` database per module in the
+disposable loopback PostgreSQL 14 cluster used for T01:
+
+| Module | Passed |
+| --- | ---: |
+| test_scan_targets.py | 18 |
+| test_scan_safety.py | 12 |
+| test_scan_schedule_safety.py | 15 |
+| test_routes_apis_browse.py | 13 |
+| test_scan_picker_submit.py | 3 |
+| test_background_jobs.py | 16 |
+| test_utilities.py | 11 |
+| test_provider_neutral_scanning.py | 3 |
+| test_utils_scanning.py | 28 |
+| test_routes_apis_scan.py | 25 |
+| test_routes.py | 62 |
+| test_local_metadata_provider_identity.py | 4 |
+| **Total** | **210** |
+
+The schedule tests exercise CREATE, PATCH, dispatch and durable `claim_next` /
+`execute` independently. The unsafe worker target fails without invoking the
+fingerprinter/scanner or storing scan state. File-task coverage verifies one file
+and its exact size rather than indexing siblings. Safety fixtures cover two roots,
+actual related-row survival, modes, exact files, empty trees, broken/external
+links, failed processing, nested permission errors, cancellation and shutdown.
+Ruff across application/tests, focused Mypy for background jobs and
+`git diff --check` passed.
+
+Computer Use verified default-theme desktop rejection of a typed file in Folders
+mode, retained input after the error, and a real Files-mode POST returning exactly
+the selected file. The result was inspected at 390 × 844 with equal document
+client/scroll widths of 375 px. The viewport was reset. These backend changes did
+not alter templates or theme assets. Light/custom themes, production mount
+disconnects, proxy behavior and release/container validation were not rerun.
+
+### Continue with T03
+
+T03–T11 remain open. In particular, the queue still needs an explicit scanner
+outcome before it saves a successful fingerprint; restarts still need durable
+queue ownership and deduplication. T02 blocks destructive cleanup independently
+of those remaining lifecycle fixes. T04 still owns bounded manual selection and
+stale results; the preview confirmed older results can remain visible after a
+rejected manual POST. Do not claim either issue is fixed by T02.
+
+No release, deployment or production-data changes were performed.

@@ -136,3 +136,32 @@ are visible under Integrations. Delivery history older than 30 days is removed b
 the maintenance thread. Keep `ALLOW_PRIVATE_WEBHOOK_TARGETS=false` unless trusted
 administrators intentionally need access to an internal automation endpoint; see
 `docs/OUTBOUND_WEBHOOKS.md` for signing and target-validation details.
+
+## Scan target and cleanup safety
+
+Scan entry points share `sharewarez/utils/scan_targets.py`. Relative paths resolve
+against the active operating system's configured scan root; `.` selects that root.
+Legacy absolute paths must remain inside a configured game-storage root. Workers
+validate again before fingerprinting. Folders mode accepts directories; Files
+mode accepts a directory or one regular file with an enabled extension.
+
+Remove missing games is restricted to the selected library and direct stored
+paths under the selected target (or the exact selected file). Missing/relative
+historical paths, nested records and other roots are retained. Files mode only
+reconciles enabled file extensions. Folders mode conservatively retains records
+with a file type or a supported-file suffix, because absent legacy paths do not
+prove a directory's type.
+
+No removals run after empty/incomplete enumeration, processing failure,
+cancellation, unreadable traversal, a changed candidate list or changed target
+identity. Scan detail records explain why removals were skipped. Root readability,
+identity and cancellation are checked again before destructive reconciliation;
+a permission/I/O failure inspecting a historical game never proves absence.
+
+Schedules accept only the five boolean scan options: `remove_missing`,
+`download_missing_images`, `force_updates_extras_scan`, `fetch_hltb`, and
+`force_hltb_refetch`. Unsupported legacy options are discarded at dispatch with a
+warning in System Logs. An unavailable due target queues no work, records a
+warning, and is checked again at the next normal interval. A paused schedule can
+still be edited while its storage is offline. This does not change the supported
+single-worker, two-container topology.

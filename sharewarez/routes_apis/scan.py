@@ -1,15 +1,14 @@
 # /sharewarez/routes_apis/scan.py
 from datetime import datetime, timedelta, timezone
-import os
 
 from flask import current_app, jsonify, request
 from flask_login import login_required
 from sharewarez import db
-from sharewarez.models import ScanJob, UnmatchedFolder, Library, LibraryScanSchedule
+from sharewarez.models import ScanJob, UnmatchedFolder, Library, LibraryScanSchedule, AllowedFileType
 from sqlalchemy import select
 from sharewarez.utils.auth import admin_required
 from sharewarez.utils.functions import PLATFORM_IDS
-from sharewarez.utils.security import get_allowed_base_directories, is_safe_path
+from sharewarez.utils.scan_targets import resolve_scan_target, validate_scan_options
 from . import apis_bp
 
 @apis_bp.route('/scan_jobs_status', methods=['GET'])
@@ -85,18 +84,21 @@ def scan_schedules():
         ).scalars().all()
         return jsonify({'schedules': [_schedule_data(item) for item in schedules]})
 
-    data = request.get_json(silent=True) or {}
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return jsonify({'error': 'Expected a JSON object'}), 400
     library = db.session.get(Library, data.get('library_uuid'))
     if library is None:
         return jsonify({'error': 'Library not found'}), 404
-    folder_path = os.path.realpath(str(data.get('folder_path') or ''))
-    allowed = get_allowed_base_directories(current_app)
-    safe, message = is_safe_path(folder_path, allowed)
-    if not safe:
-        return jsonify({'error': message}), 400
     scan_mode = data.get('scan_mode', 'folders')
-    if scan_mode not in {'folders', 'files'}:
-        return jsonify({'error': 'scan_mode must be folders or files'}), 400
+    try:
+        options = validate_scan_options(data.get('options', {}))
+        if 'is_enabled' in data and type(data['is_enabled']) is not bool:
+            raise ValueError('is_enabled must be a boolean')
+        extensions = db.session.execute(select(AllowedFileType.value)).scalars().all()
+        folder_path = resolve_scan_target(data.get('folder_path'), scan_mode, extensions=extensions).path
+    except (ValueError, OSError) as exc:
+        return jsonify({'error': str(exc)}), 400
     try:
         interval = int(data.get('interval_minutes', 1440))
     except (TypeError, ValueError):
@@ -105,7 +107,7 @@ def scan_schedules():
         return jsonify({'error': 'interval_minutes must be between 15 and 10080'}), 400
     schedule = LibraryScanSchedule(
         library_uuid=library.uuid, folder_path=folder_path, scan_mode=scan_mode,
-        interval_minutes=interval, options=data.get('options') or {},
+        interval_minutes=interval, options=options,
         is_enabled=bool(data.get('is_enabled', True)),
         next_run=datetime.now(timezone.utc) + timedelta(minutes=interval),
     )
@@ -125,19 +127,32 @@ def scan_schedule(schedule_id):
         db.session.delete(schedule)
         db.session.commit()
         return '', 204
-    data = request.get_json(silent=True) or {}
-    if 'is_enabled' in data:
-        schedule.is_enabled = bool(data['is_enabled'])
-    if 'interval_minutes' in data:
-        try:
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return jsonify({'error': 'Expected a JSON object'}), 400
+    changes = {}
+    try:
+        if 'options' in data:
+            changes['options'] = validate_scan_options(data['options'])
+        if 'is_enabled' in data:
+            if type(data['is_enabled']) is not bool:
+                raise ValueError('is_enabled must be a boolean')
+            changes['is_enabled'] = data['is_enabled']
+        if any(key in data for key in ('library_uuid', 'folder_path', 'scan_mode')):
+            library_uuid = data.get('library_uuid', schedule.library_uuid)
+            if db.session.get(Library, library_uuid) is None:
+                return jsonify({'error': 'Library not found'}), 404
+            extensions = db.session.execute(select(AllowedFileType.value)).scalars().all()
+            target = resolve_scan_target(data.get('folder_path', schedule.folder_path), data.get('scan_mode', schedule.scan_mode), extensions=extensions)
+            changes.update(library_uuid=library_uuid, folder_path=target.path, scan_mode=target.mode)
+        if 'interval_minutes' in data:
             interval = int(data['interval_minutes'])
-        except (TypeError, ValueError):
-            return jsonify({'error': 'interval_minutes must be an integer'}), 400
-        if not 15 <= interval <= 10080:
-            return jsonify({'error': 'interval_minutes must be between 15 and 10080'}), 400
-        schedule.interval_minutes = interval
-        schedule.next_run = datetime.now(timezone.utc) + timedelta(minutes=interval)
-    if 'options' in data:
-        schedule.options = data['options'] or {}
+            if not 15 <= interval <= 10080:
+                raise ValueError('interval_minutes must be between 15 and 10080')
+            changes.update(interval_minutes=interval, next_run=datetime.now(timezone.utc) + timedelta(minutes=interval))
+    except (TypeError, ValueError, OSError) as exc:
+        return jsonify({'error': str(exc)}), 400
+    for key, value in changes.items():
+        setattr(schedule, key, value)
     db.session.commit()
     return jsonify(_schedule_data(schedule))

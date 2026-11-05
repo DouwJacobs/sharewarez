@@ -252,49 +252,29 @@ class TestMainBlueprint:
         response = client.get('/scan_manual_folder')
         assert response.status_code == 302  # Redirect to login
 
-    @patch('flask_login.current_user')
-    @patch('sharewarez.routes.os.path.exists')
-    @patch('sharewarez.routes.os.access')
-    @patch('sharewarez.routes.get_game_names_from_folder')
-    def test_scan_folder_valid_path(self, mock_get_games, mock_access, mock_exists, mock_current_user, 
-                                   client, app, db_session, admin_user, test_library):
-        """Test scan_folder with valid folder path."""
-        mock_current_user.is_authenticated = True
-        mock_current_user.role = 'admin'
-        mock_exists.return_value = True
-        mock_access.return_value = True
-        mock_get_games.return_value = [{'name': 'Test Game', 'full_path': '/test/path'}]
-        
+    def test_scan_folder_valid_path(self, client, app, db_session, admin_user, test_library, tmp_path):
+        """Legacy POST uses the same target validator and result workspace."""
+        app.config.update(BASE_FOLDER_POSIX=str(tmp_path), DATA_FOLDER_WAREZ=str(tmp_path))
+        (tmp_path / 'Legacy Game').mkdir()
         with client.session_transaction() as sess:
             sess['_user_id'] = str(admin_user.id)
-        
         response = client.post('/scan_manual_folder', data={
-            'folder_path': '/test/folder',
-            'library_uuid': str(test_library.uuid),
-            'csrf_token': 'test_token',
-            'scan_mode': 'folders'
+            'folder_path': '.', 'library_uuid': str(test_library.uuid), 'scan_mode': 'folders',
         })
-        assert response.status_code == 200
+        assert response.status_code == 302
+        assert '/admin/scan_management' in response.location
+        with client.session_transaction() as sess:
+            assert sess['game_paths']['Legacy Game'] == str(tmp_path / 'Legacy Game')
 
-    @patch('flask_login.current_user')
-    @patch('sharewarez.routes.os.path.exists')
-    def test_scan_folder_invalid_path(self, mock_exists, mock_current_user, client, app, db_session, admin_user, test_library):
-        """Test scan_folder with invalid folder path."""
-        mock_current_user.is_authenticated = True
-        mock_current_user.role = 'admin'
-        mock_exists.return_value = False
-        
+    def test_scan_folder_invalid_path(self, client, app, db_session, admin_user, test_library):
         with client.session_transaction() as sess:
             sess['_user_id'] = str(admin_user.id)
-        
         response = client.post('/scan_manual_folder', data={
-            'folder_path': '/invalid/folder',
-            'library_uuid': str(test_library.uuid),
-            'csrf_token': 'test_token',
-            'scan_mode': 'folders'
-        })
+            'folder_path': '/invalid/folder', 'library_uuid': str(test_library.uuid), 'scan_mode': 'folders',
+        }, follow_redirects=True)
         assert response.status_code == 200
-        # Should contain error message about folder not existing
+        assert b'Cannot scan this target' in response.data
+        assert b'outside allowed scan directories' in response.data
 
     @patch('flask_login.current_user')
     def test_scan_management_get(self, mock_current_user, client, app, db_session, admin_user, test_library, test_scan_job):

@@ -352,6 +352,7 @@ def test_anonymous_user_cannot_inspect_jobs(client, app):
 
 
 def test_library_scan_task_runs_existing_scanner(app, db_session, tmp_path):
+    app.config['DATA_FOLDER_WAREZ'] = str(tmp_path)
     from sharewarez.platform import LibraryPlatform
     from sharewarez.models import Library
 
@@ -383,6 +384,7 @@ def test_library_scan_task_runs_existing_scanner(app, db_session, tmp_path):
 
 
 def test_unchanged_library_scan_is_skipped(app, db_session, tmp_path):
+    app.config['DATA_FOLDER_WAREZ'] = str(tmp_path)
     from sharewarez.platform import LibraryPlatform
     from sharewarez.models import Library
 
@@ -405,6 +407,7 @@ def test_unchanged_library_scan_is_skipped(app, db_session, tmp_path):
 
 
 def test_due_schedule_dispatches_scan_job(app, db_session, tmp_path):
+    app.config['DATA_FOLDER_WAREZ'] = str(tmp_path)
     from sharewarez.platform import LibraryPlatform
     from sharewarez.models import Library
     from sharewarez.utils.incremental_scanning import dispatch_due_schedules

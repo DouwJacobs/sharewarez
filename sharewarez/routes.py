@@ -1,3 +1,4 @@
+from sharewarez.utils.scan_targets import resolve_scan_target
 import hashlib
 import uuid, json, os, shutil
 from functools import lru_cache
@@ -85,70 +86,13 @@ def browse_games():
 @login_required
 @admin_required
 def scan_folder():
-    ## to be fixed broken again after update
+    if request.method == 'GET':
+        return redirect(url_for('main.admin_scan_management', active_tab='manual'))
     form = ScanFolderForm()
-    release_group_form = ReleaseGroupForm()
-
-    libraries = db.session.execute(select(Library)).scalars().all()
-    form.library_uuid.choices = [(str(lib.uuid), lib.name) for lib in libraries]
-
-    csrf_form = CsrfProtectForm()
-    game_names_with_ids = None
-
-    # Data for template consistency with scan_management
-    scanning_filters = db.session.execute(select(ReleaseGroup).order_by(ReleaseGroup.filter_pattern.asc())).scalars().all()
-    allowed_file_types = db.session.execute(select(AllowedFileType).order_by(AllowedFileType.value.asc())).scalars().all()
-    
-    if form.validate_on_submit():
-        if form.cancel.data:
-            return redirect(url_for('main.scan_folder'))
-        
-        folder_path = form.folder_path.data
-        print(f"Scanning folder: {folder_path}")
-
-        # Validate folder path security
-        allowed_bases = get_allowed_base_directories(current_app)
-        if not allowed_bases:
-            flash('Service configuration error: No allowed base directories configured.', 'error')
-            return render_template('admin/admin_manage_scanjobs.html',
-                                  form=form, manual_form=form, csrf_form=csrf_form,
-                                  game_names_with_ids=game_names_with_ids,
-                                  release_group_form=release_group_form,
-                                  scanning_filters=scanning_filters,
-                                  allowed_file_types=allowed_file_types)
-        
-        # Security validation: ensure the folder path is within allowed directories
-        is_safe, error_message = is_safe_path(folder_path, allowed_bases)
-        if not is_safe:
-            print(f"Security error: Scan folder path validation failed for {folder_path}: {error_message}")
-            flash(f"Access denied: {error_message}", 'error')
-            return render_template('admin/admin_manage_scanjobs.html',
-                                  form=form, manual_form=form, csrf_form=csrf_form,
-                                  game_names_with_ids=game_names_with_ids,
-                                  release_group_form=release_group_form,
-                                  scanning_filters=scanning_filters,
-                                  allowed_file_types=allowed_file_types)
-
-        if os.path.exists(folder_path) and os.access(folder_path, os.R_OK):
-            print("Folder exists and is accessible.")
-            insensitive_patterns, sensitive_patterns = load_scanning_filter_patterns()
-            games_with_paths = get_game_names_from_folder(folder_path, insensitive_patterns, sensitive_patterns)
-            session['active_tab'] = 'manualScan'
-            session['game_paths'] = {game['name']: game['full_path'] for game in games_with_paths}            
-            game_names_with_ids = [{'name': game['name'], 'id': i} for i, game in enumerate(games_with_paths)]
-        else:
-            flash("Folder does not exist or cannot be accessed.", "error")
-            print("Folder does not exist or cannot be accessed.")
-            
-    return render_template('admin/admin_manage_scanjobs.html',
-                          form=form,
-                          manual_form=form,
-                          csrf_form=csrf_form,
-                          game_names_with_ids=game_names_with_ids,
-                          release_group_form=release_group_form,
-                          scanning_filters=scanning_filters,
-                          allowed_file_types=allowed_file_types)
-
+    form.library_uuid.choices = [(str(lib.uuid), lib.name) for lib in db.session.execute(select(Library)).scalars()]
+    if form.cancel.data:
+        return redirect(url_for('main.admin_scan_management', active_tab='manual'))
+    return handle_manual_scan(form)
 
 
 @bp.route('/scan_management', methods=['GET', 'POST'])
@@ -323,14 +267,16 @@ def restart_scan_job(job_id):
             worker_job = db.session.get(ScanJob, job_id)
             if worker_job is None:
                 return
-            base_dir = current_app.config.get(
-                'BASE_FOLDER_WINDOWS' if os.name == 'nt' else 'BASE_FOLDER_POSIX'
-            )
-            full_path = os.path.join(base_dir, worker_job.scan_folder)
-
-            if not os.path.exists(full_path) or not os.access(full_path, os.R_OK):
+            try:
+                extensions = db.session.execute(select(AllowedFileType.value)).scalars().all()
+                full_path = resolve_scan_target(
+                    worker_job.scan_folder,
+                    'files' if worker_job.setting_filefolder else 'folders',
+                    extensions=extensions,
+                ).path
+            except (ValueError, OSError) as exc:
                 worker_job.status = 'Failed'
-                worker_job.error_message = f"Cannot access folder: {full_path}"
+                worker_job.error_message = f'{exc}. No removals performed: invalid restart target.'
                 db.session.commit()
                 return
 

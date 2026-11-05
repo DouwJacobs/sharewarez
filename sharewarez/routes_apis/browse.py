@@ -4,6 +4,7 @@ import os
 import stat
 from flask_login import login_required
 from sharewarez.utils.auth import admin_required
+from sharewarez.utils.scan_targets import resolve_scan_target, ScanTargetError
 from . import apis_bp
 
 @apis_bp.route('/browse_folders_ss')
@@ -16,19 +17,10 @@ def browse_folders_ss():
         return jsonify({'error': 'Scan location is not configured.'}), 404
     request_path = request.args.get('path', '')
     base_directory = os.path.realpath(base_directory)
-    folder_path = os.path.realpath(os.path.join(base_directory, request_path))
     try:
-        within_root = os.path.commonpath([base_directory, folder_path]) == base_directory
-    except ValueError:
-        within_root = False
-    if not within_root:
-        return jsonify({'error': 'Access denied'}), 403
-
-    if not os.path.isdir(folder_path):
-        return jsonify({
-            'error': 'Scan location is unavailable.',
-            'detail': f'The configured base directory does not exist: {base_directory}'
-        }), 404
+        folder_path = resolve_scan_target(request_path or '.', active_root_only=True).path
+    except ScanTargetError as exc:
+        return jsonify({'error': str(exc)}), (404 if exc.status_code == 400 else exc.status_code)
 
     try:
         names = os.listdir(folder_path)

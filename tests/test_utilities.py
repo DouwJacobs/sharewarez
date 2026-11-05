@@ -334,7 +334,7 @@ class TestUtilitiesWithRealDatabase:
                         scan_jobs = db_session.query(ScanJob).filter_by(library_uuid=library.uuid).all()
                         assert len(scan_jobs) > 0
                         assert scan_jobs[0].status == 'Failed'
-                        assert 'Cannot access folder' in scan_jobs[0].error_message
+                        assert 'outside allowed scan directories' in scan_jobs[0].error_message
 
     def test_library_validation(self, app, db_session):
         """Test that function handles missing library gracefully."""
@@ -402,7 +402,7 @@ class TestAdvancedScanScenarios:
                     assert updated_job is not None
                     assert updated_job.id == existing_job_id  # Same job ID
                     assert updated_job.status == 'Failed'  # Status updated
-                    assert 'Cannot access folder' in updated_job.error_message
+                    assert 'outside allowed scan directories' in updated_job.error_message
                     
                     # Verify no duplicate jobs created
                     all_jobs = db_session.execute(
@@ -415,114 +415,26 @@ class TestAdvancedScanScenarios:
                     assert all_jobs[0].folders == {"/restart/path": True}
                     assert all_jobs[0].content_type == 'Games'
 
-    def test_remove_missing_games_functionality(self, app, db_session):
-        """Test the remove missing games feature with database state verification."""
-        # Setup test environment
-        library = Library(
-            uuid=str(uuid4()),
-            name="Remove Missing Test Library", 
-            platform=LibraryPlatform.PCWIN
-        )
+    def test_remove_missing_games_functionality(self, app, db_session, tmp_path):
+        """Cleanup applies only to direct records under the selected target."""
+        app.config.update(BASE_FOLDER_POSIX=str(tmp_path), DATA_FOLDER_WAREZ=str(tmp_path))
+        library = Library(name=f'Cleanup {uuid4().hex}', platform=LibraryPlatform.PCWIN)
         db_session.add(library)
-        
-        settings = GlobalSettings(
-            update_folder_name='updates',
-            extras_folder_name='extras', 
-            scan_thread_count=1
-        )
-        db_session.add(settings)
-        
-        if not db_session.execute(select(AllowedFileType).filter_by(value='exe')).scalars().first():
+        db_session.flush()
+        (tmp_path / 'Present').mkdir()
+        present = Game(name='Present', full_disk_path=str(tmp_path / 'Present'), library_uuid=library.uuid)
+        missing = Game(name='Missing', full_disk_path=str(tmp_path / 'Missing'), library_uuid=library.uuid)
+        elsewhere = Game(name='Other root', full_disk_path=str(tmp_path.parent / 'offline' / 'Missing'), library_uuid=library.uuid)
+        db_session.add_all([present, missing, elsewhere])
+        if not db_session.query(AllowedFileType).first():
             db_session.add(AllowedFileType(value='exe'))
-        
-        # Create existing games - some that will be "missing" 
-        existing_games = [
-            Game(
-                uuid=str(uuid4()),
-                name='Game Still Exists',
-                full_disk_path='/existing/game',
-                library_uuid=library.uuid
-            ),
-            Game(
-                uuid=str(uuid4()),
-                name='Game Missing Now',
-                full_disk_path='/missing/game',
-                library_uuid=library.uuid
-            ),
-            Game(
-                uuid=str(uuid4()),
-                name='Another Missing Game',
-                full_disk_path='/another/missing',
-                library_uuid=library.uuid
-            )
-        ]
-        
-        for game in existing_games:
-            db_session.add(game)
-        
         db_session.commit()
-        
-        # Record initial game count
-        initial_games = db_session.execute(
-            select(Game).filter_by(library_uuid=library.uuid)
-        ).scalars().all()
-        assert len(initial_games) == 3
-        
-        with app.app_context():
-            with patch('sharewarez.utilities.is_scan_job_running', return_value=False):
-                with patch('os.path.exists') as mock_exists:
-                    with patch('os.access', return_value=True):
-                        # Mock to return some dummy games so scan doesn't return early
-                        dummy_games = [
-                            {'name': 'Dummy Game 1', 'full_path': '/dummy/game1'},
-                            {'name': 'Dummy Game 2', 'full_path': '/dummy/game2'}
-                        ]
-                        with patch('sharewarez.utilities.get_game_names_from_folder', return_value=dummy_games):
-                            with patch('sharewarez.utilities.load_scanning_filter_patterns', return_value=([], [])):
-                                with patch('sharewarez.utils.scanning.process_game_with_fallback', return_value=True):  # Mock successful processing
-                                    with patch('sharewarez.utilities.remove_from_lib') as mock_remove:
-                                        
-                                        # Configure path existence - only first game exists
-                                        def exists_side_effect(path):
-                                            if path == '/scan/path':  # Scan folder
-                                                return True
-                                            elif path == '/existing/game':  # First game
-                                                return True
-                                            else:  # Missing games
-                                                return False
-                                        
-                                        mock_exists.side_effect = exists_side_effect
-                                        
-                                        scan_and_add_games(
-                                            "/scan/path",
-                                            library_uuid=library.uuid,
-                                            remove_missing=True
-                                        )
-                                        
-                                        # Verify remove_from_lib was called for missing games
-                                        assert mock_remove.call_count == 2  # Two missing games
-                                        
-                                        # Get the UUIDs that were passed to remove_from_lib
-                                        removed_uuids = [call[0][0] for call in mock_remove.call_args_list]
-                                        
-                                        # Verify correct games were marked for removal
-                                        missing_game_uuids = [
-                                            existing_games[1].uuid,  # 'Game Missing Now'
-                                            existing_games[2].uuid   # 'Another Missing Game'
-                                        ]
-                                        
-                                        for uuid in missing_game_uuids:
-                                            assert uuid in removed_uuids
-                                        
-                                        # Verify scan job shows removal count
-                                        scan_jobs = db_session.execute(
-                                            select(ScanJob).filter_by(library_uuid=library.uuid)
-                                        ).scalars().all()
-                                        
-                                        assert len(scan_jobs) == 1
-                                        scan_job = scan_jobs[0]
-                                        assert scan_job.removed_count == 2
-                                        assert scan_job.status == 'Completed'
+        with patch('sharewarez.utilities.is_scan_job_running', return_value=False), patch('sharewarez.utilities.remove_from_lib', return_value=True) as remove:
+            scan_and_add_games(str(tmp_path), library_uuid=library.uuid, remove_missing=True)
+        remove.assert_called_once_with(missing.uuid)
+        job = db_session.execute(select(ScanJob).filter_by(library_uuid=library.uuid)).scalar_one()
+        assert job.removed_count == 1
+        assert job.status == 'Completed'
 
     def test_database_error_handling_during_scan(self, app, db_session):
         """Test how scan handles database errors gracefully."""
