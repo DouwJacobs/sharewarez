@@ -116,7 +116,7 @@
 
                                 <div class="option-item">
                                     <div class="form-check modern-checkbox">
-                                        {{ auto_form.fetch_hltb(class="form-check-input", id="fetch-hltb-auto", checked="checked") }}
+                                        {{ auto_form.fetch_hltb(class="form-check-input", id="fetch-hltb-auto") }}
                                         <label class="form-check-label" for="fetch-hltb-auto" data-toggle="tooltip" title="Fetch game completion times from HowLongToBeat during scan">{{ auto_form.fetch_hltb.label.text }}</label>
                                     </div>
                                 </div>
@@ -166,7 +166,8 @@
                                 </div>
                             </div>
                             <div class="scan-location-actions">
-                                <button type="submit" name="submit" value="AutoScan" class="btn btn-primary scan-start-btn">
+                                <input type="hidden" name="submit" value="AutoScan">
+                                <button type="submit" class="btn btn-primary scan-start-btn">
                                     <i class="fas fa-play"></i> Start Scan
                                 </button>
                             </div>
@@ -297,7 +298,7 @@
                         <span>Enabled update and extras folders are checked automatically.</span>
                     </div>
                     <div class="form-check modern-checkbox">
-                        {{ manual_form.fetch_hltb(class="form-check-input", id="fetch-hltb-manual", checked="checked") }}
+                        {{ manual_form.fetch_hltb(class="form-check-input", id="fetch-hltb-manual") }}
         <label class="form-check-label" for="fetch-hltb-manual" data-toggle="tooltip" title="Fetch game completion times from HowLongToBeat during scan">{{ manual_form.fetch_hltb.label.text }}</label>
                     </div>
 
@@ -308,7 +309,8 @@
 
                     <div class="form-group manual-actions">
                         <button id="browseFoldersBtnManual" type="button" class="admin_manage_scanjobs-browsefolders-btn btn btn-secondary">Browse Folders</button>
-                        <button id="manualScanSubmitBtn" type="submit" name="submit" value="ManualScan" class="admin_manage_scanjobs-browsefolders-listgames-btn btn btn-primary">
+                        <input type="hidden" name="submit" value="ManualScan">
+                        <button id="manualScanSubmitBtn" type="submit" class="admin_manage_scanjobs-browsefolders-listgames-btn btn btn-primary">
                             <i class="fas fa-list" aria-hidden="true"></i> List Games
                         </button>
                         <button id="upFolderBtnManual" type="button" class="admin_manage_scanjobs-browsefolders-up-btn btn btn-secondary" hidden>Up</button>
@@ -318,7 +320,7 @@
                         <span>Scanning folder and finding games…</span>
                     </div>
                 </form>
-                <div id="loadingSpinnerManual" class="loading-spinner">
+                <div id="loadingSpinnerManual" class="loading-spinner" hidden>
                     <div class="app-loading-indicator" role="status">
                         <span class="app-spinner" aria-hidden="true"></span>
                         <span>Loading folders…</span>

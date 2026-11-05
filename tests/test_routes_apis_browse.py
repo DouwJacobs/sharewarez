@@ -89,3 +89,47 @@ def test_unreadable_directory(browser_client):
     client, _ = browser_client
     with patch("sharewarez.routes_apis.browse.os.listdir", side_effect=PermissionError):
         assert client.get("/api/browse_folders_ss").status_code == 403
+
+
+def test_broken_and_external_children_do_not_hide_readable_items(browser_client):
+    client, base = browser_client
+    (base / "Game").mkdir()
+    outside = base.parent / "private.iso"
+    outside.write_bytes(b"private")
+    (base / "broken").symlink_to(base / "missing")
+    (base / "escape").symlink_to(outside)
+    response = client.get("/api/browse_folders_ss")
+    assert response.status_code == 200
+    assert response.json["items"] == [
+        {"name": "Game", "isDir": True, "ext": None, "size": None}
+    ]
+    assert response.json["skippedItems"] == 2
+    assert response.json["hasErrors"] is True
+    assert "private" not in response.get_data(as_text=True)
+
+
+def test_inaccessible_child_is_skipped(browser_client):
+    client, base = browser_client
+    (base / "good.iso").write_bytes(b"ok")
+    (base / "bad.iso").write_bytes(b"bad")
+    original = os.stat
+
+    def inspect(path, *args, **kwargs):
+        if os.fspath(path) == str(base / "bad.iso"):
+            raise PermissionError("fixture")
+        return original(path, *args, **kwargs)
+
+    with patch("sharewarez.routes_apis.browse.os.stat", side_effect=inspect):
+        response = client.get("/api/browse_folders_ss")
+    assert response.status_code == 200
+    assert [item["name"] for item in response.json["items"]] == ["good.iso"]
+    assert response.json["skippedItems"] == 1
+
+
+def test_empty_root_has_explicit_success_contract(browser_client):
+    client, _ = browser_client
+    response = client.get("/api/browse_folders_ss")
+    assert response.json["items"] == []
+    assert response.json["currentPath"] == ""
+    assert response.json["skippedItems"] == 0
+    assert response.json["hasErrors"] is False

@@ -1950,3 +1950,28 @@
         flex-basis: 78px;
     }
 }
+
+/* Picker rows are native controls with wrapping labels and shared hit targets. */
+.scan-management-page :is(#folderContents, #folderContentsManual) .btn {
+    max-width: 100%;
+    min-height: var(--control-height, 42px);
+    height: auto;
+    margin-block: 4px;
+}
+.scan-management-page :is(.folder-item, .file-item).btn {
+    display: flex;
+    width: 100%;
+    justify-content: flex-start;
+    text-align: left;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    transform: none;
+}
+.scan-management-page :is(.folder-item, .file-item).btn span {
+    min-width: 0;
+}
+@media (max-width: 760px) {
+    .scan-management-page :is(#folderContents, #folderContentsManual) .btn {
+        min-height: 44px;
+    }
+}

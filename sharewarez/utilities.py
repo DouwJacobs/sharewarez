@@ -674,7 +674,7 @@ def handle_auto_scan(auto_form):
             flash(f"Cannot access folder: {full_path}. Please check the path and permissions.", 'error')
             print(f"Cannot access folder: {full_path}. Please check the path and permissions.", 'error')
             session['active_tab'] = 'auto'
-            return redirect(url_for('library.library'))
+            return redirect(url_for('main.admin_scan_management', active_tab='auto'))
 
         background_job = enqueue(
             'library.scan',

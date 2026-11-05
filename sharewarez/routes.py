@@ -173,6 +173,11 @@ def scan_management():
     # This prevents overwriting form data during POST submission
     selected_library_uuid = None
     if request.method == 'GET':
+        for kind, form in [('auto', auto_form), ('manual', manual_form)]:
+            draft = session.get(f'{kind}_scan_draft', {})
+            for name, value in draft.items():
+                if name in form and name not in {'csrf_token', 'submit', 'scan', 'cancel'}:
+                    form[name].data = value
         selected_library_uuid = request.args.get('library_uuid')
         if selected_library_uuid:
             auto_form.library_uuid.data = selected_library_uuid
@@ -211,10 +216,13 @@ def scan_management():
 
     if request.method == 'POST':
         submit_action = request.form.get('submit')
-        if submit_action == 'AutoScan':
-            return handle_auto_scan(auto_form)
-        elif submit_action == 'ManualScan':
-            return handle_manual_scan(manual_form)
+        if submit_action in {'AutoScan', 'ManualScan'}:
+            kind, form = ('auto', auto_form) if submit_action == 'AutoScan' else ('manual', manual_form)
+            session[f'{kind}_scan_draft'] = {
+                name: field.data for name, field in form._fields.items()
+                if name not in {'csrf_token', 'submit', 'scan', 'cancel'}
+            }
+            return handle_auto_scan(form) if kind == 'auto' else handle_manual_scan(form)
         elif submit_action == 'DeleteAllUnmatched':
             return handle_delete_unmatched(all=True)
         elif submit_action == 'DeleteOnlyUnmatched':

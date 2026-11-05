@@ -1,8 +1,5 @@
 import { fileIcons } from './config/file_type_icons.js';
 
-var currentPathAuto = '';
-var currentPathManual = '';
-
 function showSpinner() {
     document.getElementById('globalSpinner').hidden = false;
 }
@@ -150,37 +147,12 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Prevent form submission on pressing Enter and trigger Browse Folders click (Auto Scan Tab)
-    const autoScanForm = document.querySelector('#autoScan form');
-    if (autoScanForm) {
-        autoScanForm.addEventListener('keydown', function(event) {
-            // Only prevent default and trigger browse folders on Enter key press
-            if (event.key === 'Enter') {
-                event.preventDefault();
-                const browseFoldersBtn = document.querySelector('#browseFoldersBtn');
-                if (browseFoldersBtn) {
-                    browseFoldersBtn.click();
-                }
-            }
-        });
-    }
-
-    // Same for manual scan form
+    // Native Enter and button activation submit the same hidden form action.
     const manualScanForm = document.querySelector('#manualScan form');
     if (manualScanForm) {
-        manualScanForm.addEventListener('keydown', function(event) {
-            if (event.key === 'Enter') {
-                event.preventDefault();
-                const browseFoldersBtnManual = document.querySelector('#browseFoldersBtnManual');
-                if (browseFoldersBtnManual) {
-                    browseFoldersBtnManual.click();
-                }
-            }
-        });
-
         manualScanForm.addEventListener('submit', function(event) {
-            const submitter = event.submitter || document.activeElement;
-            if (!submitter || submitter.value !== 'ManualScan') {
+            if (manualScanForm.getAttribute('aria-busy') === 'true') {
+                event.preventDefault();
                 return;
             }
 
@@ -195,8 +167,8 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    setupFolderBrowse('#browseFoldersBtn', '#folderContents', '#loadingSpinner', '#upFolderBtn', '#folder_path', 'currentPathAuto');
-    setupFolderBrowse('#browseFoldersBtnManual', '#folderContentsManual', '#loadingSpinnerManual', '#upFolderBtnManual', '#manualFolderPath', 'currentPathManual');
+    setupFolderBrowse('#browseFoldersBtn', '#folderContents', '#loadingSpinner', '#upFolderBtn', '#folder_path');
+    setupFolderBrowse('#browseFoldersBtnManual', '#folderContentsManual', '#loadingSpinnerManual', '#upFolderBtnManual', '#manualFolderPath');
 
     // No complex toggle functionality needed for simplified table
 
@@ -684,146 +656,96 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 });
 
-// Folder browse setup function
-function setupFolderBrowse(browseButtonId, folderContentsId, spinnerId, upButtonId, inputFieldId, currentPathVar) {
-    // Store the initial library selection
-    var initialLibrarySelection = $(inputFieldId).closest('form').find('select[name="library_uuid"]').val();
-    
-    $(browseButtonId).click(function() {
-        window[currentPathVar] = ''; // Reset the current path
-        $(upButtonId).prop('hidden', true); // Initially hide the "Up" button
-        // Preserve the library selection
-        var librarySelect = $(inputFieldId).closest('form').find('select[name="library_uuid"]');
-        if (!librarySelect.val() && initialLibrarySelection) {
-            librarySelect.val(initialLibrarySelection);
-        }
-        fetchFolders('', folderContentsId, spinnerId, upButtonId, inputFieldId, currentPathVar);
-    });
+// Each picker owns its cursor and request generation. Only a successful latest
+// response commits a navigation choice; a failure leaves the form draft intact.
+function setupFolderBrowse(browseButtonId, folderContentsId, spinnerId, upButtonId, inputFieldId) {
+    const browse = $(browseButtonId);
+    const contents = $(folderContentsId);
+    const spinner = $(spinnerId);
+    const up = $(upButtonId);
+    const input = $(inputFieldId);
+    const form = input.closest('form');
+    let currentPath = '';
+    let generation = 0;
 
-    $(upButtonId).click(function() {
-        var segments = window[currentPathVar].split('/').filter(Boolean);
-        if (segments.length > 0) {
-            // Remove the last segment to go up one level
-            segments.pop();
-            if (segments.length > 0) {
-                window[currentPathVar] = segments.join('/') + '/';
-            } else {
-                window[currentPathVar] = ''; // Reset to base directory if no segments left
-            }
-        } else {
-            window[currentPathVar] = ''; // Already at base directory
-        }
+    function fetchFolders(path, restoreFocus = false) {
+        const requestGeneration = ++generation;
+        spinner.prop('hidden', false);
+        contents.attr('aria-busy', 'true');
+        $.ajax({
+            url: '/api/browse_folders_ss',
+            data: {path},
+            success(data) {
+                if (requestGeneration !== generation) return;
+                spinner.prop('hidden', true);
+                contents.empty().attr('aria-busy', 'false');
+                currentPath = data.currentPath || '';
+                input.val(currentPath || '.');
+                up.prop('hidden', !currentPath);
 
-        fetchFolders(window[currentPathVar], folderContentsId, spinnerId, upButtonId, inputFieldId, currentPathVar);
-
-        // Update the input field with the new current path
-        $(inputFieldId).val(window[currentPathVar]);
-
-        if (segments.length < 1) {
-            $(upButtonId).prop('hidden', true);
-        } else {
-            $(upButtonId).prop('hidden', false);
-        }
-    });
-}
-
-function fetchFolders(path, folderContentsId, spinnerId, upButtonId, inputFieldId, currentPathVar) {
-    console.log("Fetching folders for path:", path);
-    $(spinnerId).prop('hidden', false);
-    $.ajax({
-        url: '/api/browse_folders_ss',
-        data: { path: path },
-        success: function(data) {
-            $(spinnerId).prop('hidden', true);
-            $(folderContentsId).empty();
-            
-            // Check if we're using the new response format or the old one
-            const items = data.items || data;
-
-            if (!items.length) {
-                const locationLabel = data.basePath || 'the configured scan location';
-                const emptyState = $('<div class="folder-browser-empty" role="status">');
-                emptyState.append('<i class="fas fa-folder-open" aria-hidden="true"></i>');
-                emptyState.append($('<strong>').text('No folders found'));
-                emptyState.append($('<span>').text(`${locationLabel} is empty or its remote storage is not mounted.`));
-                $(folderContentsId).append(emptyState);
-            }
-            
-            // Display warning if there were errors
-            if (data.hasErrors) {
-                $(folderContentsId).append(
-                    $('<div class="alert alert-warning">').html(
-                        `<i class="fas fa-exclamation-triangle"></i> Some items (${data.skippedItems}) could not be accessed and were skipped.`
-                    )
-                );
-            }
-            
-            items.forEach(function(item) {
-                var itemElement;
-                if (item.isDir) {
-                    itemElement = $('<div>').html('<i class="fas fa-folder text-warning"></i> ' + item.name);
-                    var fullPath = path + item.name + "/";
-                    $(itemElement).addClass('folder-item').attr('data-path', fullPath);
-                } else {
-                    // Get file extension and appropriate icon
-                    var ext = item.ext ? item.ext.toLowerCase() : '';
-                    var iconClass = fileIcons[ext] || fileIcons['default'];
-                    
-                    // Format file size
-                    var sizeText = formatFileSize(item.size);
-                    
-                    // Create file element with icon, name, and size
-                    itemElement = $('<div>').html(
-                        '<i class="fas ' + iconClass + '"></i> ' + 
-                        item.name + 
-                        '<span class="file-size">(' + sizeText + ')</span>'
-                    );
-                    var fullFilePath = path + item.name;
-                    $(itemElement)
-                        .addClass('file-item')
-                        .attr('data-path', fullFilePath)
-                        .attr('title', item.name + ' - ' + sizeText)
-                        .css('cursor', 'pointer');
+                const useFolder = $('<button type="button" class="btn btn-secondary">')
+                    .text('Use this folder').on('click', () => {
+                        input.val(currentPath || '.');
+                        input.trigger('focus');
+                    });
+                contents.append(useFolder);
+                if (!data.items.length) {
+                    contents.append($('<div class="folder-browser-empty" role="status">')
+                        .append($('<strong>').text('No items here')));
                 }
-                $(folderContentsId).append(itemElement);
-            });
-
-            // Attach click handlers to folders
-            $(folderContentsId).find('.folder-item').click(function() {
-                var newPath = $(this).data('path');
-                window[currentPathVar] = newPath; 
-                fetchFolders(newPath, folderContentsId, spinnerId, upButtonId, inputFieldId, currentPathVar);
-                $(inputFieldId).val(newPath); 
-            });
-
-            // Attach click handlers to files
-            $(folderContentsId).find('.file-item').click(function() {
-                var filePath = $(this).data('path');
-                window[currentPathVar] = filePath;
-                $(inputFieldId).val(filePath);
-                $(folderContentsId).find('.file-item, .folder-item').removeClass('active-selection');
-                $(this).addClass('active-selection');
-            });
-            if (path) {
-                $(upButtonId).prop('hidden', false);
-            } else {
-                $(upButtonId).prop('hidden', true);
+                if (data.hasErrors) {
+                    contents.append($('<div class="alert alert-warning" role="status">')
+                        .text(`Some items (${data.skippedItems}) could not be accessed and were skipped.`));
+                }
+                data.items.forEach(item => {
+                    const itemPath = currentPath + item.name + (item.isDir ? '/' : '');
+                    const icon = item.isDir ? 'fa-folder' : (fileIcons[item.ext] || fileIcons.default);
+                    const itemElement = $('<button type="button" class="btn btn-secondary">')
+                        .addClass(item.isDir ? 'folder-item' : 'file-item')
+                        .attr('data-path', itemPath)
+                        .append($('<i aria-hidden="true">').addClass(`fas ${icon}`))
+                        .append($('<span>').text(item.name));
+                    if (item.isDir) {
+                        itemElement.on('click', () => fetchFolders(itemPath, true));
+                    } else {
+                        itemElement.append($('<span class="file-size">').text(`(${formatFileSize(item.size)})`));
+                        itemElement.on('click', () => {
+                            if (form.find('[name="scan_mode"]:checked').val() !== 'files') {
+                                const notice = $('<div class="alert alert-warning" role="status">')
+                                    .text('Choose Files mode to select an individual file.');
+                                contents.find('.file-mode-notice').remove();
+                                contents.append(notice.addClass('file-mode-notice'));
+                                return;
+                            }
+                            input.val(itemPath);
+                            contents.find('.active-selection').removeClass('active-selection');
+                            itemElement.addClass('active-selection');
+                        });
+                    }
+                    contents.append(itemElement);
+                });
+                if (restoreFocus) useFolder.trigger('focus');
+            },
+            error(error) {
+                if (requestGeneration !== generation) return;
+                spinner.prop('hidden', true);
+                contents.attr('aria-busy', 'false');
+                const response = error.responseJSON || {};
+                const errorState = $('<div class="folder-browser-error" role="alert">')
+                    .append($('<strong>').text(response.error || 'Could not browse the scan location.'))
+                    .append($('<span>').text(response.detail || 'Check that the directory is mounted and readable.'));
+                contents.find('.folder-browser-error').remove();
+                contents.append(errorState);
+                // Keep existing controls and focus available for retry.
             }
-        },
-        error: function(error) {
-            $(spinnerId).prop('hidden', true);
-            console.error("Error fetching folders:", error);
-            const response = error.responseJSON || {};
-            const message = response.error || 'Could not browse the scan location.';
-            const detail = response.detail || 'Check that the configured directory is mounted and readable.';
-            const errorState = $('<div class="folder-browser-error" role="alert">');
-            const errorCopy = $('<div>');
-            errorState.append('<i class="fas fa-triangle-exclamation" aria-hidden="true"></i>');
-            errorCopy.append($('<strong>').text(message));
-            errorCopy.append($('<span>').text(detail));
-            errorState.append(errorCopy);
-            $(folderContentsId).empty().append(errorState);
-        }
+        });
+    }
+
+    browse.on('click', () => fetchFolders(''));
+    up.on('click', () => {
+        const segments = currentPath.split('/').filter(Boolean);
+        segments.pop();
+        fetchFolders(segments.length ? segments.join('/') + '/' : '', true);
     });
 }
 

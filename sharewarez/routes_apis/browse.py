@@ -1,6 +1,7 @@
 # /sharewarez/routes_apis/browse.py
 from flask import jsonify, request, current_app
 import os
+import stat
 from flask_login import login_required
 from sharewarez.utils.auth import admin_required
 from . import apis_bp
@@ -30,13 +31,7 @@ def browse_folders_ss():
         }), 404
 
     try:
-        # List directory contents; distinguish between files and directories.
-        contents = [{'name': item,
-                     'isDir': os.path.isdir(os.path.join(folder_path, item)),
-                     'ext': os.path.splitext(item)[1][1:].lower() if not os.path.isdir(os.path.join(folder_path, item)) else None,
-                     'size': os.path.getsize(os.path.join(folder_path, item)) if not os.path.isdir(os.path.join(folder_path, item)) else None
-                     }
-                    for item in sorted(os.listdir(folder_path))]
+        names = os.listdir(folder_path)
     except (OSError, PermissionError) as exc:
         current_app.logger.warning('Could not browse scan directory %s: %s', folder_path, exc)
         return jsonify({
@@ -44,8 +39,34 @@ def browse_folders_ss():
             'detail': 'Check that the storage mount is connected and readable by the application.'
         }), 403
 
+    contents = []
+    skipped = 0
+    for name in sorted(names):
+        child = os.path.join(folder_path, name)
+        try:
+            resolved = os.path.realpath(child)
+            if os.path.commonpath([base_directory, resolved]) != base_directory:
+                skipped += 1
+                continue
+            info = os.stat(child)
+            is_dir = stat.S_ISDIR(info.st_mode)
+            if not is_dir and not stat.S_ISREG(info.st_mode):
+                skipped += 1
+                continue
+            contents.append({
+                'name': name,
+                'isDir': is_dir,
+                'ext': None if is_dir else os.path.splitext(name)[1][1:].lower(),
+                'size': None if is_dir else info.st_size,
+            })
+        except (OSError, ValueError):
+            # A broken or inaccessible child must not hide readable siblings.
+            skipped += 1
+
     return jsonify({
         'items': sorted(contents, key=lambda x: (not x['isDir'], x['name'].lower())),
         'currentPath': request_path,
-        'basePath': base_directory
+        'basePath': base_directory,
+        'skippedItems': skipped,
+        'hasErrors': skipped > 0,
     })
