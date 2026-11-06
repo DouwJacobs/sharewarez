@@ -624,6 +624,7 @@ class TestSettingsPanel:
     ):
         """Matrix saves only alter events displayed for the current role."""
         from sharewarez.utils.notification_events import event_catalog
+        from sharewarez.utils.themes import SITE_DEFAULT_THEME_VALUE
         from sharewarez.utils.user_preferences import get_experience_settings
 
         events = {
@@ -649,7 +650,7 @@ class TestSettingsPanel:
             'default_sort': 'name',
             'default_sort_order': 'asc',
             'library_view': 'grid',
-            'theme': 'default',
+            'theme': SITE_DEFAULT_THEME_VALUE,
             'notify__request_updated__in_app': 'on',
         })
 
