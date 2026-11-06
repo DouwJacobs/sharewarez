@@ -7,6 +7,7 @@ from sqlalchemy.orm import joinedload
 from sharewarez.utils.functions import format_size
 from sharewarez.utils.event_logging import log_system_event
 from . import download_bp
+from sharewarez.live_snapshot_cache import invalidate_snapshots
 from sharewarez import db
 from sharewarez.utils.download_notifications import notify_admin_download_cancelled
 
@@ -67,6 +68,7 @@ def _change_link(download_id, action):
         flash(message, 'warning')
         return redirect(url_for('download.downloads'))
     db.session.commit()
+    invalidate_snapshots()
     event = f'User {current_user.name} deleted download request {download_id}' if action == 'delete' else f'User {current_user.id} applied {action} to download request {download_id}'
     log_system_event(event, event_type='audit')
     if action == 'cancel':

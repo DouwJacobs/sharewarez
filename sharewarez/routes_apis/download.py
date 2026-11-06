@@ -3,6 +3,8 @@ from typing import Tuple
 from flask import jsonify, request
 from sqlalchemy import select
 from flask_login import login_required, current_user
+from sharewarez.live_snapshot_cache import invalidate_snapshots
+from sharewarez.utils.download_state import lock_download
 from sharewarez import db
 from sharewarez.utils.auth import admin_required
 from sharewarez.models import DownloadRequest, DownloadTransfer
@@ -63,11 +65,12 @@ def bulk_download_actions():
             accepted, _message = apply_action(link, action, admin=True)
             changed += int(accepted)
     db.session.commit()
+    invalidate_snapshots()
     log_system_event(
         f'Admin bulk {action} changed {changed} of {len(request_ids)} download requests',
         event_type='download_api', event_level='information'
     )
-    return jsonify({'status': 'success', 'message': f'{changed} request(s) updated', 'changed': changed})
+    return jsonify({'status': 'success', 'message': f'{changed} link(s) changed; {len(request_ids) - changed} skipped', 'changed': changed, 'skipped': len(request_ids) - changed})
 
 @apis_bp.route('/delete_download/<int:request_id>', methods=['DELETE'])
 @login_required
@@ -91,7 +94,7 @@ def api_delete_download_request(request_id: int) -> Tuple[dict, int]:
         }), 400
         
     try:
-        download_request = db.session.get(DownloadRequest, request_id)
+        download_request = lock_download(request_id)
         if not download_request:
             return jsonify({
                 'status': 'error',
@@ -119,6 +122,7 @@ def api_delete_download_request(request_id: int) -> Tuple[dict, int]:
 
         db.session.delete(download_request)
         db.session.commit()
+        invalidate_snapshots()
 
         log_system_event('download_api', f'Successfully deleted download request {request_id}', 'info')
 

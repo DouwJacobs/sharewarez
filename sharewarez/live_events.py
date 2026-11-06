@@ -68,6 +68,8 @@ class LiveEventHub:
 
     def signal(self, topics=TOPICS):
         """Thread-safe; bursts retain at most three topics and one callback."""
+        from sharewarez.live_snapshot_cache import invalidate_snapshots
+        invalidate_snapshots()
         with self._lock:
             if self._loop is None or self._loop.is_closed():
                 return

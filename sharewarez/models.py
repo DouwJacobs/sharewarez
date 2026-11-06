@@ -756,6 +756,7 @@ class DownloadTransfer(db.Model):
     correlation_id = db.Column(db.String(64), nullable=True)
     ended_by_user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'), nullable=True)
     last_progress_at = db.Column(db.DateTime(timezone=True), nullable=True)
+    admin_history_hidden_at = db.Column(db.DateTime(timezone=True), nullable=True)
 
     user = db.relationship('User', foreign_keys=[user_id])
     download_request = db.relationship('DownloadRequest', foreign_keys=[download_request_id])

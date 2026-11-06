@@ -136,7 +136,7 @@ def test_scan_workspace_flattens_active_tab_panel():
     assert 'class="table table-dark table-striped scan-queue-table"' in template
     assert 'data-label="Case sensitive"' in template
     assert 'data-label="Folder path"' in javascript
-    assert 'data-label="Progress"' in javascript
+    assert 'data-label="Status"' in javascript
     assert "window.clearEntry = function(folderId, triggerButton)" in javascript
     assert "event.target.closest('button')" not in javascript
 
@@ -194,10 +194,10 @@ def test_scan_restart_worker_does_not_reuse_request_context():
     routes = Path("sharewarez/routes.py").read_text(encoding="utf-8")
     restart_route = routes[routes.index("def restart_scan_job"):routes.index("@bp.route('/edit_game_images")]
 
-    assert "app = current_app._get_current_object()" in restart_route
-    assert "with app.app_context():" in restart_route
-    assert "worker_job = db.session.get(ScanJob, job_id)" in restart_route
-    assert "@copy_current_request_context" not in restart_route
+    assert 'from sharewarez.utils.scan_lifecycle import restart_scan' in restart_route
+    assert 'job = restart_scan(job_id, created_by_id=current_user.id)' in restart_route
+    assert 'threading.Thread' not in restart_route
+    assert '@copy_current_request_context' not in restart_route
 
 
 def test_active_download_progress_uses_scoped_bar_styles_and_labels():
@@ -206,22 +206,27 @@ def test_active_download_progress_uses_scoped_bar_styles_and_labels():
     css = (THEME / "css/admin/admin_manage_downloads.css").read_text(encoding="utf-8")
 
     assert "admin_transfer_live.js" in template
-    assert "active-transfer-progress-label" in javascript
-    assert "expected_bytes_label" in javascript
-    assert "active-transfer-details" in javascript
-    assert ".active-transfer-details > span" in css
-    assert ".active-transfer-item div > span" not in css
+    fragment = Path("sharewarez/templates/admin/_delivery_results.html").read_text(encoding="utf-8")
+    assert 'metric.progress' in fragment
+    assert 'metric.current_speed' in fragment
+    assert 'metric.expected_bytes_label' in fragment
+    assert 'download-delivery/status' in javascript
+    assert 'region.contains(document.activeElement)' in javascript
+    assert '.active-transfer-details > span' in css
 
 
 def test_download_delivery_ui_explains_records_and_exposes_admin_controls():
     template = Path("sharewarez/templates/admin/admin_manage_downloads.html").read_text(encoding="utf-8")
-
-    assert "One row per HTTP delivery" in template
-    assert "Reusable access" in template
-    assert "Queue priority applies only while waiting for a transfer slot" in template
-    assert "download.cancel_transfer" in template
-    assert "download.clear_transfer_history" in template
-    assert "transfer.game or" in template
+    fragment = Path("sharewarez/templates/admin/_delivery_results.html").read_text(encoding="utf-8")
+    assert 'filters.tab_url(view)' in template
+    assert "One row per HTTP delivery" in fragment
+    assert "Reusable access" in fragment
+    assert "Queue priority applies only while waiting for a transfer slot" in fragment
+    assert "download.cancel_transfer" in fragment
+    assert "download.clear_transfer_history" in fragment
+    assert "Hide finished attempts" in fragment
+    assert 'data-transfer-id="{{ transfer.id }}"' in fragment
+    assert "transfer.game or" in fragment
 
 
 def test_pwa_assets_are_versioned_and_code_uses_network_first_updates():

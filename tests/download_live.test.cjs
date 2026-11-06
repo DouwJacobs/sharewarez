@@ -4,7 +4,7 @@ const fs = require('node:fs');
 const vm = require('node:vm');
 const path = require('node:path');
 
-function harness() {
+function harness(options = {}) {
     const timers = new Map(), listeners = {}, sources = [], statuses = [], renders = [];
     let counter = 0, polling = 0;
     class EventSource {
@@ -20,7 +20,7 @@ function harness() {
         setTimeout: (fn, delay) => { const id = ++counter; timers.set(id, {fn, delay}); return id; },
         clearTimeout: id => timers.delete(id)};
     vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../sharewarez/setup/default_theme/js/download_live.js'), 'utf8'), context);
-    const client = window.DownloadLive.connect({view: 'activity', poll: async () => { polling++; return {transfers: []}; },
+    const client = window.DownloadLive.connect({view: 'activity', ...options, poll: async () => { polling++; return {transfers: []}; },
         render: data => renders.push(data), status: value => statuses.push(value)});
     return {timers, sources, statuses, renders, document, listeners, client, ui: window.DownloadLive,
         polling: () => polling, async tick(delay) {
@@ -87,4 +87,21 @@ test('member updates retain server forms and never reload the page', () => {
     assert.doesNotMatch(script, /location\.reload|replaceChildren|innerHTML/);
     assert.match(script, /preventScroll:true/);
     assert.match(css, /\.downloads-page \.actions-cell \[data-action\]\[hidden\] \{ display: none !important; \}/);
+});
+
+
+test('filtered admin connections retain their own query on reconnect', async () => {
+    const first = harness({query: {user: 'Demo member', transfer_status: 'active', transfer_page: '2', per_page: '10'}});
+    const second = harness({query: {user: 'Other member', request_id: '42'}});
+    let url = new URL(first.sources[0].url, 'http://localhost');
+    assert.equal(url.searchParams.get('user'), 'Demo member');
+    assert.equal(url.searchParams.get('transfer_page'), '2');
+    assert.equal(url.searchParams.get('per_page'), '10');
+    assert.equal(url.searchParams.get('transfer_status'), 'active');
+    assert.equal(new URL(second.sources[0].url, 'http://localhost').searchParams.get('request_id'), '42');
+    first.sources[0].onerror();
+    await new Promise(setImmediate);
+    await first.tick(30000);
+    assert.equal(first.sources[1].url, first.sources[0].url);
+    first.client.close(); second.client.close();
 });

@@ -31,6 +31,10 @@ def stream(snapshotter, **kwargs):
     (scope(headers=[(b"host", b"localhost"), (b"origin", b"https://evil.example")]), 403),
     (scope(query_string=b"view=unknown"), 400),
     (scope(query_string=b"ids=invalid"), 400),
+    (scope(query_string=b"view=activity&request_id=-1"), 400),
+    (scope(query_string=b"view=activity&transfer_status=failed"), 400),
+    (scope(query_string=b"view=activity&transfer_page=0"), 400),
+    (scope(query_string=b"view=links&status=active"), 400),
 ])
 def test_rejects_invalid_boundary_before_database(request_scope, status):
     async def run():

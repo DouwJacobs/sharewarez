@@ -1,0 +1,116 @@
+{% from "partials/ui_components.html" import status_badge, empty_state %}
+{% if filters.view == 'activity' %}
+<section class="transfer-history" aria-labelledby="transfer-history-title">
+    <div class="active-transfer-heading">
+        <div><h2 id="transfer-history-title">Transfer attempts</h2><p>One row per HTTP delivery. Streamed bytes measure server-sent data, not confirmed browser disk writes.</p></div>
+    </div>
+    <form method="post" action="{{ url_for('download.clear_transfer_history') }}" class="transfer-history-actions" onsubmit="return confirm('Hide the {{ hide_count }} matching finished attempts from administrative history? Accounting and member evidence are retained.');">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        {% for key, value in filters.params().items() %}<input type="hidden" name="{{ key }}" value="{{ value }}">{% endfor %}
+        <input type="hidden" name="review_token" value="{{ hide_token }}">
+        <p>{{ hide_count }} finished attempt{{ '' if hide_count == 1 else 's' }} {{ 'matches' if hide_count == 1 else 'match' }} these filters across all pages. Hiding retains quota and member evidence.</p>
+        <button class="btn btn-secondary btn-sm" type="submit"{% if not hide_count %} disabled{% endif %}>Hide finished attempts</button>
+    </form>
+    {% if transfers %}
+    <div class="table-responsive">
+        <table class="table table-dark table-striped table-hover transfer-history-table">
+            <thead><tr><th>Started</th><th>User</th><th>File / game</th><th>Status / reason</th><th>Streamed</th><th>Ended</th><th>Action</th></tr></thead>
+            <tbody>{% for transfer in transfers %}
+                <tr data-transfer-id="{{ transfer.id }}">{% set metric = metrics[transfer.id] %}
+                    <td>{{ transfer.started_at|friendly_datetime }}</td><td>{{ transfer.user.name }}</td>
+                    <td class="file-name-cell"><strong>{{ transfer.filename }}</strong>{% if transfer.is_resumed %}<small>Resumed</small>{% endif %}<small>Attempt #{{ transfer.id }}{% if transfer.download_request_id %} · Link #{{ transfer.download_request_id }}{% endif %}</small>
+                        {% set game = transfer.game or (transfer.download_request.game if transfer.download_request else none) %}
+                        {% if game %}<a class="downloads-game-link" href="{{ url_for('games.game_details', game_uuid=game.uuid) }}">{{ game.name }}</a>{% else %}<span class="text-muted">Legacy record</span>{% endif %}
+                    </td>
+                    <td>{{ status_badge(transfer.status) }}{% if transfer.status != 'active' %}<small class="d-block">{{ transfer.end_reason_label }}</small>{% endif %}</td>
+                    <td>{{ metric.bytes_sent_label }}{% if metric.expected_bytes_label %}<small>of {{ metric.expected_bytes_label }}</small>{% endif %}{% if transfer.status == 'active' %}
+                        <small>{{ metric.progress ~ '%' if metric.progress is not none else 'Streaming' }} · {{ metric.elapsed_label }}</small>
+                        <small>Current {{ metric.current_speed|filesizeformat ~ '/s' if metric.current_speed is not none else '—' }} · Avg {{ metric.average_speed|filesizeformat ~ '/s' if metric.average_speed is not none else '—' }}</small>{% if metric.eta_seconds is not none %}<small>ETA {{ metric.eta_seconds|round|int }} s</small>{% endif %}{% endif %}</td>
+                    <td>{{ transfer.ended_at|friendly_datetime if transfer.ended_at else 'In progress' }}</td>
+                    <td>{% if transfer.status == 'active' %}<form method="post" action="{{ url_for('download.cancel_transfer', transfer_id=transfer.id) }}" onsubmit="return confirm('Stop this response?');">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        {% for key, value in filters.params().items() %}<input type="hidden" name="{{ key }}" value="{{ value }}">{% endfor %}
+                        <button class="btn btn-danger btn-sm" type="submit">Stop transfer</button></form>{% else %}<span class="text-muted">—</span>{% endif %}
+                    </td>
+                </tr>
+            {% endfor %}</tbody>
+        </table>
+    </div>
+    {% else %}<p class="active-transfer-empty">No transfer attempts match the current filters. A row is created when delivery starts.</p>{% endif %}
+    {% if pagination.pages > 1 %}
+    <nav class="sw-pagination" aria-label="Transfer history pagination">
+        {% if pagination.has_prev %}<a class="btn btn-secondary btn-sm" href="{{ filters.url(page=pagination.prev_num) }}">Previous</a>{% endif %}
+        <span>Page {{ pagination.page }} of {{ pagination.pages }}</span>
+        {% if pagination.has_next %}<a class="btn btn-secondary btn-sm" href="{{ filters.url(page=pagination.next_num) }}">Next</a>{% endif %}
+    </nav>
+    {% endif %}
+</section>
+{% else %}
+        <section class="download-request-history" aria-labelledby="download-requests-title">
+            <div class="active-transfer-heading"><div><p class="downloads-section-eyebrow">Reusable access</p><h2 id="download-requests-title">Download links</h2><small>Prepared links users can start again until expiry. Queue priority applies only while waiting for a transfer slot.</small></div></div>
+        {% if download_requests %}
+            <div class="downloads-bulk-bar" aria-label="Bulk download actions">
+                <span><strong id="bulkSelectedCount">0</strong> selected</span>
+                <button class="btn btn-secondary btn-sm" type="button" data-bulk-action="cancel" disabled>Cancel links</button>
+                <button class="btn btn-primary btn-sm" type="button" data-bulk-action="retry" disabled>Retry eligible links</button>
+                <button class="btn btn-danger btn-sm" type="button" data-bulk-action="delete" disabled>Delete links</button>
+                <a class="btn btn-secondary btn-sm ms-auto" href="{{ url_for('admin2.system_logs', event_type='download_api') }}"><i class="fas fa-clipboard-list" aria-hidden="true"></i> Audit log</a>
+            </div>
+            <div class="table-responsive"><table id="downloadsTable" class="admin_manage_downloads-table table table-dark table-striped">
+                <thead class="admin_manage_downloads-table-header">
+                    <tr class="admin_manage_downloads-tr-headings">
+                        <th><input type="checkbox" id="selectAllDownloads" aria-label="Select all requests on this page"></th>
+                        <th class="admin_manage_downloads-th-headings-2">User</th>
+                        <th class="admin_manage_downloads-th-headings-3">Content</th>
+                        <th class="admin_manage_downloads-th-headings-4">Status</th>
+                        <th>Queue priority</th>
+                        <th class="admin_manage_downloads-th-headings-6">Requested / expiry</th>
+                        <th class="admin_manage_downloads-th-headings-8">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="admin_manage_downloads-table-body">
+                    {% for request in download_requests %}
+                    <tr class="admin_manage_downloads-tr-data" data-download-id="{{ request.id }}" data-download-status="{{ request.status }}">
+                        <td><input type="checkbox" class="download-row-select" value="{{ request.id }}" aria-label="Select request {{ request.id }}"></td>
+                        <td class="admin_manage_downloads-td-data-2">{{ request.user.name }}</td>
+                        <td class="admin_manage_downloads-td-data-3">
+                            {% set content_label = request.content_title or (request.game_update.title if request.game_update else none) or request.game.name %}
+                            <span class="download-content-type download-content-type--{{ request.content_type or 'game' }}">{{ (request.content_type or 'game')|title }}</span>
+                            <strong class="download-content-title"><a class="downloads-game-link" href="{{ url_for('games.game_details', game_uuid=request.game_uuid) }}">{{ content_label }}<i class="fas fa-arrow-up-right-from-square downloads-game-link-icon" aria-hidden="true"></i></a></strong>
+                            {% if request.game_update and request.game_update.version %}<small>Version {{ request.game_update.version }}</small>{% endif %}
+                            {% if request.content_type and request.content_type != 'game' %}
+                            <a class="downloads-game-link" href="{{ url_for('games.game_details', game_uuid=request.game_uuid) }}">
+                                <i class="fas fa-gamepad" aria-hidden="true"></i><span>For {{ request.game.name }}</span>
+                            </a>
+                            {% endif %}
+                        </td>
+                        <td class="admin_manage_downloads-td-data-4">{{ status_badge(request.status) }}{% if request.status == 'failed' %}<small class="download-failure-reason">{% if not request.file_location %}Missing source location{% else %}Retry required{% endif %}</small>{% endif %}</td>
+                        <td>
+                            <select class="form-select form-select-sm download-priority-select" data-request-id="{{ request.id }}" aria-label="Queue priority for request {{ request.id }}">
+                                <option value="-10"{% if request.priority == -10 %} selected{% endif %}>Low</option>
+                                <option value="0"{% if request.priority == 0 %} selected{% endif %}>Normal</option>
+                                <option value="10"{% if request.priority == 10 %} selected{% endif %}>High</option>
+                            </select>
+                        </td>
+                        <td class="admin_manage_downloads-td-data-6">{{ request.request_time|friendly_datetime if request.request_time else 'N/A' }}<small>Expires {{ request.expires_at.strftime('%d %b %Y %H:%M UTC') if request.expires_at else 'Not available' }}</small></td>
+                        <td>
+                            <a class="btn btn-secondary btn-sm" href="{{ url_for('download.manage_downloads', view='activity', request_id=request.id, user=filters.user, per_page=filters.per_page) }}">View attempts</a>
+                            <button type="button" class="btn btn-danger btn-sm" onclick="showDeleteModal({{ request.id }})"><i class="fas fa-trash" aria-hidden="true"></i> Delete</button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table></div>
+            {% if pagination.pages > 1 %}
+            <nav class="sw-pagination" aria-label="Download links pagination">
+                {% if pagination.has_prev %}<a class="btn btn-secondary btn-sm" href="{{ filters.url(page=pagination.prev_num) }}">Previous</a>{% endif %}
+                <span>Page {{ pagination.page }} of {{ pagination.pages }}</span>
+                {% if pagination.has_next %}<a class="btn btn-secondary btn-sm" href="{{ filters.url(page=pagination.next_num) }}">Next</a>{% endif %}
+            </nav>
+            {% endif %}
+        {% else %}
+            {{ empty_state('No download requests', 'No requests match the current filters.' if filters.status or filters.user else 'New user download activity will appear here.') }}
+        {% endif %}
+        </section>
+
+{% endif %}

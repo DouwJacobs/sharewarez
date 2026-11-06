@@ -45,8 +45,8 @@ def test_representative_snapshot_costs(app, db_session, tmp_path):
         # One sample round: a long TTL avoids machine-speed-dependent cache misses.
         cache = SnapshotCache(ttl=60)
         _, shared = measure(lambda:[snapshot(app,scope,'activity',(),cache=cache) for scope in scopes])
-        assert shared['queries'] == 11  # Ten independent authorizations, one transfer query.
-        assert baseline['queries'] == 20
+        assert shared['queries'] == 12  # Ten authorizations, one bounded page query and one count.
+        assert baseline['queries'] == 30
         def old_inventory():
             archives = db.session.execute(select(DownloadArchive)).scalars().all()
             return sum(item.archive_bytes for item in archives if item.state == 'ready')

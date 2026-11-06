@@ -789,3 +789,21 @@ Retry submissions, polling fallback, terminal attempt reconciliation and the
 corrected semantic colors after live rendering. Buttons measure 42 px desktop /
 44 px mobile, with no document overflow (1265/375 client and scroll widths).
 Screenshot: member-states-mobile.jpg in the task artifact directory.
+### Admin Activity and Links (6 November 2026)
+
+Download delivery now uses bookmarkable Activity/Links navigation and one result
+surface. Filters belong to the active view. Duplicate section counts and the
+unfiltered active-monitor copy are removed. Activity rows identify their transfer,
+link where retained, Resumed state and terminal reason. Links shows expiry and
+View attempts. Hide finished attempts previews matching finished rows across all
+filtered pages and explains retained quota/evidence. Retry eligible links reports
+changed/skipped counts; bulk controls stay disabled with no selection.
+
+The filter region is flat within the shared surface; ordinary controls measure
+42 px desktop and 44 px at 390×844. Default/Ember Computer Use verified the 12 px
+mobile gutter, internal table scrollbars, no document overflow, keyboard/form
+navigation, scoped Back navigation, independent filtered tabs, terminal SSE and
+polling updates, and the centered reusable-link action dialog. Modal markup lives
+in the shared top-level modals block. Results replacement preserves active input,
+text selection, selected bulk rows and modal controls by deferring the refresh.
+See ADMIN_SCAN_DOWNLOAD_PROGRESS.md for database and browser evidence.

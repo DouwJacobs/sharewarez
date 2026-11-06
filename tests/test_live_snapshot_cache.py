@@ -30,3 +30,15 @@ def test_concurrent_readers_share_one_load():
     with ThreadPoolExecutor(max_workers=8) as executor:
         results = list(executor.map(lambda _: reader(), range(8)))
     assert calls == [1] and all(result == {'value':42} for result in results)
+
+
+
+def test_local_commit_invalidation_discards_even_unexpired_snapshots():
+    from sharewarez.live_snapshot_cache import invalidate_snapshots
+    cache = SnapshotCache(ttl=60)
+    current = [1]
+    assert cache.get('activity', lambda: current[0]) == 1
+    current[0] = 2
+    assert cache.get('activity', lambda: current[0]) == 1
+    invalidate_snapshots()
+    assert cache.get('activity', lambda: current[0]) == 2

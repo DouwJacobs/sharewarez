@@ -70,8 +70,8 @@ ADMIN_NAVIGATION = (
                 'keywords': 'issues bugs reports problems support', 'feature_flag': 'enable_game_issues',
             },
             {
-                'key': 'downloads', 'label': 'Download activity',
-                'description': 'Monitor transfers and manage download requests.',
+                'key': 'downloads', 'label': 'Download delivery',
+                'description': 'Review transfer activity and manage reusable download links.',
                 'icon': 'fa-download', 'endpoint': 'download.manage_downloads',
                 'keywords': 'downloads delivery transfers queue files',
             },

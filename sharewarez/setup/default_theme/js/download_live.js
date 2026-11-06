@@ -2,7 +2,7 @@
 (() => {
     'use strict';
     window.DownloadLive = {
-        connect({view, ids = [], poll, render, status}) {
+        connect({view, ids = [], query = {}, poll, render, status}) {
             let source = null, timer = null, retry = null, watchdog = null;
             let controller = null, stopped = false, generation = 0, live = false;
             let delay = 2000;
@@ -55,7 +55,7 @@
                 report('Connecting live updates…');
                 if (!window.EventSource) { fallback(); return; }
                 const version = generation;
-                const params = new URLSearchParams({view, ids: ids.join(',')});
+                const params = new URLSearchParams({...query, view, ids: ids.join(',')});
                 try { source = new EventSource(`/api/live/downloads?${params}`); }
                 catch (_) { fallback(); return; }
                 armWatchdog(5000);

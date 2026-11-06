@@ -5,6 +5,17 @@ import threading
 import time
 
 
+_generation = 0
+_generation_lock = threading.Lock()
+
+
+def invalidate_snapshots():
+    """Invalidate process snapshots after local commits or PostgreSQL signals."""
+    global _generation
+    with _generation_lock:
+        _generation += 1
+
+
 class SnapshotCache:
     def __init__(self, ttl=0.8, capacity=32, clock=time.monotonic):
         self.ttl, self.capacity, self.clock = ttl, capacity, clock
@@ -16,6 +27,7 @@ class SnapshotCache:
         # Serialize misses to avoid one query burst per connected browser. This
         # runs in the background executor, never on the ASGI event loop.
         with self._lock:
+            key = (_generation, key)
             now = self.clock()
             cached = self._entries.get(key)
             if cached is not None and now - cached[0] < self.ttl:

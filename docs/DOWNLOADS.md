@@ -78,8 +78,10 @@ from download links:
   priority. Priority matters only while a delivery is waiting for a free slot.
 - A **transfer attempt** (`DownloadTransfer`) is one HTTP response started from
   that link. It owns the live heartbeat, streamed bytes, start/end times, and
-  final status. Administrators can clear finished attempt history without
-  deleting members' reusable links.
+  final status. **Hide finished attempts** hides only finished rows matching the
+  active Activity filters, across all pages. The reviewed count and filters must
+  match the POST. Rows remain in PostgreSQL for quota, statistics and member
+  recovery evidence; active attempts are excluded. This is not a retention purge.
 
 Each transfer stores its own game identifier so history remains attributable
 after its reusable link is deleted. Older records whose links were already
@@ -213,3 +215,22 @@ current actions; it does not implicitly renew an expired or active link.
 The legacy check_download_status response retains stored status for compatibility
 and includes a canonical download object. The page and current status API use
 canonical state/actions, and the summary badges count the current page.
+## Administrative views
+
+`/admin/manage-downloads?view=activity` shows one row per HTTP attempt; `view=links`
+shows reusable links. Activity accepts username, transfer status, link ID and
+`transfer_page`; Links accepts username, stored link status, content type and
+`page`. Both retain `per_page` (10–100, default 25). Username is a literal substring,
+including `%` and `_`. Tabs preserve username/row count and reset pagination.
+View attempts carries the link ID. Back restores the full prior URL.
+
+Legacy links without `view` infer Activity when `transfer_status` or
+`transfer_page` is present, before considering link-only `status`, `content_type`
+or `page`. No filters defaults to Activity. Irrelevant filters do not cross views.
+
+Migration `20261106_35` adds nullable `admin_history_hidden_at`; historical rows
+remain visible. Apply migrations before running this version. Hiding requires a
+CSRF token and an actor-bound, one-hour review token for the complete normalized
+filter/page and count. Missing/tampered filters are rejected; a changed count
+returns 409 and requires a new review. The legacy `/clear` URL now hides rather
+than deleting attempts. Permanent retention remains a separate policy decision.

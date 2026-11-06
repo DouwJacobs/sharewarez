@@ -492,3 +492,73 @@ member-states-mobile.jpg in the task visualization folder.
 
 T09-T11 remain open. Next: separate administrator Activity/Links views and hide
 finished attempts without changing quota accounting.
+## 6 November 2026 — T09 admin delivery views and retained accounting
+
+Implemented separate Activity (default) and Links views. A shared normalized query
+contract in `utils/admin_delivery.py` owns legacy URL inference, literal username
+search, view-specific filters, deterministic sorting and 10–100 row pagination.
+Transfer filters win mixed legacy URLs. Tabs retain username/per-page and reset
+page; View attempts carries the link ID; browser Back restores the prior query.
+Activity owns one identified row per attempt, live metrics, Resumed, terminal
+reason and Stop transfer. Links owns stored state, expiry, queue priority and
+reusable-link actions. Bulk actions start disabled and report changed/skipped.
+Navigation, dashboard destinations and the settings shortcut use Download delivery.
+
+Migration `20261106_35` adds nullable `admin_history_hidden_at`. The retained legacy
+clear URL now hides finished attempts matching the current Activity filters,
+across all pages, using the same predicate for preview and update. CSRF plus an
+actor-bound signed filter/count review prevents accidental widening; stale counts
+roll back with 409. Active/unknown-outcome attempts are excluded. Accounting,
+statistics and member latest-attempt queries continue to use the retained rows.
+Single-link administrator deletion now shares the owner lock with admission so a
+transfer committed while deletion waits prevents deletion.
+
+HTML, SSE and polling share the same scoped page query. Live events re-fetch one
+bounded Jinja fragment, including actual terminal outcomes and fresh reviewed hide
+counts; no global active list bypasses filters. Focus, selections, checked bulk
+rows and open dialogs defer replacement. Snapshot keys include normalized filters,
+page, view/role and member identity where required; local commits and PostgreSQL
+signals invalidate the process cache. Admin fragment requests add per-viewer work;
+the September performance figures are historical. Current snapshot cost coverage
+checks 30 unshared versus 12 shared queries for ten independently authorized
+viewers. Production capacity remeasurement remains part of release validation.
+
+### Verification
+
+The two initial regressions failed on mixed link/attempt rendering and unreviewed
+history deletion. Final isolated PostgreSQL verification passed **187 Python tests**
+across admin routes (48), SSE (19), snapshot cache (3), download APIs (18), migrations
+(13), UI contracts (20), live events (6), member routes (19), snapshot performance
+(1), navigation (3) and canonical states (37). JavaScript transport checks: **8**.
+Required four-file Mypy, Ruff, 95-template accessibility and diff checks passed.
+Old UI assertions expecting the removed web-owned restart thread and scan progress
+column were updated to the durable restart/Status contract introduced by T03.
+
+Migration tests cover populated revision 34 upgrade, retained reservation/reason,
+null default, downgrade/re-upgrade, metadata-created columns and one current head.
+Filter tests cover both pagers, legacy precedence, literal wildcard input, malformed
+filters, role guards, stale/tampered/missing preview data, terminal transitions and
+two simultaneous filter/cache scopes. A real quota admission check returns the
+same `(None, 133, 200)` before/after hiding, with a second owner and active attempt
+preserved; latest member recovery evidence remains queryable. Both admin deletion
+routes also retain a link when an admission commits while they await its owner lock.
+
+Computer Use exercised the disposable ASGI fixture on 5013 and a polling-only
+Flask fixture on 5014, both using `gamelibrary_t09_preview_test`. One link showed
+two attempt IDs in Activity and one row in Links; View attempts/Back retained scope.
+The open ASGI page reconciled an active attempt to Interrupted/peer disconnect,
+while an unmatched-username tab stayed empty. The polling-only page independently
+reconciled a legacy attempt to Interrupted/source-read failure. A real filtered
+hide POST hid two demo-member attempts; SQL retained both rows and **580245** quota
+bytes, plus the other member's **555** bytes and visible history. The native browser
+confirmation required keyboard confirmation through Computer Use after the browser
+API stalled; the page and SQL verified completion. No production state was used.
+Default desktop and Ember 390×844 checks verified 42/44 px controls, one 12 px mobile
+gutter, table-owned horizontal scrolling, bulk disabled/enabled states and a centered
+link-action dialog. Temporary viewport override was reset. Artifacts:
+`delivery-activity-desktop.jpg`, `delivery-activity-mobile.jpg`,
+`delivery-history-hidden.jpg`, `delivery-polling-terminal.jpg` in the task directory.
+
+T10 settings ownership and T11 integrated journeys remain. The overall goal stays
+active; release/deployment and the previously recorded slow-mount staging check
+remain outside this local implementation work.

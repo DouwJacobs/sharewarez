@@ -6,6 +6,8 @@ import json
 import logging
 import time
 from urllib.parse import parse_qs, urlsplit
+from werkzeug.datastructures import MultiDict
+from sharewarez.utils.admin_delivery import DeliveryFilters
 
 from sqlalchemy.engine import make_url
 from werkzeug.sansio.utils import host_is_trusted
@@ -82,11 +84,13 @@ class DownloadEventStream:
         try:
             if len(scope.get("query_string", b"")) > 4096:
                 raise ValueError()
-            query = parse_qs(scope.get("query_string", b"").decode("ascii"), max_num_fields=4)
+            query = parse_qs(scope.get("query_string", b"").decode("ascii"), max_num_fields=12)
             view = query.get("view", ["downloads"])[0]
             ids = tuple(set(filter(None, query.get("ids", [""])[0].split(","))))
-            if view not in {"downloads", "activity", "cache"} or len(ids) > 100 or any(len(item) > 36 for item in ids):
+            if view not in {"downloads", "activity", "links", "cache"} or len(ids) > 100 or any(len(item) > 36 for item in ids):
                 raise ValueError()
+            if view in {'activity', 'links'}:
+                DeliveryFilters.parse(MultiDict((key, value) for key, values in query.items() for value in values))
             if view == "downloads":
                 ids = tuple(int(item) for item in ids)
                 if any(item <= 0 for item in ids):
@@ -112,7 +116,7 @@ class DownloadEventStream:
             return
         finally:
             self._initializing -= 1
-        topics = {"transfers", "downloads", "archives"} if view == "downloads" else (
+        topics = {"transfers", "downloads", "archives"} if view in {"downloads", "links"} else (
             {"transfers"} if view == "activity" else {"archives", "transfers"}
         )
         try:

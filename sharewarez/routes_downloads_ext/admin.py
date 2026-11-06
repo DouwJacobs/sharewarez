@@ -1,79 +1,62 @@
-from flask import render_template, redirect, url_for, flash, request, jsonify
+from flask import render_template, redirect, url_for, flash, request, jsonify, current_app, abort
 from datetime import datetime, timezone
 from flask_login import current_user, login_required
 from sharewarez.forms import CsrfProtectForm
-from sharewarez.models import DownloadQueueEntry, DownloadRequest, DownloadTransfer, User
-from sqlalchemy import and_, delete, select, update
+from sharewarez.models import DownloadQueueEntry, DownloadRequest, DownloadTransfer
+from sqlalchemy import select, update
 from sqlalchemy.orm import joinedload
 from sharewarez.utils.auth import admin_required
 from sharewarez.utils.event_logging import log_system_event
-from sharewarez.utils.functions import format_duration, format_size
 from sharewarez import db
 from sharewarez.live_snapshots import transfer_payload
+from itsdangerous import URLSafeTimedSerializer, BadSignature
+from sharewarez.utils.admin_delivery import DeliveryFilters, delivery_page, finished_count, finished_query
+from sharewarez.live_snapshot_cache import invalidate_snapshots
+from sharewarez.utils.download_state import lock_download
 from . import download_bp
 
 @download_bp.route('/admin/manage-downloads', methods=['GET', 'POST'])
 @login_required
 @admin_required
 def manage_downloads():
-    page = max(1, request.args.get('page', 1, type=int))
-    transfer_page = max(1, request.args.get('transfer_page', 1, type=int))
-    per_page = min(max(10, request.args.get('per_page', 25, type=int)), 100)
-    status_filter = request.args.get('status', '').strip().lower()
-    user_filter = request.args.get('user', '').strip()
-    content_type_filter = request.args.get('content_type', '').strip().lower()
-    transfer_status_filter = request.args.get('transfer_status', '').strip().lower()
-    filters = []
-    if status_filter:
-        filters.append(DownloadRequest.status == status_filter)
-    if user_filter:
-        filters.append(User.name.ilike(f'%{user_filter}%'))
-    if content_type_filter in {'game', 'update', 'extra'}:
-        filters.append(DownloadRequest.content_type == content_type_filter)
-    query = (
-        select(DownloadRequest)
-        .options(
-            joinedload(DownloadRequest.game),
-            joinedload(DownloadRequest.user),
-            joinedload(DownloadRequest.game_update),
-            joinedload(DownloadRequest.game_extra),
-        )
-        .join(User, DownloadRequest.user_id == User.id)
-        .order_by(DownloadRequest.request_time.desc(), DownloadRequest.id.desc())
-    )
-    if filters:
-        query = query.where(and_(*filters))
-    pagination = db.paginate(query, page=page, per_page=per_page, error_out=False)
+    return render_template('admin/admin_manage_downloads.html', **delivery_context())
 
-    transfer_query = (
-        select(DownloadTransfer)
-        .options(
-            joinedload(DownloadTransfer.user),
-            joinedload(DownloadTransfer.game),
-            joinedload(DownloadTransfer.download_request).joinedload(DownloadRequest.game),
-        )
-        .join(User, DownloadTransfer.user_id == User.id)
-        .order_by(DownloadTransfer.started_at.desc(), DownloadTransfer.id.desc())
-    )
-    transfer_filters = []
-    if user_filter:
-        transfer_filters.append(User.name.ilike(f'%{user_filter}%'))
-    if transfer_status_filter in {'active', 'completed', 'interrupted', 'cancelled'}:
-        transfer_filters.append(DownloadTransfer.status == transfer_status_filter)
-    if transfer_filters:
-        transfer_query = transfer_query.where(and_(*transfer_filters))
-    transfer_pagination = db.paginate(
-        transfer_query, page=transfer_page, per_page=per_page, error_out=False
-    )
-    for transfer in transfer_pagination.items:
-        transfer.formatted_bytes_sent = format_size(transfer.bytes_sent) if transfer.bytes_sent else '0 B'
 
-    return render_template('admin/admin_manage_downloads.html', download_requests=pagination.items,
-                           pagination=pagination, status_filter=status_filter, user_filter=user_filter,
-                           content_type_filter=content_type_filter,
-                           transfer_status_filter=transfer_status_filter,
-                           transfer_pagination=transfer_pagination,
-                           transfers=transfer_pagination.items)
+def parsed_filters(args):
+    try:
+        return DeliveryFilters.parse(args)
+    except (ValueError, TypeError):
+        abort(400, 'Invalid delivery filters')
+
+
+def history_signer():
+    return URLSafeTimedSerializer(current_app.secret_key, salt='admin-hide-finished-attempts')
+
+
+def delivery_context():
+    filters = parsed_filters(request.args)
+    pagination = delivery_page(filters)
+    context = dict(filters=filters, pagination=pagination,
+                   download_requests=pagination.items if filters.view == 'links' else [],
+                   transfers=pagination.items if filters.view == 'activity' else [])
+    if filters.view == 'activity':
+        now = datetime.now(timezone.utc)
+        context['metrics'] = {item.id: transfer_payload(item, now, admin=True) for item in pagination.items}
+        count = finished_count(filters)
+        context.update(hide_count=count, hide_token=history_signer().dumps(
+            dict(actor=current_user.id, filters=filters.params(), count=count)))
+    return context
+
+
+@download_bp.get('/admin/download-delivery/status')
+@login_required
+@admin_required
+def delivery_status():
+    context = delivery_context()
+    response = jsonify(html=render_template('admin/_delivery_results.html', **context),
+                       total=context['pagination'].total, view=context['filters'].view)
+    response.headers['Cache-Control'] = 'no-store'
+    return response
 
 
 @download_bp.route('/admin/download-transfers/<int:transfer_id>/cancel', methods=['POST'])
@@ -83,6 +66,7 @@ def cancel_transfer(transfer_id):
     form = CsrfProtectForm()
     if not form.validate_on_submit():
         return jsonify({'message': 'Invalid request'}), 400
+    filters = parsed_filters(request.form)
     now = datetime.now(timezone.utc)
     result = db.session.execute(
         update(DownloadTransfer)
@@ -100,6 +84,7 @@ def cancel_transfer(transfer_id):
         )
     )
     db.session.commit()
+    invalidate_snapshots()
     if result.rowcount:
         log_system_event(
             f'Administrator cancelled download transfer {transfer_id}',
@@ -110,7 +95,7 @@ def cancel_transfer(transfer_id):
         flash('Transfer attempt not found.', 'error')
     else:
         flash('Only active transfers can be cancelled.', 'warning')
-    return redirect(url_for('download.manage_downloads'))
+    return redirect(filters.url())
 
 
 @download_bp.route('/admin/download-transfers/clear', methods=['POST'])
@@ -120,17 +105,32 @@ def clear_transfer_history():
     form = CsrfProtectForm()
     if not form.validate_on_submit():
         return jsonify({'message': 'Invalid request'}), 400
-    result = db.session.execute(
-        delete(DownloadTransfer).where(DownloadTransfer.status != 'active')
-    )
+    filters = parsed_filters(request.form)
+    if filters.view != 'activity' or not all(key in request.form for key in filters.params()):
+        abort(400, 'Review the exact activity filters before hiding attempts')
+    try:
+        reviewed = history_signer().loads(request.form.get('review_token', ''), max_age=3600)
+    except BadSignature:
+        abort(400, 'Review the matching count before hiding attempts')
+    if reviewed.get('actor') != current_user.id or reviewed.get('filters') != filters.params():
+        abort(400, 'The reviewed filters have changed')
+    result = db.session.execute(update(DownloadTransfer).where(
+        DownloadTransfer.id.in_(finished_query(filters)),
+        DownloadTransfer.admin_history_hidden_at.is_(None),
+        DownloadTransfer.status.in_(('completed', 'interrupted', 'cancelled')),
+    ).values(admin_history_hidden_at=datetime.now(timezone.utc)))
     count = max(result.rowcount or 0, 0)
+    if count != reviewed.get('count'):
+        db.session.rollback()
+        abort(409, 'Matching history changed; reload and review the count again')
     db.session.commit()
+    invalidate_snapshots()
     log_system_event(
-        f'Administrator cleared {count} finished download transfer records',
+        f'Administrator {current_user.id} hid {count} finished download attempts',
         event_type='download_api', event_level='information',
     )
-    flash(f'Cleared {count} transfer attempt record(s).', 'success')
-    return redirect(url_for('download.manage_downloads'))
+    flash(f'Hidden {count} finished attempt(s). Transfer and quota records retained.', 'success')
+    return redirect(filters.url())
 
 
 @download_bp.route('/admin/active-transfers')
@@ -159,7 +159,7 @@ def delete_download_request(request_id):
     """
     Delete a download request via admin interface.
     """
-    download_request = db.session.get(DownloadRequest, request_id)
+    download_request = lock_download(request_id)
     if not download_request:
         flash('Download request not found.', 'error')
         return redirect(url_for('download.manage_downloads'))
@@ -178,6 +178,7 @@ def delete_download_request(request_id):
     log_system_event('admin_download', f'Admin deleting download request {request_id}', 'info')
     db.session.delete(download_request)
     db.session.commit()
+    invalidate_snapshots()
 
     flash('Download request deleted.', 'success')
     return redirect(url_for('download.manage_downloads'))
@@ -203,6 +204,7 @@ def update_download_priority(request_id):
         .values(priority=priority)
     )
     db.session.commit()
+    invalidate_snapshots()
     log_system_event(
         f'Admin changed download request {request_id} priority to {priority}',
         event_type='download_api',

@@ -384,3 +384,11 @@
 @media (max-width: 768px) {
     .downloads-page .downloads-table tr[data-transfer-active="true"] .actions-cell { display: none; }
 }
+.downloads-page .delivery-tabs { margin-bottom: 1rem; }
+.downloads-page .transfer-history-actions { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem; margin-bottom: 1rem; }
+.downloads-page .transfer-history-actions p { flex: 1 1 22rem; margin: 0; }
+.downloads-page #deliveryResults td small { display: block; color: var(--theme-text-secondary, var(--text-light)); }
+.downloads-page #deliveryResults td:last-child { min-width: 9rem; }
+.downloads-page #deliveryResults td:last-child .btn { margin: .15rem; }
+
+.downloads-page .downloads-filter-bar { padding: .5rem 0 1.25rem; border: 0; border-bottom: 1px solid var(--theme-border-color, var(--border-light)); border-radius: 0; background: transparent; }

@@ -1,6 +1,9 @@
 """Authorized, read-only snapshots shared by live download transports."""
 
 from datetime import datetime, timezone
+from urllib.parse import parse_qsl
+from werkzeug.datastructures import MultiDict
+from sharewarez.utils.admin_delivery import DeliveryFilters, delivery_page
 
 from flask import Request
 from sqlalchemy import select, func
@@ -78,7 +81,7 @@ def authenticate(app, scope, view):
 
 
 def transfer_payload(transfer, now, *, admin=False):
-    elapsed = max(0, (now - transfer.started_at).total_seconds())
+    elapsed = max(0, ((transfer.ended_at or now) - transfer.started_at).total_seconds())
     sent = transfer.bytes_sent
     expected = transfer.expected_response_bytes
     if expected is None:
@@ -116,24 +119,37 @@ def snapshot(app, scope, view, ids, *, cache=None):
         user_id = user.id
         # Release the authentication transaction before waiting for the cache lock.
         db.session.remove()
-        key = (view, user_id if view == "downloads" else None, tuple(sorted(ids)))
-        loader = lambda: snapshot_data(view, ids, user_id)
+        filters = None
+        if view in {'activity', 'links'}:
+            args = MultiDict(parse_qsl(scope.get('query_string', b'').decode('ascii'), keep_blank_values=True))
+            args['view'] = view
+            filters = DeliveryFilters.parse(args)
+        key = (view, user_id if view == "downloads" else None, user.role, filters, tuple(sorted(ids)))
+        loader = lambda: snapshot_data(view, ids, user_id, filters=filters)
         data = cache.get(key, loader) if cache is not None else loader()
         return {**data, "user_id": user_id}
 
 
-def snapshot_data(view, ids, user_id):
+def snapshot_data(view, ids, user_id, *, filters=None):
     now = datetime.now(timezone.utc)
     result = {"view": view, "server_time": now.isoformat()}
-    if view in {"downloads", "activity"}:
-        query = select(DownloadTransfer).where(DownloadTransfer.status == "active")
-        if view == "downloads":
-            query = query.where(DownloadTransfer.user_id == user_id, DownloadTransfer.download_request_id.in_(ids))
+    if view in {'activity', 'links'}:
+        filters = filters or DeliveryFilters(view=view)
+        pagination = delivery_page(filters)
+        result.update(total=pagination.total, page=pagination.page, pages=pagination.pages,
+                      filters=filters.params(), transfers_truncated=False)
+        if view == 'activity':
+            result['transfers'] = [transfer_payload(item, now, admin=True) for item in pagination.items]
         else:
-            query = query.options(joinedload(DownloadTransfer.user))
-        transfers = db.session.execute(query.order_by(DownloadTransfer.id).limit(1001)).scalars().all()
-        result["transfers_truncated"] = len(transfers) > 1000
-        result["transfers"] = [transfer_payload(item, now, admin=view == "activity") for item in transfers[:1000]]
+            result['links'] = [{'id': item.id, 'status': item.status, 'priority': item.priority}
+                               for item in pagination.items]
+    if view == 'downloads':
+        transfers = db.session.execute(select(DownloadTransfer).where(
+            DownloadTransfer.status == 'active', DownloadTransfer.user_id == user_id,
+            DownloadTransfer.download_request_id.in_(ids),
+        ).order_by(DownloadTransfer.id).limit(1001)).scalars().all()
+        result['transfers_truncated'] = len(transfers) > 1000
+        result['transfers'] = [transfer_payload(item, now) for item in transfers[:1000]]
     if view == "downloads":
         from sharewarez.utils.download_cache import archive_policy
         downloads = db.session.execute(select(DownloadRequest).options(joinedload(DownloadRequest.archive)).where(

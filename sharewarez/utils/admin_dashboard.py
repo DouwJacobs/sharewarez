@@ -76,7 +76,7 @@ def get_admin_dashboard_context():
         {
             'label': 'Transfers', 'value': active_transfers,
             'detail': 'active now', 'icon': 'fa-download',
-            'url': url_for('download.manage_downloads'),
+            'url': url_for('download.manage_downloads', view='activity', transfer_status='active'),
             'tone': 'primary' if active_transfers else 'neutral',
         },
         {
@@ -134,7 +134,7 @@ def get_admin_dashboard_context():
         attention.append(_attention_item(
             'Download', content_name,
             download.status.title(),
-            url_for('download.manage_downloads', status=download.status),
+            url_for('download.manage_downloads', view='links', status=download.status),
             download.request_time, 'fa-download', 'danger',
         ))
 

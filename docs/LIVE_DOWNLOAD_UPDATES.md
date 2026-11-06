@@ -1,6 +1,6 @@
 # Live download updates
 
-The member Downloads page, administrator transfer monitor and cache inventory use
+The member Downloads page, administrator Activity/Links views and cache inventory use
 authenticated Server-Sent Events at `/api/live/downloads`. The ordinary Flask/Jinja
 pages and CSRF-protected actions remain authoritative. There is no Redis, WebSocket
 server or additional service container.
@@ -27,7 +27,7 @@ server or additional service container.
   with a fresh snapshot; browser back/forward restoration reconnects too.
 - Every snapshot verifies the signed session and current account state/role.
   Member streams always filter by owner, including when an admin visits Downloads.
-  Activity and cache streams require admin permission. Revocation closes a stream.
+  Activity, Links and cache streams require admin permission. Revocation closes a stream.
 - Default limits are 100 admitted streams and four per user **per web process**,
   with at most 16 concurrent initializations. Multiply per-process limits by the
   configured web-worker count. Slow sends time out after ten seconds.
@@ -48,13 +48,19 @@ to infer download resume positions.
 
 Identical data queries are shared for up to 0.8 seconds within one web process,
 with 32 LRU entries. Authorization is never cached: it runs before every access.
-Member data keys include the owner ID and visible request IDs; admin datasets are
-shared only after verifying the admin role. Background-thread cache misses are
+Member data keys include the owner ID and visible request IDs; admin keys also include the role, normalized view filters and pagination.
+Equivalent admin datasets share only after independent authorization. Local
+mutations and PostgreSQL change signals invalidate process snapshots. Background-thread cache misses are
 serialized to avoid a query burst. No database session remains open while sending
 an SSE response or waiting for the next signal.
 
-Transfer snapshots cap at 1,000 active attempts and flag truncation; the paginated
-admin transfer-history table remains available for the complete records. Cache
+Member transfer snapshots cap at 1,000 active attempts and flag truncation. Admin
+Activity/Links snapshots use the same normalized 10–100 row query and sort as the
+page and `/admin/download-delivery/status` fallback. A live event triggers one
+bounded, non-overlapping fragment refresh so terminal outcomes replace active
+controls without guessing from disappearance. No global active rows are appended
+to filtered pages. Focus, text selection, checked bulk rows and an open modal defer
+fragment replacement until a subsequent refresh. Cache
 and member subscriptions accept at most 100 visible row IDs. Inventory rows stay
 in place, with an explicit refresh hint when the inventory count changes, rather
 than silently reordering a page with unsaved controls.
@@ -84,7 +90,7 @@ round stable on slower test machines; production uses 0.8 seconds. The inventory
 baseline is the previous row-loading/summing pattern; its minimal version excludes
 policy/health work, so the aggregate comparison includes more work, not less.
 
-Healthy SSE replaces repeating monitor HTTP requests with one open connection and
+For the original monitor implementation, healthy SSE replaced repeating HTTP requests with one open connection and
 approximately one-second changes. Idle snapshots happen about every 16 seconds
 instead of the old admin monitor's two-second polls. Active refresh frequency is
 higher, so a single busy viewer can perform more database work than before; shared
@@ -133,3 +139,16 @@ The browser previews use synthetic transfer metadata, not a 50 GB download.
 Real WAN interruptions, the production reverse proxy and custom/light themes
 still require staging checks before deployment. No image publication or remote
 source push is part of this implementation verification.
+
+
+### November 2026 admin reconciliation
+
+Activity/Links now fetch the bounded server-rendered results fragment after each
+live snapshot, and use the same endpoint for fallback polling. This preserves
+Jinja escaping, CSRF forms, ordering, pagination, reasons and reviewed hide counts
+without duplicating the action markup in JavaScript. Each live event therefore
+adds a bounded HTTP request per viewer; the September measurement above is
+historical and does not measure this revised rendering path. The updated local
+cost regression expects 30 queries for ten unshared page snapshots and 12 for ten
+shared snapshots (authorization on every call plus page/count), with at most 25
+rows in the default page. Re-measure production capacity before release.
