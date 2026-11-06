@@ -17,7 +17,7 @@ from sqlalchemy.exc import IntegrityError
 from werkzeug.utils import secure_filename
 
 from sharewarez import db
-from sharewarez.metadata_files import is_local_metadata_filename
+from sharewarez.utils.download_sources import source_entries
 from sharewarez.models import DownloadArchive, DownloadRequest, DownloadTransfer, GlobalSettings
 from sharewarez.utils.security import get_allowed_base_directories, is_safe_path
 
@@ -191,30 +191,10 @@ def build_source_manifest(source_path: str, settings_record=None) -> tuple[str, 
         raise ArchiveCacheError(message or 'Archive source is outside allowed storage.', 'unsafe_source')
 
     excluded = _excluded_folder_names(settings_record)
-    entries = []
-    for root, dirs, files in os.walk(source, followlinks=False):
-        root_path = Path(root)
-        dirs[:] = sorted(
-            name for name in dirs
-            if name.lower() not in excluded and not (root_path / name).is_symlink()
-        )
-        for name in sorted(files):
-            if is_local_metadata_filename(name):
-                continue
-            path = root_path / name
-            if path.is_symlink() or not path.is_file():
-                continue
-            resolved = path.resolve()
-            if source not in resolved.parents:
-                raise ArchiveCacheError('Archive entry escaped its source directory.', 'unsafe_source_entry')
-            stat = resolved.stat()
-            entries.append({
-                'relative_path': resolved.relative_to(source).as_posix(),
-                'path': str(resolved),
-                'size': stat.st_size,
-                'mtime_ns': stat.st_mtime_ns,
-            })
-    entries.sort(key=lambda item: item['relative_path'].encode('utf-8'))
+    try:
+        entries = source_entries(str(source), excluded)
+    except (OSError, ValueError) as exc:
+        raise ArchiveCacheError('Archive source could not be fully enumerated.', 'source_unreadable') from exc
     canonical = {
         'version': ARCHIVE_FORMAT_VERSION,
         'source': str(source),

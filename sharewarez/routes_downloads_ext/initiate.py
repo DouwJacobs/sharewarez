@@ -1,300 +1,76 @@
-import os
 import re
-from datetime import datetime, timezone
-from flask import redirect, url_for, flash, current_app, abort
-from flask_login import login_required, current_user
-from sqlalchemy.exc import SQLAlchemyError
+
+from flask import abort, current_app, flash, redirect, render_template, request, url_for
+from flask_login import current_user, login_required
+from flask_wtf import FlaskForm
 from sqlalchemy import select
-from sharewarez.models import Game, DownloadRequest, GameUpdate, GameExtra, GlobalSettings
-from sharewarez.metadata_files import is_local_metadata_filename
-from sharewarez.utils.game_core import get_game_by_uuid
-from sharewarez.utils.security import is_safe_path, get_allowed_base_directories
-from sharewarez.utils.filename import sanitize_filename
-from sharewarez.utils.download_limits import calculate_download_expiry, expire_download_requests
-from sharewarez.utils.download_cache import request_resumable_archive
+
 from sharewarez import db
+from sharewarez.models import Game, GameExtra, GameUpdate
+from sharewarez.utils.download_creation import create_or_reuse_download, validate_download_source
 from sharewarez.utils.event_logging import log_system_event
-from sharewarez.routes_games_ext.details import get_path_size
 from . import download_bp
 
-@download_bp.route('/download_game/<game_uuid>', methods=['GET'])
+
+def _validate_uuid(value):
+    if not re.fullmatch(r'[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}', value, re.IGNORECASE):
+        abort(400)
+
+
+def _initiate(game, content_type='game', record=None):
+    form = FlaskForm()
+    if request.method == 'POST' and not form.validate_on_submit():
+        abort(400)
+    source = game.full_disk_path if record is None else record.file_path
+    try:
+        validate_download_source(source)
+        if request.method in {'GET', 'HEAD'}:
+            title = game.name if record is None else (getattr(record, 'title', None) or getattr(record, 'name', None) or game.name)
+            return render_template('download_confirm.html', form=form, game=game, content_title=title)
+        link, created = create_or_reuse_download(current_user.id, game, content_type=content_type, record=record)
+        db.session.commit()
+    except ValueError as exc:
+        db.session.rollback()
+        flash(str(exc), 'error')
+        return redirect(url_for('download.downloads'))
+    except Exception:
+        db.session.rollback()
+        current_app.logger.exception('Download initiation failed for game %s', game.uuid)
+        flash('The download could not be prepared. Ask an administrator to check its source and download cache.', 'error')
+        return redirect(url_for('download.downloads'))
+    log_system_event(f'User {current_user.id} {"created" if created else "reopened"} download request {link.id}', event_type='audit')
+    if link.status == 'available':
+        return redirect(url_for('download.download_zip', download_id=link.id))
+    if link.status == 'processing':
+        flash('Preparing a resumable download. You can leave this page and return later.', 'info')
+    else:
+        flash('Manage this existing link from Downloads to renew or retry it.', 'info')
+    return redirect(url_for('download.downloads'))
+
+
+@download_bp.route('/download_game/<game_uuid>', methods=['GET', 'POST'])
 @login_required
 def download_game(game_uuid):
-    expire_download_requests(current_user.id)
-    # Validate UUID format
-    if not re.match(r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$', game_uuid, re.IGNORECASE):
-        log_system_event(f"Invalid game UUID format attempted: {game_uuid[:50]}", event_type='security', event_level='warning')
-        abort(400)
-    
-    game = db.session.execute(select(Game).filter_by(uuid=game_uuid)).scalars().first() or abort(404)
-    log_system_event(
-        f"User {current_user.name} initiated a download for {game.name} ({game.uuid})",
-        event_type='game', event_level='information',
-    )
+    _validate_uuid(game_uuid)
+    game = db.session.scalar(select(Game).where(Game.uuid == game_uuid)) or abort(404)
+    return _initiate(game)
 
-    # Validate game path is within allowed directories
-    allowed_bases = get_allowed_base_directories(current_app)
-    if not allowed_bases:
-        log_system_event("No allowed base directories configured", event_type='system', event_level='error')
-        flash("System configuration error. Please contact administrator.", "error")
-        return redirect(url_for('download.downloads'))
-        
-    is_safe, error_message = is_safe_path(game.full_disk_path, allowed_bases)
-    if not is_safe:
-        log_system_event(f"Path validation failed for game {game_uuid}: {error_message}", event_type='security', event_level='warning')
-        flash("Access denied.", "error")
-        return redirect(url_for('download.downloads'))
 
-    # Check for any existing download request for the same game by the current user
-    existing_request = db.session.execute(select(DownloadRequest).filter_by(user_id=current_user.id, file_location=game.full_disk_path)).scalars().first()
-    
-    if existing_request:
-        log_system_event(
-            f"User {current_user.name} reopened existing download request {existing_request.id} for {game.name}",
-            event_type='audit', event_level='information',
-        )
-        if existing_request.status == 'available':
-            return redirect(url_for('download.download_zip', download_id=existing_request.id))
-        if existing_request.status in {'failed', 'cancelled', 'expired'} and os.path.exists(existing_request.file_location):
-            settings = db.session.execute(select(GlobalSettings)).scalars().first()
-            if os.path.isdir(existing_request.file_location):
-                existing_request.archive_id = None
-                request_resumable_archive(existing_request, f'{sanitize_filename(game.name)}.zip')
-            else:
-                existing_request.status = 'available'
-                existing_request.delivery_kind = 'direct'
-            existing_request.expires_at = calculate_download_expiry(settings)
-            db.session.commit()
-            return redirect(
-                url_for('download.downloads') if existing_request.status == 'processing'
-                else url_for('download.download_zip', download_id=existing_request.id)
-            )
-        flash("You already have a download request for this game. Manage it from your downloads page.", "info")
-        return redirect(url_for('download.downloads'))
-
-    try:
-        settings = db.session.execute(select(GlobalSettings)).scalars().first()
-        # Determine how to handle the game for instant streaming download
-        if os.path.isdir(game.full_disk_path):
-            files_in_directory = []
-            for f in os.listdir(game.full_disk_path):
-                full_path = os.path.join(game.full_disk_path, f)
-                # Skip updates and extras folders
-                if os.path.isdir(full_path) and (
-                    f.lower() == settings.update_folder_name.lower() or 
-                    f.lower() == settings.extras_folder_name.lower()):
-                    continue
-                if os.path.isfile(full_path):
-                    files_in_directory.append(f)
-            
-            # Metadata and release-note files do not make a folder a multi-file download.
-            significant_files = [f for f in files_in_directory
-                               if not f.lower().endswith(('.nfo', '.sfv'))
-                               and f.lower() != 'file_id.diz'
-                               and not is_local_metadata_filename(f)]
-            
-            if len(significant_files) == 1:
-                # Single significant file - direct download (no zipping)
-                zip_file_path = os.path.join(game.full_disk_path, significant_files[0])
-            else:
-                # Multiple files or empty - stream as ZIP on-the-fly
-                zip_file_path = game.full_disk_path
-        else:
-            # Already a single file - direct download
-            zip_file_path = game.full_disk_path
-            
-        status = 'available'  # Always instant for streaming
-            
-        # Create download request - instantly available for streaming
-        new_request = DownloadRequest(
-            user_id=current_user.id,
-            game_uuid=game.uuid,
-            content_type='game',
-            content_title=game.name,
-            status=status,  # Always 'available' for instant download
-            completion_time=datetime.now(timezone.utc),
-            download_size=game.size,
-            file_location=game.full_disk_path,
-            zip_file_path=zip_file_path,
-            expires_at=calculate_download_expiry(settings),
-            delivery_kind='direct' if os.path.isfile(zip_file_path) else 'live_archive',
-        )
-        db.session.add(new_request)
-        game.times_downloaded += 1
-        if os.path.isdir(zip_file_path):
-            request_resumable_archive(new_request, f'{sanitize_filename(game.name)}.zip')
-        db.session.commit()
-
-        log_system_event(
-            f"User {current_user.name} created download request {new_request.id} for {game.name} ({new_request.status})",
-            event_type='audit', event_level='information',
-        )
-        
-        # Direct and already-cached files start immediately; new archives prepare in
-        # the background and become available from the user's Downloads page.
-        if new_request.status == 'processing':
-            flash('Preparing a resumable download. You can leave this page and return later.', 'info')
-            return redirect(url_for('download.downloads'))
-        return redirect(url_for('download.download_zip', download_id=new_request.id))
-        
-    except Exception as e:
-        db.session.rollback()
-        log_system_event(
-            f"Download request creation failed for user {current_user.name}, game {game.name} ({game_uuid}): {e}",
-            event_type='game', event_level='error',
-        )
-        flash("An error occurred processing your request.", "error")
-        return redirect(url_for('download.downloads'))
-
-@download_bp.route('/download_other/<file_type>/<game_uuid>/<file_id>', methods=['GET'])
+@download_bp.route('/download_other/<file_type>/<game_uuid>/<file_id>', methods=['GET', 'POST'])
 @login_required
 def download_other(file_type, game_uuid, file_id):
-    """Handle downloads for update and extra files"""
-    expire_download_requests(current_user.id)
-    
-    # Validate inputs
-    if file_type not in ['update', 'extra']:
-        log_system_event(f"Invalid file type attempted: {file_type}", event_type='security', event_level='warning')
-        flash("Invalid file type", "error")
+    _validate_uuid(game_uuid)
+    if file_type not in {'update', 'extra'}:
+        flash('Invalid file type.', 'error')
         return redirect(url_for('games.game_details', game_uuid=game_uuid))
-    
-    # Validate UUID format
-    if not re.match(r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$', game_uuid, re.IGNORECASE):
-        log_system_event(f"Invalid game UUID format attempted: {game_uuid[:50]}", event_type='security', event_level='warning')
-        abort(400)
-    
-    # Validate file_id is numeric
     try:
         file_id = int(file_id)
     except ValueError:
-        log_system_event(f"Invalid file ID attempted: {file_id}", event_type='security', event_level='warning')
         abort(400)
-
-    FileModel = GameUpdate if file_type == 'update' else GameExtra
-    file_record = db.session.execute(select(FileModel).filter_by(id=file_id, game_uuid=game_uuid)).scalars().first()
-    
-    if not file_record:
-        log_system_event(f"Failed to download {file_type} - file not found: {game_uuid}/{file_id}", event_type='game', event_level='error')
-        flash(f"{file_type.capitalize()} file not found", "error")
+    model = GameUpdate if file_type == 'update' else GameExtra
+    record = db.session.scalar(select(model).where(model.id == file_id, model.game_uuid == game_uuid))
+    if record is None:
+        flash(f'{file_type.capitalize()} file not found.', 'error')
         return redirect(url_for('games.game_details', game_uuid=game_uuid))
-
-    # Validate file path is within allowed directories
-    allowed_bases = get_allowed_base_directories(current_app)
-    if not allowed_bases:
-        log_system_event("No allowed base directories configured", event_type='system', event_level='error')
-        flash("System configuration error. Please contact administrator.", "error")
-        return redirect(url_for('games.game_details', game_uuid=game_uuid))
-        
-    is_safe, error_message = is_safe_path(file_record.file_path, allowed_bases)
-    if not is_safe:
-        log_system_event(f"Path validation failed for {file_type} {file_id}: {error_message}", event_type='security', event_level='warning')
-        flash("Access denied.", "error")
-        return redirect(url_for('games.game_details', game_uuid=game_uuid))
-
-    # Check if the file or folder exists
-    if not os.path.exists(file_record.file_path):
-        log_system_event(f"{file_type.capitalize()} file not found on disk: {file_record.file_path}", event_type='system', event_level='error')
-        flash("File not found on disk", "error")
-        return redirect(url_for('games.game_details', game_uuid=game_uuid))
-
-    # Check for an existing download request
-    existing_request = db.session.execute(select(DownloadRequest).filter_by(
-        user_id=current_user.id,
-        file_location=file_record.file_path
-    )).scalars().first()
-    if existing_request:
-        log_system_event(
-            f"User {current_user.name} reopened existing download request {existing_request.id} for {file_type} {file_record.id}",
-            event_type='audit', event_level='information',
-        )
-        if existing_request.status == 'available':
-            return redirect(url_for('download.download_zip', download_id=existing_request.id))
-        if existing_request.status in {'failed', 'cancelled', 'expired'} and os.path.exists(existing_request.file_location):
-            settings = db.session.execute(select(GlobalSettings)).scalars().first()
-            if os.path.isdir(existing_request.file_location):
-                existing_request.archive_id = None
-                request_resumable_archive(existing_request, f'{sanitize_filename(os.path.basename(existing_request.file_location))}.zip')
-            else:
-                existing_request.status = 'available'
-                existing_request.delivery_kind = 'direct'
-            existing_request.expires_at = calculate_download_expiry(settings)
-            db.session.commit()
-            return redirect(
-                url_for('download.downloads') if existing_request.status == 'processing'
-                else url_for('download.download_zip', download_id=existing_request.id)
-            )
-        flash("You already have a download request for this file. Manage it from your downloads page.", "info")
-        return redirect(url_for('download.downloads'))
-    
-    try:
-        # Extract necessary data from file_record while still in session context
-        file_path = file_record.file_path
-        base_name = os.path.basename(file_path)
-        
-        # Determine how to handle this file/folder for streaming download
-        if os.path.isfile(file_path) and file_path.lower().endswith('.zip'):
-            # Already a ZIP file - can be served directly
-            zip_file_path = file_path
-            status = 'available'
-        else:
-            # File or folder that needs to be zipped on-the-fly via streaming
-            # Store the source path for the ASGI handler to stream
-            zip_file_path = file_path
-            status = 'available'  # Ready for streaming
-            
-        # Calculate actual file size for display on downloads page
-        calculated_size = get_path_size(file_path) if os.path.exists(file_path) else 0
-            
-        # Create download request
-        new_request = DownloadRequest(
-            user_id=current_user.id,
-            game_uuid=game_uuid,
-            content_type=file_type,
-            content_title=(file_record.title if file_type == 'update' and file_record.title else base_name),
-            game_update_id=file_record.id if file_type == 'update' else None,
-            game_extra_id=file_record.id if file_type == 'extra' else None,
-            status=status,
-            completion_time=datetime.now(timezone.utc),
-            download_size=calculated_size,  # Use calculated size instead of 0
-            file_location=file_path,
-            zip_file_path=zip_file_path,
-            expires_at=calculate_download_expiry(
-                db.session.execute(select(GlobalSettings)).scalars().first()
-            ),
-            delivery_kind='direct' if os.path.isfile(zip_file_path) else 'live_archive',
-        )
-        
-        db.session.add(new_request)
-        file_record.times_downloaded += 1
-        if os.path.isdir(zip_file_path):
-            request_resumable_archive(new_request, f'{sanitize_filename(base_name)}.zip')
-        db.session.commit()
-
-        log_system_event(
-            f"User {current_user.name} created download request {new_request.id} for {file_type} {base_name} ({new_request.status})",
-            event_type='audit', event_level='information',
-        )
-        
-        if new_request.status == 'processing':
-            flash('Preparing a resumable download. You can leave this page and return later.', 'info')
-            return redirect(url_for('download.downloads'))
-        return redirect(url_for('download.download_zip', download_id=new_request.id))
-        
-    except SQLAlchemyError as e:
-        db.session.rollback()
-        log_system_event(
-            f"Database error creating {file_type} download request for user {current_user.name}, file {file_record.id}: {e}",
-            event_type='system', event_level='error',
-        )
-        flash("Database error occurred", "error")
-        return redirect(url_for('games.game_details', game_uuid=game_uuid))
-    except Exception as e:
-        db.session.rollback()
-        log_system_event(
-            f"Error creating {file_type} download request for user {current_user.name}, file {file_record.id}: {e}",
-            event_type='system', event_level='error',
-        )
-        flash("An error occurred processing your request.", "error")
-        return redirect(url_for('games.game_details', game_uuid=game_uuid))
-
-
+    game = db.session.scalar(select(Game).where(Game.uuid == game_uuid)) or abort(404)
+    return _initiate(game, file_type, record)

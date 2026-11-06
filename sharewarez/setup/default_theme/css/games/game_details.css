@@ -2259,3 +2259,11 @@ pre {
     }
     .game-mobile-actions > .status-dropdown-mobile { right: 0; bottom: calc(100% + 8px); width: min(240px, calc(100vw - 24px)); }
 }
+
+/* Asset downloads are ordinary form actions, including inside the mobile dialog. */
+#extrasModal .extras-file-heading > form { margin: 0; }
+#extrasModal .extras-download-button { min-height: 42px; }
+@media (max-width: 768px) {
+    #extrasModal .extras-table { display: table; min-width: 0; table-layout: fixed; }
+    #extrasModal .extras-download-button { min-height: 44px; }
+}

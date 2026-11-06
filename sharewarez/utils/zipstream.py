@@ -8,6 +8,7 @@ import asyncio
 from typing import AsyncGenerator, Tuple, Optional, Dict, Any
 import zipstream
 from sharewarez.metadata_files import is_local_metadata_filename
+from sharewarez.utils.download_sources import source_entries
 from sharewarez.utils.security import is_safe_path
 from sharewarez.utils.event_logging import log_system_event
 
@@ -29,14 +30,8 @@ def _build_zipstream(
     if os.path.isfile(source_path):
         archive.write(source_path, arcname=os.path.basename(source_path))
     else:
-        excluded = {folder.lower() for folder in excluded_folders}
-        for root, dirs, files in os.walk(source_path):
-            dirs[:] = [directory for directory in dirs if directory.lower() not in excluded]
-            for file_name in files:
-                if is_local_metadata_filename(file_name):
-                    continue
-                file_path = os.path.join(root, file_name)
-                archive.write(file_path, arcname=os.path.relpath(file_path, source_path))
+        for entry in source_entries(source_path, excluded_folders):
+            archive.write(entry['path'], arcname=entry['relative_path'])
 
     return iter(archive)
 

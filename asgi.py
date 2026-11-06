@@ -525,6 +525,12 @@ class LazyASGIApp:
                     'completed' if completed else 'interrupted',
                 )
     
+    def _sync_archive_exclusions(self):
+        assert self._flask_app is not None
+        from sharewarez.utils.download_cache import _excluded_folder_names
+        with self._flask_app.app_context():
+            return sorted(_excluded_folder_names())
+
     async def _handle_streaming_download(
         self, receive, send, download_request_id, file_location, game_name,
         source_path, user_id, bandwidth_limit=0, method='GET',
@@ -560,6 +566,8 @@ class LazyASGIApp:
             compression_level = self._flask_app.config.get('ZIPSTREAM_COMPRESSION_LEVEL', 0) if self._flask_app else 0
             enable_zip64 = self._flask_app.config.get('ZIPSTREAM_ENABLE_ZIP64', True) if self._flask_app else True
             
+            excluded_folders = await asyncio.to_thread(self._sync_archive_exclusions)
+
             # Generate filename from the original file/folder name
             if file_location:
                 base_name = os.path.basename(file_location)
@@ -569,7 +577,8 @@ class LazyASGIApp:
 
             if method == 'HEAD':
                 _generator, headers = async_generate_zipstream_response(
-                    source_path, filename, chunk_size, compression_level, enable_zip64
+                    source_path, filename, chunk_size, compression_level, enable_zip64,
+                    excluded_folders=excluded_folders
                 )
                 await send({
                     "type": "http.response.start", "status": 200,
@@ -596,7 +605,8 @@ class LazyASGIApp:
             
             # Create zipstream response
             async_generator, headers = async_generate_zipstream_response(
-                source_path, filename, chunk_size, compression_level, enable_zip64
+                source_path, filename, chunk_size, compression_level, enable_zip64,
+                excluded_folders=excluded_folders
             )
             
             # Send HTTP response start

@@ -133,3 +133,21 @@ have 3 second and 2 second limits respectively. Admission and preparation run in
 worker threads so waiting cannot block SSE or other ASGI requests. Disconnected
 queue entries and late acquisitions are reclaimed; expired queue rows provide
 recovery if database cleanup is unavailable.
+
+### Package selection and initiation
+
+Game, update and extra download creation uses POST with CSRF. Bookmarked
+initiation GET/HEAD URLs show a confirmation without changing download records.
+Concurrent creation by a member locks that member before looking up a reusable
+link. Reuse requires the same game, content type, record identity when known and
+source path. Legacy duplicate URLs and attempt relationships remain intact;
+duplicate IDs are logged for later review rather than merged.
+
+Cached and live ZIPs share utils/download_sources.py inclusion rules. Ordinary
+release notes are included; local metadata files, symlink entries and configured
+or default updates/extras subdirectories are excluded. Enumeration errors stop
+preparation. The main-game direct-file shortcut applies only to a single
+significant root file with notes/metadata and no eligible nested files. A launcher
+with nested assets therefore produces a complete archive. Updates and extras
+are validated and packaged relative to their own source. A missing source is
+reported before creating a link or incrementing the request counter.

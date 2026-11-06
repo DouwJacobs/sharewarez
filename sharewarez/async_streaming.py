@@ -204,7 +204,7 @@ async def create_async_streaming_response(
 
 
 def async_generate_zipstream_response(source_path, filename, chunk_size=65536, 
-                                      compression_level=0, enable_zip64=True):
+                                      compression_level=0, enable_zip64=True, excluded_folders=None):
     """
     Create an async streaming response for ZIP downloads using zipstream-new.
     This function returns an async generator and headers for ASGI usage.
@@ -245,7 +245,8 @@ def async_generate_zipstream_response(source_path, filename, chunk_size=65536,
             source_path, 
             chunk_size=chunk_size,
             compression_level=compression_level,
-            enable_zip64=enable_zip64
+            enable_zip64=enable_zip64,
+            excluded_folders=excluded_folders
         )
         return async_generator, headers
         

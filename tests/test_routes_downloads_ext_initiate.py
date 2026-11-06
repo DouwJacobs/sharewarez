@@ -130,7 +130,6 @@ def test_game_extra(db_session, test_game):
     extra = GameExtra(
         game_uuid=test_game.uuid,
         file_path=extra_file,
-        name='Soundtrack',
         times_downloaded=0
     )
     db_session.add(extra)
@@ -166,7 +165,7 @@ class TestDownloadGameRoute:
     
     def test_download_game_requires_login(self, client, test_game):
         """Test that download_game requires authentication."""
-        response = client.get(f'/download_game/{test_game.uuid}')
+        response = client.post(f'/download_game/{test_game.uuid}')
         assert response.status_code == 302  # Redirect to login
         assert '/login' in response.location
     
@@ -201,7 +200,7 @@ class TestDownloadGameRoute:
         db_session.add(existing_request)
         db_session.commit()
         
-        response = client.get(f'/download_game/{test_game.uuid}')
+        response = client.post(f'/download_game/{test_game.uuid}')
         assert response.status_code == 302  # Redirect to downloads
         assert '/downloads' in response.location
     
@@ -214,7 +213,7 @@ class TestDownloadGameRoute:
             # Set up app config for security validation
             app.config['DATA_FOLDER_WAREZ'] = os.path.dirname(test_game.full_disk_path)
 
-            response = client.get(f'/download_game/{test_game.uuid}')
+            response = client.post(f'/download_game/{test_game.uuid}')
             assert response.status_code == 302
             assert response.location.endswith('/downloads')
 
@@ -286,7 +285,7 @@ class TestDownloadOtherRoute:
             # Set up app config for security validation
             app.config['DATA_FOLDER_WAREZ'] = os.path.dirname(test_game_update.file_path)
 
-            response = client.get(f'/download_other/update/{test_game_update.game_uuid}/{test_game_update.id}')
+            response = client.post(f'/download_other/update/{test_game_update.game_uuid}/{test_game_update.id}')
             assert response.status_code == 302
             assert '/download_zip/' in response.location
 
@@ -383,7 +382,7 @@ class TestIntegration:
             ).count()
             
             # Make download request
-            response = client.get(f'/download_game/{test_game.uuid}')
+            response = client.post(f'/download_game/{test_game.uuid}')
             assert response.status_code == 302
             assert response.location.endswith('/downloads')
 

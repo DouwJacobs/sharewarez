@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Download {{ content_title }} · {{ site_title }}{% endblock %}
+{% block content %}
+<div class="app-page app-page--narrow app-stack">
+    <header class="app-page-header"><h1>Download {{ content_title }}</h1></header>
+    <section class="app-surface app-stack">
+        <p>Prepare your download for {{ game.name }}. You can return to Downloads to check progress or reuse this link.</p>
+        <form method="post" class="app-page-actions">
+            {{ form.hidden_tag() }}
+            <button type="submit" class="btn btn-primary">Prepare download</button>
+            <a class="btn btn-secondary" href="{{ url_for('download.downloads') }}">My downloads</a>
+        </form>
+    </section>
+</div>
+{% endblock %}

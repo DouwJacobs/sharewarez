@@ -759,4 +759,12 @@ with path-specific accessible Identify labels. Fifty rows per page and standard
 Previous/Next controls bound the rendered list. Rows use flat separators within
 the existing surface. Computer Use verified default/Ember desktop and 390 x 844,
 44 px mobile actions, no document overflow, distinct ISO/ZIP identify paths and
-page navigation in the disposable T04 preview.
+page navigation in the disposable T04 preview.### Download initiation forms (6 November 2026)
+
+Game Details, its mobile Get game action, popup Download and asset Download
+buttons now submit CSRF-protected POST forms. Bookmarked URLs use a shared
+app-page/app-surface confirmation with a primary Prepare download action and
+secondary My downloads link. Computer Use verified default desktop and Ember
+390 x 844 confirmation, actual game/update submissions and mobile reuse.
+The asset modal uses 44 px mobile download buttons and its single-column table
+fits the dialog rather than inheriting the shared 680 px table minimum.

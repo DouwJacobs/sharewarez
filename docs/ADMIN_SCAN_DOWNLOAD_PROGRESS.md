@@ -254,4 +254,54 @@ mobile Identify buttons measure 44 px and document client/scroll widths both
 measure 375 px. Viewport override reset. Evidence: manual-candidates-mobile.jpg
 in the task visualization folder. Ruff and diff checks pass.
 
-T05-T11 remain open. Next: complete package selection and transactional link reuse.
+T05-T11 remain open. Next: complete package selection and transactional link reuse.## T05 completed: complete packages and transactional link reuse
+
+Baseline: 605ac6b8. source_entries in utils/download_sources.py now owns the
+shared cached/live archive inclusion policy: stable relative ordering, ordinary
+notes retained, configured/default update and extra folders excluded, metadata
+files excluded, symlink entries skipped, escaped entries rejected and walk/stat
+failures surfaced. The direct shortcut requires exactly one significant root
+file and no included nested payload. Requested updates/extras use their own
+validated source. Missing sources fail before any link/counter is created.
+
+utils/download_creation.py serializes initiation with a User row lock before
+looking up links by member, game, content type, record identity (including legacy
+null identity) and source. Exact legacy duplicates remain addressable; the newest
+is reused and duplicate IDs are logged for review. Counters use atomic increments
+only for newly created links. Game and asset routes share this transaction.
+Bookmarked GET/HEAD initiation URLs render a read-only confirmation; creation is
+POST with CSRF. Game Details, mobile Get game, popup Download and asset buttons
+use POST forms. Delivery GET/HEAD and byte-range behavior is unchanged. Expired,
+failed and cancelled reuse currently opens Downloads for the renewal/retry UI;
+T08 owns the shared eligibility/action resolver across all entry points.
+
+Changed: asgi.py, async_streaming.py, utils/download_sources.py,
+utils/download_creation.py, utils/download_cache.py, utils/zipstream.py,
+routes_downloads_ext/initiate.py, download_confirm.html, Game Details/popup
+forms and the canonical Game Details stylesheet. No migration.
+
+Regression baseline reproduced missing POST support, mutating bookmarked GET,
+and an external file symlink included by live ZIP. Final isolated PostgreSQL
+checks: test_download_package_selection.py 13, test_routes_downloads_ext_initiate.py
+15, test_download_cache.py 7, test_zipstream_async.py 2, test_download_ranges.py
+18, test_download_admission_audit.py 4: **59 passed**, fresh DB per module.
+The new suite submits concurrent normal POSTs through independent request/app
+contexts and PostgreSQL sessions, asserts one link/one count, tests asset/member/
+source identity, preserved legacy duplicates, GET/HEAD read-only behavior, CSRF,
+missing sources, equal cached/live exclusions and an actual built ZIP containing
+launcher, assets/required.bin and release notes. Ruff and the 94-template
+accessibility audit pass. Required four-module Mypy plus both new helpers pass.
+An expanded optional Mypy check of ASGI/cache reports existing nullable app and
+archive-writer typing issues; comparison against HEAD confirms those predate T05.
+
+Computer Use against gamelibrary_t05_preview_test submitted desktop game/update
+POSTs and mobile Get game, confirmed Preparing, then reopened via bookmarked
+confirmation POST. SQL shows one game link, one update link and game count 1.
+Default desktop and Ember 390 x 844 confirmation were inspected. Mobile asset
+buttons now measure 44 px; its single-column table no longer inherits a 680 px
+minimum or block-table shrinkage. Viewport reset, temporary tab closed. Screenshots:
+download-confirm-mobile.jpg and download-assets-mobile.jpg in the task artifacts.
+Manifest timing was measured independently: 5,000 files in 50 folders took 0.380 s
+on local disposable storage; this is not a network-storage latency claim.
+
+T06-T11 remain open. Next: persistent transfer reasons and attempt evidence.

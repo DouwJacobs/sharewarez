@@ -48,12 +48,12 @@
                     </a>
                     <span class="file-size">{{ file.file_size|default('0') }}</span>
                 </div>
-                <a href="{{ download_url }}"
-                   class="extras-download-button"
-                   aria-label="Download {{ file_name }}">
-                    <i class="fas fa-download" aria-hidden="true"></i>
-                    <span>Download</span>
-                </a>
+                <form action="{{ download_url }}" method="post">
+                    {{ form.csrf_token }}
+                    <button type="submit" class="extras-download-button" aria-label="Download {{ file_name }}">
+                        <i class="fas fa-download" aria-hidden="true"></i><span>Download</span>
+                    </button>
+                </form>
             </div>
             {% if file_type == 'update' %}
                 <div class="update-metadata">
@@ -490,7 +490,7 @@
                             <div><strong>{{ game.size or 'Unknown' }}</strong><small>Download size</small></div>
                         </div>
                         <div class="download-buttons">
-                            <form id="gameDownloadForm" action="{{ url_for('download.download_game', game_uuid=game.uuid) }}" method="get" class="download-form">
+                            <form id="gameDownloadForm" action="{{ url_for('download.download_game', game_uuid=game.uuid) }}" method="post" class="download-form">
                                 <button type="submit" class="button-glass-download" data-game-uuid="{{ game.uuid }}"><i class="fas fa-download" aria-hidden="true"></i> Download</button>
                                 {{ form.csrf_token }}
                             </form>
