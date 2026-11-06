@@ -1,79 +1,45 @@
 {% extends "base.html" %}
 {% from "partials/ui_components.html" import page_header, status_badge, empty_state, pagination as render_pagination %}
-
-{% block styles %}
-{{ super() }}
-<link rel="stylesheet" href="{{ 'css/admin/admin_manage_downloads.css'|theme_asset }}">
-{% endblock %}
-
+{% block styles %}{{ super() }}<link rel="stylesheet" href="{{ 'css/admin/admin_manage_downloads.css'|theme_asset }}">{% endblock %}
 {% block content %}
 <main class="app-page downloads-page" aria-labelledby="my-downloads-title">
     {{ page_header('My downloads', 'Use your reusable download links and return to a game whenever you need more details.', 'Library activity', 'fa-download', pagination.total, 'download', 'my-downloads-title', class_name='downloads-page-header', eyebrow_class='downloads-page-eyebrow', count_class='downloads-count') }}
-    {% if state_counts %}<div class="download-state-summary" aria-label="Download status summary">{% for label, count in state_counts.items() %}<span><strong>{{ count }}</strong>{{ label }}</span>{% endfor %}<a href="{{ url_for('site.helpfaq') }}#downloads">How downloads work</a></div>{% endif %}
+    <div class="download-state-summary" aria-label="Download status summary for this page"><small>On this page</small>{% for label, count in state_counts.items() %}<span data-state-label="{{ label }}"><strong>{{ count }}</strong>{{ label }}</span>{% endfor %}<a href="{{ url_for('site.helpfaq') }}#downloads">How downloads work</a></div>
     <div class="app-surface downloads-panel">
         <p id="downloadConnection" class="active-transfer-empty" role="status">Connecting live updates…</p>
         {% if download_requests %}
         <div class="table-responsive">
             <table class="table table-dark table-striped table-hover downloads-table">
-                <thead>
-                    <tr>
-                        <th>Game</th>
-                        <th>Status</th>
-                        <th>Size</th>
-                        <th class="text-end">Actions</th>
-                    </tr>
-                </thead>
+                <thead><tr><th>Game</th><th>Status</th><th>Size</th><th class="text-end">Actions</th></tr></thead>
                 <tbody>
-                    {% for download in download_requests %}
-                    <tr data-download-id="{{ download.id }}" data-download-status="{{ download.status }}" data-transfer-active="{{ 'true' if download.active_transfer else 'false' }}" data-delivery-kind="{{ download.delivery_kind }}" data-direct-resumable="{{ 'true' if download.delivery_kind == 'direct' and download.delivery_label == 'Resumable' else 'false' }}">
-                        <td data-label="Game">
-                            <a class="downloads-game-link" href="{{ url_for('games.game_details', game_uuid=download.game_uuid) }}">
-                                <i class="fas fa-gamepad" aria-hidden="true"></i>
-                                <span>{{ download.game.name }}</span>
-                                <i class="fas fa-arrow-up-right-from-square downloads-game-link-icon" aria-hidden="true"></i>
-                            </a>
-                        </td>
+                {% for download in download_requests %}{% set view = download.view %}{% set actions = view.allowed_actions %}
+                    <tr data-download-id="{{ download.id }}" data-download-status="{{ view.status }}" data-transfer-active="{{ 'true' if view.active_transfer else 'false' }}" data-delivery-kind="{{ view.delivery_kind }}">
+                        <td data-label="Game"><a class="downloads-game-link" href="{{ url_for('games.game_details', game_uuid=download.game_uuid) }}"><i class="fas fa-gamepad" aria-hidden="true"></i><span>{{ download.game.name }}</span><i class="fas fa-arrow-up-right-from-square downloads-game-link-icon" aria-hidden="true"></i></a></td>
                         <td class="status-cell" data-label="Status" tabindex="-1">
-                            {{ status_badge(download.display_status) }}
-                            <span class="download-delivery-badge download-delivery-badge--{{ 'resumable' if download.delivery_label == 'Resumable' else 'preparing' if download.delivery_label == 'Preparing' else 'streaming' }}"><i class="fas {{ 'fa-rotate' if download.delivery_label == 'Resumable' else 'fa-box-open' if download.delivery_label == 'Preparing' else 'fa-triangle-exclamation' }}" aria-hidden="true"></i>{{ download.delivery_label }}</span>
-                            {% if download.archive and download.archive.state in ['queued', 'building'] %}
-                            <span class="download-archive-progress" role="status" aria-live="polite">
-                                <span><span style="width: {{ download.archive_progress or 2 }}%"></span></span>
-                                {{ download.archive_progress or 0 }}% prepared
-                            </span>
-                            {% elif download.archive and download.archive.state == 'failed' %}<small class="download-failure-reason">{{ download.archive.failure_message or 'The resumable archive could not be prepared.' }}</small>{% endif %}
-                            {% if download.status == 'failed' %}<small class="download-failure-reason">{% if not download.file_location %}The source location is unavailable.{% else %}The previous request could not be completed. Retry to validate the source.{% endif %}</small>{% endif %}
-                            {% if download.status == 'expired' %}<small class="download-failure-reason">This download link expired. Retry to create a fresh link.</small>{% endif %}
-                            {% if download.active_transfer %}<small class="download-transfer-detail">{{ download.active_transfer.formatted_bytes_sent }} streamed{% if download.active_transfer.formatted_expected_bytes %} of {{ download.active_transfer.formatted_expected_bytes }}{% endif %}</small>{% elif download.status == 'available' and download.expires_at %}<small class="download-expiry{% if download.expiring_soon %} is-urgent{% endif %}">{{ 'Expires soon · ' if download.expiring_soon else 'Available until ' }}{{ download.expires_at|friendly_datetime }}</small>{% endif %}
+                            {{ status_badge(view.display_status) }}
+                            <span class="download-delivery-badge download-delivery-badge--{{ view.delivery_class }}"{% if view.delivery_label == view.display_status %} hidden{% endif %}><i class="fas {{ 'fa-rotate' if view.delivery_class == 'resumable' else 'fa-box-open' if view.delivery_class == 'preparing' else 'fa-triangle-exclamation' }}" aria-hidden="true"></i><span>{{ view.delivery_label }}</span></span>
+                            <span class="download-archive-progress"{% if view.status != 'processing' %} hidden{% endif %}><span><span style="width: {{ view.archive_progress or 0 }}%"></span></span><small>{{ view.archive_progress or 0 }}% prepared</small></span>
+                            <small class="download-failure-reason"{% if not view.message %} hidden{% endif %}>{{ view.message }}</small>
+                            <small class="download-transfer-detail"{% if not view.active_transfer %} hidden{% endif %}>{% if view.active_transfer %}{{ view.active_transfer.bytes_sent_label }} streamed{% if view.active_transfer.expected_bytes_label %} of {{ view.active_transfer.expected_bytes_label }}{% endif %}{% endif %}</small>
+                            <small class="download-latest-attempt"{% if view.active_transfer or not view.latest_attempt %} hidden{% endif %}>{% if view.latest_attempt %}Last attempt: {{ view.latest_attempt.end_reason_label }}{% endif %}</small>
+                            <small class="download-expiry{% if view.expiring_soon %} is-urgent{% endif %}"{% if view.status != 'available' or not view.expires_at %} hidden{% endif %}>{{ view.expiry_label }}</small>
                         </td>
-                        <td data-label="Size" class="download-size">{{ download.formatted_size }}</td>
+                        <td data-label="Size" class="download-size">{{ view.size_label }}</td>
                         <td class="actions-cell text-end" data-label="Actions">
-                            <span data-action="downloading" class="btn btn-secondary btn-sm disabled btn-downloading" aria-disabled="true"{% if not download.active_transfer %} hidden{% endif %}><i class="fas fa-circle-notch fa-spin" aria-hidden="true"></i> Downloading</span>
-                            <a data-action="download" href="{{ url_for('download.download_zip', download_id=download.id) }}" class="btn btn-primary btn-sm"{% if download.active_transfer or download.status != 'available' %} hidden{% endif %}><i class="fas fa-download" aria-hidden="true"></i> Download</a>
-                            <form data-action="cancel" action="{{ url_for('download.cancel_download', download_id=download.id) }}" method="post" class="inline-form"{% if download.status not in ['pending', 'processing'] %} hidden{% endif %}>
-                                {{ form.csrf_token }}<button type="submit" class="btn btn-secondary btn-sm"><i class="fas fa-ban" aria-hidden="true"></i> Cancel</button>
-                            </form>
-                            <form data-action="retry" action="{{ url_for('download.retry_download', download_id=download.id) }}" method="post" class="inline-form"{% if download.status not in ['failed', 'cancelled', 'expired'] %} hidden{% endif %}>
-                                {{ form.csrf_token }}<button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-rotate-right" aria-hidden="true"></i> Retry</button>
-                            </form>
-                            <form data-action="fallback" action="{{ url_for('download.stream_without_resume', download_id=download.id) }}" method="post" class="inline-form"{% if not download.fallback_available or download.status not in ['pending', 'processing', 'failed', 'cancelled', 'expired'] %} hidden{% endif %}>
-                                {{ form.csrf_token }}<button type="submit" class="btn btn-secondary btn-sm"><i class="fas fa-bolt" aria-hidden="true"></i> Stream without resume</button>
-                            </form>
-                            <form data-action="delete" action="{{ url_for('download.delete_download', download_id=download.id) }}" method="post" class="inline-form"{% if download.active_transfer %} hidden{% endif %}>
-                                {{ form.csrf_token }}<button type="submit" class="btn btn-danger btn-sm"><i class="fas fa-trash" aria-hidden="true"></i> Delete</button>
-                            </form>
+                            <a data-action="download" href="{{ url_for('download.download_zip', download_id=download.id) }}" class="btn btn-primary btn-sm"{% if 'download' not in actions %} hidden{% endif %}><i class="fas fa-download" aria-hidden="true"></i> Download</a>
+                            <form data-action="cancel" action="{{ url_for('download.cancel_download', download_id=download.id) }}" method="post" class="inline-form"{% if 'cancel' not in actions %} hidden{% endif %}>{{ form.csrf_token }}<button type="submit" class="btn btn-secondary btn-sm"><i class="fas fa-ban" aria-hidden="true"></i> Cancel</button></form>
+                            <form data-action="retry" action="{{ url_for('download.retry_download', download_id=download.id) }}" method="post" class="inline-form"{% if 'retry' not in actions %} hidden{% endif %}>{{ form.csrf_token }}<button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-rotate-right" aria-hidden="true"></i> <span data-retry-label>{{ view.retry_label }}</span></button></form>
+                            <form data-action="fallback" action="{{ url_for('download.stream_without_resume', download_id=download.id) }}" method="post" class="inline-form"{% if 'fallback' not in actions %} hidden{% endif %}>{{ form.csrf_token }}<button type="submit" class="btn btn-secondary btn-sm"><i class="fas fa-bolt" aria-hidden="true"></i> Stream without resume</button></form>
+                            <form data-action="delete" action="{{ url_for('download.delete_download', download_id=download.id) }}" method="post" class="inline-form"{% if 'delete' not in actions %} hidden{% endif %}>{{ form.csrf_token }}<button type="submit" class="btn btn-secondary btn-sm"><i class="fas fa-link-slash" aria-hidden="true"></i> Remove link</button></form>
                         </td>
                     </tr>
-                    {% endfor %}
+                {% endfor %}
                 </tbody>
             </table>
         </div>
         {{ render_pagination(pagination, 'download.downloads') }}
-        {% else %}
-        {{ empty_state('No downloads yet', 'Files you request from a game page will appear here.', 'fa-box-open', url_for('library.library'), 'Browse library') }}
-        {% endif %}
+        {% else %}{{ empty_state('No downloads yet', 'Files you request from a game page will appear here.', 'fa-box-open', url_for('library.library'), 'Browse library') }}{% endif %}
     </div>
 </main>
-<script src="{{ 'js/download_live.js'|theme_asset }}"></script>
-<script src="{{ 'js/downloads_manager.js'|theme_asset }}"></script>
+<script src="{{ 'js/download_live.js'|theme_asset }}"></script><script src="{{ 'js/downloads_manager.js'|theme_asset }}"></script>
 {% endblock %}

@@ -202,10 +202,14 @@ def estimate_path_bytes(path):
     return sum(item.stat().st_size for item in target.rglob('*') if item.is_file())
 
 
+class DownloadAdmissionRejected(RuntimeError):
+    pass
+
+
 def reserve_transfer(
     user_id, filename, expected_bytes, download_request_id=None, game_uuid=None,
     *, archive_id=None, range_start=None, range_end=None, http_status=None,
-    delivery_kind=None, expected_response_bytes=None, correlation_id=None,
+    delivery_kind=None, expected_response_bytes=None, correlation_id=None, source_path=None,
 ):
     """Atomically reserve monthly quota and create an active transfer record."""
     from sharewarez import db
@@ -214,6 +218,18 @@ def reserve_transfer(
     user = db.session.execute(
         select(User).where(User.id == user_id).with_for_update()
     ).scalar_one()
+    if download_request_id is not None:
+        from sharewarez.utils.download_state import delivery_path, download_state
+        request_record = db.session.scalar(select(DownloadRequest).where(
+            DownloadRequest.id == download_request_id, DownloadRequest.user_id == user_id
+        ).with_for_update())
+        if request_record is None:
+            raise DownloadAdmissionRejected('This download link changed. Return to Downloads.')
+        state = download_state(request_record, active=None, latest=None)
+        if 'download' not in state['allowed_actions']:
+            raise DownloadAdmissionRejected(state['message'] or 'This download is not ready. Return to Downloads.')
+        if request_record.archive_id != archive_id or (source_path and not archive_id and Path(delivery_path(request_record)).resolve() != Path(source_path).resolve()):
+            raise DownloadAdmissionRejected('The prepared representation changed. Return to Downloads before starting again.')
     settings_record = db.session.execute(select(GlobalSettings)).scalars().first()
     settings = dict(settings_record.settings or {}) if settings_record else {}
     default_gb = float(settings.get('defaultMonthlyDownloadQuotaGb', 0) or 0)

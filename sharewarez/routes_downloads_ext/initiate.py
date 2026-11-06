@@ -7,7 +7,7 @@ from sqlalchemy import select
 
 from sharewarez import db
 from sharewarez.models import Game, GameExtra, GameUpdate
-from sharewarez.utils.download_creation import create_or_reuse_download, validate_download_source
+from sharewarez.utils.download_creation import create_or_reuse_download
 from sharewarez.utils.event_logging import log_system_event
 from . import download_bp
 
@@ -21,9 +21,7 @@ def _initiate(game, content_type='game', record=None):
     form = FlaskForm()
     if request.method == 'POST' and not form.validate_on_submit():
         abort(400)
-    source = game.full_disk_path if record is None else record.file_path
     try:
-        validate_download_source(source)
         if request.method in {'GET', 'HEAD'}:
             title = game.name if record is None else (getattr(record, 'title', None) or getattr(record, 'name', None) or game.name)
             return render_template('download_confirm.html', form=form, game=game, content_title=title)
@@ -39,12 +37,14 @@ def _initiate(game, content_type='game', record=None):
         flash('The download could not be prepared. Ask an administrator to check its source and download cache.', 'error')
         return redirect(url_for('download.downloads'))
     log_system_event(f'User {current_user.id} {"created" if created else "reopened"} download request {link.id}', event_type='audit')
-    if link.status == 'available':
+    from sharewarez.utils.download_state import download_state
+    state = download_state(link)
+    if 'download' in state['allowed_actions']:
         return redirect(url_for('download.download_zip', download_id=link.id))
-    if link.status == 'processing':
+    if state['status'] == 'processing':
         flash('Preparing a resumable download. You can leave this page and return later.', 'info')
     else:
-        flash('Manage this existing link from Downloads to renew or retry it.', 'info')
+        flash(state['message'] or 'Manage this link from Downloads.', 'info')
     return redirect(url_for('download.downloads'))
 
 

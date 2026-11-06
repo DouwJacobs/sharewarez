@@ -1,17 +1,15 @@
 # /sharewarez/routes_apis/download.py
 from typing import Tuple
 from flask import jsonify, request
-import os
 from sqlalchemy import select
 from flask_login import login_required, current_user
 from sharewarez import db
 from sharewarez.utils.auth import admin_required
-from sharewarez.models import DownloadRequest, DownloadTransfer, GlobalSettings
+from sharewarez.models import DownloadRequest, DownloadTransfer
 from sqlalchemy.orm import joinedload
 from sharewarez.utils.event_logging import log_system_event
-from sharewarez.utils.download_limits import calculate_download_expiry
-from sharewarez.utils.download_cache import request_resumable_archive, archive_policy
-from sharewarez.live_snapshots import download_payload
+from sharewarez.utils.download_cache import archive_policy
+from sharewarez.live_snapshots import download_payloads
 from . import apis_bp
 
 ALLOWED_BULK_ACTIONS = {'delete', 'cancel', 'retry'}
@@ -33,7 +31,8 @@ def download_statuses():
         query = query.where(DownloadRequest.user_id == current_user.id)
     downloads = db.session.execute(query).scalars().all()
     policy = archive_policy()
-    response = jsonify({'downloads': [download_payload(item, policy) for item in downloads]})
+    payloads = download_payloads(downloads, policy)
+    response = jsonify({'downloads': payloads, 'transfers': [item['active_transfer'] for item in payloads if item['active_transfer']]})
     response.headers['Cache-Control'] = 'no-store'
     return response
 
@@ -56,31 +55,13 @@ def bulk_download_actions():
     downloads = db.session.execute(
         select(DownloadRequest).where(DownloadRequest.id.in_(request_ids))
     ).scalars().all()
-    active_request_ids = set(db.session.execute(
-        select(DownloadTransfer.download_request_id).where(
-            DownloadTransfer.download_request_id.in_(request_ids),
-            DownloadTransfer.status == 'active',
-        )
-    ).scalars().all())
-    settings = db.session.execute(select(GlobalSettings)).scalars().first()
+    from sharewarez.utils.download_state import apply_action, lock_download
     changed = 0
-    for download in downloads:
-        if action == 'delete' and download.id not in active_request_ids:
-            db.session.delete(download)
-            changed += 1
-        elif action == 'cancel' and download.status != 'cancelled':
-            download.status = 'cancelled'
-            changed += 1
-        elif action == 'retry' and download.status in {'failed', 'cancelled', 'expired'} and download.file_location and os.path.exists(download.file_location):
-            if os.path.isdir(download.file_location):
-                download.archive_id = None
-                request_resumable_archive(download)
-            else:
-                download.status = 'available'
-                download.delivery_kind = 'direct'
-            download.completion_time = None
-            download.expires_at = calculate_download_expiry(settings)
-            changed += 1
+    for item in sorted(downloads, key=lambda link: (link.user_id, link.id)):
+        link = lock_download(item.id)
+        if link is not None:
+            accepted, _message = apply_action(link, action, admin=True)
+            changed += int(accepted)
     db.session.commit()
     log_system_event(
         f'Admin bulk {action} changed {changed} of {len(request_ids)} download requests',

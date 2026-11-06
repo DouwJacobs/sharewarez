@@ -18,20 +18,13 @@ class LiveAccessDenied(Exception):
 
 
 def download_payload(item, policy):
-    archive = item.archive
-    return {
-        "id": item.id, "status": item.status, "delivery_kind": item.delivery_kind,
-        "available": item.status == "available", "size_label": format_size(item.download_size),
-        "expires_at": item.expires_at.isoformat() if item.expires_at else None,
-        "fallback_available": bool(archive and policy["archiveCacheMode"] == "prefer"
-                                   and policy["archiveCacheFallbackEnabled"]),
-        "archive": ({
-            "state": archive.state,
-            "progress": min(99, round(archive.bytes_written / archive.source_bytes * 100))
-            if archive.source_bytes and archive.state in {"queued", "building"} else None,
-            "failure_message": archive.failure_message,
-        } if archive else None),
-    }
+    from sharewarez.utils.download_state import download_state
+    return download_state(item, policy)
+
+
+def download_payloads(items, policy=None):
+    from sharewarez.utils.download_state import download_states
+    return download_states(items, policy)
 
 
 def cache_payload(ids):
@@ -135,7 +128,7 @@ def snapshot_data(view, ids, user_id):
     if view in {"downloads", "activity"}:
         query = select(DownloadTransfer).where(DownloadTransfer.status == "active")
         if view == "downloads":
-            query = query.where(DownloadTransfer.user_id == user_id)
+            query = query.where(DownloadTransfer.user_id == user_id, DownloadTransfer.download_request_id.in_(ids))
         else:
             query = query.options(joinedload(DownloadTransfer.user))
         transfers = db.session.execute(query.order_by(DownloadTransfer.id).limit(1001)).scalars().all()
@@ -147,7 +140,7 @@ def snapshot_data(view, ids, user_id):
             DownloadRequest.user_id == user_id, DownloadRequest.id.in_(ids),
         )).scalars().all()
         policy = archive_policy()
-        result["downloads"] = [download_payload(item, policy) for item in downloads]
+        result["downloads"] = download_payloads(downloads, policy)
     if view == "cache":
         result.update(cache_payload(ids))
     return result

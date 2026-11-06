@@ -22,6 +22,7 @@ from sharewarez.utils.event_logging import log_system_event
 from sharewarez.utils.download_limits import (
     acquire_queued_download_slot,
     heartbeat_transfer,
+    DownloadAdmissionRejected,
     finish_transfer,
     reserve_transfer,
     run_owned_in_thread,
@@ -260,13 +261,11 @@ class LazyASGIApp:
                     DownloadRequest.id == download_id, DownloadRequest.user_id == user_id))
                 if record is None:
                     raise DownloadRejected(404, 'Download not found')
-                if record.expires_at and record.expires_at <= datetime.now(timezone.utc):
-                    record.status = 'expired'
-                    db.session.commit()
-                    raise DownloadRejected(410, 'Download request expired')
-                if record.status != 'available':
-                    raise DownloadRejected(400, 'Download not ready')
-                data = {'file_path': record.zip_file_path, 'req_id': record.id,
+                from sharewarez.utils.download_state import delivery_path, download_state
+                state = download_state(record, active=None, latest=None)
+                if 'download' not in state['allowed_actions']:
+                    raise DownloadRejected(410 if state['status'] == 'expired' else 409, state['message'] or 'Download not ready')
+                data = {'file_path': delivery_path(record), 'req_id': record.id,
                         'file_location': record.file_location,
                         'game_name': record.game.name if record.game else None,
                         'archive_id': record.archive_id, 'etag': None,
@@ -390,7 +389,7 @@ class LazyASGIApp:
     def _sync_reserve_transfer(
         self, user_id, filename, length, download_request_id, game_uuid=None,
         archive_id=None, range_start=None, range_end=None, http_status=None,
-        delivery_kind=None, expected_response_bytes=None, correlation_id=None,
+        delivery_kind=None, expected_response_bytes=None, correlation_id=None, source_path=None,
     ):
         """Run reserve_transfer synchronously inside a Flask app context."""
         with self._flask_app.app_context():
@@ -399,7 +398,7 @@ class LazyASGIApp:
                 download_request_id=download_request_id, game_uuid=game_uuid,
                 archive_id=archive_id, range_start=range_start, range_end=range_end,
                 http_status=http_status, delivery_kind=delivery_kind,
-                expected_response_bytes=expected_response_bytes, correlation_id=correlation_id,
+                expected_response_bytes=expected_response_bytes, correlation_id=correlation_id, source_path=source_path,
             )
 
     def _sync_update_transfer_progress(self, transfer_id, bytes_sent):
@@ -502,7 +501,7 @@ class LazyASGIApp:
                 transfer_id, _used, _quota = await control.wait(run_owned_in_thread(
                     lambda: self._sync_reserve_transfer(user_id, filename, length, download_request_id,
                         game_uuid, archive_id, start, start + length - 1, status,
-                        'cached_archive' if archive_id else 'direct', length, correlation_id),
+                        'cached_archive' if archive_id else 'direct', length, correlation_id, file_path),
                     self._cleanup_reservation, executor=BOOKKEEPING_EXECUTOR))
                 if transfer_id is None:
                     await self._send_error(send_response, 429, 'Monthly download quota exceeded', extra_headers=[(b'retry-after', b'3600')])
@@ -526,7 +525,7 @@ class LazyASGIApp:
             logging.getLogger('gamelibrary.download').error('File transfer failed: %s (%s)', end_reason, type(exc).__name__, extra={'request_id': correlation_id})
             if not response_started and not control.stopped.is_set():
                 with contextlib.suppress(TransferFailure):
-                    await self._send_error(send_response, 500, 'Error streaming file')
+                    await self._send_error(send_response, 409 if isinstance(exc, DownloadAdmissionRejected) else 500, str(exc) if isinstance(exc, DownloadAdmissionRejected) else 'Error streaming file')
         finally:
             await finish_cleanup(self._finish_delivery(control, source, transfer_id, state, completed, end_reason))
 
@@ -577,7 +576,7 @@ class LazyASGIApp:
                 expected = await control.wait(asyncio.to_thread(estimate))
                 transfer_id, _used, _quota = await control.wait(run_owned_in_thread(
                     lambda: self._sync_reserve_transfer(user_id, filename, expected, download_request_id,
-                        delivery_kind='live_archive', http_status=200, correlation_id=correlation_id),
+                        delivery_kind='live_archive', http_status=200, correlation_id=correlation_id, source_path=source_path),
                     self._cleanup_reservation, executor=BOOKKEEPING_EXECUTOR))
                 if transfer_id is None:
                     await self._send_error(send_response, 429, 'Monthly download quota exceeded', extra_headers=[(b'retry-after', b'3600')])
@@ -597,7 +596,7 @@ class LazyASGIApp:
             logging.getLogger('gamelibrary.download').error('Archive transfer failed: %s (%s)', end_reason, type(exc).__name__, extra={'request_id': correlation_id})
             if not response_started and not control.stopped.is_set():
                 with contextlib.suppress(TransferFailure):
-                    await self._send_error(send_response, 500, 'Error streaming ZIP file')
+                    await self._send_error(send_response, 409 if isinstance(exc, DownloadAdmissionRejected) else 500, str(exc) if isinstance(exc, DownloadAdmissionRejected) else 'Error streaming ZIP file')
         finally:
             await finish_cleanup(self._finish_delivery(control, None, transfer_id, state, completed, end_reason))
 

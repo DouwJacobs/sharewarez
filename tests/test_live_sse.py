@@ -157,13 +157,24 @@ def test_disconnect_during_idle_does_not_wait_for_heartbeat():
 
 
 def test_snapshot_owner_admin_and_account_revocation(app, db_session):
+    from sharewarez.models import DownloadRequest, Game, Library
+    from sharewarez.platform import LibraryPlatform
     suffix = uuid4().hex
     users = [User(name=f"live-{index}-{suffix}", email=f"live-{index}-{suffix}@example.test",
                   role="admin" if index == 2 else "user", state=True, password_hash="test") for index in range(3)]
     db_session.add_all(users)
     db_session.flush()
+    library = Library(name=suffix, platform=LibraryPlatform.PCWIN)
+    db_session.add(library)
+    db_session.flush()
+    game = Game(name=suffix, library_uuid=library.uuid)
+    db_session.add(game)
+    db_session.flush()
+    links = [DownloadRequest(user_id=user.id, game_uuid=game.uuid, status='available') for user in users[:2]]
+    db_session.add_all(links)
+    db_session.flush()
     now = datetime.now(timezone.utc)
-    transfers = [DownloadTransfer(user_id=user.id, filename=f"private-{index}", bytes_sent=1000,
+    transfers = [DownloadTransfer(user_id=user.id, download_request_id=links[index].id, filename=f"private-{index}", bytes_sent=1000,
                                  reserved_bytes=2000, started_at=now-timedelta(seconds=10))
                  for index, user in enumerate(users[:2])]
     db_session.add_all(transfers)
@@ -171,7 +182,8 @@ def test_snapshot_owner_admin_and_account_revocation(app, db_session):
     def signed(user):
         token = app.session_interface.get_signing_serializer(app).dumps({"_user_id": str(user.id)})
         return scope(headers=[(b"cookie", f"session={token}".encode())])
-    result = snapshot(app, signed(users[0]), "downloads", ())
+    assert snapshot(app, signed(users[0]), "downloads", ())["transfers"] == []
+    result = snapshot(app, signed(users[0]), "downloads", tuple(link.id for link in links))
     assert [item["id"] for item in result["transfers"]] == [transfers[0].id]
     assert "filename" not in result["transfers"][0]
     assert 95 <= result["transfers"][0]["average_speed"] <= 100
@@ -187,23 +199,26 @@ def test_snapshot_owner_admin_and_account_revocation(app, db_session):
         snapshot(app, scope(), "downloads", ())
 
 
-def test_download_payload_preparing_ready_and_fallback_policy():
+def test_download_payload_preparing_ready_and_fallback_policy(app, db_session, tmp_path):
     from types import SimpleNamespace
     from sharewarez.live_snapshots import download_payload
-    policy = {"archiveCacheMode": "prefer", "archiveCacheFallbackEnabled": True}
-    archive = SimpleNamespace(state="building", bytes_written=99, source_bytes=100, failure_message=None)
-    item = SimpleNamespace(id=1, status="processing", delivery_kind="cached_archive",
-                           download_size=100, expires_at=None, archive=archive)
+    from sharewarez.utils.download_cache import request_resumable_archive, build_archive
+    from tests.test_download_cache import _cache_download_fixture
+    source, user, game, item = _cache_download_fixture(db_session, app, tmp_path, suffix='payload')
+    policy = {'archiveCacheMode': 'prefer', 'archiveCacheFallbackEnabled': True}
+    archive = request_resumable_archive(item)
+    archive.bytes_written = archive.source_bytes - 1
+    db_session.commit()
     preparing = download_payload(item, policy)
-    assert preparing["archive"]["progress"] == 99
-    assert preparing["fallback_available"] and not preparing["available"]
-    archive.state = "ready"
-    item.status = "available"
+    assert preparing['fallback_available'] and not preparing['available']
+    assert preparing['delivery_label'] == 'Preparing'
+    build_archive(SimpleNamespace(job_id=archive.build_job_id, heartbeat=lambda *args: None, check_cancelled=lambda: None), archive.id)
+    db_session.refresh(item)
+    db_session.refresh(archive)
     ready = download_payload(item, policy)
-    assert ready["available"] and ready["archive"]["state"] == "ready"
-    assert ready["archive"]["progress"] is None
-    policy["archiveCacheFallbackEnabled"] = False
-    assert not download_payload(item, policy)["fallback_available"]
+    assert ready['available'] and ready['archive']['state'] == 'ready'
+    assert ready['archive']['progress'] is None and not ready['fallback_available']
+    assert ready['delivery_label'] == 'Resumable'
 
 
 def test_cache_snapshot_stage_leases_and_admin_only_polling(app, db_session, client, tmp_path):

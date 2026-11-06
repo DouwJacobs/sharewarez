@@ -425,4 +425,70 @@ retained descriptor closes. Hash prefix + resumed output for a file and cached
 ZIP through the real staging ingress. Validate the initial 300-second default
 there; changing production proxy/mount settings remains separate operator work.
 
-T08-T11 remain open. Next: one shared member action/state resolver.
+T08-T11 remain open. Next: one shared member action/state resolver.## T08 completed: one member state/action authority
+
+Baseline: 9976c39c. utils/download_state.py now derives member presentation and
+allowed actions together. Active attempts take precedence, with bytes/progress
+and no conflicting link controls or duplicate Downloading button. Expiry is
+computed from the actual timestamp even before maintenance updates stored status;
+expired/cancelled links expose Renew/Retry only, and fallback cannot revive them.
+Preparation uses one policy path for new links, member retry and admin bulk retry:
+off makes directory links available as live ZIPs; prefer prepares cache or allows
+live fallback only when enabled; require/unavailable persists a recoverable failed
+link. Renew validates its source before changing expiry or representation.
+
+The HTML, download_payload/SSE, bounded polling and action handlers share that
+resolver. Actual prepared paths determine resumability, including a direct file
+inside a source folder and legacy file-only/completed rows. Existing healthy
+cached artifacts retain their representation, including while original storage
+is offline. Missing/unsafe sources offer a reason plus secondary Remove link;
+known archive causes use bounded public messages once. Latest relevant attempt
+and allowed actions are included in live/polled payloads. Member transfer context
+is bounded to requested, owned links; shared archive ownership does not make
+another member's attempt appear. Counts explicitly describe this page.
+
+Mutations lock the User and reload the link before checking active state, expiry,
+source and current policy. New HTTP admission rechecks the link and prepared
+representation under that same User lock, returning a correlated 409 without a
+quota row if they changed. Existing transfers can finish their open representation.
+Reopening from Game Details respects the same actions and never starts another
+transfer or renews an active/expired link implicitly. Legacy exact file-only paths
+reuse their historical link IDs. No destructive merge or schema change.
+
+Server forms remain in place through JS updates. Removing a link is secondary
+and explicitly labelled; original files and attempt records are not deleted.
+Cancelling one member's preparation does not cancel a shared archive build.
+Administrative revocation/removal remains role-specific, but active attempts
+block conflicting bulk operations. The legacy check_download_status wrapper keeps
+its stored status field for compatibility and adds a canonical download object;
+the member page uses the canonical status endpoint.
+
+Changed: new utils/download_state.py, download_creation.py/download_limits.py,
+asgi.py, member/initialization/API routes, live_snapshots.py, member template,
+canonical downloads_manager.js and download stylesheet; new test_download_states.py
+and strengthened live snapshot fixtures. No migration; head remains 20261106_34.
+Initial regressions reproduced terminal fallback revival, active retry mutation
+and cache-off retry remaining failed. Final disposable PostgreSQL runs (fresh DB
+per module): state matrix 37, package selection 13, member routes 19, download API
+18, SSE 15, snapshot cache 2, stream liveness 28, initiation 15, cache 7, admin
+routes 21, admission 4, transfer evidence 14, ranges 18, audit security 10:
+**221 Python tests passed**. Seven standalone live JavaScript checks pass. Cases
+include first HTML vs SSE/polling, original source offline, expired cached links,
+policy/source changes during POST, two owners, cancelled/shared/admin-stopped
+builds, serialized double retry, a transfer committed while the POST waits for its
+owner lock, and representation changes before quota admission. Required Mypy plus
+both state/creation helpers, Ruff, 94-template accessibility and diff checks pass.
+
+Computer Use against gamelibrary_t08_preview_test verified real Renew and Retry
+POSTs retaining link IDs and moving into Preparing; direct-file resumability after
+poll fallback; unknown source removal without a misleading retry; and one
+Downloading label with zero actions. A synthetic attempt terminal update appeared
+with its actual last-attempt reason through polling, without a reload. Default
+desktop and Ember 390 x 844 were inspected; buttons measure 42/44 px and document
+client/scroll widths match (1265 desktop, 375 mobile). A visual pass caught lost
+status color modifiers after polling; the corrected live Ready/Failed/Preparing
+classes preserve green/red/amber. Viewport reset and final tabs closed. Evidence:
+member-states-mobile.jpg in the task visualization folder.
+
+T09-T11 remain open. Next: separate administrator Activity/Links views and hide
+finished attempts without changing quota accounting.

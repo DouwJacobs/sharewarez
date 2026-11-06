@@ -3,14 +3,13 @@ import os
 from datetime import datetime, timezone
 
 from flask import current_app
-from sqlalchemy import func, or_, select, update
+from sqlalchemy import and_, func, or_, select, update
 
 from sharewarez import db
 from sharewarez.models import DownloadRequest, GlobalSettings, User
-from sharewarez.utils.download_cache import build_source_manifest, request_resumable_archive
+from sharewarez.utils.download_cache import build_source_manifest
 from sharewarez.utils.download_sources import direct_package_path
 from sharewarez.utils.download_limits import calculate_download_expiry
-from sharewarez.utils.filename import sanitize_filename
 from sharewarez.utils.security import get_allowed_base_directories, is_safe_path
 
 
@@ -26,6 +25,24 @@ def validate_download_source(source):
 
 
 def create_or_reuse_download(user_id, game, *, content_type='game', record=None):
+    source = game.full_disk_path if record is None else record.file_path
+    source = os.path.normpath(source) if source else None
+    # Serialize all entry points for a member before looking up a reusable link.
+    db.session.execute(select(User).where(User.id == user_id).with_for_update()).scalar_one()
+    update_id = record.id if content_type == 'update' else None
+    extra_id = record.id if content_type == 'extra' else None
+    matches = db.session.scalars(select(DownloadRequest).where(
+        DownloadRequest.user_id == user_id, DownloadRequest.game_uuid == game.uuid,
+        DownloadRequest.content_type == content_type,
+        or_(DownloadRequest.file_location == source, and_(DownloadRequest.file_location.is_(None), DownloadRequest.archive_id.is_(None), DownloadRequest.zip_file_path == source)),
+        or_(DownloadRequest.game_update_id == update_id, DownloadRequest.game_update_id.is_(None)),
+        or_(DownloadRequest.game_extra_id == extra_id, DownloadRequest.game_extra_id.is_(None)),
+    ).order_by(DownloadRequest.request_time.desc(), DownloadRequest.id.desc()).with_for_update()).all()
+    if matches:
+        if len(matches) > 1:
+            current_app.logger.warning('Duplicate download links retained for review: request_ids=%s', [item.id for item in matches])
+        # Keep historical IDs and transfer relationships intact; never merge/delete.
+        return matches[0], False
     source = validate_download_source(game.full_disk_path if record is None else record.file_path)
     settings = db.session.scalar(select(GlobalSettings))
     if os.path.isdir(source):
@@ -35,21 +52,6 @@ def create_or_reuse_download(user_id, game, *, content_type='game', record=None)
             size = os.path.getsize(package)
     else:
         package, size = source, os.path.getsize(source)
-    # Serialize all entry points for a member before looking up a reusable link.
-    db.session.execute(select(User).where(User.id == user_id).with_for_update()).scalar_one()
-    update_id = record.id if content_type == 'update' else None
-    extra_id = record.id if content_type == 'extra' else None
-    matches = db.session.scalars(select(DownloadRequest).where(
-        DownloadRequest.user_id == user_id, DownloadRequest.game_uuid == game.uuid,
-        DownloadRequest.content_type == content_type, DownloadRequest.file_location == source,
-        or_(DownloadRequest.game_update_id == update_id, DownloadRequest.game_update_id.is_(None)),
-        or_(DownloadRequest.game_extra_id == extra_id, DownloadRequest.game_extra_id.is_(None)),
-    ).order_by(DownloadRequest.request_time.desc(), DownloadRequest.id.desc()).with_for_update()).all()
-    if matches:
-        if len(matches) > 1:
-            current_app.logger.warning('Duplicate download links retained for review: request_ids=%s', [item.id for item in matches])
-        # Keep historical IDs and transfer relationships intact; never merge/delete.
-        return matches[0], False
     title = game.name if content_type == 'game' else (getattr(record, 'title', None) or getattr(record, 'name', None) or os.path.basename(source))
     link = DownloadRequest(user_id=user_id, game_uuid=game.uuid, content_type=content_type,
         content_title=title, game_update_id=update_id, game_extra_id=extra_id,
@@ -61,7 +63,7 @@ def create_or_reuse_download(user_id, game, *, content_type='game', record=None)
     model = type(counter)
     key = model.uuid == counter.uuid if record is None else model.id == counter.id
     db.session.execute(update(model).where(key).values(times_downloaded=func.coalesce(model.times_downloaded, 0) + 1))
-    if os.path.isdir(package):
-        request_resumable_archive(link, f'{sanitize_filename(title)}.zip')
+    from sharewarez.utils.download_state import prepare_download
+    prepare_download(link, settings, package=package, size=size)
     db.session.flush()
     return link, True

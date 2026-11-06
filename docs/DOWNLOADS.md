@@ -188,4 +188,28 @@ the application does not close/reuse its descriptor underneath a running read.
 Accounting and admission cleanup can finish while that safe reclamation waits.
 An application deadline cannot force an unresponsive kernel/mount operation to
 return. Validate kernel I/O recovery and the five-minute default on slow staging
-storage before release, with both supported processes and the real ingress.
+storage before release, with both supported processes and the real ingress.### Member link states and actions
+
+utils/download_state.py is the shared authority for HTML, SSE, polling and link
+mutations. Active attempts show progress first and suppress conflicting controls.
+Expired/cancelled links require Renew/Retry; a fallback POST cannot bypass expiry.
+Renew validates source eligibility and containment before changing the link.
+Unknown source locations show a reason and secondary Remove link. That removes
+only the reusable link; original game files and transfer accounting remain.
+
+New preparation and retries use the same off/prefer/require cache policy. A cache
+failure in require mode remains a failed link that can be retried when storage is
+healthy. Existing ready cached representations remain reusable while their source
+storage is offline. Resumability comes from the actual prepared file/archive,
+including the sole-file shortcut inside a game directory. Cancelling one link
+does not stop an archive shared with another member. Known preparation failures
+use bounded public messages, with latest HTTP attempt evidence shown separately.
+
+Actions lock the member and reload the link, then recheck active attempts, expiry,
+source and policy. Delivery admission checks that its prepared representation is
+still current under the same lock. A changed link is rejected before quota is
+reserved. Bookmarked Game Details initiation reuses the link and follows its
+current actions; it does not implicitly renew an expired or active link.
+The legacy check_download_status response retains stored status for compatibility
+and includes a canonical download object. The page and current status API use
+canonical state/actions, and the summary badges count the current page.

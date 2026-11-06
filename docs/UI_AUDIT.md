@@ -774,4 +774,18 @@ show Reason unavailable. Computer Use verified default desktop and Ember 390 x
 844 with distinct source-read, downstream-write and administrator-stop labels.
 Mobile has no document overflow; the existing history table owns its scroller.
 A browser stop POST and SQL independently confirmed retained actor/reason. T09
-will replace the combined activity/link presentation and reconcile terminal rows.
+will replace the combined activity/link presentation and reconcile terminal rows.### Canonical member download states (6 November 2026)
+
+The member page and live renderer now consume the same server state/action
+payload. Direct files inside source folders retain Resumable after updates.
+Expired links offer Renew; cancelled links offer Retry; active attempts display
+one Downloading status and no conflicting controls. Preparing hides its duplicate
+delivery label. Source-unavailable links show a cause and secondary Remove link.
+Latest attempt evidence is separate from preparation errors. Summary badges say
+On this page. Existing forms, focus handling and CSRF tokens survive live updates.
+
+Default desktop and Ember 390 x 844 Computer Use checks verified actual Renew/
+Retry submissions, polling fallback, terminal attempt reconciliation and the
+corrected semantic colors after live rendering. Buttons measure 42 px desktop /
+44 px mobile, with no document overflow (1265/375 client and scroll widths).
+Screenshot: member-states-mobile.jpg in the task artifact directory.
