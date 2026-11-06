@@ -750,10 +750,22 @@ class DownloadTransfer(db.Model):
     http_status = db.Column(db.SmallInteger, nullable=True)
     is_resumed = db.Column(db.Boolean, nullable=False, default=False)
 
+    end_reason = db.Column(db.String(32), nullable=True)
+    delivery_kind = db.Column(db.String(24), nullable=True)
+    expected_response_bytes = db.Column(db.BigInteger, nullable=True)
+    correlation_id = db.Column(db.String(64), nullable=True)
+    ended_by_user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'), nullable=True)
+    last_progress_at = db.Column(db.DateTime(timezone=True), nullable=True)
+
     user = db.relationship('User', foreign_keys=[user_id])
     download_request = db.relationship('DownloadRequest', foreign_keys=[download_request_id])
     game = db.relationship('Game', foreign_keys=[game_uuid])
     archive = db.relationship('DownloadArchive', foreign_keys=[archive_id])
+
+    @property
+    def end_reason_label(self):
+        from sharewarez.utils.transfer_evidence import reason_label
+        return reason_label(self.end_reason)
 
 
 class DownloadArchive(db.Model):

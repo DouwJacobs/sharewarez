@@ -86,7 +86,10 @@ def authenticate(app, scope, view):
 
 def transfer_payload(transfer, now, *, admin=False):
     elapsed = max(0, (now - transfer.started_at).total_seconds())
-    sent, expected = transfer.bytes_sent, transfer.reserved_bytes
+    sent = transfer.bytes_sent
+    expected = transfer.expected_response_bytes
+    if expected is None:
+        expected = 0 if transfer.delivery_kind == 'live_archive' else transfer.reserved_bytes
     current_speed = transfer_rates.observe(transfer.id, sent, now.timestamp(), transfer.last_activity_at.timestamp())
     result = {
         "id": transfer.id, "download_request_id": transfer.download_request_id,
@@ -100,9 +103,16 @@ def transfer_payload(transfer, now, *, admin=False):
         "eta_seconds": (expected - sent) / current_speed
         if expected > sent and current_speed and current_speed > 0 else None,
         "last_activity_at": transfer.last_activity_at.isoformat(),
+        "last_progress_at": transfer.last_progress_at.isoformat() if transfer.last_progress_at else None,
+        "status": transfer.status, "end_reason": transfer.end_reason,
+        "end_reason_label": transfer.end_reason_label,
+        "delivery_kind": transfer.delivery_kind,
+        "expected_response_bytes": transfer.expected_response_bytes,
+        "correlation_id": transfer.correlation_id,
+        "ended_at": transfer.ended_at.isoformat() if transfer.ended_at else None,
     }
     if admin:
-        result.update(username=transfer.user.name, filename=transfer.filename)
+        result.update(username=transfer.user.name, filename=transfer.filename, ended_by_user_id=transfer.ended_by_user_id)
     return result
 
 

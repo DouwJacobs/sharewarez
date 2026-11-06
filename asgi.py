@@ -9,6 +9,7 @@ import contextlib
 import os
 import re
 import json
+import logging
 import uuid
 import time
 from datetime import datetime, timezone
@@ -31,6 +32,8 @@ from sharewarez.utils.download_limits import (
 from sharewarez.utils.download_cache import (
     ArchiveCacheError, acquire_archive_lease, resolved_archive_path,
 )
+from sharewarez.observability import normalize_request_id
+from sharewarez.utils.transfer_evidence import TransferFailure, observed_chunks, observed_send
 from sqlalchemy import select
 from sqlalchemy.exc import TimeoutError as PoolTimeoutError
 
@@ -115,6 +118,20 @@ class LazyASGIApp:
     
     async def _handle_download(self, scope, receive, send):
         """Handle download routes with async file streaming"""
+        scope = dict(scope)
+        supplied = dict(scope.get('headers', [])).get(b'x-request-id', b'').decode('ascii', 'ignore')
+        scope['correlation_id'] = normalize_request_id(supplied)
+        raw_send = send
+        async def send(message):
+            if message['type'] == 'http.response.start':
+                message = {**message, 'headers': [*message.get('headers', []),
+                           (b'x-request-id', scope['correlation_id'].encode('ascii'))]}
+                if message['status'] >= 400:
+                    route = '/download_zip/<download_id>' if scope['path'].startswith('/download_zip/') else '/api/downloadrom/<game_uuid>'
+                    logging.getLogger('gamelibrary.download').warning('Download rejected', extra={
+                        'request_id': scope['correlation_id'], 'path': route,
+                        'method': scope['method'], 'status': message['status']})
+            await raw_send(message)
         path = scope["path"]
         method = scope["method"]
         
@@ -325,7 +342,7 @@ class LazyASGIApp:
             if data['is_dir']:
                 await self._handle_streaming_download(receive, send, data['req_id'],
                     data['file_location'], data['game_name'], data['file_path'], user_id,
-                    bandwidth_limit, method=scope.get('method', 'GET'))
+                    bandwidth_limit, method=scope.get('method', 'GET'), correlation_id=scope.get('correlation_id'))
             else:
                 await self._stream_file(receive, send, data['file_path'], data['filename'],
                     scope, user_id, bandwidth_limit, download_request_id=data['req_id'],
@@ -380,6 +397,7 @@ class LazyASGIApp:
     def _sync_reserve_transfer(
         self, user_id, filename, length, download_request_id, game_uuid=None,
         archive_id=None, range_start=None, range_end=None, http_status=None,
+        delivery_kind=None, expected_response_bytes=None, correlation_id=None,
     ):
         """Run reserve_transfer synchronously inside a Flask app context."""
         with self._flask_app.app_context():
@@ -387,18 +405,22 @@ class LazyASGIApp:
                 user_id, filename, length,
                 download_request_id=download_request_id, game_uuid=game_uuid,
                 archive_id=archive_id, range_start=range_start, range_end=range_end,
-                http_status=http_status,
+                http_status=http_status, delivery_kind=delivery_kind,
+                expected_response_bytes=expected_response_bytes, correlation_id=correlation_id,
             )
 
     def _sync_update_transfer_progress(self, transfer_id, bytes_sent):
         """Run update_transfer_progress synchronously inside a Flask app context."""
-        with self._flask_app.app_context():
-            return update_transfer_progress(transfer_id, bytes_sent)
+        try:
+            with self._flask_app.app_context():
+                return update_transfer_progress(transfer_id, bytes_sent)
+        except Exception as exc:
+            raise TransferFailure('progress_store_error') from exc
 
-    def _sync_finish_transfer(self, transfer_id, bytes_sent, status):
+    def _sync_finish_transfer(self, transfer_id, bytes_sent, status, end_reason=None):
         """Run finish_transfer synchronously inside a Flask app context."""
         with self._flask_app.app_context():
-            finish_transfer(transfer_id, bytes_sent, status)
+            finish_transfer(transfer_id, bytes_sent, status, end_reason=end_reason)
 
     async def _watch_disconnect(self, receive, disconnected):
         while not disconnected.is_set():
@@ -414,10 +436,15 @@ class LazyASGIApp:
     ):
         """Stream a file asynchronously"""
         transfer_id = None
+        end_reason = 'unknown'
+        raw_send = send
+        async def send(message):
+            await observed_send(raw_send, message)
         bytes_sent = 0
         completed = False
         response_started = False
         externally_stopped = False
+        correlation_id = normalize_request_id(scope.get('correlation_id', ''))
         disconnected = asyncio.Event()
         disconnect_task = asyncio.create_task(self._watch_disconnect(receive, disconnected))
         try:
@@ -452,7 +479,8 @@ class LazyASGIApp:
             if user_id is not None and scope.get('method') != 'HEAD':
                 transfer_id, _used_bytes, _quota_bytes = await run_owned_in_thread(
                     lambda: self._sync_reserve_transfer(user_id, filename, length,
-                        download_request_id, game_uuid, archive_id, start, (start + length - 1), status),
+                        download_request_id, game_uuid, archive_id, start, (start + length - 1), status,
+                        "cached_archive" if archive_id else "direct", length, correlation_id),
                     self._cleanup_reservation,
                 )
                 if transfer_id is None:
@@ -483,7 +511,7 @@ class LazyASGIApp:
             
             # Stream file chunks
             progress_updated_at = time.monotonic()
-            async for chunk in throttle_chunks(async_generator, bandwidth_limit):
+            async for chunk in throttle_chunks(observed_chunks(async_generator), bandwidth_limit):
                 if disconnected.is_set():
                     break
                 if transfer_id is not None and time.monotonic() - progress_updated_at >= 1:
@@ -512,7 +540,8 @@ class LazyASGIApp:
             completed = True
             
         except Exception as e:
-            print(f"Error streaming file: {type(e).__name__}")
+            end_reason = e.reason if isinstance(e, TransferFailure) else 'source_read_error'
+            logging.getLogger('gamelibrary.download').error('File transfer failed: %s (%s)', end_reason, type(e).__name__, extra={'request_id': correlation_id})
             if not response_started:
                 await self._send_error(send, 500, "Error streaming file")
         finally:
@@ -523,6 +552,7 @@ class LazyASGIApp:
                 await asyncio.to_thread(
                     self._sync_finish_transfer, transfer_id, bytes_sent,
                     'completed' if completed else 'interrupted',
+                    'completed' if completed else ('peer_disconnect' if disconnected.is_set() else end_reason),
                 )
     
     def _sync_archive_exclusions(self):
@@ -533,10 +563,15 @@ class LazyASGIApp:
 
     async def _handle_streaming_download(
         self, receive, send, download_request_id, file_location, game_name,
-        source_path, user_id, bandwidth_limit=0, method='GET',
+        source_path, user_id, bandwidth_limit=0, method='GET', correlation_id=None,
     ):
         """Handle zipstream downloads for multi-file games"""
+        correlation_id = normalize_request_id(correlation_id or '')
         transfer_id = None
+        end_reason = 'unknown'
+        raw_send = send
+        async def send(message):
+            await observed_send(raw_send, message)
         bytes_sent = 0
         completed = False
         response_started = False
@@ -591,7 +626,8 @@ class LazyASGIApp:
 
             expected_bytes = await asyncio.to_thread(estimate_path_bytes, source_path)
             transfer_id, _used_bytes, _quota_bytes = await run_owned_in_thread(
-                lambda: self._sync_reserve_transfer(user_id, filename, expected_bytes, download_request_id, None),
+                lambda: self._sync_reserve_transfer(user_id, filename, expected_bytes, download_request_id, None,
+                    delivery_kind='live_archive', http_status=200, correlation_id=correlation_id),
                 self._cleanup_reservation,
             )
             if transfer_id is None:
@@ -619,7 +655,7 @@ class LazyASGIApp:
             
             # Stream ZIP chunks
             progress_updated_at = time.monotonic()
-            async for chunk in throttle_chunks(async_generator, bandwidth_limit):
+            async for chunk in throttle_chunks(observed_chunks(async_generator, archive=True), bandwidth_limit):
                 if disconnected.is_set():
                     break
                 if transfer_id is not None and time.monotonic() - progress_updated_at >= 1:
@@ -650,9 +686,8 @@ class LazyASGIApp:
             completed = True
             
         except Exception as e:
-            # Use print and handle potential undefined filename
-            error_filename = locals().get('filename', 'unknown')
-            print(f"Error streaming ZIP {error_filename}: {str(e)}")
+            end_reason = e.reason if isinstance(e, TransferFailure) else 'archive_generation_error'
+            logging.getLogger('gamelibrary.download').error('Archive transfer failed: %s (%s)', end_reason, type(e).__name__, extra={'request_id': correlation_id})
             
             if not response_started:
                 await self._send_error(send, 500, "Error streaming ZIP file")
@@ -664,6 +699,7 @@ class LazyASGIApp:
                 await asyncio.to_thread(
                     self._sync_finish_transfer, transfer_id, bytes_sent,
                     'completed' if completed else 'interrupted',
+                    'completed' if completed else ('peer_disconnect' if disconnected.is_set() else end_reason),
                 )
     
     async def _send_error(self, send, status_code, message, extra_headers=None):

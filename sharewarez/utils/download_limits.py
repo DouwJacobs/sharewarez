@@ -201,6 +201,7 @@ def estimate_path_bytes(path):
 def reserve_transfer(
     user_id, filename, expected_bytes, download_request_id=None, game_uuid=None,
     *, archive_id=None, range_start=None, range_end=None, http_status=None,
+    delivery_kind=None, expected_response_bytes=None, correlation_id=None,
 ):
     """Atomically reserve monthly quota and create an active transfer record."""
     from sharewarez import db
@@ -232,6 +233,8 @@ def reserve_transfer(
         game_uuid = db.session.scalar(
             select(DownloadRequest.game_uuid).where(DownloadRequest.id == download_request_id)
         )
+    from sharewarez.observability import normalize_request_id
+    correlation_id = normalize_request_id(correlation_id or '')
     transfer = DownloadTransfer(
         user_id=user_id,
         download_request_id=download_request_id,
@@ -245,6 +248,10 @@ def reserve_transfer(
         range_end=range_end,
         http_status=http_status,
         is_resumed=bool(range_start),
+        delivery_kind=delivery_kind if delivery_kind in {'direct', 'cached_archive', 'live_archive'} else None,
+        expected_response_bytes=expected_response_bytes,
+        correlation_id=correlation_id,
+        last_progress_at=now,
     )
     db.session.add(transfer)
     db.session.commit()
@@ -260,10 +267,14 @@ def reserve_transfer(
     return transfer.id, used_bytes, quota_bytes
 
 
-def finish_transfer(transfer_id, bytes_sent, status):
+def finish_transfer(transfer_id, bytes_sent, status, *, end_reason=None, ended_by_user_id=None):
     from sharewarez import db
     from sharewarez.models import DownloadTransfer
 
+    from sharewarez.utils.transfer_evidence import REASON_LABELS
+    if end_reason not in REASON_LABELS:
+        end_reason = 'completed' if status == 'completed' else 'unknown'
+    ended_by_user_id = ended_by_user_id if end_reason == 'admin_stop' else None
     reported_bytes = max(0, bytes_sent)
     now = datetime.now(timezone.utc)
     result = db.session.execute(
@@ -276,6 +287,9 @@ def finish_transfer(transfer_id, bytes_sent, status):
             bytes_sent=reported_bytes,
             reserved_bytes=reported_bytes,
             status=status,
+            end_reason=end_reason,
+            ended_by_user_id=ended_by_user_id,
+            last_progress_at=case((DownloadTransfer.bytes_sent < reported_bytes, now), else_=DownloadTransfer.last_progress_at),
             last_activity_at=now,
             ended_at=now,
         )
@@ -292,9 +306,10 @@ def finish_transfer(transfer_id, bytes_sent, status):
             update(DownloadTransfer)
             .where(
                 DownloadTransfer.id == transfer_id,
-                DownloadTransfer.status.in_(('cancelled', 'interrupted')),
+                DownloadTransfer.status.in_(('cancelled', 'interrupted', 'completed')),
             )
-            .values(bytes_sent=reconciled_bytes, reserved_bytes=reconciled_bytes)
+            .values(bytes_sent=reconciled_bytes, reserved_bytes=reconciled_bytes,
+                    last_progress_at=case((DownloadTransfer.bytes_sent < reported_bytes, now), else_=DownloadTransfer.last_progress_at))
         )
     db.session.commit()
     return (result.rowcount or 0) > 0
@@ -308,7 +323,9 @@ def update_transfer_progress(transfer_id, bytes_sent):
     result = db.session.execute(
         update(DownloadTransfer)
         .where(DownloadTransfer.id == transfer_id, DownloadTransfer.status == 'active')
-        .values(bytes_sent=max(0, bytes_sent), last_activity_at=datetime.now(timezone.utc))
+        .values(bytes_sent=max(0, bytes_sent), last_activity_at=datetime.now(timezone.utc),
+                last_progress_at=case((DownloadTransfer.bytes_sent < max(0, bytes_sent), datetime.now(timezone.utc)),
+                                      else_=DownloadTransfer.last_progress_at))
     )
     db.session.commit()
     return result.rowcount > 0
@@ -329,6 +346,7 @@ def mark_stale_transfers(stale_seconds=60):
         )
         .values(
             status='interrupted',
+            end_reason='stale_heartbeat',
             reserved_bytes=DownloadTransfer.bytes_sent,
             ended_at=now,
         )

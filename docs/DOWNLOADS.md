@@ -150,4 +150,19 @@ preparation. The main-game direct-file shortcut applies only to a single
 significant root file with notes/metadata and no eligible nested files. A launcher
 with nested assets therefore produces a complete archive. Updates and extras
 are validated and packaged relative to their own source. A missing source is
-reported before creating a link or incrementing the request counter.
+reported before creating a link or incrementing the request counter.### Transfer evidence
+
+Each new HTTP attempt records its delivery kind, original fixed response length
+(or unknown for live ZIP), correlation ID and last byte-progress time. The first
+terminal decision retains its reason and explicit administrator actor; later
+stream finalization may reconcile additional bytes without changing that decision.
+Historical attempts without evidence show **Reason unavailable**.
+
+Reasons distinguish completed delivery, observed peer disconnect, downstream
+connection write failure, source read failure, archive generation failure,
+progress persistence failure, stale owner heartbeat, administrator stop, inactivity
+timeout and unknown interruption. A reason records the observed boundary; it does
+not establish a proxy or browser root cause. Reasons are fixed public labels and
+never include raw exception text, source paths or credentials. Download ingress
+validates or generates X-Request-ID and logs rejections with that ID and a route
+pattern; rejected admission does not create a quota-bearing attempt.

@@ -28,7 +28,7 @@ def test_scan_lifecycle_upgrade_preserves_previous_rows(app, db_session):
     command.upgrade(alembic_config(database_uri), 'head')
     row = db_session.execute(text("SELECT status, folders_success, folders_failed, folders_unmatched, outcome, background_job_id, replacement_job_id FROM scan_jobs WHERE id = 'legacy-scan'" )).one()
     assert tuple(row) == ('Failed', 2, 1, 0, None, None, None)
-    assert current_revision(database_uri) == '20261105_33'
+    assert current_revision(database_uri) == head_revision()
 
 
 def test_scan_lifecycle_fresh_bootstrap_matches_head(app, db_session):
@@ -38,7 +38,7 @@ def test_scan_lifecycle_fresh_bootstrap_matches_head(app, db_session):
     db_session.commit()
     db_session.refresh(row)
     assert row.folders_unmatched == 0 and row.scan_options == {'fetch_hltb': False}
-    assert current_revision(app.config['SQLALCHEMY_DATABASE_URI']) == head_revision() == '20261105_33'
+    assert current_revision(app.config['SQLALCHEMY_DATABASE_URI']) == head_revision() == '20261106_34'
 
 
 @pytest.fixture(autouse=True)
@@ -274,3 +274,45 @@ def test_latest_upgrades_reconcile_metadata_created_schema(app, db_session):
         "WHERE table_schema = 'public'"
     )).scalars())
     assert {'notification_events', 'webhook_endpoints', 'webhook_deliveries'} <= tables
+
+
+def test_transfer_evidence_upgrade_preserves_populated_previous_schema(app, db_session):
+    from uuid import uuid4
+    from sharewarez.models import DownloadTransfer, User
+    uri = app.config['SQLALCHEMY_DATABASE_URI']
+    command.downgrade(alembic_config(uri), '20261105_33')
+    owner = User(name=uuid4().hex, email=f'{uuid4().hex}@example.test', password_hash='unused', role='user')
+    actor = User(name=uuid4().hex, email=f'{uuid4().hex}@example.test', password_hash='unused', role='admin')
+    db_session.add_all([owner, actor])
+    db_session.commit()
+    transfer_id = db_session.execute(text("INSERT INTO download_transfers (user_id, filename, reserved_bytes, bytes_sent, status, started_at, last_activity_at, is_resumed) VALUES (:owner, 'legacy.bin', 7, 7, 'interrupted', now(), now(), false) RETURNING id"), {'owner': owner.id}).scalar_one()
+    db_session.commit()
+    command.upgrade(alembic_config(uri), 'head')
+    row = db_session.get(DownloadTransfer, transfer_id)
+    assert row.bytes_sent == row.reserved_bytes == 7 and row.status == 'interrupted'
+    assert all(getattr(row, field) is None for field in ('end_reason', 'delivery_kind', 'expected_response_bytes', 'correlation_id', 'ended_by_user_id', 'last_progress_at'))
+    assert row.end_reason_label == 'Reason unavailable'
+    row.end_reason = 'admin_stop'
+    row.ended_by_user_id = actor.id
+    row.expected_response_bytes = 8_000_000_000
+    db_session.commit()
+    db_session.delete(actor)
+    db_session.commit()
+    db_session.refresh(row)
+    assert row.ended_by_user_id is None and row.expected_response_bytes == 8_000_000_000
+    db_session.commit()
+    command.downgrade(alembic_config(uri), '20261105_33')
+    command.upgrade(alembic_config(uri), 'head')
+    assert current_revision(uri) == head_revision() == '20261106_34'
+
+
+def test_transfer_evidence_upgrade_accepts_metadata_created_columns(app, db_session):
+    from sqlalchemy import inspect
+    uri = app.config['SQLALCHEMY_DATABASE_URI']
+    command.stamp(alembic_config(uri), '20261105_33', purge=True)
+    command.upgrade(alembic_config(uri), 'head')
+    command.upgrade(alembic_config(uri), 'head')
+    columns = {column['name']: column for column in inspect(db.engine).get_columns('download_transfers')}
+    assert columns['last_progress_at']['type'].timezone
+    assert columns['end_reason']['nullable'] and columns['expected_response_bytes']['nullable']
+    assert len([fk for fk in inspect(db.engine).get_foreign_keys('download_transfers') if fk['constrained_columns'] == ['ended_by_user_id']]) == 1

@@ -304,4 +304,59 @@ download-confirm-mobile.jpg and download-assets-mobile.jpg in the task artifacts
 Manifest timing was measured independently: 5,000 files in 50 folders took 0.380 s
 on local disposable storage; this is not a network-storage latency claim.
 
-T06-T11 remain open. Next: persistent transfer reasons and attempt evidence.
+T06-T11 remain open. Next: persistent transfer reasons and attempt evidence.## T06 completed: durable transfer evidence
+
+Baseline: eddfde4d. Additive migration 20261106_34 (after 20261105_33) adds nullable
+end_reason, delivery_kind, expected_response_bytes (big integer), correlation_id,
+ended_by_user_id (User FK, SET NULL) and timezone-aware last_progress_at. Existing
+rows retain null evidence and display Reason unavailable. No enum conversion or
+historical cause inference. Model/bootstrap and previous populated-schema paths
+are covered, including downgrade/re-upgrade and one head.
+
+reserve_transfer accepts representation evidence. Fixed responses retain their
+original selected length, including 206 ranges; live ZIP response length stays
+unknown. ASGI ingress validates/generates correlation IDs, returns X-Request-ID
+and logs rejected requests with a route pattern and correlation, without creating
+a quota row. Read, ZIP generation, downstream send and progress-store observation
+boundaries assign bounded reasons. Explicit http.disconnect records peer_disconnect;
+task cancellation without an observed cause remains unknown. Successful completion,
+stale heartbeat and explicit administrator stop have distinct reasons. The stop
+endpoint records its actor. The first conditional terminal update wins; late
+finalizers reconcile streamed/accounting bytes without replacing reason or actor.
+Progress timestamps advance with reported byte changes, including finalization.
+Raw exception text is never used as a member-visible reason.
+
+History renders readable reasons beside terminal states; transfer_payload exposes
+status, reason/label, original expected length, representation, correlation and
+progress timestamps, with the actor ID in administrator payloads. T07 still owns
+independent heartbeat, cancellable waits, inactivity timeout and early-EOF checks;
+T08/T09 own shared member actions and bounded terminal-row live reconciliation.
+
+Changed: models.py, utils/download_limits.py, utils/transfer_evidence.py,
+asgi.py, live_snapshots.py, routes_downloads_ext/admin.py and its template;
+migration 20261106_34; new transfer evidence tests and migration assertions.
+Initial regressions reproduced missing read/write reasons and terminal-reason
+persistence. Final disposable PostgreSQL run (fresh DB per module):
+test_transfer_evidence.py 14, test_migrations.py 12, test_download_limits.py 9,
+test_download_admission_audit.py 4, test_download_ranges.py 18,
+test_routes_downloads_ext_admin.py 21, test_live_sse.py 15,
+test_live_snapshot_cache.py 2: **95 passed**. Tests inject actual source/send/progress
+boundary failures, archive generation error and disconnect; cover concurrent
+terminal decisions, actor preservation, stale cleanup, original range length,
+validated and rejected correlation IDs, historical display and progress clocks.
+Migration tests preserve populated old rows, an 8 GB length, actor SET NULL,
+metadata-created foreign keys and idempotent upgrade. A fixture read transaction
+initially held a downgrade lock; it was verified/cancelled in the disposable DB
+and corrected by ending the read transaction before DDL. Final migration run passes.
+Ruff, required four-module Mypy plus transfer_evidence.py, accessibility (94
+templates) and diff checks pass.
+
+Computer Use verified default desktop and Ember 390 x 844 history with distinct
+source/write/admin reasons and Reason unavailable. A real stop POST completed;
+SQL confirms attempt 5 is cancelled/admin_stop, actor 1, bytes/reservation 20.
+The browser initially stalled during that click; a fresh tab and SQL independently
+verified its result. Mobile document client/scroll widths both measure 375 px;
+the history table owns its internal scroller. Viewport reset and tabs closed.
+Evidence: transfer-reasons-mobile.jpg in the task visualization folder.
+
+T07-T11 remain open. Next: stream liveness, cancellation and fixed-length integrity.

@@ -1,6 +1,6 @@
 from flask import render_template, redirect, url_for, flash, request, jsonify
 from datetime import datetime, timezone
-from flask_login import login_required
+from flask_login import current_user, login_required
 from sharewarez.forms import CsrfProtectForm
 from sharewarez.models import DownloadQueueEntry, DownloadRequest, DownloadTransfer, User
 from sqlalchemy import and_, delete, select, update
@@ -92,6 +92,8 @@ def cancel_transfer(transfer_id):
         )
         .values(
             status='cancelled',
+            end_reason='admin_stop',
+            ended_by_user_id=current_user.id,
             reserved_bytes=DownloadTransfer.bytes_sent,
             last_activity_at=now,
             ended_at=now,

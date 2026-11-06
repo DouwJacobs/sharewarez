@@ -54,3 +54,12 @@ keys, and its downgrade recognizes PostgreSQL-generated FK names. Fresh schema,
 previous-version populated upgrade, downgrade/re-upgrade, and a single revision
 head are covered by `tests/test_migrations.py`. Follow the normal backup and
 Alembic upgrade procedure before running code that uses these fields.
+
+Revision `20261106_34` adds nullable transfer evidence after `20261105_33`:
+terminal reason, delivery kind, original expected response bytes, correlation ID,
+nullable administrator actor with SET NULL, and a timezone-aware progress clock.
+Existing attempts are preserved with null evidence; no cause is inferred. The
+revision handles both previous populated schemas and metadata-created columns/FKs.
+Tests cover fresh bootstrap, populated upgrade, downgrade/re-upgrade, an 8 GB
+expected length, actor deletion and one migration head. Follow the usual backup
+and Alembic upgrade process before starting code that reads these fields.

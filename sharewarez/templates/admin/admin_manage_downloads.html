@@ -42,7 +42,7 @@
                         <td>{{ transfer.user.name }}</td>
                         <td class="file-name-cell" title="{{ transfer.filename }}">{{ transfer.filename }}</td>
                         <td>{% set transfer_game = transfer.game or (transfer.download_request.game if transfer.download_request else none) %}{% if transfer_game %}<a class="downloads-game-link" href="{{ url_for('games.game_details', game_uuid=transfer_game.uuid) }}">{{ transfer_game.name }}</a>{% else %}<span class="text-muted">Legacy record</span>{% endif %}</td>
-                        <td>{{ status_badge(transfer.status) }}</td>
+                        <td>{{ status_badge(transfer.status) }}{% if transfer.status != 'active' %}<small class="d-block text-muted">{{ transfer.end_reason_label }}</small>{% endif %}</td>
                         <td>{{ transfer.formatted_bytes_sent }}</td>
                         <td>{{ transfer.ended_at|friendly_datetime if transfer.ended_at else 'In progress' }}</td>
                         <td>{% if transfer.status == 'active' %}<form method="post" action="{{ url_for('download.cancel_transfer', transfer_id=transfer.id) }}" onsubmit="return confirm('Cancel this active transfer?');"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-danger btn-sm" type="submit"><i class="fas fa-stop" aria-hidden="true"></i> Cancel</button></form>{% else %}<span class="text-muted">—</span>{% endif %}</td>

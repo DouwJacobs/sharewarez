@@ -767,4 +767,11 @@ app-page/app-surface confirmation with a primary Prepare download action and
 secondary My downloads link. Computer Use verified default desktop and Ember
 390 x 844 confirmation, actual game/update submissions and mobile reuse.
 The asset modal uses 44 px mobile download buttons and its single-column table
-fits the dialog rather than inheriting the shared 680 px table minimum.
+fits the dialog rather than inheriting the shared 680 px table minimum.### Transfer reason history (6 November 2026)
+
+Terminal status cells now include a readable reason. Historical nulls explicitly
+show Reason unavailable. Computer Use verified default desktop and Ember 390 x
+844 with distinct source-read, downstream-write and administrator-stop labels.
+Mobile has no document overflow; the existing history table owns its scroller.
+A browser stop POST and SQL independently confirmed retained actor/reason. T09
+will replace the combined activity/link presentation and reconcile terminal rows.
