@@ -7,8 +7,8 @@
 
 {% block content %}
 <main class="app-page settings-panel-page" aria-labelledby="settings-page-title">
-    {% call page_header('Settings', 'Choose how your library behaves and how ' ~ site_title ~ ' looks for your account.', 'Personalization', title_id='settings-page-title', class_name='settings-page-header', eyebrow_class='settings-eyebrow') %}
-        <a class="btn btn-secondary" href="{{ url_for('settings.settings_profile_view') }}"><i class="fas fa-user" aria-hidden="true"></i> Account</a>
+    {% call page_header('Account Settings', 'Choose how your library behaves and how ' ~ site_title ~ ' looks for your account.', 'Personalization', title_id='settings-page-title', class_name='settings-page-header', eyebrow_class='settings-eyebrow') %}
+        <a class="btn btn-secondary" href="{{ url_for('settings.settings_profile_view') }}{{ '#preferences' if request.args.get('return_to') == 'preferences' else '' }}"><i class="fas fa-user" aria-hidden="true"></i> Account</a>
     {% endcall %}
 
     <form id="preferencesForm" method="POST" action="{{ url_for('settings.settings_panel') }}" class="settings-form app-stack">
@@ -79,7 +79,7 @@
             <div class="settings-actions">
                 <p><i class="fas fa-circle-info" aria-hidden="true"></i> These preferences apply only to your account.</p>
                 <div>
-                    <a class="btn btn-secondary" href="{{ url_for('settings.settings_profile_view') }}">Cancel</a>
+                    <a class="btn btn-secondary" href="{{ url_for('settings.settings_profile_view') }}{{ '#preferences' if request.args.get('return_to') == 'preferences' else '' }}">Cancel</a>
                     {{ form.submit(class="btn btn-primary") }}
                 </div>
             </div>

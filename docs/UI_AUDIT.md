@@ -807,3 +807,27 @@ polling updates, and the centered reusable-link action dialog. Modal markup live
 in the shared top-level modals block. Results replacement preserves active input,
 text selection, selected bulk rows and modal controls by deferring the refresh.
 See ADMIN_SCAN_DOWNLOAD_PROGRESS.md for database and browser evidence.
+
+### Settings ownership and inherited scan options (6 November 2026)
+
+Application Settings saves one category's changed keys and retains other drafts.
+The category URL survives reload/history. Metadata & enrichment and Metadata
+providers have distinct names and contextual links. Configure has one settings
+entry; notification-rule deep links still resolve. Integrations derives its four
+panes from actual controls, so Webhooks survives reload on desktop and the mobile
+section selector. Flash routing and old aliases use that same controller.
+
+Profile offers Open Account Settings instead of a second preference form; return
+links restore its Preferences pane. Browsing, appearance and personal notification
+controls remain together. Auto/Manual/Schedule use flat Advanced scan options
+disclosures, with destructive cleanup outside them. Inherited HLTB availability
+and a prerequisite link replace duplicate availability copy. Download limits,
+transfer Activity/Links, and archive-cache policy keep separate destinations.
+
+Computer Use verified default desktop and Ember/default 390×844, actual scoped
+saves from stale tabs, invalid hidden drafts, account-save/return behavior, all
+integration reloads, legacy SMTP navigation, a credential-safe dummy connection
+test, inherited disabled scan options, disclosure opening and guide readability.
+Mobile fields/actions measure 44 px, with one outer gutter and no document
+horizontal overflow; wide guide/history tables retain their own scroller. See
+SETTINGS_OWNERSHIP.md and ADMIN_SCAN_DOWNLOAD_PROGRESS.md for the contract/evidence.

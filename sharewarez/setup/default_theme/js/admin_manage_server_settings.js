@@ -1,148 +1,109 @@
-document.addEventListener('DOMContentLoaded', function() {
-    console.log("Settings form DOMContentLoaded event triggered.");
-
-    // Initialize tooltips
-    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-toggle="tooltip"]'))
-    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-        return new bootstrap.Tooltip(tooltipTriggerEl)
-    });
-
-    const currentSettings = JSON.parse(document.getElementById('currentSettings').textContent);
-    console.log("Current settings loaded:", currentSettings);
-
-    const categoryButtons = Array.from(document.querySelectorAll('[data-settings-target]'));
-    const settingsPanels = Array.from(document.querySelectorAll('[data-settings-panel]'));
-    categoryButtons.forEach(function(button) {
-        button.addEventListener('click', function() {
-            const target = button.dataset.settingsTarget;
-            categoryButtons.forEach(item => {
-                const selected = item === button;
-                item.classList.toggle('is-active', selected);
-                item.setAttribute('aria-selected', selected ? 'true' : 'false');
-            });
-            settingsPanels.forEach(panel => {
-                const selected = panel.dataset.settingsPanel === target;
-                panel.classList.toggle('is-active', selected);
-                panel.hidden = !selected;
-            });
-        });
-    });
-    const initialSection = document.querySelector('.server-settings-page')?.dataset.initialSettingsSection || 'general';
-    const initialButton = categoryButtons.find(button => button.dataset.settingsTarget === initialSection);
-    if (initialButton) initialButton.click();
-
-    // Apply current settings to form
-    Object.keys(currentSettings).forEach(function(key) {
+/* Save only changed keys owned by the visible section. */
+document.addEventListener('DOMContentLoaded', () => {
+    const form = document.getElementById('settingsForm');
+    const current = JSON.parse(document.getElementById('currentSettings').textContent);
+    const panels = Array.from(form.querySelectorAll('[data-settings-panel]'));
+    const buttons = Array.from(form.querySelectorAll('[data-settings-target]'));
+    const mobileItems = ['discover', 'library', 'requests', 'downloads', 'favorites'];
+    const slots = Array.from(form.querySelectorAll('.mobile-nav-slot'));
+    for (const [key, value] of Object.entries(current)) {
         const input = document.getElementById(key);
-        if (input && input.type === 'checkbox') {
-            input.checked = currentSettings[key];
-        } else if (input) {
-            input.value = currentSettings[key];
-        }
-        console.log("Applied setting for:", key, "; Value:", currentSettings[key]);
-    });
-
-    const mobileNavItems = ['discover', 'library', 'requests', 'downloads', 'favorites'];
-    const savedMobileOrder = Array.isArray(currentSettings.mobileNavOrder)
-        ? currentSettings.mobileNavOrder
-        : mobileNavItems;
-    const mobileNavSlots = Array.from(document.querySelectorAll('.mobile-nav-slot'));
-    mobileNavSlots.forEach(function(select, index) {
-        select.value = savedMobileOrder[index] || mobileNavItems[index];
-    });
-    function updateMobileNavOptions() {
-        const selected = mobileNavSlots.map(select => select.value);
-        mobileNavSlots.forEach(function(select) {
-            Array.from(select.options).forEach(function(option) {
-                option.disabled = option.value !== select.value && selected.includes(option.value);
-            });
-        });
+        if (!input) continue;
+        if (input.type === 'checkbox') input.checked = value;
+        else input.value = value;
     }
-    mobileNavSlots.forEach(select => select.addEventListener('change', updateMobileNavOptions));
-    updateMobileNavOptions();
-
-    // Form submission handler
-    document.getElementById('settingsForm').addEventListener('submit', function(e) {
-        e.preventDefault();
-        console.log("Form submit event triggered.");
-
-        const settings = {
-            showSystemLogo: document.getElementById('showSystemLogo').checked,
-            showHelpButton: document.getElementById('showHelpButton').checked,
-            allowUsersToInviteOthers: document.getElementById('allowUsersToInviteOthers').checked,
-            enableWebLinksOnDetailsPage: document.getElementById('enableWebLinksOnDetailsPage').checked,
-            enableServerStatusFeature: document.getElementById('enableServerStatusFeature').checked,
-            enableNewsletterFeature: document.getElementById('enableNewsletterFeature').checked,
-            showVersion: document.getElementById('showVersion').checked,
-            showDiscovery: document.getElementById('showDiscovery').checked,
-            showFavorites: document.getElementById('showFavorites').checked,
-            showTrailers: document.getElementById('showTrailers').checked,
-            showPlayStatus: document.getElementById('showPlayStatus').checked,
-            enableDeleteGameOnDisk: document.getElementById('enableDeleteGameOnDisk').checked,
-            enableGameUpdates: document.getElementById('enableGameUpdates').checked,
-            enableGameExtras: document.getElementById('enableGameExtras').checked,
-            updateFolderName: document.getElementById('updateFolderName').value,
-            extrasFolderName: document.getElementById('extrasFolderName').value,
-            siteUrl: document.getElementById('siteUrl').value,
-            useTurboImageDownloads: document.getElementById('useTurboImageDownloads').checked,
-            turboDownloadThreads: parseInt(document.getElementById('turboDownloadThreads').value),
-            turboDownloadBatchSize: parseInt(document.getElementById('turboDownloadBatchSize').value),
-            maxConcurrentDownloadsPerUser: parseInt(document.getElementById('maxConcurrentDownloadsPerUser').value),
-            downloadBandwidthLimitMbps: parseFloat(document.getElementById('downloadBandwidthLimitMbps').value),
-            defaultMonthlyDownloadQuotaGb: parseFloat(document.getElementById('defaultMonthlyDownloadQuotaGb').value),
-            downloadQueueWaitSeconds: parseInt(document.getElementById('downloadQueueWaitSeconds').value),
-            downloadRequestExpirationHours: parseInt(document.getElementById('downloadRequestExpirationHours').value),
-            scanThreadCount: parseInt(document.getElementById('scanThreadCount').value),
-            enableHltbIntegration: document.getElementById('enableHltbIntegration').checked,
-            hltbRateLimitDelay: parseFloat(document.getElementById('hltbRateLimitDelay').value),
-            useLocalMetadata: document.getElementById('useLocalMetadata').checked,
-            writeLocalMetadata: document.getElementById('writeLocalMetadata').checked,
-            useLocalImages: document.getElementById('useLocalImages').checked,
-            localMetadataFilename: document.getElementById('localMetadataFilename').value,
-            enableGameRequests: document.getElementById('enableGameRequests').checked,
-            enableGameIssues: document.getElementById('enableGameIssues').checked,
-            allowRequestNotes: document.getElementById('allowRequestNotes').checked,
-            allowRequestAnyEdition: document.getElementById('allowRequestAnyEdition').checked,
-            maxActiveRequestsPerUser: parseInt(document.getElementById('maxActiveRequestsPerUser').value),
-            notificationPolicy: Object.fromEntries(Array.from(document.querySelectorAll('[data-notification-event]')).map(row => [
+    slots.forEach((select, index) => { select.value = (current.mobileNavOrder || mobileItems)[index]; });
+    function navOptions() {
+        const selected = slots.map(select => select.value);
+        slots.forEach(select => Array.from(select.options).forEach(option => {
+            option.disabled = option.value !== select.value && selected.includes(option.value);
+        }));
+    }
+    slots.forEach(select => select.addEventListener('change', navOptions));
+    navOptions();
+    function values(panel, validate = false) {
+        const result = {};
+        for (const input of panel.querySelectorAll('input[id], select[id]')) {
+            if (input.classList.contains('mobile-nav-slot')) continue;
+            if (input.type === 'checkbox') result[input.id] = input.checked;
+            else if (input.type === 'number') {
+                const valid = input.value.trim() && Number.isFinite(Number(input.value));
+                if (validate && !valid) throw new Error('Enter a valid number.');
+                result[input.id] = valid ? Number(input.value) : input.value;
+            } else result[input.id] = input.value;
+        }
+        if (panel.dataset.settingsPanel === 'interface') {
+            const selected = slots.map(select => select.value);
+            if (validate && new Set(selected).size !== selected.length) throw new Error('Choose a different destination for each mobile position.');
+            result.mobileNavOrder = selected.concat(mobileItems.filter(item => !selected.includes(item)));
+        }
+        if (panel.dataset.settingsPanel === 'notifications') {
+            result.notificationPolicy = Object.fromEntries(Array.from(panel.querySelectorAll('[data-notification-event]')).map(row => [
                 row.dataset.notificationEvent,
                 Object.fromEntries(Array.from(row.querySelectorAll('[data-notification-channel]')).map(input => [input.dataset.notificationChannel, input.checked]))
-            ])),
-            mobileNavOrder: (function() {
-                const pinned = mobileNavSlots.map(select => select.value);
-                return pinned.concat(mobileNavItems.filter(item => !pinned.includes(item)));
-            })()
-        };
-        if (new Set(settings.mobileNavOrder).size !== mobileNavItems.length) {
-            alert('Each mobile navigation position must use a different destination.');
-            return;
+            ]));
         }
-        console.log("Settings to be saved:", settings);
-
-        fetch('/admin/settings', {
-            method: 'POST',
-            headers: CSRFUtils.getHeaders({
-                'Content-Type': 'application/json'
-            }),
-            body: JSON.stringify(settings)
-        })
-        .then(response => {
-            console.log("Fetch response received.");
-            if (response.ok) {
-                return response.json();
-            }
-            throw new Error('Network response was not ok.');
-        })
-        .then(data => {
-            console.log("Response data:", data);
-            document.getElementById('settingsSavedNotification').style.display = 'block';
-            setTimeout(() => {
-                document.getElementById('settingsSavedNotification').style.display = 'none';
-            }, 3000);
-        })
-        .catch(error => {
-            console.error('Fetch operation error:', error);
-            alert('Error updating settings');
-        });
+        return result;
+    }
+    const baseline = new Map(panels.map(panel => [panel.dataset.settingsPanel, values(panel)]));
+    let active = null, pending = false;
+    const status = document.getElementById('settingsSavedNotification');
+    function report(message, failed = false) {
+        status.textContent = message;
+        status.classList.toggle('alert-danger', failed);
+        status.classList.toggle('alert-success', !failed);
+        status.style.display = 'block';
+    }
+    function activate(section, push = false) {
+        const selected = panels.find(panel => panel.dataset.settingsPanel === section) || panels[0];
+        active = selected.dataset.settingsPanel;
+        for (const panel of panels) {
+            panel.hidden = panel !== selected;
+            // Native validation belongs to the visible category too.
+            panel.querySelectorAll('input, select, textarea').forEach(input => { input.disabled = panel !== selected; });
+            panel.classList.toggle('is-active', panel === selected);
+        }
+        for (const button of buttons) {
+            const chosen = button.dataset.settingsTarget === active;
+            button.classList.toggle('is-active', chosen);
+            button.setAttribute('aria-selected', String(chosen));
+        }
+        if (push) {
+            const url = new URL(window.location.href);
+            url.searchParams.set('section', active);
+            url.hash = '';
+            history.pushState(null, '', url);
+        }
+    }
+    buttons.forEach(button => button.addEventListener('click', () => activate(button.dataset.settingsTarget, true)));
+    const navigate = () => activate(new URL(window.location.href).searchParams.get('section') || window.location.hash.slice(1) || document.querySelector('.server-settings-page').dataset.initialSettingsSection);
+    window.addEventListener('popstate', navigate);
+    window.addEventListener('hashchange', navigate);
+    navigate();
+    form.addEventListener('submit', async event => {
+        event.preventDefault();
+        if (pending) return;
+        const section = active, panel = panels.find(item => item.dataset.settingsPanel === section);
+        let changes;
+        try {
+            const snapshot = values(panel, true), previous = baseline.get(section);
+            changes = Object.fromEntries(Object.entries(snapshot).filter(([key, value]) => JSON.stringify(value) !== JSON.stringify(previous[key])));
+        } catch (error) { report(error.message, true); return; }
+        if (!Object.keys(changes).length) { report('No changes in this category.'); return; }
+        pending = true;
+        const submit = form.querySelector('[type=submit]');
+        submit.disabled = true;
+        try {
+            const response = await fetch('/admin/settings', {
+                method: 'POST', headers: CSRFUtils.getHeaders({'Content-Type': 'application/json'}),
+                body: JSON.stringify({section, settings: changes})
+            });
+            const result = await response.json();
+            if (!response.ok) throw new Error((result.errors || []).join(' ') || result.error || 'Could not save settings.');
+            // Preserve edits made while the request was in flight as unsaved changes.
+            baseline.set(section, {...baseline.get(section), ...changes});
+            report(result.message);
+        } catch (error) { report(error.message, true); }
+        finally { pending = false; submit.disabled = false; }
     });
 });

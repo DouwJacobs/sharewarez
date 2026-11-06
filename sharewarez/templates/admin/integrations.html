@@ -12,7 +12,8 @@
 <link rel="stylesheet" href="{{ 'css/admin/outbound_webhooks.css'|theme_asset }}">
 
 
-<main class="app-page admin-page integrations-page" aria-labelledby="integrations-title">
+{% set initial = namespace(tab='') %}{% for message in get_flashed_messages() %}{% if 'Discord' in message %}{% set initial.tab = '#discord' %}{% endif %}{% endfor %}
+<main class="app-page admin-page integrations-page" data-initial-integration-tab="{{ initial.tab }}" aria-labelledby="integrations-title">
     {{ admin_page_header('Integrations', 'Connect email, game metadata, and notification services.', 'Administration', 'fa-plug', title_id='integrations-title') }}
     <section class="app-surface integrations-panel admin-tab-workspace">
 
@@ -30,7 +31,7 @@
             </li>
             <li class="integrations-nav-item nav-item" role="presentation">
                 <button class="integrations-nav-link admin-tab-link nav-link" id="igdb-tab" data-bs-toggle="tab" data-bs-target="#igdb" type="button" role="tab" aria-controls="igdb" aria-selected="false">
-                    <i class="fas fa-gamepad" aria-hidden="true"></i><span><strong>Metadata</strong><small>Provider order and credentials</small></span>
+                    <i class="fas fa-gamepad" aria-hidden="true"></i><span><strong>Metadata providers</strong><small>Provider order and credentials</small></span>
                 </button>
             </li>
             <li class="integrations-nav-item nav-item" role="presentation">
@@ -56,6 +57,7 @@
 
             <!-- IGDB Settings Tab -->
             <div class="integrations-tab-pane tab-pane fade" id="igdb" role="tabpanel" aria-labelledby="igdb-tab">
+                <p><a class="settings-owner-link" href="{{ url_for('admin2.settings', section='metadata') }}">Configure metadata &amp; enrichment policy</a></p>
                 <div class="tab-content-wrapper">
                     <h4><i class="fas fa-gamepad"></i><span class="integration-panel-title">Metadata providers</span></h4>
 
@@ -105,32 +107,6 @@
 <script src="{{ 'js/integrations_tabs.js'|theme_asset }}"></script>
 <script src="{{ 'js/outbound_webhooks.js'|theme_asset }}"></script>
 
-<script>
-// Auto-activate Discord tab if there are Discord-related messages
-document.addEventListener('DOMContentLoaded', function() {
-    {% with messages = get_flashed_messages() %}
-        {% if messages %}
-            {% for message in messages %}
-                {% if 'Discord' in message %}
-                    // Activate Discord tab if there's a Discord-related flash message
-                    const discordTab = document.getElementById('discord-tab');
-                    const discordPane = document.getElementById('discord');
-                    if (discordTab && discordPane) {
-                        // Remove active class from all tabs and panes
-                        document.querySelectorAll('.nav-link').forEach(tab => tab.classList.remove('active'));
-                        document.querySelectorAll('.tab-pane').forEach(pane => {
-                            pane.classList.remove('show', 'active');
-                        });
 
-                        // Activate Discord tab
-                        discordTab.classList.add('active');
-                        discordPane.classList.add('show', 'active');
-                    }
-                {% endif %}
-            {% endfor %}
-        {% endif %}
-    {% endwith %}
-});
-</script>
 
 {% endblock %}

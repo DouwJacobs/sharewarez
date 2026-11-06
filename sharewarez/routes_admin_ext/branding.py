@@ -23,6 +23,9 @@ IMAGE_SIGNATURES = {
 
 
 def _get_or_create_settings():
+    if request.method == 'POST':
+        from sharewarez.utils.settings_sections import locked_settings
+        return locked_settings()
     settings = db.session.execute(select(GlobalSettings)).scalars().first()
     if not settings:
         settings = GlobalSettings(settings={})

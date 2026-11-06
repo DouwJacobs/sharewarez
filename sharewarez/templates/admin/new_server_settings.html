@@ -16,7 +16,7 @@
         <div class="settingsform-admin">
             <form id="settingsForm">
                 <div class="server-settings-toolbar">
-                    <div><p class="admin-panel-kicker">Configuration</p><h2 id="server-settings-title">Application settings</h2></div>
+                    <div><p class="admin-panel-kicker">Configuration</p><h2 id="server-settings-title">Application settings</h2><p>Save changes in the current category. Other categories keep their drafts.</p></div>
                     <button type="submit" class="btn btn-primary"><i class="fas fa-check" aria-hidden="true"></i> Save Settings</button>
                 </div>
 
@@ -26,7 +26,7 @@
                         <button type="button" class="settings-category is-active" data-settings-target="general"><i class="fas fa-sliders" aria-hidden="true"></i><span><strong>General</strong><small>Core application features</small></span></button>
                         <button type="button" class="settings-category" data-settings-target="scanning"><i class="fas fa-magnifying-glass" aria-hidden="true"></i><span><strong>Scanning</strong><small>Library discovery and images</small></span></button>
                         <button type="button" class="settings-category" data-settings-target="downloads"><i class="fas fa-download" aria-hidden="true"></i><span><strong>Downloads</strong><small>Delivery limits and speed</small></span></button>
-                        <button type="button" class="settings-category" data-settings-target="metadata"><i class="fas fa-file-code" aria-hidden="true"></i><span><strong>Metadata</strong><small>HLTB and local files</small></span></button>
+                        <button type="button" class="settings-category" data-settings-target="metadata"><i class="fas fa-file-code" aria-hidden="true"></i><span><strong>Metadata &amp; enrichment</strong><small>HLTB and local files</small></span></button>
                         <button type="button" class="settings-category" data-settings-target="interface"><i class="fas fa-display" aria-hidden="true"></i><span><strong>Interface</strong><small>Navigation and visibility</small></span></button>
                         <button type="button" class="settings-category" data-settings-target="requests"><i class="fas fa-paper-plane" aria-hidden="true"></i><span><strong>Community</strong><small>Request and issue rules</small></span></button>
                         <button type="button" class="settings-category" data-settings-target="notifications"><i class="fas fa-bell" aria-hidden="true"></i><span><strong>Notifications</strong><small>Email, Discord, and admin alerts</small></span></button>
@@ -62,7 +62,7 @@
                         </section>
 
                         <section class="settings-panel" data-settings-panel="downloads" aria-labelledby="settings-downloads-title" hidden>
-                            <div class="settings-panel-heading"><span class="settings-panel-icon"><i class="fas fa-download" aria-hidden="true"></i></span><div><p class="admin-panel-kicker">Delivery policy</p><h3 id="settings-downloads-title">Download controls</h3><p>Protect server capacity while keeping transfers predictable for users.</p><a class="settings-owner-link" href="{{ url_for('download.manage_downloads', view='activity') }}"><i class="fas fa-arrow-up-right-from-square" aria-hidden="true"></i> Open Download delivery to review transfers</a></div></div>
+                            <div class="settings-panel-heading"><span class="settings-panel-icon"><i class="fas fa-download" aria-hidden="true"></i></span><div><p class="admin-panel-kicker">Delivery policy</p><h3 id="settings-downloads-title">Download controls</h3><p>Protect server capacity while keeping transfers predictable for users.</p><a class="settings-owner-link" href="{{ url_for('download.manage_downloads', view='activity') }}"><i class="fas fa-arrow-up-right-from-square" aria-hidden="true"></i> Open Download delivery to review transfers</a> <a class="settings-owner-link" href="{{ url_for('download.manage_download_cache') }}">Open Download cache for archive policy and maintenance</a></div></div>
                             <div class="settings-callout"><i class="fas fa-circle-info" aria-hidden="true"></i><p>Limits apply to direct files and generated ZIP downloads. Existing range and resume support is preserved.</p></div>
                             <div class="settings-field-grid settings-field-grid--two">
                                 <div class="settings-field-block"><label for="maxConcurrentDownloadsPerUser">Concurrent downloads per user</label><p>Extra transfers receive a retry response until a slot is available.</p><input type="number" class="form-control" id="maxConcurrentDownloadsPerUser" min="1" max="20"></div>
@@ -74,9 +74,9 @@
                         </section>
 
                         <section class="settings-panel" data-settings-panel="metadata" aria-labelledby="settings-metadata-title" hidden>
-                            <div class="settings-panel-heading"><span class="settings-panel-icon"><i class="fas fa-file-code" aria-hidden="true"></i></span><div><p class="admin-panel-kicker">Enrichment</p><h3 id="settings-metadata-title">Metadata sources</h3><p>Configure completion-time data and filesystem metadata behavior.</p></div></div>
+                            <div class="settings-panel-heading"><span class="settings-panel-icon"><i class="fas fa-file-code" aria-hidden="true"></i></span><div><p class="admin-panel-kicker">Enrichment</p><h3 id="settings-metadata-title">Metadata &amp; enrichment</h3><p>Configure completion-time data and filesystem metadata behavior.</p><a class="settings-owner-link" href="{{ url_for('admin2.integrations') }}#igdb">Configure metadata providers and credentials</a></div></div>
                             <div class="settings-option-list">
-                                <label class="settings-toggle"><input type="checkbox" id="enableHltbIntegration"><span><strong>HowLongToBeat integration</strong><small>Fetch completion-time estimates during scanning.</small></span></label>
+                                <label class="settings-toggle"><input type="checkbox" id="enableHltbIntegration"><span><strong>Allow HLTB lookups</strong><small>Allow completion-time lookups for scans and manual identification.</small></span></label>
                                 <div class="settings-inline-control"><label for="hltbRateLimitDelay">Request delay (seconds)</label><input type="number" class="form-control" id="hltbRateLimitDelay" min="0.5" max="10" step="0.5"></div>
                                 <label class="settings-toggle"><input type="checkbox" id="useLocalMetadata"><span><strong>Read local metadata</strong><small>Prefer metadata stored alongside each game.</small></span></label>
                                 <label class="settings-toggle"><input type="checkbox" id="writeLocalMetadata"><span><strong>Write local metadata</strong><small>Persist manual identification results beside game files.</small></span></label>

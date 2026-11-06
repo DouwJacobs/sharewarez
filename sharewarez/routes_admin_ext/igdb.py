@@ -15,24 +15,15 @@ from sharewarez.utils.auth import admin_required
 def igdb_settings():
     if request.method == 'GET':
         return redirect(url_for('admin2.integrations') + '#igdb', code=308)
-    settings = db.session.execute(select(GlobalSettings)).scalars().first()
-    if request.method == 'POST':
-        data = request.json
-        if not settings:
-            settings = GlobalSettings()
-            db.session.add(settings)
-        
-        settings.igdb_client_id = data.get('igdb_client_id')
-        settings.igdb_client_secret = data.get('igdb_client_secret')
-        
-        try:
-            db.session.commit()
-            return jsonify({'status': 'success', 'message': 'IGDB settings updated successfully'})
-        except Exception as e:
-            db.session.rollback()
-            return jsonify({'status': 'error', 'message': str(e)}), 500
-    
-    return render_template('admin/admin_manage_igdb_settings.html', settings=settings)
+    from .settings import save_metadata_credentials
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return jsonify(status='error', message='Expected a JSON object.'), 400
+    # This legacy endpoint accepted incomplete credentials. Preserve that contract,
+    # without letting it change provider order, RAWG or unrelated settings.
+    normalized = {key: data[key] for key in ('igdb_client_id', 'igdb_client_secret') if key in data}
+    return save_metadata_credentials(normalized, credentials_only=True)
+
 
 @admin2_bp.route('/admin/test_igdb', methods=['POST'])
 @login_required

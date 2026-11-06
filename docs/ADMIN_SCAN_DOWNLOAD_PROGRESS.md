@@ -562,3 +562,83 @@ link-action dialog. Temporary viewport override was reset. Artifacts:
 T10 settings ownership and T11 integrated journeys remain. The overall goal stays
 active; release/deployment and the previously recorded slow-mount staging check
 remain outside this local implementation work.
+
+## 6 November 2026 — T10 settings ownership and completion-time policy
+
+Application Settings now posts only changed keys in the visible category, using
+an explicit `{section, settings}` envelope and server allowlist. Existing flat JSON
+and former-URL POST clients remain compatible. The merge reloads/locks the row;
+first creation is serialized. The same lock boundary covers archive policy,
+branding, site-default theme and metadata changes; theme-delete fallback reloads
+before merging. Existing column mappings, zero values, notification-rule side
+effects and cache invalidation are preserved. Inactive categories retain their
+drafts and cannot block a save through native validation. Failed/in-flight saves
+retain edits correctly. Category URLs and browser history restore the selection.
+
+All metadata credential writes, including setup and both legacy IGDB POSTs, now
+use one service. Credentials-only compatibility saves retain RAWG/provider order;
+blank secrets retain stored values, and failures return a bounded message. The
+Integrations controller derives every tab from its controls, accepts SMTP and
+Metadata aliases, resolves Discord flash navigation centrally, and restores
+Webhooks on reload. Metadata & enrichment and Metadata providers link to each
+other. Configure has one Application Settings entry while notification deep links
+remain valid. The manual Discord group and three delivery destinations are named
+according to their actual behavior; help describes cache modes and queue timeout.
+
+Profile now links to Account Settings instead of duplicating its five preference
+fields. Returning from that editor restores Profile → Preferences. Personal
+notification matrices, the existing full-page submitter and the legacy modal
+response remain compatible. The modal caller inventory and runtime ownership are
+documented in SETTINGS_OWNERSHIP.md; other controls were retained.
+
+Auto, Manual and Schedule place optional overrides under Advanced scan options;
+cleanup remains explicit. Both HLTB choices show inherited global availability
+and are disabled when the policy is off. Execution reloads settings, and manual
+identification checks the selected option and the global column again. Saved
+schedule choices survive disable/re-enable; optional lookup failures preserve an
+identified game. No schema migration was needed (head remains 20261106_35).
+
+### Verification
+
+Six initial regressions failed before the fix: nested transport fields persisted,
+category boundaries were unenforced, and a stale loaded settings record overwrote
+a concurrent legacy POST. Final independent PostgreSQL module runs passed **335
+Python tests**: settings 44, account routes 26, navigation 3, manual selection 21,
+scan lifecycle 21, provider helpers 15, IGDB compatibility 27, UI contracts 20,
+notifications 3, notification delivery 8, download notifications 3, background jobs
+16, scan APIs 25, setup 23, branding 6, theme routes 43 and theme utilities 31.
+Five new JavaScript tests execute the real settings/tab controllers, including
+zero values, hidden drafts, failed-save retry, in-flight edits and future tab
+controls. Ruff, seven-file Mypy (the four required modules plus the new services),
+95-template accessibility, source compilation and diff checks passed.
+
+Concurrency coverage pins a stale settings object in one session, commits a
+second administrator's site URL edit, then submits Application Settings, cache
+policy, branding or site-default theme. All four retain the newer unrelated value.
+HLTB coverage queues a schedule while enabled, disables policy before execution,
+checks both lookup paths stay off and stored choices remain true, then re-enables
+and executes the saved choices. Manual identification covers the global/per-run
+truth table; all six rendered scan controls inherit availability. Existing setup,
+credential, notification and conditional-navigation regressions remain green.
+
+Computer Use verified the disposable `gamelibrary_t10_preview_test` on port 5015.
+Two stale tabs submitted only the changed General site URL and Downloads zero
+bandwidth/wait fields; captured JSON and SQL verified both survived. An unfinished
+URL draft in General did not block a Downloads save and survived tab/back changes.
+Webhooks, Email, Metadata providers and Discord retained their pane on reload;
+Back and the SMTP alias worked. An actual account save retained 50 items per page
+and Ember while preserving notification controls and return navigation. A dummy
+provider connection test updated its tested timestamp and restored its button;
+the rendered stored-secret field stayed empty. No external metadata service was
+contacted and no production data was used.
+
+Default desktop and Ember/default 390×844 checks covered category navigation,
+advanced disclosures, disabled HLTB controls and prerequisite links, account/profile
+handoff, three delivery destinations and guide text. Ordinary fields/actions
+measure 42 px desktop and 44 px mobile; mobile client/scroll widths both measure
+375 px in the 390 px viewport. Authored/served JS and CSS match. Temporary viewport
+overrides were reset. Artifacts include settings-ownership-mobile.jpg,
+webhooks-reload-mobile.jpg and hltb-disabled-mobile.jpg in the task directory.
+
+T11's full scan/download journeys and completion audit remain. The goal stays
+active; production release, publishing, SQL/proxy/mount changes remain excluded.

@@ -152,15 +152,6 @@ ADMIN_NAVIGATION = (
                 'icon': 'fa-sliders', 'endpoint': 'admin2.settings',
                 'keywords': 'settings configuration policies features notifications interface',
                 'match_paths': ('/admin/new_server_settings',),
-                'exclude_query': {'section': 'notifications'},
-            },
-            {
-                'key': 'notification-rules', 'label': 'Notification rules',
-                'description': 'Choose which user and admin events send alerts.',
-                'icon': 'fa-bell', 'endpoint': 'admin2.settings',
-                'query_args': {'section': 'notifications'},
-                'keywords': 'notifications email push discord requests issues downloads alerts',
-                'match_paths': ('/admin/new_server_settings',),
             },
             {
                 'key': 'integrations', 'label': 'Integrations',

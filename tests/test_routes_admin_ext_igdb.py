@@ -293,7 +293,7 @@ class TestMetadataProviderSettings:
         assert response.status_code == 500
         response_data = response.get_json()
         assert response_data['status'] == 'error'
-        assert 'Database error' in response_data['message']
+        assert response_data['message'] == 'Unable to save metadata provider settings.'
     
     def test_igdb_settings_post_invalid_json(self, client, admin_user):
         """Test POST request with invalid JSON."""

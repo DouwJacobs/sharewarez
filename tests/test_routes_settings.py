@@ -718,3 +718,22 @@ class TestSettingsPanel:
             assert response_data['success'] is False
             assert response_data['message'] == 'Form validation failed'
             assert 'errors' in response_data
+
+
+def test_profile_links_to_single_account_editor_and_preserves_return_navigation(client, test_user, test_user_preference):
+    from bs4 import BeautifulSoup
+    with client.session_transaction() as session:
+        session['_user_id'] = str(test_user.id)
+    profile = BeautifulSoup(client.get('/settings_profile_view').data,'html.parser')
+    assert profile.select_one('#preferencesForm') is None
+    link = profile.select_one('#profile-panel-preferences a[href*="/settings_panel"]')
+    assert 'return_to=preferences' in link['href'] and '#library-defaults-title' in link['href']
+    account = BeautifulSoup(client.get(link['href']).data,'html.parser')
+    for key in ('items_per_page','default_sort','default_sort_order','library_view','theme'):
+        assert len(account.select(f'#preferencesForm [name={key}]')) == 1
+    assert account.select_one('[name=notification_matrix]') is not None
+    assert account.select_one('a[href="/settings_profile_view#preferences"]') is not None
+    # Keep the old modal response for compatible clients; the shared submitter
+    # also services the canonical full-page form.
+    legacy = BeautifulSoup(client.get('/settings_panel?modal=1').data,'html.parser')
+    assert legacy.select_one('#preferencesForm') is not None

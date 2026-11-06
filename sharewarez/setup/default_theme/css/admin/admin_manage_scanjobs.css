@@ -2028,3 +2028,8 @@
     margin-bottom: 0;
     color: var(--scan-text);
 }
+.scan-management-page .scan-advanced-options { grid-column: 1 / -1; min-width: 0; width: 100%; }
+.scan-management-page .scan-advanced-options > summary { min-height: 42px; padding-block: .6rem; cursor: pointer; font-weight: 600; }
+.scan-management-page .scan-advanced-options[open] > summary { margin-bottom: .75rem; }
+.scan-management-page .scan-advanced-options > p { color: var(--theme-text-secondary); }
+@media (max-width: 768px) { .scan-management-page .scan-advanced-options > summary { min-height: 44px; } }

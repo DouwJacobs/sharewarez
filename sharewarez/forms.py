@@ -96,8 +96,8 @@ class AutoScanForm(FlaskForm):
     remove_missing = BooleanField('Remove missing games')
     download_missing_images = BooleanField('Download missing images')
     force_updates_extras_scan = BooleanField('Force scan for new updates and extras on existing games')
-    fetch_hltb = BooleanField('Fetch HowLongToBeat data', default=True)
-    force_hltb_refetch = BooleanField('Force refetch HLTB for existing games')
+    fetch_hltb = BooleanField('Include completion times', default=True)
+    force_hltb_refetch = BooleanField('Refresh existing completion times')
     submit = SubmitField('AutoScan')
 
 
@@ -116,8 +116,8 @@ class ScanFolderForm(FlaskForm):
     scan_mode = RadioField('My Games are:', choices=[('folders', 'Folders'), ('files', 'Files')], default='folders')
     library_uuid = SelectField('Select Library', coerce=str, validators=[DataRequired()])
     force_updates_extras_scan = BooleanField('Force scan for new updates and extras on existing games')
-    fetch_hltb = BooleanField('Fetch HowLongToBeat data', default=True)
-    force_hltb_refetch = BooleanField('Force refetch HLTB for existing games')
+    fetch_hltb = BooleanField('Include completion times', default=True)
+    force_hltb_refetch = BooleanField('Refresh existing completion times')
     scan = SubmitField('List Games')
     cancel = SubmitField('Cancel')
 

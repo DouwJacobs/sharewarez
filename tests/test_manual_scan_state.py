@@ -169,3 +169,45 @@ def test_equal_titles_can_both_be_saved_independently(manual_storage, db_session
     games = db_session.query(Game).filter_by(library_uuid=library.uuid).all()
     assert len(games) == 2
     assert {game.full_disk_path for game in games} == {str(root / 'Game.iso'), str(root / 'Game.zip')}
+
+
+@pytest.mark.parametrize('include_times', [False, True])
+@pytest.mark.parametrize('enabled_at_identify', [False, True])
+def test_manual_identify_rechecks_hltb_policy_after_listing(manual_storage, db_session, enabled_at_identify, include_times):
+    from unittest.mock import patch
+    client, library, root = manual_storage
+    (root / 'Game.iso').touch()
+    settings = db_session.query(GlobalSettings).first()
+    if settings is None:
+        settings = GlobalSettings(); db_session.add(settings)
+    settings.enable_hltb_integration = True; settings.write_local_metadata = False
+    db_session.commit()
+    choice = selections(listing(client, library, fetch_hltb='on' if include_times else '', force_hltb_refetch='on'))[0]
+    settings.enable_hltb_integration = enabled_at_identify
+    db_session.commit()
+    with patch('sharewarez.routes_games_ext.add.Thread.start'), patch('sharewarez.routes_games_ext.add.read_first_nfo_content',return_value=None), patch('sharewarez.utils.hltb.update_game_hltb_sync') as lookup:
+        response = client.post(identify_url(choice), data={**choice,'full_disk_path':str(root/'Game.iso'),'manual_identity':'1','igdb_id':'','name':'Game','status':'RELEASED','category':'MAIN_GAME'})
+    assert response.status_code == 302
+    assert lookup.call_count == int(enabled_at_identify and include_times)
+    assert db_session.query(Game).filter_by(library_uuid=library.uuid).count() == 1
+
+
+def test_all_scan_hltb_controls_disabled_by_global_policy(manual_storage, db_session):
+    client, library, root = manual_storage
+    settings = db_session.query(GlobalSettings).first()
+    if settings is None:
+        settings = GlobalSettings(); db_session.add(settings)
+    settings.enable_hltb_integration = False
+    db_session.commit()
+    page = BeautifulSoup(client.get('/admin/scan_management').data,'html.parser')
+    controls = page.select('[name=fetch_hltb], [name=force_hltb_refetch]')
+    assert len(controls) == 6 and all(control.has_attr('disabled') for control in controls)
+    advanced = page.select('details.scan-advanced-options')
+    assert len(advanced) == 3 and all(len(item.select('[name=fetch_hltb], [name=force_hltb_refetch]')) == 2 for item in advanced)
+    assert all(item.select_one('a[href="/admin/settings?section=metadata"]') is not None for item in advanced)
+    assert all(not control.find_parent('details', class_='scan-advanced-options') for control in page.select('[name=remove_missing]'))
+
+    settings.enable_hltb_integration = True
+    db_session.commit()
+    page = BeautifulSoup(client.get('/admin/scan_management').data,'html.parser')
+    assert all(not control.has_attr('disabled') for control in page.select('[name=fetch_hltb], [name=force_hltb_refetch]'))

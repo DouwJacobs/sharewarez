@@ -233,6 +233,9 @@ def add_game_manual():
                         event_level='warning'
                     )
 
+            from sharewarez.utils.enrichment_policy import enrich_manual_candidate
+            enrich_manual_candidate(new_game, selection)
+
             flash('Game added successfully.', 'success')
             log_system_event(
                 f"Game '{game_name}' added manually by admin {current_user.name}" +

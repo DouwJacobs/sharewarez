@@ -114,16 +114,13 @@ def setup_igdb():
 
     form = IGDBSetupForm()
     if form.validate_on_submit():
-        settings = db.session.execute(select(GlobalSettings)).scalars().first()
-        if not settings:
-            settings = GlobalSettings()
-            db.session.add(settings)
-        
-        settings.igdb_client_id = form.igdb_client_id.data
-        settings.igdb_client_secret = form.igdb_client_secret.data
-        
         try:
+            from sharewarez.utils.metadata_settings import apply_metadata_credentials
+            apply_metadata_credentials(dict(igdb_client_id=form.igdb_client_id.data,
+                                            igdb_client_secret=form.igdb_client_secret.data), credentials_only=True)
             db.session.commit()
+            from sharewarez import cache
+            cache.delete('global_settings')
             mark_setup_complete()  # Mark setup as fully completed
             log_system_event("IGDB settings configured - Setup completed", event_type='setup', event_level='information')
             flash('Setup completed successfully! Please create your first game library.', 'success')

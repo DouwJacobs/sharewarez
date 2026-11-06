@@ -203,10 +203,8 @@ def set_site_default_theme():
         flash('Select an installed theme.', 'error')
         return redirect(url_for('admin2.manage_themes'))
 
-    settings_record = db.session.execute(select(GlobalSettings)).scalars().first()
-    if not settings_record:
-        settings_record = GlobalSettings(settings={})
-        db.session.add(settings_record)
+    from sharewarez.utils.settings_sections import locked_settings
+    settings_record = locked_settings()
     settings = dict(settings_record.settings or {})
     settings['defaultTheme'] = theme_id
     settings_record.settings = settings

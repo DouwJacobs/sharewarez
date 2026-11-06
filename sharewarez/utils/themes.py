@@ -20,7 +20,7 @@ def get_site_default_theme_id(app=None):
     if has_request_context() and hasattr(g, cache_key):
         return getattr(g, cache_key)
 
-    settings_record = db.session.execute(select(GlobalSettings)).scalars().first()
+    settings_record = db.session.execute(select(GlobalSettings).with_for_update().execution_options(populate_existing=True)).scalars().first()
     configured = (settings_record.settings or {}).get('defaultTheme', 'default') if settings_record else 'default'
     manager = ThemeManager(app or current_app)
     theme_id = configured if manager.get_theme(configured) else 'default'
@@ -363,7 +363,7 @@ a {{ color: {palette['accent_soft']}; }}
         if display_name:
             values.append(display_name)
         db.session.execute(update(UserPreference).where(UserPreference.theme.in_(values)).values(theme='default'))
-        settings_record = db.session.execute(select(GlobalSettings)).scalars().first()
+        settings_record = db.session.execute(select(GlobalSettings).with_for_update().execution_options(populate_existing=True)).scalars().first()
         if settings_record and (settings_record.settings or {}).get('defaultTheme') in values:
             settings = dict(settings_record.settings or {})
             settings['defaultTheme'] = 'default'

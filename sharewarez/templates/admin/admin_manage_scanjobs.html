@@ -102,7 +102,7 @@
                                     </div>
                                 </div>
                                 
-                                <div class="option-item">
+                                <details class="scan-advanced-options"><summary>Advanced scan options{% if not hltb_enabled %} · HLTB disabled{% endif %}</summary><p>Completion-time lookups are {{ 'allowed' if hltb_enabled else 'disabled by the global policy' }}. <a href="{{ url_for('admin2.settings', section='metadata') }}">Metadata &amp; enrichment settings</a>.</p>                                <div class="option-item">
                                     <div class="form-check modern-checkbox">
                                         {{ auto_form.download_missing_images(class="form-check-input") }}
                                         {{ auto_form.download_missing_images.label(class="form-check-label", **{"data-toggle": "tooltip", "title": "Automatically download cover art and screenshots for games missing images"}) }}
@@ -116,17 +116,18 @@
 
                                 <div class="option-item">
                                     <div class="form-check modern-checkbox">
-                                        {{ auto_form.fetch_hltb(class="form-check-input", id="fetch-hltb-auto") }}
+                                        {{ auto_form.fetch_hltb(class="form-check-input", id="fetch-hltb-auto", disabled=not hltb_enabled) }}
                                         <label class="form-check-label" for="fetch-hltb-auto" data-toggle="tooltip" title="Fetch game completion times from HowLongToBeat during scan">{{ auto_form.fetch_hltb.label.text }}</label>
                                     </div>
                                 </div>
 
                                 <div class="option-item">
                                     <div class="form-check modern-checkbox">
-                                        {{ auto_form.force_hltb_refetch(class="form-check-input", id="force-hltb-refetch-auto") }}
+                                        {{ auto_form.force_hltb_refetch(class="form-check-input", id="force-hltb-refetch-auto", disabled=not hltb_enabled) }}
                                         <label class="form-check-label" for="force-hltb-refetch-auto" data-toggle="tooltip" title="Force refetch HLTB data for games that already exist in the database">{{ auto_form.force_hltb_refetch.label.text }}</label>
                                     </div>
                                 </div>
+                                </details>
                             </div>
                         </div>
                     </div>
@@ -199,7 +200,8 @@
                             <label>Games are<select name="scan_mode"><option value="folders">Folders</option><option value="files">Files</option></select></label>
                             <label>Repeat<select name="interval_minutes">{% for minutes, label in schedule_intervals.items() %}<option value="{{ minutes }}"{% if minutes == 1440 %} selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
                             <label>First run (UTC)<input type="datetime-local" name="first_run"><small>Blank starts after one interval.</small></label>
-                            <fieldset><legend>Options</legend><label><input type="checkbox" name="fetch_hltb" checked> Fetch HLTB</label><label><input type="checkbox" name="download_missing_images"> Missing images</label><label><input type="checkbox" name="remove_missing"> Remove missing</label><label><input type="checkbox" name="force_updates_extras_scan"> Force updates/extras</label><label><input type="checkbox" name="force_hltb_refetch"> Force HLTB refresh</label></fieldset>
+                            <label><input type="checkbox" name="remove_missing"> Remove missing games</label>
+                            <details class="scan-advanced-options"><summary>Advanced scan options{% if not hltb_enabled %} · HLTB disabled{% endif %}</summary><p>Completion-time lookups are {{ 'allowed' if hltb_enabled else 'disabled by the global policy' }}. <a href="{{ url_for('admin2.settings', section='metadata') }}">Metadata &amp; enrichment settings</a>.</p><p>Existing schedule choices remain saved when lookups are disabled.</p><fieldset><legend>Enrichment and maintenance</legend><label><input type="checkbox" name="fetch_hltb" checked{% if not hltb_enabled %} disabled{% endif %}> Include completion times</label><label><input type="checkbox" name="download_missing_images"> Missing images</label><label><input type="checkbox" name="force_updates_extras_scan"> Force updates/extras</label><label><input type="checkbox" name="force_hltb_refetch"{% if not hltb_enabled %} disabled{% endif %}> Refresh existing completion times</label></fieldset></details>
                             <div class="scan-schedule-submit"><button class="btn btn-primary" type="submit"><i class="fas fa-calendar-plus" aria-hidden="true"></i> Create schedule</button></div>
                         </form>
                     </details>
@@ -292,20 +294,20 @@
                     </div>
                     
                     <!-- Options -->
-                    <div class="manual-options-panel"><span class="config-label">Scan options</span>
+                    <details class="manual-options-panel scan-advanced-options"><summary>Advanced scan options{% if not hltb_enabled %} · HLTB disabled{% endif %}</summary><p>Completion-time lookups are {{ 'allowed' if hltb_enabled else 'disabled by the global policy' }}. <a href="{{ url_for('admin2.settings', section='metadata') }}">Metadata &amp; enrichment settings</a>.</p>
                     <div class="supplemental-scan-note">
                         <i class="fas fa-circle-info" aria-hidden="true"></i>
                         <span>Enabled update and extras folders are checked automatically.</span>
                     </div>
                     <div class="form-check modern-checkbox">
-                        {{ manual_form.fetch_hltb(class="form-check-input", id="fetch-hltb-manual") }}
+                        {{ manual_form.fetch_hltb(class="form-check-input", id="fetch-hltb-manual", disabled=not hltb_enabled) }}
         <label class="form-check-label" for="fetch-hltb-manual" data-toggle="tooltip" title="Fetch game completion times from HowLongToBeat during scan">{{ manual_form.fetch_hltb.label.text }}</label>
                     </div>
 
                     <div class="form-check modern-checkbox">
-                        {{ manual_form.force_hltb_refetch(class="form-check-input", id="force-hltb-refetch-manual") }}
+                        {{ manual_form.force_hltb_refetch(class="form-check-input", id="force-hltb-refetch-manual", disabled=not hltb_enabled) }}
         <label class="form-check-label" for="force-hltb-refetch-manual" data-toggle="tooltip" title="Force refetch HLTB data for games that already exist in the database">{{ manual_form.force_hltb_refetch.label.text }}</label>
-                    </div></div>
+                    </div></details>
 
                     <div class="form-group manual-actions">
                         <button id="browseFoldersBtnManual" type="button" class="admin_manage_scanjobs-browsefolders-btn btn btn-secondary">Browse Folders</button>

@@ -106,5 +106,5 @@ def resolve_manual_candidate(generation, relative_path, library_uuid=None):
     for candidate in candidates:
         if candidate['relative_path'] == relative_path:
             validate_scan_candidate(target, candidate['full_path'])
-            return candidate
+            return {**candidate, 'options': dict(state.get('options') or {})}
     raise StaleManualSelection('This candidate was removed, moved or is no longer eligible. List games again.')

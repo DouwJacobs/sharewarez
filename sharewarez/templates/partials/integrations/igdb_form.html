@@ -42,7 +42,7 @@
     <h5 class="provider-heading">IGDB</h5>
     <div class="form-group">
         <label for="igdb_client_id">Client ID *</label>
-        <input type="text" id="igdb_client_id" value="{{ settings.igdb_client_id if settings else '' }}" class="form-control input-glass"
+        <input type="text" id="igdb_client_id" value="{{ (settings.igdb_client_id or '') if settings else '' }}" class="form-control input-glass"
             minlength="20" maxlength="50">
     </div>
 

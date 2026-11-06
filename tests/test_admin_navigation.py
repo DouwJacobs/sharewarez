@@ -11,7 +11,7 @@ def test_admin_navigation_metadata_has_unique_groups_and_destinations():
     assert all(item['label'] and item['description'] and item['icon'] for group in ADMIN_NAVIGATION for item in group['items'])
 
 
-def test_notification_rules_are_a_distinct_active_admin_destination(app):
+def test_notification_deep_link_activates_the_single_settings_destination(app):
     settings = {
         'enable_game_requests': True,
         'enable_game_issues': True,
@@ -22,12 +22,10 @@ def test_notification_rules_are_a_distinct_active_admin_destination(app):
         groups = build_admin_navigation(settings)
 
     configure = next(group for group in groups if group['key'] == 'configure')
-    notification_rules = next(item for item in configure['items'] if item['key'] == 'notification-rules')
     application_settings = next(item for item in configure['items'] if item['key'] == 'settings')
-
-    assert notification_rules['url'] == '/admin/settings?section=notifications'
-    assert notification_rules['active'] is True
-    assert application_settings['active'] is False
+    assert not any(item['key'] == 'notification-rules' for item in configure['items'])
+    assert application_settings['url'] == '/admin/settings'
+    assert application_settings['active'] is True
     assert configure['active'] is True
 
 

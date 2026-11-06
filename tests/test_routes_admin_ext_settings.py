@@ -488,3 +488,127 @@ class TestSettingsIntegration:
         assert final_settings['showSystemLogo'] == True  # Updated value
         assert final_settings['scanThreadCount'] == 2    # Persistent value
         assert final_settings['turboDownloadThreads'] == 15  # New value
+
+class TestSectionSettings:
+    def test_section_patch_changes_only_owned_keys_and_keeps_zero(self, client, admin_user, db_session, global_settings):
+        with client.session_transaction() as session:
+            session['_user_id'] = str(admin_user.id)
+        response = client.post('/admin/settings', json={'section':'downloads','settings':{'downloadBandwidthLimitMbps':0,'downloadQueueWaitSeconds':0}})
+        assert response.status_code == 200
+        db_session.refresh(global_settings)
+        assert global_settings.settings['downloadBandwidthLimitMbps'] == 0
+        assert global_settings.settings['downloadQueueWaitSeconds'] == 0
+        assert global_settings.settings['siteUrl'] == 'http://test.local'
+        assert 'section' not in global_settings.settings and 'settings' not in global_settings.settings
+
+    @pytest.mark.parametrize('data', [
+        {'section':'downloads','settings':{'siteUrl':'https://wrong.test'}},
+        {'section':'missing','settings':{'showHelpButton':False}},
+        {'section':'downloads','settings':{'notASetting':True}},
+        {'section':'downloads','settings':{},'showHelpButton':False},
+    ])
+    def test_section_rejects_cross_section_or_malformed_patch(self, client, admin_user, global_settings, data):
+        with client.session_transaction() as session:
+            session['_user_id'] = str(admin_user.id)
+        assert client.post('/admin/settings', json=data).status_code == 400
+
+    @pytest.mark.parametrize('stale_endpoint', ['/admin/settings','/admin/download-cache/policy','/admin/branding','/admin/themes/site-default'])
+    def test_stale_session_reload_preserves_concurrent_legacy_post(self, app, admin_user, db_session, global_settings, stale_endpoint):
+        from concurrent.futures import ThreadPoolExecutor
+        from threading import Event
+        uid, sid = admin_user.id, global_settings.id
+        db_session.commit()
+        loaded, release = Event(), Event()
+        def post(data, stale=False):
+            with app.app_context(), app.test_client() as browser:
+                if stale:
+                    record = db.session.get(GlobalSettings, sid)
+                    assert record.settings['siteUrl'] == 'http://test.local'
+                    loaded.set()
+                    assert release.wait(5)
+                with browser.session_transaction() as session:
+                    session['_user_id'] = str(uid)
+                endpoint = stale_endpoint if stale else '/admin/settings'
+                return browser.post(endpoint, **({'json':data} if endpoint == '/admin/settings' else {'data':data})).status_code
+        changes = {
+            '/admin/settings': {'downloadBandwidthLimitMbps':0},
+            '/admin/download-cache/policy': dict(archiveCacheMode='off',archiveCacheMaxGb='10',archiveCacheMinFreeGb='1',archiveCacheRetentionDays='7',archiveCacheBuildConcurrency='1'),
+            '/admin/branding': {'site_title':'Concurrent brand'},
+            '/admin/themes/site-default': {'theme_id':'default'},
+        }[stale_endpoint]
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            first = pool.submit(post, changes, True)
+            assert loaded.wait(5)
+            try:
+                second = pool.submit(post, {'siteUrl':'https://newer.test'})
+                assert second.result(timeout=5) == 200
+            finally:
+                release.set()
+            assert first.result(timeout=5) == (200 if stale_endpoint == '/admin/settings' else 302)
+        db_session.expire_all()
+        record = db_session.get(GlobalSettings, sid)
+        assert record.settings['siteUrl'] == 'https://newer.test'
+        expected_key, expected_value = {
+            '/admin/settings': ('downloadBandwidthLimitMbps',0),
+            '/admin/download-cache/policy': ('archiveCacheMode','off'),
+            '/admin/branding': ('siteTitle','Concurrent brand'),
+            '/admin/themes/site-default': ('defaultTheme','default'),
+        }[stale_endpoint]
+        assert record.settings[expected_key] == expected_value
+
+    @pytest.mark.parametrize('path', ['/admin/igdb_settings','/admin/integrations/igdb/save','/admin/integrations/metadata/save'])
+    def test_metadata_writers_preserve_other_providers(self, client, admin_user, db_session, global_settings, path):
+        global_settings.metadata_provider_order = ['rawg','igdb']
+        global_settings.rawg_enabled = True
+        global_settings.rawg_api_key = 'preserved-key'
+        global_settings.igdb_client_id = 'old-id'
+        global_settings.igdb_client_secret = 'old-secret'
+        db_session.commit()
+        with client.session_transaction() as session:
+            session['_user_id'] = str(admin_user.id)
+        data = {'igdb_client_id':'new-client-id-long-enough','igdb_client_secret':'new-secret-long-enough'}
+        if path.endswith('/metadata/save'):
+            data.update(metadata_provider_order=['rawg','igdb'],rawg_enabled=True)
+        assert client.post(path, json=data).status_code == 200
+        db_session.refresh(global_settings)
+        assert global_settings.rawg_enabled and global_settings.rawg_api_key == 'preserved-key'
+        assert global_settings.metadata_provider_order == ['rawg','igdb']
+        assert global_settings.igdb_client_id == data['igdb_client_id']
+        assert global_settings.igdb_client_secret == data['igdb_client_secret']
+
+    def test_section_column_mappings_and_notification_effects_remain(self, client, admin_user, db_session, global_settings):
+        with client.session_transaction() as session:
+            session['_user_id'] = str(admin_user.id)
+        assert client.post('/admin/settings',json={'section':'metadata','settings':{'enableHltbIntegration':False}}).status_code == 200
+        assert client.post('/admin/settings',json={'section':'notifications','settings':{'notificationPolicy':{'request_created':{'email':True,'discord':True}}}}).status_code == 200
+        db_session.refresh(global_settings)
+        assert not global_settings.enable_hltb_integration
+        assert global_settings.settings['notifyAdminRequestEmail'] and global_settings.settings['notifyDiscordNewRequests']
+        assert 'section' not in global_settings.settings
+
+    def test_rendered_category_controls_have_server_owned_keys(self, client, admin_user):
+        from bs4 import BeautifulSoup
+        from sharewarez.utils.settings_sections import SECTION_KEYS
+        with client.session_transaction() as session:
+            session['_user_id'] = str(admin_user.id)
+        page = BeautifulSoup(client.get('/admin/settings').data,'html.parser')
+        panels = page.select('[data-settings-panel]')
+        assert {panel['data-settings-panel'] for panel in panels} == set(SECTION_KEYS)
+        for panel in panels:
+            section = panel['data-settings-panel']
+            keys = {control['id'] for control in panel.select('input[id],select[id]') if 'mobile-nav-slot' not in control.get('class', [])}
+            assert keys <= SECTION_KEYS[section]
+
+
+    def test_download_destinations_are_separate_and_cache_policy_keeps_settings(self, client, admin_user, db_session, global_settings):
+        from bs4 import BeautifulSoup
+        with client.session_transaction() as session:
+            session['_user_id'] = str(admin_user.id)
+        page = BeautifulSoup(client.get('/admin/settings?section=downloads').data,'html.parser')
+        assert page.select_one('[data-settings-panel=downloads] a[href="/admin/manage-downloads?view=activity"]') is not None
+        assert page.select_one('[data-settings-panel=downloads] a[href="/admin/download-cache"]') is not None
+        response = client.post('/admin/download-cache/policy', data=dict(archiveCacheMode='off',archiveCacheMaxGb='10',archiveCacheMinFreeGb='1',archiveCacheRetentionDays='7',archiveCacheBuildConcurrency='1'))
+        assert response.status_code == 302
+        db_session.refresh(global_settings)
+        assert global_settings.settings['siteUrl'] == 'http://test.local'
+        assert global_settings.settings['archiveCacheMode'] == 'off'

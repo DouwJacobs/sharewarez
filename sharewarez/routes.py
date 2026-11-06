@@ -214,7 +214,9 @@ def scan_management():
             flash(f'Manual selection unavailable: {exc}', 'warning')
     game_names_with_ids = manual_pagination['items'] if manual_pagination else []
 
+    from sharewarez.utils.enrichment_policy import hltb_allowed
     return render_template('admin/admin_manage_scanjobs.html',
+                           hltb_enabled=hltb_allowed(),
                            auto_form=auto_form,
                            manual_form=manual_form,
                            jobs=jobs,

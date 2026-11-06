@@ -360,3 +360,39 @@ def test_invalid_legacy_queue_options_have_a_failed_detail(scan_run, db_session)
     detail = db_session.get(ScanJob, job.payload['scan_job_id'])
     assert detail.outcome == 'failed' and not detail.setting_remove
     fingerprint.assert_not_called()
+
+
+def test_scheduled_hltb_choices_survive_global_disable_before_execution(scan_run, db_session):
+    from sharewarez.models import LibraryScanSchedule
+    from sharewarez.utils.incremental_scanning import enqueue_scheduled_scan
+    library, root = scan_run
+    (root / 'Known').mkdir(); (root / 'New').mkdir()
+    db_session.add(Game(name='Known', library_uuid=library.uuid, full_disk_path=str(root / 'Known')))
+    settings = db_session.query(GlobalSettings).first()
+    settings.enable_hltb_integration = True
+    schedule = LibraryScanSchedule(library_uuid=library.uuid, folder_path=str(root), scan_mode='folders', interval_minutes=1440,
+        options={'fetch_hltb':True,'force_hltb_refetch':True}, next_run=datetime.now(timezone.utc))
+    db_session.add(schedule); db_session.commit()
+    job = enqueue_scheduled_scan(schedule, force=True)
+    job.queue = f'policy-{uuid4().hex}'
+    settings.enable_hltb_integration = False
+    db_session.commit()
+    with patch('sharewarez.utilities.process_game_with_fallback',return_value=True) as provider, patch('sharewarez.utils.hltb.update_game_hltb_sync') as force_lookup:
+        execute(claim_next('policy-worker', queue=job.queue), 'policy-worker')
+    db_session.refresh(job); db_session.refresh(schedule)
+    assert job.status == 'completed'
+    assert provider.call_count == 1 and provider.call_args.kwargs['fetch_hltb'] is False
+    force_lookup.assert_not_called()
+    assert schedule.options == {'fetch_hltb':True,'force_hltb_refetch':True}
+    settings.enable_hltb_integration = True
+    db_session.commit()
+    again = enqueue_scheduled_scan(schedule, force=True)
+    assert again.payload['fetch_hltb'] and again.payload['force_hltb_refetch']
+    again.queue = f'policy-{uuid4().hex}'
+    db_session.commit()
+    with patch('sharewarez.utilities.process_game_with_fallback',return_value=True) as provider, patch('sharewarez.utils.hltb.update_game_hltb_sync') as force_lookup:
+        execute(claim_next('enabled-policy-worker', queue=again.queue), 'enabled-policy-worker')
+    db_session.refresh(again)
+    assert again.status == 'completed'
+    assert provider.call_count == 1 and provider.call_args.kwargs['fetch_hltb'] is True
+    force_lookup.assert_called_once()

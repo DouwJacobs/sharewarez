@@ -81,28 +81,9 @@
                     <p>Choose how your library is displayed and which theme you use.</p>
                 </div>
             </div>
-            <form id="preferencesForm" method="POST" action="{{ url_for('settings.settings_panel') }}" class="profile-preferences-form">
-                {{ preferences_form.hidden_tag() }}
-                <input type="hidden" name="preferences_scope" value="profile">
-                <div class="preferences-field">
-                    {{ form_field(preferences_form.items_per_page, 'form-select') }}
-                </div>
-                <div class="preferences-field">
-                    {{ form_field(preferences_form.default_sort, 'form-select') }}
-                </div>
-                <div class="preferences-field">
-                    {{ form_field(preferences_form.default_sort_order, 'form-select') }}
-                </div>
-                <div class="preferences-field">
-                    {{ form_field(preferences_form.library_view, 'form-select') }}
-                </div>
-                <div class="preferences-field">
-                    {{ form_field(preferences_form.theme, 'form-select') }}
-                </div>
-                <div class="profile-preferences-submit">
-                    <button type="submit" class="btn btn-primary"><i class="fas fa-check" aria-hidden="true"></i>Save Preferences</button>
-                </div>
-            </form>
+            <p>Edit your browsing defaults, theme and personal notifications in Account Settings.</p>
+            <div class="profile-preferences-submit"><a class="btn btn-primary" href="{{ url_for('settings.settings_panel', return_to='preferences') }}#library-defaults-title">Open Account Settings</a></div>
+
         </section>
 
         <section class="profile-api-tokens profile-settings-panel" id="profile-panel-tokens" data-profile-panel="tokens" aria-labelledby="profile-api-tokens-title" hidden>

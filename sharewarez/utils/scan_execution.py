@@ -79,7 +79,7 @@ def scan_and_add_games(folder_path, scan_mode='folders', library_uuid=None, remo
     partial_work = False
     try:
         _check(detail_id, context)
-        settings = db.session.execute(select(GlobalSettings)).scalars().first()
+        settings = db.session.execute(select(GlobalSettings).execution_options(populate_existing=True)).scalars().first()
         extensions = [ext.lower() for ext in db.session.execute(select(AllowedFileType.value)).scalars()]
         if not extensions:
             raise ScanRunError('No allowed file types configured. No removals performed.')

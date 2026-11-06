@@ -17,8 +17,8 @@ from sharewarez.utils.event_logging import log_system_event
 from sharewarez.utils.auth import admin_required
 from sharewarez.utils.igdb_api import make_igdb_api_request
 from sharewarez.utils.metadata_provider_rawg import RawgAPIClient
-from sharewarez.utils.metadata_providers import validate_provider_order
 import logging
+from sharewarez.utils.settings_sections import settings_patch, SECTION_KEYS
 from sharewarez.utils.notification_events import event_catalog, notification_policy
 
 # Configuration constants
@@ -195,13 +195,9 @@ def validate_settings_data(settings_data):
 
 
 def get_or_create_settings_record():
-    """Get existing settings record or create a new one."""
-    settings_record = db.session.execute(select(GlobalSettings)).scalars().first()
-    if not settings_record:
-        settings_record = GlobalSettings(settings={})
-        db.session.add(settings_record)
-        db.session.flush()  # Ensure record has an ID
-    return settings_record
+    """Lock/reload existing settings, or serialize creation of the first row."""
+    from sharewarez.utils.settings_sections import locked_settings
+    return locked_settings()
 
 
 def update_settings_fields(settings_record, new_settings):
@@ -272,9 +268,15 @@ def update_settings():
         if not request.is_json:
             return jsonify({'error': 'Request must be JSON'}), 400
 
-        new_settings = request.get_json()
-        if not new_settings:
+        data = request.get_json(silent=True)
+        if not data:
             return jsonify({'error': 'No settings data provided'}), 400
+        try:
+            new_settings = settings_patch(data)
+        except ValueError as error:
+            return jsonify({'error': str(error)}), 400
+        if not new_settings:
+            return jsonify({'message': 'No settings changed'}), 200
 
         # Validate settings data
         validation_errors = validate_settings_data(new_settings)
@@ -322,10 +324,7 @@ def settings():
             settings_record = db.session.execute(select(GlobalSettings)).scalars().first()
             current_settings = build_current_settings(settings_record)
             initial_section = request.args.get('section', 'general')
-            allowed_sections = {
-                'general', 'scanning', 'downloads', 'metadata',
-                'interface', 'requests', 'notifications',
-            }
+            allowed_sections = SECTION_KEYS
             if initial_section not in allowed_sections:
                 initial_section = 'general'
             return render_template(
@@ -391,36 +390,14 @@ def integrations():
 @admin_required
 def integrations_igdb_save():
     """Handle IGDB settings save from integrations page."""
-    try:
-        data = request.json
-        settings = db.session.execute(select(GlobalSettings)).scalars().first()
-
-        if not settings:
-            settings = GlobalSettings()
-            db.session.add(settings)
-
-        # Validate input
-        client_id = data.get('igdb_client_id', '').strip()
-        client_secret = data.get('igdb_client_secret', '').strip()
-
-        if len(client_id) < 20 or len(client_secret) < 20:
-            return jsonify({
-                'status': 'error',
-                'message': 'Client ID and Secret must be at least 20 characters long'
-            }), 400
-
-        settings.igdb_client_id = client_id
-        settings.igdb_client_secret = client_secret
-
-        db.session.commit()
-        log_system_event("IGDB settings updated via integrations page")
-
-        return jsonify({'status': 'success', 'message': 'IGDB settings saved successfully'})
-
-    except Exception as e:
-        db.session.rollback()
-        logging.error(f"Error saving IGDB settings from integrations: {str(e)}")
-        return jsonify({'status': 'error', 'message': str(e)}), 500
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return jsonify(status='error', message='Expected a JSON object.'), 400
+    client_id = str(data.get('igdb_client_id') or '').strip()
+    client_secret = str(data.get('igdb_client_secret') or '').strip()
+    if len(client_id) < 20 or len(client_secret) < 20:
+        return jsonify(status='error', message='Client ID and Secret must be at least 20 characters long'), 400
+    return save_metadata_credentials(dict(igdb_client_id=client_id, igdb_client_secret=client_secret), credentials_only=True)
 
 
 @admin2_bp.route('/admin/integrations/igdb/test', methods=['POST'])
@@ -461,49 +438,23 @@ def integrations_igdb_test():
 @admin_required
 def integrations_metadata_save():
     """Save provider credentials, enablement, and deterministic search order."""
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return jsonify(status='error', message='Expected a JSON object.'), 400
+    return save_metadata_credentials(data)
+
+
+def save_metadata_credentials(data, *, credentials_only=False):
+    """One locked writer for both current provider and legacy IGDB saves."""
     try:
-        data = request.get_json(silent=True) or {}
-        settings = db.session.execute(select(GlobalSettings)).scalars().first()
-        if settings is None:
-            settings = GlobalSettings()
-            db.session.add(settings)
-
-        order = validate_provider_order(data.get('metadata_provider_order'))
-        client_id = str(data.get('igdb_client_id') or '').strip()
-        client_secret = str(data.get('igdb_client_secret') or '').strip()
-        if client_id:
-            settings.igdb_client_id = client_id
-        if client_secret:
-            settings.igdb_client_secret = client_secret
-        if 'igdb' in order and not (
-            settings.igdb_client_id and settings.igdb_client_secret
-        ):
-            return jsonify({
-                'status': 'error',
-                'message': 'IGDB credentials are required while IGDB is in the provider order.',
-            }), 400
-        rawg_enabled = bool(data.get('rawg_enabled'))
-        rawg_key = str(data.get('rawg_api_key') or '').strip()
-        if rawg_enabled and not (rawg_key or settings.rawg_api_key):
-            return jsonify({
-                'status': 'error',
-                'message': 'A RAWG API key is required before RAWG can be enabled.',
-            }), 400
-        if 'rawg' in order and not rawg_enabled:
-            return jsonify({
-                'status': 'error',
-                'message': 'Enable RAWG before adding it to the provider order.',
-            }), 400
-
-        if rawg_key:
-            settings.rawg_api_key = rawg_key
-        settings.rawg_enabled = rawg_enabled
-        settings.metadata_provider_order = list(order)
+        from sharewarez.utils.metadata_settings import apply_metadata_credentials
+        apply_metadata_credentials(data, credentials_only=credentials_only)
         db.session.commit()
         cache.delete('global_settings')
         log_system_event('Metadata provider settings updated', event_type='audit')
-        return jsonify({'status': 'success', 'message': 'Metadata provider settings saved.'})
+        return jsonify({'status': 'success', 'message': 'IGDB settings updated successfully' if credentials_only else 'Metadata provider settings saved.'})
     except ValueError as error:
+        db.session.rollback()
         return jsonify({'status': 'error', 'message': str(error)}), 400
     except Exception:
         db.session.rollback()

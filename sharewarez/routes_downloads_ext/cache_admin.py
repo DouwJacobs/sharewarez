@@ -127,10 +127,8 @@ def update_download_cache_policy():
     if errors:
         flash(' '.join(errors), 'error')
         return redirect(url_for('download.manage_download_cache'))
-    settings = db.session.execute(select(GlobalSettings)).scalars().first()
-    if settings is None:
-        settings = GlobalSettings(settings={})
-        db.session.add(settings)
+    from sharewarez.utils.settings_sections import locked_settings
+    settings = locked_settings()
     update_settings_fields(settings, values)
     db.session.commit()
     cache.delete('global_settings')
