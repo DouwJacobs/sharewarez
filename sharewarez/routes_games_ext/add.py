@@ -40,12 +40,30 @@ def add_game_manual():
         else:
             return redirect(url_for('library.library'))
     
-    full_disk_path = request.args.get('full_disk_path', None)
-    library_uuid = request.args.get('library_uuid') or session.get('selected_library_uuid')
+    from sharewarez.utils.manual_scan import resolve_manual_candidate
+    generation = request.args.get('selection_generation') or request.form.get('selection_generation')
+    candidate_path = request.args.get('candidate_path') or request.form.get('candidate_path')
+    selection = None
+    if generation:
+        try:
+            selection = resolve_manual_candidate(generation, candidate_path, request.form.get('library_uuid') if request.method == 'POST' else request.args.get('library_uuid'))
+            if request.method == 'POST':
+                if request.form.get('full_disk_path') != selection['full_path'] or request.form.get('selection_generation', generation) != generation or request.form.get('candidate_path', candidate_path) != candidate_path:
+                    raise ValueError('The selected candidate changed. List games again.')
+        except (ValueError, OSError) as exc:
+            flash(f'Manual selection is stale: {exc}', 'warning')
+            return redirect(url_for('main.admin_scan_management', active_tab='manual'))
+
+    full_disk_path = selection['full_path'] if selection else request.args.get('full_disk_path', None)
+    library_uuid = selection['library_uuid'] if selection else request.args.get('library_uuid') or session.get('selected_library_uuid')
     from_unmatched = request.args.get('from_unmatched', 'false') == 'true'  # Detect origin
     game_name = os.path.basename(full_disk_path) if full_disk_path else ''
 
     form = AddGameForm()
+    if selection:
+        form.selection_generation.data = generation
+        form.candidate_path.data = candidate_path
+        form.full_disk_path.render_kw = {'readonly': True}
 
     # Populate the choices for the library_uuid field
     form.library_uuid.choices = [(str(library.uuid), library.name) for library in db.session.execute(select(Library).order_by(Library.name)).scalars().all()]
@@ -116,6 +134,7 @@ def add_game_manual():
 
             url=form.url.data,
             full_disk_path=form.full_disk_path.data,
+            file_type=selection.get('file_type') if selection else None,
             # Set default cover for custom games
             cover=url_for('static', filename='newstyle/default_cover.jpg') if is_custom_game else None,
             category=form.category.data,

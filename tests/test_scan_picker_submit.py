@@ -38,7 +38,9 @@ def test_rendered_manual_form_posts_without_submitter(scan_picker):
     assert b'Picker Game' in response.data
     assert b'Unrecognized action' not in response.data
     with client.session_transaction() as session:
-        assert session['game_paths']['Picker Game'] == str(root / 'Picker Game')
+        assert 'game_paths' not in session
+        assert session['manual_scan_selection']['target'] == '.'
+        assert session['manual_scan_selection']['library_uuid'] == str(library.uuid)
 
 
 @pytest.mark.parametrize('kind,action', [('manual', 'ManualScan'), ('auto', 'AutoScan')])

@@ -751,3 +751,12 @@ measured 44 px, and document client/scroll widths matched (375 px mobile,
 1265 px default desktop). The wide desktop table has one intentional internal
 scroller. The temporary viewport override was reset. Light palettes and live
 provider/network failures were not re-audited in this pass.
+
+### Manual scan candidate pages (6 November 2026)
+
+Manual candidate rows now show the cleaned title and distinct relative filename,
+with path-specific accessible Identify labels. Fifty rows per page and standard
+Previous/Next controls bound the rendered list. Rows use flat separators within
+the existing surface. Computer Use verified default/Ember desktop and 390 x 844,
+44 px mobile actions, no document overflow, distinct ISO/ZIP identify paths and
+page navigation in the disposable T04 preview.

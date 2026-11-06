@@ -331,20 +331,29 @@
                 {% if game_names_with_ids %}
                 <br>
                 <div class="admin_manage_scanjobs-foundgames-header">
-                    <h4>Found Games:</h4>
+                    <h4>Found games{% if manual_pagination %}: {{ manual_pagination.total }}{% endif %}</h4>
                 </div>
                 <div class="admin_manage_scanjobs-foudngames-list list-group">
                     {% for game in game_names_with_ids %}
                         <div class="admin_manage_scanjobs-list-item list-group-item list-group-item-action d-flex justify-content-between align-items-center">
-                            {{ game['name'] }}
+                            <div class="manual-candidate-copy"><strong>{{ game['name'] }}</strong><small class="d-block">{{ game['relative_path'] }}</small></div>
                             <!-- Identify Form for each game -->
                             <form action="{{ url_for('games.add_game_manual') }}" method="GET">
-                                <input type="hidden" name="full_disk_path" value="{{ game['full_path'] }}">
-                                <input type="submit" class="admin_manage_scanjobs-identify-btn btn btn-primary btn-sm" value="Identify">
+                                <input type="hidden" name="selection_generation" value="{{ game['generation'] }}">
+                                <input type="hidden" name="candidate_path" value="{{ game['relative_path'] }}">
+                                <input type="hidden" name="library_uuid" value="{{ game['library_uuid'] }}">
+                                <input type="submit" class="admin_manage_scanjobs-identify-btn btn btn-primary btn-sm" value="Identify" aria-label="Identify {{ game['relative_path'] }}">
                             </form>
                         </div>
                     {% endfor %}
                 </div>
+                {% if manual_pagination and manual_pagination.pages > 1 %}
+                <nav class="app-page-actions" aria-label="Manual scan result pages">
+                    {% if manual_pagination.page > 1 %}<a class="btn btn-secondary" href="{{ url_for('main.admin_scan_management', active_tab='manual', manual_page=manual_pagination.page - 1) }}">Previous</a>{% endif %}
+                    <span>Page {{ manual_pagination.page }} of {{ manual_pagination.pages }}</span>
+                    {% if manual_pagination.page < manual_pagination.pages %}<a class="btn btn-secondary" href="{{ url_for('main.admin_scan_management', active_tab='manual', manual_page=manual_pagination.page + 1) }}">Next</a>{% endif %}
+                </nav>
+                {% endif %}
                 {% elif active_tab == 'manual' %}
                 <div class="scan-empty-state scan-empty-state-panel" role="status">
                     <i class="fas fa-folder-open" aria-hidden="true"></i>

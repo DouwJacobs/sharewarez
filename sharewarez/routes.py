@@ -198,10 +198,21 @@ def scan_management():
             flash("Unrecognized action.", "error")
             return redirect(url_for('main.admin_scan_management'))
 
-    game_paths_dict = session.get('game_paths', {})
-    game_names_with_ids = [{'name': name, 'full_path': path} for name, path in game_paths_dict.items()]
-    # Handle active_tab from URL parameter, default to 'auto'
+    from sharewarez.utils.manual_scan import STATE_KEY, manual_candidate_page
     active_tab = request.args.get('active_tab', 'auto')
+    manual_pagination = None
+    if selected_library_uuid and session.get(STATE_KEY, {}).get('library_uuid') not in {None, selected_library_uuid}:
+        session.pop(STATE_KEY, None)
+        flash('The selected library changed. List games again.', 'warning')
+    if active_tab == 'manual' and session.get(STATE_KEY):
+        try:
+            manual_pagination = manual_candidate_page(request.args.get('manual_page', 1, type=int))
+            if selected_library_uuid and selected_library_uuid != manual_pagination['library_uuid']:
+                manual_pagination = None
+                flash('This list belongs to another library. Select a target and list games again.', 'warning')
+        except (ValueError, OSError) as exc:
+            flash(f'Manual selection unavailable: {exc}', 'warning')
+    game_names_with_ids = manual_pagination['items'] if manual_pagination else []
 
     return render_template('admin/admin_manage_scanjobs.html',
                            auto_form=auto_form,
@@ -214,6 +225,7 @@ def scan_management():
                            game_count=game_count,
                            libraries=libraries,
                            game_names_with_ids=game_names_with_ids,
+                           manual_pagination=manual_pagination,
                            release_group_form=release_group_form,
                            scanning_filters=scanning_filters,
                            allowed_file_types=allowed_file_types,

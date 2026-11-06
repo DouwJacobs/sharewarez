@@ -2011,3 +2011,20 @@
 @media (max-width: 768px) {
     .scan-management-page #scanJobsTable .scan-run-actions .btn { height: 44px; }
 }
+
+.scan-management-page .manual-candidate-copy {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+.scan-management-page .manual-candidate-copy small { color: var(--scan-subtle); }
+.scan-management-page .admin_manage_scanjobs-list-item { gap: 12px; }
+
+.scan-management-page .admin_manage_scanjobs-list-item {
+    background: transparent;
+    border: 0;
+    border-bottom: 1px solid var(--border-light-strong);
+    border-radius: 0;
+    box-shadow: none;
+    margin-bottom: 0;
+    color: var(--scan-text);
+}

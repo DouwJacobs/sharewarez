@@ -202,3 +202,12 @@ Scan Manager exposes queued work, terminal outcomes, counters, reasons, and job
 detail links. Clear finished and single-row history deletion retain queued,
 running/stopping, pending-replacement and unmatched-referenced scan records.
 Background job history and scan detail history are separate objects.
+
+### Manual scan selections
+
+List Games creates a compact, owner-bound selection and displays 50 candidates
+per page. Identify uses the generation and relative filename; a new listing,
+changed library/root, removed file or changed eligibility invalidates the old
+selection. Return to Scan Management, choose the target and List Games again.
+Listing does not test write permissions or write local metadata. Metadata writes
+remain part of saving an identification when enabled.

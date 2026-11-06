@@ -224,3 +224,34 @@ saved in the task's visualization folder as `scan-lifecycle-mobile.jpg`.
 T04–T11 remain open. The next item is bounded path-based manual candidate state,
 including equal cleaned titles, stale selections and revalidation at identify.
 No production data, release tags, deployment or proxy configuration was changed.
+
+## T04 completed: bounded manual candidate identity
+
+Baseline: e5901c28. Manual listing now stores only the owner, library, configured
+root identity, relative target, mode, options and generation in the session.
+Re-enumerated pages contain 50 candidates sorted by relative path. Identify GET
+and POST revalidate the generation, library, containment, eligibility and current
+existence; old or tampered selections return to Manual scan with an explanation.
+The selected path is read-only, and file identity includes its extension. New
+listing clears legacy candidate dictionaries, including when the target fails.
+Listing is read-only even when local metadata writing is enabled. Standalone and
+unmatched entry points retain their original behavior.
+
+Changed production files: utils/manual_scan.py, utilities.py, routes.py, forms.py,
+routes_games_ext/add.py, admin/admin_manage_scanjobs.html and its canonical CSS.
+No migration. Tests: test_manual_scan_state.py (16), test_scan_picker_submit.py
+(3), test_manual_game_identity.py (1), test_routes.py (62), test_utilities.py (8):
+90 passed against disposable PostgreSQL, one fresh database per module. The 650
+candidate regression renders 50 per page with session JSON below 1800 bytes.
+Both equal-title files are independently saved; removed files, changed roots,
+libraries, generations, types and POST identity tampering are rejected.
+
+Computer Use against isolated gamelibrary_t04_preview_test verified a real List
+Games POST, Game.iso and Game.zip opening their distinct read-only paths, next
+and previous pages, and an old Identify URL after relisting. Default and Ember
+were inspected at desktop and 390 x 844. Rows are flat with quiet dividers;
+mobile Identify buttons measure 44 px and document client/scroll widths both
+measure 375 px. Viewport override reset. Evidence: manual-candidates-mobile.jpg
+in the task visualization folder. Ruff and diff checks pass.
+
+T05-T11 remain open. Next: complete package selection and transactional link reuse.

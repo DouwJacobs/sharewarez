@@ -264,7 +264,9 @@ class TestMainBlueprint:
         assert response.status_code == 302
         assert '/admin/scan_management' in response.location
         with client.session_transaction() as sess:
-            assert sess['game_paths']['Legacy Game'] == str(tmp_path / 'Legacy Game')
+            assert 'game_paths' not in sess
+            assert sess['manual_scan_selection']['target'] == '.'
+            assert sess['manual_scan_selection']['library_uuid'] == str(test_library.uuid)
 
     def test_scan_folder_invalid_path(self, client, app, db_session, admin_user, test_library):
         with client.session_transaction() as sess:

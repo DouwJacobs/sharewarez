@@ -252,6 +252,8 @@ def handle_auto_scan(auto_form):
 
 
 def handle_manual_scan(manual_form):
+    from sharewarez.utils.manual_scan import clear_manual_selection, start_manual_selection
+    clear_manual_selection()
     session['active_tab'] = 'manual'
     library_uuid = manual_form.library_uuid.data
     try:
@@ -279,28 +281,13 @@ def handle_manual_scan(manual_form):
 
             try:
                 extensions = db.session.execute(select(AllowedFileType.value)).scalars().all()
+                if scan_mode == 'files' and not extensions:
+                    raise ValueError('No allowed file types configured. Enable them in Scan Manager → File types.')
                 target = resolve_scan_target(folder_path, scan_mode, extensions=extensions)
                 full_path = target.path
             except (ValueError, OSError) as exc:
                 flash(f'Cannot scan this target: {exc}', 'error')
                 return redirect(url_for('main.admin_scan_management', active_tab='manual'))
-
-            # Check write permissions if local metadata writing is enabled
-            from sharewarez.utils.local_metadata import check_library_write_permissions
-            settings = db.session.execute(select(GlobalSettings)).scalar_one_or_none()
-
-            if settings and settings.write_local_metadata:
-                print(f"🔍 [PERMISSIONS] Checking write permissions for library path: {full_path}")
-                all_ok, failed_paths = check_library_write_permissions(os.path.dirname(full_path) if target.is_file else full_path)
-
-                if not all_ok:
-                    print(f"🚫 [PERMISSIONS] Write permission check failed for {len(failed_paths)} path(s)")
-                    # Store permission errors in session to show in modal
-                    session['permission_check_failed'] = True
-                    session['permission_errors'] = failed_paths
-                    session['permission_check_path'] = full_path
-                    flash('Write permission check failed. Please review the permission errors.', 'error')
-                    return redirect(url_for('main.admin_scan_management', active_tab='manual', show_permissions_modal='true'))
 
             if os.path.exists(full_path) and os.access(full_path, os.R_OK):
                 print("Folder or file exists and can be accessed.")
@@ -310,11 +297,10 @@ def handle_manual_scan(manual_form):
                 )
                 if not complete:
                     flash('Some scan entries could not be read or were outside the selected target and were skipped.', 'warning')
-                session['game_paths'] = {game['name']: game['full_path'] for game in games_with_paths}
-                session['force_updates_extras_scan'] = force_updates_extras_scan
-                session['fetch_hltb'] = fetch_hltb
-                session['force_hltb_refetch'] = force_hltb_refetch
-                print(f"Found {len(session['game_paths'])} games in the folder/file.")
+                start_manual_selection(library_uuid, target, {
+                    'force_updates_extras_scan': bool(force_updates_extras_scan),
+                    'fetch_hltb': bool(fetch_hltb), 'force_hltb_refetch': bool(force_hltb_refetch),
+                })
                 flash('Manual scan processed for target: ' + full_path, 'info')
                 
             else:
@@ -325,5 +311,4 @@ def handle_manual_scan(manual_form):
         current_app.logger.exception("Unexpected error in handle_manual_scan: %s", exc)
         flash(f'Manual scan failed: {str(exc)}', 'error')
         
-    print("Game paths: ", session.get('game_paths', {}))
     return redirect(url_for('main.admin_scan_management', library_uuid=library_uuid, active_tab='manual'))

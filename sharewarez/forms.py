@@ -233,6 +233,8 @@ class IGDBApiForm(FlaskForm):
 
 
 class AddGameForm(FlaskForm):
+    selection_generation = HiddenField()
+    candidate_path = HiddenField()
     # Existing fields
     igdb_id = IntegerField('IGDB ID', validators=[Optional(), NumberRange(min=1, max=9999999999)], widget=TextInput())
     manual_identity = HiddenField(default='0')
