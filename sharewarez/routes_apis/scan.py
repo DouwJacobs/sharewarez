@@ -1,10 +1,10 @@
 # /sharewarez/routes_apis/scan.py
 from datetime import datetime, timedelta, timezone
 
-from flask import current_app, jsonify, request
+from flask import current_app, jsonify, request, url_for
 from flask_login import login_required
 from sharewarez import db
-from sharewarez.models import ScanJob, UnmatchedFolder, Library, LibraryScanSchedule, AllowedFileType
+from sharewarez.models import ScanJob, UnmatchedFolder, Library, LibraryScanSchedule, AllowedFileType, BackgroundJob
 from sqlalchemy import select
 from sharewarez.utils.auth import admin_required
 from sharewarez.utils.functions import PLATFORM_IDS
@@ -15,6 +15,7 @@ from . import apis_bp
 @login_required
 @admin_required
 def scan_jobs_status():
+    from sharewarez.utils.scan_lifecycle import scan_is_active
     jobs = db.session.execute(select(ScanJob).order_by(ScanJob.last_run.desc())).scalars().all()
     jobs_data = [{
         'id': job.id,
@@ -25,6 +26,15 @@ def scan_jobs_status():
         'total_folders': job.total_folders,
         'folders_success': job.folders_success,
         'folders_failed': job.folders_failed,
+        'folders_unmatched': job.folders_unmatched,
+        'outcome': job.outcome,
+        'display_status': {'partial': 'Partial', 'cancelled': 'Cancelled', 'interrupted': 'Interrupted', 'skipped': 'Skipped'}.get(job.outcome, job.status),
+        'background_job_id': job.background_job_id,
+        'job_url': url_for('admin2.background_jobs', q=job.background_job_id) if job.background_job_id else None,
+        'can_restart': not scan_is_active(job),
+        'is_active': job.status in {'Running', 'Stopping', 'Scheduled'},
+        'cancel_url': url_for('main.cancel_scan_job', job_id=job.id) if job.status in {'Running', 'Stopping', 'Scheduled'} else None,
+        'restart_url': url_for('main.restart_scan_job', job_id=job.id),
         'removed_count': job.removed_count,
         'scan_folder': job.scan_folder,
         'setting_remove': bool(job.setting_remove),
@@ -35,8 +45,28 @@ def scan_jobs_status():
         'last_run': job.last_run.strftime('%Y-%m-%d %H:%M:%S') if job.last_run else 'Not Available',
         'last_update': job.last_progress_update.isoformat() if job.last_progress_update else None,
         'next_run': job.next_run.strftime('%Y-%m-%d %H:%M:%S') if job.next_run else 'Not Scheduled',
-        'progress_percentage': round((job.folders_success + job.folders_failed) / job.total_folders * 100, 1) if job.total_folders > 0 else 0
+        'progress_percentage': round((job.folders_success + job.folders_failed + job.folders_unmatched) / job.total_folders * 100, 1) if job.total_folders > 0 else 0
     } for job in jobs]
+    active_owners = {job.background_job_id for job in jobs if job.status in {'Running', 'Stopping', 'Scheduled'}}
+    for queued in db.session.execute(select(BackgroundJob).where(BackgroundJob.task_name == 'library.scan')).scalars():
+        if queued.id in active_owners:
+            continue
+        payload = queued.payload or {}
+        if queued.status not in {'queued', 'running'} and payload.get('scan_job_id'):
+            continue
+        library = db.session.get(Library, payload.get('library_uuid'))
+        jobs_data.append({
+            'id': queued.id, 'library_name': library.name if library else 'Deleted library',
+            'library_uuid': payload.get('library_uuid'), 'scan_folder': payload.get('folder_path'),
+            'status': ('Stopping' if queued.cancel_requested else 'Running') if queued.status == 'running' else queued.status.title(),
+            'display_status': ('Stopping' if queued.cancel_requested else 'Finalizing') if queued.status == 'running' else queued.status.title(),
+            'total_folders': 0, 'folders_success': 0, 'folders_failed': 0, 'folders_unmatched': 0,
+            'current_processing': queued.progress_message, 'error_message': queued.error_message or '',
+            'last_run': queued.created_at.isoformat(), 'progress_percentage': queued.progress,
+            'background_job_id': queued.id, 'is_active': queued.status in {'queued', 'running'}, 'can_restart': False,
+            'job_url': url_for('admin2.background_jobs', q=queued.id),
+            'cancel_url': url_for('main.cancel_scan_job', job_id=queued.id) if queued.status in {'queued', 'running'} else None, 'restart_url': None,
+        })
     return jsonify(jobs_data)
 
 @apis_bp.route('/unmatched_folders', methods=['GET'])

@@ -333,8 +333,11 @@ class TestLogUnmatchedFolder:
     
     def test_log_unmatched_folder_new_entry(self, db_session, sample_library):
         """Test logging new unmatched folder."""
+        scan = ScanJob(library_uuid=sample_library.uuid, status='Running')
+        db_session.add(scan)
+        db_session.commit()
         log_unmatched_folder(
-            1,
+            scan.id,
             '/test/unmatched/path',
             'Unmatched',
             sample_library.uuid
@@ -345,6 +348,7 @@ class TestLogUnmatchedFolder:
         ).first()
         
         assert unmatched_folder is not None
+        assert unmatched_folder.scan_job_id == scan.id
         assert unmatched_folder.status == 'Unmatched'
         assert unmatched_folder.library_uuid == sample_library.uuid
         assert unmatched_folder.content_type == 'Games'
@@ -736,6 +740,7 @@ class TestIsScanJobRunning:
     def test_is_scan_job_running_true(self, db_session):
         """Test when there is a running scan job."""
         # Clean up any existing scan jobs first
+        db_session.query(UnmatchedFolder).delete()
         db_session.query(ScanJob).delete()
         db_session.flush()
         
@@ -750,6 +755,7 @@ class TestIsScanJobRunning:
     def test_is_scan_job_running_false_no_jobs(self, db_session):
         """Test when there are no scan jobs."""
         # Clean up any existing scan jobs
+        db_session.query(UnmatchedFolder).delete()
         db_session.query(ScanJob).delete()
         db_session.commit()
         
@@ -759,6 +765,7 @@ class TestIsScanJobRunning:
     def test_is_scan_job_running_false_no_running_jobs(self, db_session):
         """Test when there are scan jobs but none running."""
         # Clean up any existing scan jobs first
+        db_session.query(UnmatchedFolder).delete()
         db_session.query(ScanJob).delete()
         db_session.flush()
         

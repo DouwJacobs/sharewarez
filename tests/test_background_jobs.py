@@ -9,6 +9,13 @@ from sharewarez import db
 from sharewarez.models import (
     BackgroundJob, DownloadArchive, LibraryScanSchedule, LibraryScanState, User,
 )
+from sharewarez.utils.scan_lifecycle import finish_scan
+from unittest.mock import ANY
+
+def finalized_scan(*args, **kwargs):
+    return finish_scan(kwargs["existing_job"].id, "completed")
+
+
 from sharewarez.utils.background_jobs import (
     JobCancelled,
     JobContext,
@@ -368,7 +375,7 @@ def test_library_scan_task_runs_existing_scanner(app, db_session, tmp_path):
         })
         claimed = claim_next('scan-worker')
 
-        with patch('sharewarez.utilities.scan_and_add_games') as scanner:
+        with patch('sharewarez.utilities.scan_and_add_games', side_effect=finalized_scan) as scanner:
             execute(claimed, 'scan-worker')
 
         scanner.assert_called_once_with(
@@ -376,6 +383,7 @@ def test_library_scan_task_runs_existing_scanner(app, db_session, tmp_path):
             library_uuid=library.uuid, remove_missing=True,
             download_missing_images=False, force_updates_extras_scan=False,
             fetch_hltb=False, force_hltb_refetch=False,
+            existing_job=ANY, context=ANY,
         )
         completed = db.session.get(BackgroundJob, job.id)
         assert completed.status == 'completed'
@@ -395,7 +403,7 @@ def test_unchanged_library_scan_is_skipped(app, db_session, tmp_path):
         db.session.commit()
         payload = {'library_uuid': library.uuid, 'folder_path': str(tmp_path), 'scan_mode': 'files'}
 
-        with patch('sharewarez.utilities.scan_and_add_games') as scanner:
+        with patch('sharewarez.utilities.scan_and_add_games', side_effect=finalized_scan) as scanner:
             first = enqueue('library.scan', payload)
             execute(claim_next('scan-worker'), 'scan-worker')
             second = enqueue('library.scan', payload)

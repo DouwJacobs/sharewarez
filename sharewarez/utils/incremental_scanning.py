@@ -75,7 +75,7 @@ def has_changed(library_uuid, folder_path, scan_mode, fingerprint):
     return state is None or state.fingerprint != fingerprint
 
 
-def save_scan_state(library_uuid, folder_path, scan_mode, fingerprint, entry_count, total_size):
+def save_scan_state(library_uuid, folder_path, scan_mode, fingerprint, entry_count, total_size, *, commit=True):
     normalized = os.path.realpath(folder_path)
     state = get_scan_state(library_uuid, normalized, scan_mode)
     if state is None:
@@ -88,7 +88,8 @@ def save_scan_state(library_uuid, folder_path, scan_mode, fingerprint, entry_cou
     state.entry_count = entry_count
     state.total_size = total_size
     state.scanned_at = datetime.now(timezone.utc)
-    db.session.commit()
+    if commit:
+        db.session.commit()
     return state
 
 
@@ -119,7 +120,7 @@ def dispatch_due_schedules(now=None):
     return dispatched
 
 
-def enqueue_scheduled_scan(schedule, *, created_by_id=None):
+def enqueue_scheduled_scan(schedule, *, created_by_id=None, force=False):
     """Queue one execution without changing the schedule's recurring cadence."""
     from sharewarez.utils.background_jobs import enqueue
 
@@ -136,6 +137,7 @@ def enqueue_scheduled_scan(schedule, *, created_by_id=None):
         'folder_path': target.path,
         'scan_mode': target.mode,
         'schedule_id': schedule.id,
+        'force_scan': force,
     }
     return enqueue(
         'library.scan', payload, max_attempts=3, created_by_id=created_by_id,

@@ -43,6 +43,8 @@ def run_worker():
 
     def stop(*_args):
         stopping.set()
+        from sharewarez.utils.shutdown import request_shutdown
+        request_shutdown()
 
     signal.signal(signal.SIGTERM, stop)
     signal.signal(signal.SIGINT, stop)

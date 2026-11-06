@@ -165,3 +165,40 @@ warning in System Logs. An unavailable due target queues no work, records a
 warning, and is checked again at the next normal interval. A paused schedule can
 still be edited while its storage is offline. This does not change the supported
 single-worker, two-container topology.
+
+## Durable scan lifecycle
+
+Scan work and restarts execute only in the existing job worker. Each execution
+attempt creates a new ScanJob detail linked to its BackgroundJob, and writes the
+latest scan ID into a newly assigned job payload before processing. Previous
+terminal details remain available. Legacy restarts preserve the stored path,
+library, mode and known options; missing historical HLTB overrides default to
+false. A row lock and replacement-job pointer deduplicate simultaneous restarts.
+
+Scan details separate matched, unmatched and failed units. An unmatched result
+counts as processed only after its database record exists. Partial work has
+status Failed and outcome partial; cancelled and interrupted attempts also use
+the existing Failed enum value with their distinct outcome. No enum expansion is
+required. Migration 20261105_33 adds the nullable outcome/options/owner/replacement
+fields and the unmatched counter while preserving historical rows.
+
+Fingerprint persistence and queue completion share a locked transaction. A scan
+must persist a successful terminal result before the queue can complete it;
+errors and cancellation cannot save a new successful fingerprint. Explicit scans
+and restart actions force execution. Recurring scans can skip unchanged trees
+unless cleanup, missing images, forced supplemental work or forced HLTB refresh
+requires execution. The ordinary fetch-HLTB option enriches discovered games and
+does not by itself prevent an unchanged skip.
+
+Both cancellation entry points address the same durable job. Parallel scans keep
+only one submitted unit per configured thread (capped at eight); cancellation
+stops new submissions and drains started work. A normal worker stop finalizes
+cancellation. An abrupt stop leaves durable ownership for the next single worker
+to recover immediately, preserving the interrupted attempt before retrying with a
+fresh detail. Web startup never changes worker-owned scans. The two-container
+production topology is unchanged.
+
+Scan Manager exposes queued work, terminal outcomes, counters, reasons, and job
+detail links. Clear finished and single-row history deletion retain queued,
+running/stopping, pending-replacement and unmatched-referenced scan records.
+Background job history and scan detail history are separate objects.

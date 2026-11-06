@@ -160,7 +160,7 @@ def run_scan_schedule(schedule_id):
         flash('This scheduled scan is already queued or running.', 'info')
         return redirect(url_for('main.admin_scan_management', active_tab='auto'))
     try:
-        job = enqueue_scheduled_scan(schedule, created_by_id=current_user.id)
+        job = enqueue_scheduled_scan(schedule, created_by_id=current_user.id, force=True)
     except (ValueError, OSError) as exc:
         flash(f'Cannot run this scan: {exc}', 'error')
         return redirect(url_for('main.admin_scan_management', active_tab='auto'))

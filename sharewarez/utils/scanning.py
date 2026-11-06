@@ -110,6 +110,7 @@ def log_unmatched_folder(scan_job_id, folder_path, matched_status, library_uuid=
     if existing_unmatched_folder is None:
         unmatched_folder = UnmatchedFolder(
             folder_path=folder_path,
+            scan_job_id=scan_job_id,
             failed_time=datetime.now(timezone.utc),
             content_type='Games',
             library_uuid=library_uuid,
@@ -123,8 +124,8 @@ def log_unmatched_folder(scan_job_id, folder_path, matched_status, library_uuid=
             print(f"[UNMATCHED] Library UUID: {library_uuid}")
             print(f"[UNMATCHED] Scan Job ID: {scan_job_id}")
         except IntegrityError:
-            log_system_event(f"Failed to log unmatched folder: {folder_path}", event_type='scan', event_level='warning')
             db.session.rollback()
+            raise
             print(f"[UNMATCHED ERROR] Failed to log unmatched folder due to a database error: {folder_path}")
     else:
         print(f"[UNMATCHED SKIPPED] Unmatched folder already logged for: {folder_path}. Status: {existing_unmatched_folder.status}")

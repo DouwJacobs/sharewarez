@@ -424,27 +424,9 @@ class InitializationManager:
             print(f"✅ Bundled theme refreshed: {theme_name}")
 
     def _cleanup_orphaned_scan_jobs(self, session):
-        """Clean up scan jobs left in 'Running' or 'Stopping' state after server restart."""
-        from sharewarez.models import ScanJob
-        from sqlalchemy import or_
-
-        # Find jobs that were either running or in the process of stopping when server crashed
-        orphaned_jobs = session.execute(
-            select(ScanJob).filter(
-                or_(ScanJob.status == 'Running', ScanJob.status == 'Stopping')
-            )
-        ).scalars().all()
-
-        if orphaned_jobs:
-            for job in orphaned_jobs:
-                job.status = 'Failed'
-                job.error_message = 'Scan job interrupted by server restart'
-                job.is_enabled = False
-                job.current_processing = None
-
-            print(f"🧹 Cleaned up {len(orphaned_jobs)} orphaned scan jobs")
-        else:
-            print("ℹ️  No orphaned scan jobs found")
+        # A web process can restart while the independent worker is healthy.
+        # Only worker startup has authority to reconcile abandoned scan attempts.
+        print('ℹ️ Scan recovery is owned by the durable job worker.')
 
     def _log_system_event(self, session):
         """Log system startup event."""

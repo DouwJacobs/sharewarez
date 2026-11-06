@@ -395,25 +395,17 @@ class TestMainBlueprint:
         db_session.refresh(test_scan_job)
         assert test_scan_job.status == 'Completed'
 
-    @patch('flask_login.current_user')
-    @patch('sharewarez.routes.Thread')
-    @patch('sharewarez.routes.copy_current_request_context')
-    def test_restart_scan_job(self, mock_copy_context, mock_thread, mock_current_user, 
-                             client, app, db_session, admin_user, test_scan_job):
-        """Test restarting a scan job."""
-        mock_current_user.is_authenticated = True
-        mock_current_user.role = 'admin'
-        
+    def test_restart_scan_job(self, client, db_session, admin_user, test_scan_job):
+        from sharewarez.models import BackgroundJob
+        old_id = test_scan_job.id
         with client.session_transaction() as sess:
             sess['_user_id'] = str(admin_user.id)
-        
-        response = client.post(f'/restart_scan_job/{test_scan_job.id}')
-        assert response.status_code == 302  # Redirect
-        
-        # Check job was restarted
+        response = client.post(f'/restart_scan_job/{old_id}')
+        assert response.status_code == 302
         db_session.refresh(test_scan_job)
-        assert test_scan_job.status == 'Running'
-        assert test_scan_job.is_enabled == True
+        assert test_scan_job.status == 'Completed'
+        job = db_session.get(BackgroundJob, test_scan_job.replacement_job_id)
+        assert job.status == 'queued' and job.payload['restart_of_scan_id'] == old_id
 
     @patch('flask_login.current_user')
     def test_restart_running_scan_job(self, mock_current_user, client, app, db_session, admin_user, test_scan_job):
@@ -430,6 +422,10 @@ class TestMainBlueprint:
         
         response = client.post(f'/restart_scan_job/{test_scan_job.id}')
         assert response.status_code == 302  # Redirect
+        db_session.refresh(test_scan_job)
+        assert test_scan_job.status == 'Running'
+        test_scan_job.status = 'Completed'
+        db_session.commit()
 
     @patch('flask_login.current_user')
     @patch('sharewarez.routes.is_scan_job_running')
@@ -644,9 +640,11 @@ class TestMainBlueprint:
         response = client.post('/clear_all_scan_jobs')
         assert response.status_code == 302  # Redirect
         
-        # Check all jobs were deleted
-        job_count = db.session.scalar(select(func.count(ScanJob.id)))
-        assert job_count == 0
+        # Finished unreferenced records are deleted; active/reference history survives.
+        from sharewarez.utils.scan_lifecycle import scan_is_active
+        assert db.session.get(ScanJob, test_scan_job.id) is None
+        for retained in db_session.execute(select(ScanJob)).scalars():
+            assert scan_is_active(retained) or db_session.query(UnmatchedFolder).filter_by(scan_job_id=retained.id).first()
 
     @patch('flask_login.current_user')
     def test_delete_all_unmatched_folders(self, mock_current_user, client, app, db_session, 

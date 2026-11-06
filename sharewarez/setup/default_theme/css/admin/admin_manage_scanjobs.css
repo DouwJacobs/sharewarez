@@ -1975,3 +1975,39 @@
         min-height: 44px;
     }
 }
+
+/* Scan history has labelled actions; the other tables retain compact icons. */
+.scan-management-page #scanJobsTable .scan-run-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+    flex: 1;
+}
+.scan-management-page #scanJobsTable .scan-run-actions .inline-form {
+    display: block;
+    width: 100%;
+    margin: 0;
+}
+.scan-management-page #scanJobsTable .scan-run-actions .btn {
+    width: 100%;
+    min-width: 0;
+    height: 42px;
+    margin: 0;
+    padding: 0 12px;
+}
+@media (min-width: 769px) {
+    .scan-management-page #scanJobsTable { min-width: 920px; }
+    .scan-management-page #scanJobsTable :is(th, td):nth-child(4) {
+        width: 190px;
+        max-width: 240px;
+        text-align: left;
+    }
+    .scan-management-page #scanJobsTable :is(th, td):nth-child(6) {
+        width: 140px;
+        max-width: none;
+    }
+}
+@media (max-width: 768px) {
+    .scan-management-page #scanJobsTable .scan-run-actions .btn { height: 44px; }
+}

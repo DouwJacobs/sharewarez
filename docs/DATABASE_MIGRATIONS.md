@@ -46,3 +46,11 @@ Revisions `20260922_26` through `20260922_29` add provider-neutral game and requ
 identities, encrypted RAWG configuration, request attribution, and provider-aware
 relationship/image provenance. Existing IGDB rows are backfilled in place. Legacy
 IGDB columns remain for compatibility, and old local metadata files need no rewrite.
+
+Revision `20261105_33` adds durable scan attempt links, options, a nullable outcome
+and an unmatched counter. It preserves existing status enum values and populated
+rows. Its upgrade also recognizes metadata-created columns, indexes and foreign
+keys, and its downgrade recognizes PostgreSQL-generated FK names. Fresh schema,
+previous-version populated upgrade, downgrade/re-upgrade, and a single revision
+head are covered by `tests/test_migrations.py`. Follow the normal backup and
+Alembic upgrade procedure before running code that uses these fields.

@@ -71,6 +71,7 @@ def enqueue(
 
 def cancel_job(job: BackgroundJob):
     """Request cancellation while preserving cooperative worker shutdown."""
+    job = db.session.execute(select(BackgroundJob).where(BackgroundJob.id == job.id).with_for_update().execution_options(populate_existing=True)).scalar_one()
     if job.status not in {'queued', 'running'}:
         raise ValueError('Job is not cancellable')
     job.cancel_requested = True
@@ -81,11 +82,15 @@ def cancel_job(job: BackgroundJob):
         job.error_message = 'Cancellation requested'
         _mark_archive_job_terminal(job)
     db.session.commit()
+    if job.task_name == 'library.scan':
+        from sharewarez.utils.scan_lifecycle import mark_scan_cancellation
+        mark_scan_cancellation(job)
     return job
 
 
 def retry_job(job: BackgroundJob):
     """Reset a terminal job so the worker can claim it again."""
+    job = db.session.execute(select(BackgroundJob).where(BackgroundJob.id == job.id).with_for_update().execution_options(populate_existing=True)).scalar_one()
     if job.status not in {'failed', 'cancelled'}:
         raise ValueError('Only failed or cancelled jobs can be retried')
     job.status = 'queued'
@@ -97,6 +102,7 @@ def retry_job(job: BackgroundJob):
     job.error_message = None
     job.progress = 0
     job.progress_message = 'Retry queued'
+    job.result = None
     db.session.commit()
     return job
 
@@ -171,7 +177,14 @@ def execute(job: BackgroundJob, worker_id: str):
     context = JobContext(job.id, worker_id)
     try:
         result = handler(context, job.payload or {})
-        current = context._job(refresh=True)
+        context.check_cancelled(force=True)
+        current = db.session.execute(select(BackgroundJob).where(BackgroundJob.id == job.id).with_for_update().execution_options(populate_existing=True)).scalar_one()
+        if current.locked_by != worker_id or current.cancel_requested:
+            raise JobCancelled('Cancellation requested or job ownership lost')
+        if job.task_name == 'library.scan' and result and not result.get('skipped'):
+            from sharewarez.utils.incremental_scanning import save_scan_state
+            save_scan_state(result['library_uuid'], result['folder_path'], result['scan_mode'],
+                            result['fingerprint'], result['entry_count'], result['total_size'], commit=False)
         current.status = 'completed'
         current.result = result or {}
         current.progress = 100
@@ -180,17 +193,24 @@ def execute(job: BackgroundJob, worker_id: str):
         current.locked_by = None
         db.session.commit()
     except JobCancelled as exc:
+        db.session.rollback()
         current = db.session.get(BackgroundJob, job.id)
-        if current:
+        if current and current.locked_by == worker_id:
             current.status = 'cancelled'
             current.error_message = str(exc)
             current.completed_at = datetime.now(timezone.utc)
             current.locked_by = None
             _mark_archive_job_terminal(current)
             db.session.commit()
+            if current.task_name == 'library.scan':
+                from sharewarez.utils.scan_lifecycle import mark_scan_cancellation
+                mark_scan_cancellation(current)
     except Exception as exc:
         current_app.logger.exception("Background job %s failed", job.id)
         db.session.rollback()
+        if job.task_name == 'library.scan':
+            from sharewarez.utils.scan_lifecycle import mark_scan_failed
+            mark_scan_failed(job.id, str(exc))
         _fail_or_retry(job.id, worker_id, str(exc), retry=True)
 
 
@@ -270,7 +290,10 @@ def recover_stale_jobs(stale_after_seconds=120):
             job.error_message = 'Worker stopped before the job completed'
             job.completed_at = datetime.now(timezone.utc)
             _mark_archive_job_terminal(job)
+    job_ids = [job.id for job in jobs]
     db.session.commit()
+    from sharewarez.utils.scan_lifecycle import recover_scan_details
+    recover_scan_details(job_ids, all_running=stale_after_seconds == 0)
     return len(jobs)
 
 
@@ -355,58 +378,59 @@ def build_download_archive_task(context, payload):
 
 @register_task('library.scan')
 def library_scan_task(context, payload):
-    """Run the existing scanner in the persistent worker process."""
-    from sharewarez.models import Library, AllowedFileType
-    from sharewarez.utils.scan_targets import resolve_scan_target, validate_scan_options, SCAN_OPTIONS
+    """Own one fresh scan detail per durable execution attempt."""
+    from sharewarez.models import Library, AllowedFileType, ScanJob
     from sharewarez.utilities import scan_and_add_games
-    from sharewarez.utils.incremental_scanning import (
-        filesystem_fingerprint, has_changed, save_scan_state,
-    )
+    from sharewarez.utils.scan_targets import resolve_scan_target, validate_scan_options, SCAN_OPTIONS
+    from sharewarez.utils.scan_lifecycle import create_scan_detail, finish_scan, ScanRunError, recover_scan_details
+    from sharewarez.utils.incremental_scanning import filesystem_fingerprint, has_changed
+    from sharewarez.utils.scan_execution import _check
 
-    library_uuid = payload['library_uuid']
-    library = db.session.get(Library, library_uuid)
+    library_uuid = payload.get('library_uuid')
+    library = db.session.get(Library, library_uuid) if library_uuid else None
     if library is None:
-        raise ValueError(f"Library not found: {library_uuid}")
-    validate_scan_options({key: payload[key] for key in SCAN_OPTIONS if key in payload})
-    extensions = db.session.execute(select(AllowedFileType.value)).scalars().all()
-    target = resolve_scan_target(payload['folder_path'], payload.get('scan_mode', 'folders'), extensions=extensions)
-    payload = {**payload, 'folder_path': target.path}
-    scan_mode = target.mode
-    context.heartbeat(1, f"Indexing {library.name}")
-    fingerprint, entry_count, total_size = filesystem_fingerprint(payload['folder_path'], context)
-    force_scan = any(payload.get(key) for key in (
-        'force_updates_extras_scan', 'fetch_hltb', 'force_hltb_refetch',
-        'remove_missing', 'download_missing_images',
-    ))
-    if not force_scan and not has_changed(
-        library_uuid, payload['folder_path'], scan_mode, fingerprint,
-    ):
-        context.heartbeat(99, f"No filesystem changes in {library.name}")
-        return {
-            'library_uuid': library_uuid, 'folder_path': payload['folder_path'],
-            'skipped': True, 'entry_count': entry_count, 'total_size': total_size,
-        }
-
-    context.heartbeat(10, f"Scanning changed library {library.name}")
-    scan_and_add_games(
-        payload['folder_path'],
-        scan_mode=scan_mode,
-        library_uuid=library_uuid,
-        remove_missing=bool(payload.get('remove_missing')),
-        download_missing_images=bool(payload.get('download_missing_images')),
-        force_updates_extras_scan=bool(payload.get('force_updates_extras_scan')),
-        fetch_hltb=bool(payload.get('fetch_hltb')),
-        force_hltb_refetch=bool(payload.get('force_hltb_refetch')),
-    )
-    save_scan_state(
-        library_uuid, payload['folder_path'], scan_mode,
-        fingerprint, entry_count, total_size,
-    )
-    context.heartbeat(99, f"Finished scanning {library.name}")
-    return {
-        'library_uuid': library_uuid, 'folder_path': payload['folder_path'],
-        'skipped': False, 'entry_count': entry_count, 'total_size': total_size,
-    }
+        raise ValueError('Library not found.')
+    owner = context._job(refresh=True)
+    recover_scan_details([owner.id])
+    options = {key: payload.get(key, False) for key in SCAN_OPTIONS}
+    detail = create_scan_detail(str(payload.get('folder_path') or ''), payload.get('scan_mode', 'folders'), library_uuid, options, owner)
+    detail_id = detail.id
+    try:
+        validate_scan_options(options)
+        if type(payload.get('force_scan', False)) is not bool:
+            raise ValueError('force_scan must be a boolean')
+        extensions = db.session.execute(select(AllowedFileType.value)).scalars().all()
+        target = resolve_scan_target(payload.get('folder_path'), payload.get('scan_mode', 'folders'), extensions=extensions)
+        context.heartbeat(1, f'Indexing {library.name}')
+        fingerprint, entry_count, total_size = filesystem_fingerprint(target.path, context)
+        force_scan = payload.get('force_scan', False) or any(options[key] for key in SCAN_OPTIONS if key != 'fetch_hltb')
+        _check(detail_id, context)
+        if not force_scan and not has_changed(library_uuid, target.path, target.mode, fingerprint):
+            result = finish_scan(detail_id, 'skipped', 'No filesystem changes.')
+            return {**result, 'library_uuid': library_uuid, 'folder_path': target.path, 'skipped': True, 'entry_count': entry_count, 'total_size': total_size}
+        context.heartbeat(10, f'Scanning {library.name}')
+        result = scan_and_add_games(target.path, scan_mode=target.mode, library_uuid=library_uuid,
+                                    existing_job=detail, context=context, **options)
+        if not isinstance(result, dict) or result.get('outcome') != 'completed':
+            raise ScanRunError('Scanner did not return a successful finalized result.')
+        context.check_cancelled(force=True)
+        finalized = db.session.get(ScanJob, detail_id, populate_existing=True)
+        if finalized is None or finalized.outcome != 'completed' or finalized.status != 'Completed':
+            raise ScanRunError('Scanner did not persist a successful terminal detail.')
+        context.heartbeat(99, f'Finished scanning {library.name}')
+        return {**result, 'library_uuid': library_uuid, 'folder_path': target.path, 'skipped': False, 'entry_count': entry_count, 'total_size': total_size, 'fingerprint': fingerprint, 'scan_mode': target.mode}
+    except JobCancelled as exc:
+        db.session.rollback()
+        row = db.session.get(ScanJob, detail_id, populate_existing=True)
+        if row and row.outcome != 'cancelled':
+            finish_scan(detail_id, 'cancelled', f'Scan cancelled. No removals performed. {exc}')
+        raise
+    except Exception as exc:
+        db.session.rollback()
+        row = db.session.get(ScanJob, detail_id, populate_existing=True)
+        if row and row.outcome not in {'failed', 'partial', 'cancelled'}:
+            finish_scan(detail_id, 'partial' if row.folders_success + row.folders_unmatched else 'failed', str(exc))
+        raise
 
 
 @register_task('library.bulk_metadata_refresh')

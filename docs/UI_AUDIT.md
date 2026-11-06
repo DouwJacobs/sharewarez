@@ -731,3 +731,23 @@ The administrator guide now presents `gamelibrary.json` as the current local
 metadata filename and identifies `sharewarez.json` only as its supported legacy
 alias. Both names come from the shared metadata-file registry rather than template
 literals.
+
+## Scan attempt lifecycle — 6 November 2026
+
+Scan activity now shows durable queued work and explicit completed, skipped,
+partial, failed, cancelled and interrupted outcomes. Matched/unmatched/failed
+counts and reasons use text nodes; recovery actions link to the durable owner.
+Identical polling snapshots retain the DOM, and changed snapshots restore a
+surviving focused action. Labelled Scan activity controls use their own scoped
+wrapper, retaining ordinary 42 px desktop / 44 px mobile controls; other Scan
+Manager icon tables keep their compact contract. This avoids the overlap found
+when labelled Restart and Job details actions inherited 38 px icon widths.
+
+Computer Use exercised a real restart POST, preserved partial history, a queued
+replacement, cancellation of that replacement, and navigation to its job detail
+screen in a disposable fixture. Default and Ember were inspected at desktop and
+390 × 844. Mobile reasons/counters align under their values, all new actions
+measured 44 px, and document client/scroll widths matched (375 px mobile,
+1265 px default desktop). The wide desktop table has one intentional internal
+scroller. The temporary viewport override was reset. Light palettes and live
+provider/network failures were not re-audited in this pass.

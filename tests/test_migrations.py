@@ -20,6 +20,27 @@ from sharewarez.utils.migrations import (
 BASELINE_REVISION = '20260809_01'
 
 
+def test_scan_lifecycle_upgrade_preserves_previous_rows(app, db_session):
+    database_uri = app.config['SQLALCHEMY_DATABASE_URI']
+    command.downgrade(alembic_config(database_uri), '20260925_32')
+    db_session.execute(text("INSERT INTO scan_jobs (id, status, folders_success, folders_failed) VALUES ('legacy-scan', 'Failed', 2, 1)"))
+    db_session.commit()
+    command.upgrade(alembic_config(database_uri), 'head')
+    row = db_session.execute(text("SELECT status, folders_success, folders_failed, folders_unmatched, outcome, background_job_id, replacement_job_id FROM scan_jobs WHERE id = 'legacy-scan'" )).one()
+    assert tuple(row) == ('Failed', 2, 1, 0, None, None, None)
+    assert current_revision(database_uri) == '20261105_33'
+
+
+def test_scan_lifecycle_fresh_bootstrap_matches_head(app, db_session):
+    from sharewarez.models import ScanJob
+    row = ScanJob(status='Completed', outcome='completed', scan_options={'fetch_hltb': False})
+    db_session.add(row)
+    db_session.commit()
+    db_session.refresh(row)
+    assert row.folders_unmatched == 0 and row.scan_options == {'fetch_hltb': False}
+    assert current_revision(app.config['SQLALCHEMY_DATABASE_URI']) == head_revision() == '20261105_33'
+
+
 @pytest.fixture(autouse=True)
 def current_versioned_schema(app):
     """Give each migration test an isolated current schema and revision marker."""

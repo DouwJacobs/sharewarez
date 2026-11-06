@@ -62,53 +62,21 @@ def cleanup_after_each_test(db_session):
 
 
 class TestScanAndAddGamesCore:
-    """Test core functionality of scan_and_add_games with comprehensive assertions."""
-    
-    @patch('sharewarez.utilities.is_scan_job_running')
-    def test_early_return_when_scan_running(self, mock_is_running, app):
-        """Test that function returns early if scan is already running with no side effects."""
-        mock_is_running.return_value = True
-        
-        with app.app_context():
-            # Ensure clean database state before test
-            initial_scan_jobs = db.session.execute(select(ScanJob)).scalars().all()
-            initial_count = len(initial_scan_jobs)
-            
-            result = scan_and_add_games("/fake/path", library_uuid=str(uuid4()))
-            
-            # Verify function returns None
-            assert result is None
-            
-            # Verify running check was called exactly once
-            mock_is_running.assert_called_once()
-            
-            # Critical assertion: No scan job should be created when one is running
-            final_scan_jobs = db.session.execute(select(ScanJob)).scalars().all()
-            assert len(final_scan_jobs) == initial_count, "No new scan jobs should be created when scan is running"
+    def test_active_scan_raises_without_creating_detail(self, app):
+        from sharewarez.utils.scan_lifecycle import ScanRunError
+        with app.app_context(), patch('sharewarez.utilities.is_scan_job_running', return_value=True):
+            before = db.session.query(ScanJob).count()
+            with pytest.raises(ScanRunError, match='already in progress'):
+                scan_and_add_games('/fake/path', library_uuid=str(uuid4()))
+            assert db.session.query(ScanJob).count() == before
 
-    def test_library_not_found_creates_no_scan_job(self, app, db_session):
-        """Test that no scan job is created when library UUID doesn't exist."""
-        nonexistent_uuid = str(uuid4())
-        
-        with app.app_context():
-            with patch('sharewarez.utilities.is_scan_job_running', return_value=False):
-                initial_jobs = db_session.execute(select(ScanJob)).scalars().all()
-                initial_count = len(initial_jobs)
-                
-                result = scan_and_add_games("/fake/path", library_uuid=nonexistent_uuid)
-                
-                # Verify function returns None
-                assert result is None
-                
-                # Critical assertion: No scan job created for nonexistent library
-                final_jobs = db_session.execute(select(ScanJob)).scalars().all()
-                assert len(final_jobs) == initial_count, "No scan job should be created for nonexistent library"
-                
-                # Verify no scan job exists for the nonexistent UUID
-                uuid_specific_jobs = db_session.execute(
-                    select(ScanJob).filter_by(library_uuid=nonexistent_uuid)
-                ).scalars().all()
-                assert len(uuid_specific_jobs) == 0, f"No scan jobs should exist for UUID {nonexistent_uuid}"
+    def test_missing_library_raises_without_creating_detail(self, app):
+        from sharewarez.utils.scan_lifecycle import ScanRunError
+        with app.app_context(), patch('sharewarez.utilities.is_scan_job_running', return_value=False):
+            before = db.session.query(ScanJob).count()
+            with pytest.raises(ScanRunError, match='Library not found'):
+                scan_and_add_games('/fake/path', library_uuid=str(uuid4()))
+            assert db.session.query(ScanJob).count() == before
 
 
 class TestHandleAutoScanCore:
@@ -296,124 +264,19 @@ class TestHandleManualScanCore:
 
 
 class TestUtilitiesWithRealDatabase:
-    """Test utilities with actual database integration (faster, focused tests)."""
-    
-    def test_scan_job_creation_with_real_db(self, app, db_session):
-        """Test that scan job is created properly when library exists."""
-        # Create test library
-        library = Library(
-            uuid=str(uuid4()),
-            name="Test Library", 
-            platform=LibraryPlatform.PCWIN
-        )
+    def test_invalid_target_persists_failure_and_raises(self, app, db_session):
+        from sharewarez.utils.scan_lifecycle import ScanRunError
+        library = Library(name=f'Invalid {uuid4().hex}', platform=LibraryPlatform.PCWIN)
         db_session.add(library)
-        
-        # Create required settings
-        settings = GlobalSettings(
-            update_folder_name='updates',
-            extras_folder_name='extras', 
-            scan_thread_count=1
-        )
-        db_session.add(settings)
-        
-        # Create allowed file type to prevent empty list error (check if exists first)
-        existing_file_type = db_session.query(AllowedFileType).filter_by(value='exe').first()
-        if not existing_file_type:
-            file_type = AllowedFileType(value='exe')
-            db_session.add(file_type)
-        
-        db_session.commit()
-        
-        with app.app_context():
-            with patch('sharewarez.utilities.is_scan_job_running', return_value=False):
-                with patch('os.path.exists', return_value=False):  # Force folder access failure
-                    with patch('os.access', return_value=False):
-                        scan_and_add_games("/nonexistent/path", library_uuid=library.uuid)
-                        
-                        # Check that scan job was created
-                        scan_jobs = db_session.query(ScanJob).filter_by(library_uuid=library.uuid).all()
-                        assert len(scan_jobs) > 0
-                        assert scan_jobs[0].status == 'Failed'
-                        assert 'outside allowed scan directories' in scan_jobs[0].error_message
-
-    def test_library_validation(self, app, db_session):
-        """Test that function handles missing library gracefully."""
-        with app.app_context():
-            with patch('sharewarez.utilities.is_scan_job_running', return_value=False):
-                result = scan_and_add_games("/fake/path", library_uuid="nonexistent-uuid")
-                assert result is None
-
-
-class TestAdvancedScanScenarios:
-    """Test advanced scanning scenarios with deep database integration."""
-    
-    def test_existing_job_restart_workflow(self, app, db_session):
-        """Test restarting an existing scan job with proper state management."""
-        # Setup test environment
-        library = Library(
-            uuid=str(uuid4()),
-            name="Restart Test Library", 
-            platform=LibraryPlatform.PCWIN
-        )
-        db_session.add(library)
-        
-        settings = GlobalSettings(
-            update_folder_name='updates',
-            extras_folder_name='extras', 
-            scan_thread_count=1
-        )
-        db_session.add(settings)
-        
-        # Add required file types
-        if not db_session.execute(select(AllowedFileType).filter_by(value='exe')).scalars().first():
+        if not db_session.query(AllowedFileType).first():
             db_session.add(AllowedFileType(value='exe'))
-        
-        # Create existing failed job
-        existing_job = ScanJob(
-            folders={"/restart/path": True},
-            content_type='Games',
-            status='Failed',
-            is_enabled=True,
-            last_run=datetime.now() - timedelta(hours=1),
-            library_uuid=library.uuid,
-            error_message='Previous failure reason',
-            total_folders=5,
-            folders_success=2,
-            folders_failed=3,
-            scan_folder='/restart/path'
-        )
-        db_session.add(existing_job)
         db_session.commit()
-        existing_job_id = existing_job.id
-        
-        with app.app_context():
-            # Simulate path access failure again
-            with patch('os.path.exists', return_value=False):
-                with patch('os.access', return_value=False):
-                    scan_and_add_games(
-                        "/restart/path",
-                        library_uuid=library.uuid,
-                        existing_job=existing_job
-                    )
-                    
-                    # Verify the same job was updated, not a new one created
-                    # Query the job again instead of refreshing to avoid session issues
-                    updated_job = db_session.get(ScanJob, existing_job_id)
-                    assert updated_job is not None
-                    assert updated_job.id == existing_job_id  # Same job ID
-                    assert updated_job.status == 'Failed'  # Status updated
-                    assert 'outside allowed scan directories' in updated_job.error_message
-                    
-                    # Verify no duplicate jobs created
-                    all_jobs = db_session.execute(
-                        select(ScanJob).filter_by(library_uuid=library.uuid)
-                    ).scalars().all()
-                    assert len(all_jobs) == 1  # Still only one job
-                    
-                    # Verify state preservation and updates
-                    assert all_jobs[0].id == existing_job_id
-                    assert all_jobs[0].folders == {"/restart/path": True}
-                    assert all_jobs[0].content_type == 'Games'
+        with patch('sharewarez.utilities.is_scan_job_running', return_value=False):
+            with pytest.raises(ScanRunError):
+                scan_and_add_games('/invalid/target', library_uuid=library.uuid)
+        row = db_session.query(ScanJob).filter_by(library_uuid=library.uuid).one()
+        assert row.status == 'Failed' and row.outcome == 'failed'
+        assert 'No removals performed' in row.error_message
 
     def test_remove_missing_games_functionality(self, app, db_session, tmp_path):
         """Cleanup applies only to direct records under the selected target."""
@@ -435,104 +298,3 @@ class TestAdvancedScanScenarios:
         job = db_session.execute(select(ScanJob).filter_by(library_uuid=library.uuid)).scalar_one()
         assert job.removed_count == 1
         assert job.status == 'Completed'
-
-    def test_database_error_handling_during_scan(self, app, db_session):
-        """Test how scan handles database errors gracefully."""
-        # Setup test environment
-        library = Library(
-            uuid=str(uuid4()),
-            name="Database Error Test Library", 
-            platform=LibraryPlatform.PCWIN
-        )
-        db_session.add(library)
-        
-        settings = GlobalSettings(
-            update_folder_name='updates',
-            extras_folder_name='extras', 
-            scan_thread_count=1
-        )
-        db_session.add(settings)
-        
-        if not db_session.execute(select(AllowedFileType).filter_by(value='exe')).scalars().first():
-            db_session.add(AllowedFileType(value='exe'))
-        
-        db_session.commit()
-        
-        with app.app_context():
-            # Test 1: Database error during initial ScanJob creation
-            with patch('sharewarez.utilities.is_scan_job_running', return_value=False):
-                with patch('os.path.exists', return_value=True):
-                    with patch('os.access', return_value=True):
-                        with patch('sharewarez.utilities.db.session.commit') as mock_commit:
-                            from sqlalchemy.exc import SQLAlchemyError
-                            
-                            # Simulate database error on first commit (ScanJob creation)
-                            mock_commit.side_effect = SQLAlchemyError("Database connection lost")
-                            
-                            result = scan_and_add_games("/test/path", library_uuid=library.uuid)
-                            
-                            # Verify function returns early on database error
-                            assert result is None
-                            mock_commit.assert_called_once()
-            
-            # Test 2: Database error during final commit  
-            with patch('sharewarez.utilities.is_scan_job_running', return_value=False):
-                with patch('os.path.exists', return_value=True):
-                    with patch('os.access', return_value=True):
-                        with patch('sharewarez.utilities.get_game_names_from_folder', return_value=[]):
-                            with patch('sharewarez.utilities.load_scanning_filter_patterns', return_value=([], [])):
-                                with patch('sharewarez.utilities.db.session.commit') as mock_commit:
-                                    from sqlalchemy.exc import SQLAlchemyError
-                                    
-                                    # Track commits and fail on final one
-                                    commit_count = 0
-                                    def commit_side_effect():
-                                        nonlocal commit_count
-                                        commit_count += 1
-                                        if commit_count >= 3:  # Fail on final commit
-                                            raise SQLAlchemyError("Connection timeout during final commit")
-                                        return None
-                                    
-                                    mock_commit.side_effect = commit_side_effect
-                                    
-                                    # The scan function should handle the SQLAlchemy error gracefully
-                                    # and continue execution (not raise an exception to the test)
-                                    try:
-                                        scan_and_add_games("/test/path", library_uuid=library.uuid)
-                                    except SQLAlchemyError:
-                                        # This is expected - the function lets final commit errors propagate
-                                        # but handles them at the higher level via try/catch in utilities.py
-                                        pass
-                                    
-                                    # Verify multiple commits were attempted
-                                    assert mock_commit.call_count >= 2
-                                    
-                                    # Check that scan job was created initially (despite final error)
-                                    scan_jobs = db_session.execute(
-                                        select(ScanJob).filter_by(library_uuid=library.uuid)
-                                    ).scalars().all()
-                                    # At least one scan job should exist from the successful initial creation
-                                    assert len(scan_jobs) >= 1
-            
-            # Test 3: Verify error handling preserves partial progress  
-            existing_job = ScanJob(
-                folders={"/error/path": True},
-                content_type='Games',
-                status='Running',
-                is_enabled=True,
-                last_run=datetime.now(),
-                library_uuid=library.uuid,
-                error_message='Initial error message',
-                total_folders=2,
-                folders_success=1,
-                folders_failed=0,
-                scan_folder='/error/path'
-            )
-            db_session.add(existing_job)
-            db_session.commit()
-            
-            # Verify scan job state is preserved even with database errors
-            db_session.refresh(existing_job)
-            assert existing_job.folders_success == 1  # Progress preserved
-            assert 'Initial error message' in existing_job.error_message
-            assert existing_job.total_folders == 2

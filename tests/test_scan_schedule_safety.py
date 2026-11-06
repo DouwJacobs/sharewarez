@@ -7,7 +7,7 @@ import pytest
 from sqlalchemy import select
 
 from sharewarez.models import (
-    AllowedFileType, BackgroundJob, Library, LibraryScanSchedule, LibraryScanState, SystemEvents, User,
+    AllowedFileType, BackgroundJob, Game, Library, LibraryScanSchedule, LibraryScanState, SystemEvents, User,
 )
 from sharewarez.platform import LibraryPlatform
 from sharewarez.utils.background_jobs import library_scan_task, enqueue, claim_next, execute
@@ -98,10 +98,12 @@ def test_worker_revalidates_retargeted_link_before_fingerprinting(schedule_stora
     payload = {'library_uuid': library.uuid, 'folder_path': str(link), 'scan_mode': 'folders'}
     link.unlink()
     link.symlink_to(root.parent, target_is_directory=True)
-    context = SimpleNamespace(heartbeat=lambda *args, **kwargs: None)
+    queue = f'safe-{uuid4().hex}'
+    job = enqueue('library.scan', payload, queue=queue, max_attempts=1)
     with patch('sharewarez.utilities.scan_and_add_games') as scanner, patch('sharewarez.utils.incremental_scanning.filesystem_fingerprint') as fingerprint:
-        with pytest.raises(ValueError, match='outside'):
-            library_scan_task(context, payload)
+        execute(claim_next('scan-worker', queue=queue), 'scan-worker')
+    db_session.refresh(job)
+    assert job.status == 'failed'
     scanner.assert_not_called()
     fingerprint.assert_not_called()
 
@@ -111,11 +113,14 @@ def test_worker_fingerprints_only_requested_file(schedule_storage, db_session):
     game = root / 'game.iso'
     game.write_bytes(b'game')
     (root / 'sibling.iso').write_bytes(b'not this game')
-    context = SimpleNamespace(heartbeat=lambda *args, **kwargs: None)
-    with patch('sharewarez.utilities.scan_and_add_games') as scanner:
-        result = library_scan_task(context, {'library_uuid': library.uuid, 'folder_path': str(game), 'scan_mode': 'files'})
-    assert result['entry_count'] == 1 and result['total_size'] == 4
-    assert scanner.call_args.args == (str(game),)
+    db_session.add(Game(name='Game', full_disk_path=str(game), library_uuid=library.uuid))
+    db_session.commit()
+    queue = f'file-{uuid4().hex}'
+    job = enqueue('library.scan', {'library_uuid': library.uuid, 'folder_path': str(game), 'scan_mode': 'files'}, queue=queue, max_attempts=1)
+    execute(claim_next('scan-worker', queue=queue), 'scan-worker')
+    db_session.refresh(job)
+    assert job.status == 'completed'
+    assert job.result['entry_count'] == 1 and job.result['total_size'] == 4
     state = db_session.execute(select(LibraryScanState).where(LibraryScanState.library_uuid == library.uuid)).scalar_one()
     assert state.folder_path == str(game)
 

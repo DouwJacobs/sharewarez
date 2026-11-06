@@ -1059,6 +1059,11 @@ class ScanJob(db.Model):
     setting_force_updates_extras = db.Column(db.Boolean, default=False)
     current_processing = db.Column(db.String(255), nullable=True)  # "Processing: Game Name (450/1000)"
     last_progress_update = db.Column(db.DateTime, nullable=True)
+    outcome = db.Column(db.String(20), nullable=True)
+    folders_unmatched = db.Column(db.Integer, nullable=False, default=0, server_default='0')
+    scan_options = db.Column(JSONEncodedDict, nullable=True)
+    background_job_id = db.Column(db.String(36), db.ForeignKey('background_jobs.id', ondelete='SET NULL'), nullable=True, index=True)
+    replacement_job_id = db.Column(db.String(36), db.ForeignKey('background_jobs.id', ondelete='SET NULL'), nullable=True)
 
 
 class BackgroundJob(db.Model):

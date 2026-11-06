@@ -226,77 +226,37 @@ def scan_management():
 @login_required
 @admin_required
 def cancel_scan_job(job_id):
-    job = db.session.get(ScanJob, job_id)
-    if job and job.status == 'Running':
-        job.is_enabled = False
-        job.status = 'Stopping'
-        job.error_message = 'Scan is stopping, waiting for threads to complete'
-        db.session.commit()
-        flash(f"Scan job {job_id} is stopping. Waiting for threads to complete...")
-        print(f"Scan job {job_id} is stopping. Waiting for threads to complete...")
-    else:
-        flash('Scan job not found or not in a cancellable state.', 'error')
-    return redirect(url_for('main.admin_scan_management'))
+    from sharewarez.utils.scan_lifecycle import cancel_scan
+    detail = db.session.get(ScanJob, job_id)
+    try:
+        if detail is not None:
+            cancel_scan(detail)
+        else:
+            from sharewarez.models import BackgroundJob
+            from sharewarez.utils.background_jobs import cancel_job
+            queued = db.session.get(BackgroundJob, job_id)
+            if queued is None or queued.task_name != 'library.scan':
+                abort(404)
+            cancel_job(queued)
+        flash('Scan cancellation requested.', 'info')
+    except ValueError as exc:
+        flash(str(exc), 'error')
+    return redirect(url_for('main.admin_scan_management', active_tab='auto'))
+
 
 @bp.route('/restart_scan_job/<job_id>', methods=['POST'])
 @login_required
 @admin_required
 def restart_scan_job(job_id):
-    job = db.session.get(ScanJob, job_id) or abort(404)
-    if job.status == 'Running':
-        flash('Cannot restart a running scan.', 'error')
-        return redirect(url_for('main.admin_scan_management'))
-
-    # Reset the existing job's counters instead of creating a new job
-    job.status = 'Running'
-    job.total_folders = 0
-    job.folders_success = 0
-    job.folders_failed = 0
-    job.removed_count = 0
-    job.last_run = datetime.now(timezone.utc)
-    job.error_message = None
-    job.is_enabled = True
-    db.session.commit()
-
-    # The response can tear down its request context while the scan is still
-    # starting. Give the worker its own application context and DB-bound job.
-    app = current_app._get_current_object()
-
-    def start_scan():
-        with app.app_context():
-            worker_job = db.session.get(ScanJob, job_id)
-            if worker_job is None:
-                return
-            try:
-                extensions = db.session.execute(select(AllowedFileType.value)).scalars().all()
-                full_path = resolve_scan_target(
-                    worker_job.scan_folder,
-                    'files' if worker_job.setting_filefolder else 'folders',
-                    extensions=extensions,
-                ).path
-            except (ValueError, OSError) as exc:
-                worker_job.status = 'Failed'
-                worker_job.error_message = f'{exc}. No removals performed: invalid restart target.'
-                db.session.commit()
-                return
-
-            scan_and_add_games(
-                full_path,
-                scan_mode='files' if worker_job.setting_filefolder else 'folders',
-                library_uuid=worker_job.library_uuid,
-                remove_missing=worker_job.setting_remove,
-                existing_job=worker_job,
-                download_missing_images=getattr(
-                    worker_job, 'setting_download_missing_images', False
-                ),
-                force_updates_extras_scan=getattr(
-                    worker_job, 'setting_force_updates_extras', False
-                ),
-            )
-
-    thread = Thread(target=start_scan, daemon=True)
-    thread.start()
-    return redirect(url_for('main.admin_scan_management'))
+    from sharewarez.utils.scan_lifecycle import restart_scan
+    try:
+        job = restart_scan(job_id, created_by_id=current_user.id)
+        flash(f'Scan restart queued (job {job.id}).', 'info')
+    except LookupError:
+        abort(404)
+    except ValueError as exc:
+        flash(str(exc), 'error')
+    return redirect(url_for('main.admin_scan_management', active_tab='auto'))
 
 
 @bp.route('/edit_game_images/<game_uuid>', methods=['GET'])
@@ -491,21 +451,22 @@ def delete_image():
 @login_required
 @admin_required
 def delete_scan_job(job_id):
-    job = db.session.get(ScanJob, job_id) or abort(404)
-    db.session.delete(job)
-    db.session.commit()
-    flash('Scan job deleted successfully.', 'success')
-    return redirect(url_for('main.admin_scan_management'))
+    from sharewarez.utils.scan_lifecycle import delete_scan_history
+    db.session.get(ScanJob, job_id) or abort(404)
+    deleted, retained = delete_scan_history([job_id])
+    flash(f'Deleted {deleted} scan record(s); retained {retained} active or referenced record(s).', 'info')
+    return redirect(url_for('main.admin_scan_management', active_tab='auto'))
+
 
 @bp.route('/clear_all_scan_jobs', methods=['POST'])
 @login_required
 @admin_required
 def clear_all_scan_jobs():
-    db.session.execute(delete(ScanJob))
-    db.session.commit()
-    flash('All scan jobs cleared successfully.', 'success')
-    return redirect(url_for('main.admin_scan_management'))
-
+    from sharewarez.utils.scan_lifecycle import delete_scan_history
+    ids = db.session.execute(select(ScanJob.id)).scalars().all()
+    deleted, retained = delete_scan_history(ids)
+    flash(f'Deleted {deleted} scan record(s); retained {retained} active or referenced record(s).', 'info')
+    return redirect(url_for('main.admin_scan_management', active_tab='auto'))
 
 
 

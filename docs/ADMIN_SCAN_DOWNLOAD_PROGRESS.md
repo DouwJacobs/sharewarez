@@ -140,3 +140,87 @@ stale results; the preview confirmed older results can remain visible after a
 rejected manual POST. Do not claim either issue is fixed by T02.
 
 No release, deployment or production-data changes were performed.
+
+## 6 November 2026 — T03 durable scan attempts and recovery
+
+Implemented after `cb7d6177`. Migration: `20261105_33` (one head).
+
+- `utils/scan_execution.py` replaces the duplicated scan loops with explicit
+  terminal results, counters, bounded parallel submission and cooperative stop.
+  `utilities.scan_and_add_games` remains the compatibility entry point. Provider
+  non-matches count as processed only when an unmatched record was persisted.
+- Every durable attempt creates a fresh linked ScanJob before processing and
+  assigns a new payload dictionary containing its ID. Failed/partial/cancelled
+  paths finalize details and raise to the queue. Partial work uses status Failed
+  plus outcome partial. Earlier terminal attempts are preserved on retry.
+- Successful fingerprint persistence and queue completion share a locked
+  transaction. Configuration, unit, finalization and fingerprint-store failures
+  cannot appear successful. Cancellation at the success boundary saves no state.
+- Restarts now enqueue through a locked original row and replacement-job pointer.
+  Simultaneous requests reuse the same pending replacement. Known legacy fields
+  are reconstructed; missing HLTB overrides default false. Both cancel routes use
+  the durable owner; queued work is cancellable from Scan Manager.
+- Worker shutdown finalizes cancellation; forced process death is reconciled by
+  the next worker, preserving the interrupted attempt and creating another detail.
+  Web startup leaves running scans alone. The existing two-container topology is
+  preserved. Explicit scans/restarts force work; ordinary HLTB enrichment does not
+  prevent an unchanged recurring skip.
+- Single and bulk history deletion lock owners/details and retain active,
+  pending-replacement and unmatched-referenced rows, reporting retained counts.
+- Scan activity displays queued, partial, cancelled, interrupted and skipped
+  states, separate counters, reasons and job links. Labelled actions have their
+  own layout rather than inheriting fixed icon widths. Polling preserves unchanged
+  DOM and restores surviving focus. Canonical/served default assets match.
+
+### Verification
+
+The initial no-file-types regression reproduced a completed durable job and saved
+fingerprint under the old code. Final focused runs used a fresh PostgreSQL 14
+`gamelibrary_t03_test` database per module in the disposable loopback cluster:
+
+| Module | Passed |
+| --- | ---: |
+| test_scan_lifecycle.py | 20 |
+| test_scan_worker_process.py | 1 |
+| test_scan_safety.py | 12 |
+| test_background_jobs.py | 16 |
+| test_scan_schedule_safety.py | 15 |
+| test_utilities.py | 8 |
+| test_routes.py | 62 |
+| test_routes_apis_scan.py | 25 |
+| test_migrations.py | 10 |
+| test_init_manager_fresh_database.py | 1 |
+| test_utils_scanning.py | 28 |
+| test_provider_neutral_scanning.py | 3 |
+| test_container_layout.py | 2 |
+| test_scan_picker_submit.py | 3 |
+| test_routes_apis_browse.py | 13 |
+| test_download_cache.py | 7 |
+| **Total** | **226** |
+
+The worker-process test ran `run_worker` in separate processes against synthetic
+storage: an independent web initialization left its scan Running, SIGTERM
+produced a terminal cancelled attempt, retry produced a fresh successful detail,
+and SIGKILL/startup produced an interrupted old attempt followed by successful
+recovery. The old cancellation history remained intact. Migrations passed fresh
+metadata bootstrap, populated previous-revision upgrade, downgrade/re-upgrade,
+historical upgrade compatibility and a single head. Twenty lifecycle scenarios
+include concurrent restarts, both cancellation routes, skipped work, persistence
+errors and cancellation during cleanup (one observed removal, no further ones).
+Four standalone picker JavaScript cases, Ruff, focused Mypy, the 93-template
+accessibility audit and diff checks also passed.
+
+Computer Use verified default/Ember desktop and 390 × 844 states with synthetic
+data. A real Restart POST queued a replacement without changing partial history;
+Stop cancelled the queued replacement; Job details opened its correct owner.
+The first visual pass found labelled-action overlap and the final pass verified
+the corrected controls. Mobile buttons measured 44 px; document client/scroll
+widths matched at 375 px mobile and 1265 px desktop. The desktop table uses one
+internal scroller. Viewport overrides were reset. A default mobile screenshot is
+saved in the task's visualization folder as `scan-lifecycle-mobile.jpg`.
+
+### Continue with T04
+
+T04–T11 remain open. The next item is bounded path-based manual candidate state,
+including equal cleaned titles, stale selections and revalidation at identify.
+No production data, release tags, deployment or proxy configuration was changed.

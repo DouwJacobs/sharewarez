@@ -8,6 +8,8 @@ from sqlalchemy import select
 from sharewarez.models import AllowedFileType, Game, GameUpdate, GlobalSettings, Library, ScanJob
 from sharewarez.platform import LibraryPlatform
 from sharewarez.utilities import scan_and_add_games
+from sharewarez.utils.scan_lifecycle import ScanRunError
+from sharewarez.utils.background_jobs import JobCancelled
 
 
 @pytest.fixture
@@ -76,7 +78,11 @@ def test_incomplete_or_failed_scan_never_removes(scan_storage, db_session, fault
         patch('sharewarez.utils.shutdown.should_continue_processing', return_value=fault != 'shutdown'),
         patch('sharewarez.utilities.filesystem_fingerprint', side_effect=PermissionError('nested unreadable') if fault == 'nested_permission' else filesystem_fingerprint),
     ):
-        scan_and_add_games(str(target), library_uuid=library.uuid, remove_missing=True)
+        if fault == 'empty':
+            scan_and_add_games(str(target), library_uuid=library.uuid, remove_missing=True)
+        else:
+            with pytest.raises((ScanRunError, JobCancelled)):
+                scan_and_add_games(str(target), library_uuid=library.uuid, remove_missing=True)
     remove.assert_not_called()
     job = db_session.execute(select(ScanJob).where(ScanJob.library_uuid == library.uuid)).scalar_one()
     assert 'No removals performed' in job.error_message

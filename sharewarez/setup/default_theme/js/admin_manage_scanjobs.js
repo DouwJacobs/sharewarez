@@ -174,21 +174,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
     var csrfToken = CSRFUtils.getToken();
 
-    // Helper function to get user-friendly status display
-    function getDisplayStatus(job) {
-        if (job.status === 'Failed' && job.error_message) {
-            if (job.error_message === 'Scan cancelled by user') {
-                return 'Cancelled';
-            } else if (job.error_message === 'Scan job interrupted by server restart') {
-                return 'Interrupted by server restart';
-            }
-        }
-        return job.status;
-    }
-
-    const activeScanStatuses = new Set(['Running', 'Stopping']);
+    const activeScanStatuses = new Set(['Running', 'Stopping', 'Scheduled', 'Queued']);
     let scanJobsPollTimer = null;
     let scanJobsPollInFlight = false;
+    let scanJobsSnapshot = null;
 
     const isAutoScanTabVisible = () =>
         document.querySelector('#autoScan')?.classList.contains('active') && !document.hidden;
@@ -212,7 +201,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Sort the data array to ensure the latest scan is at the top
                 data.sort((a, b) => new Date(b.last_run) - new Date(a.last_run));
                 
-                // Clear the table body
+                const signature = JSON.stringify(data);
+                if (signature === scanJobsSnapshot) return data.some(job => activeScanStatuses.has(job.status));
+                scanJobsSnapshot = signature;
+                const focusRow = document.activeElement.closest('tr[data-scan-id]')?.dataset.scanId;
+                const focusAction = document.activeElement.dataset.scanAction;
                 scanJobsTableBody.innerHTML = '';
 
                 if (data.length === 0) {
@@ -226,80 +219,84 @@ document.addEventListener('DOMContentLoaded', function() {
                 const isAnyJobRunning = data.some(job => activeScanStatuses.has(job.status));
                 
                 data.forEach(job => {
-                    // Create progress column content
-                    let progressColumn = '';
-                    if (job.status === 'Running' && job.total_folders > 0) {
-                        const percentage = job.progress_percentage || 0;
-                        const processed = job.folders_success + job.folders_failed;
-                        progressColumn = `
-                            <div class="scan-progress">
-                                <div class="progress mb-1">
-                                    <div class="progress-bar" style="width: ${percentage}%"></div>
-                                </div>
-                                <div class="progress-info">
-                                    <span class="progress-numbers">${processed}/${job.total_folders} (${percentage}%)</span>
-                                </div>
-                                <div class="progress-status">
-                                    <small class="text-bright-green">${job.current_processing || 'Processing...'}</small>
-                                </div>
-                            </div>
-                        `;
-                    } else if (job.status === 'Stopping') {
-                        const processed = job.folders_success + job.folders_failed;
-                        progressColumn = `
-                            <div class="scan-progress">
-                                <div class="progress-status">
-                                    <span class="text-warning">
-                                        <i class="fas fa-spinner fa-spin"></i>
-                                        Stopping scan... (${processed}/${job.total_folders})
-                                    </span>
-                                </div>
-                                <div class="progress-status">
-                                    <small class="text-muted">Waiting for threads to complete</small>
-                                </div>
-                            </div>
-                        `;
-                    } else if (job.status === 'Completed') {
-                        progressColumn = `<span class="text-success"><i class="fas fa-check"></i> ${job.folders_success + job.folders_failed}/${job.total_folders}</span>`;
-                    } else if (job.status === 'Failed') {
-                        progressColumn = `<span class="text-danger"><i class="fas fa-times"></i> ${job.folders_success + job.folders_failed}/${job.total_folders}</span>`;
-                    } else {
-                        progressColumn = '-';
-                    }
-
-                    // Create actions column content
-                    const actionsColumn = `
-                        ${job.status === 'Running' ?
-                            `<form action="/cancel_scan_job/${job.id}" method="post" class="inline-form">
-                                <input type="hidden" name="csrf_token" value="${csrfToken}">
-                                <button type="submit" class="btn btn-warning btn-sm" title="Cancel Scan" aria-label="Cancel scan"><i class="fas fa-stop" aria-hidden="true"></i></button>
-                            </form>` :
-                        job.status === 'Stopping' ?
-                            `<button class="btn btn-warning btn-sm" disabled title="Scan is stopping, please wait..." aria-label="Scan is stopping">
-                                <i class="fas fa-spinner fa-spin" aria-hidden="true"></i>
-                            </button>` :
-                            `${isAnyJobRunning ?
-                                `<button class="btn btn-secondary btn-sm" disabled title="Cannot restart while another scan is running" aria-label="Restart unavailable while another scan is running"><i class="fas fa-sync" aria-hidden="true"></i></button>` :
-                                `<form action="/restart_scan_job/${job.id}" method="post" class="inline-form">
-                                    <input type="hidden" name="csrf_token" value="${csrfToken}">
-                                        <button type="submit" class="btn btn-secondary btn-sm" title="Restart Scan" aria-label="Restart scan"><i class="fas fa-sync" aria-hidden="true"></i></button>
-                                </form>`
-                            }`
-                        }
-                    `;
-                    
                     const row = document.createElement('tr');
-                    row.innerHTML = `
-                        <td data-label="ID">${job.id.substring(0, 8)}</td>
-                        <td data-label="Library">${job.library_name || 'N/A'}</td>
-                        <td data-label="Path">${job.scan_folder || 'N/A'}</td>
-                        <td data-label="Status">${getDisplayStatus(job)}</td>
-                        <td data-label="Progress">${progressColumn}</td>
-                        <td data-label="Actions" class="scan-row-actions">${actionsColumn}</td>
-                    `;
+                    row.dataset.scanId = job.id;
+                    const cell = (label, text) => {
+                        const td = document.createElement('td');
+                        td.dataset.label = label;
+                        td.textContent = text;
+                        row.appendChild(td);
+                        return td;
+                    };
+                    cell('ID', job.id.substring(0, 8));
+                    cell('Library', job.library_name || 'N/A');
+                    cell('Path', job.scan_folder || 'N/A');
+                    const statusCell = cell('Status', '');
+                    const status = document.createElement('div');
+                    status.textContent = job.display_status || job.status;
+                    statusCell.appendChild(status);
+                    if (job.error_message) {
+                        const reason = document.createElement('small');
+                        reason.className = 'd-block';
+                        reason.textContent = job.error_message;
+                        status.appendChild(reason);
+                    }
+                    const processed = job.folders_success + job.folders_failed + (job.folders_unmatched || 0);
+                    const progressCell = cell('Progress', '');
+                    const progress = document.createElement('div');
+                    progress.textContent = job.total_folders ? `${processed}/${job.total_folders}` : (job.is_active ? 'Waiting to start' : 'No items processed');
+                    progressCell.appendChild(progress);
+                    if (job.total_folders) {
+                        const summary = document.createElement('small');
+                        summary.className = 'd-block';
+                        summary.textContent = `${job.folders_success} matched · ${job.folders_unmatched || 0} unmatched · ${job.folders_failed} failed`;
+                        progress.appendChild(summary);
+                    }
+                    if (job.current_processing && job.is_active) {
+                        const message = document.createElement('small');
+                        message.className = 'd-block';
+                        message.textContent = job.current_processing;
+                        progress.appendChild(message);
+                    }
+                    const actionsCell = cell('Actions', '');
+                    actionsCell.className = 'scan-row-actions';
+                    const actions = document.createElement('div');
+                    actions.className = 'scan-run-actions';
+                    actionsCell.appendChild(actions);
+                    const action = (url, label, variant) => {
+                        const form = document.createElement('form');
+                        form.method = 'post';
+                        form.action = url;
+                        form.className = 'inline-form';
+                        const csrf = document.createElement('input');
+                        csrf.type = 'hidden';
+                        csrf.name = 'csrf_token';
+                        csrf.value = csrfToken;
+                        const button = document.createElement('button');
+                        button.type = 'submit';
+                        button.className = `btn ${variant} btn-sm`;
+                        button.textContent = label;
+                        button.dataset.scanAction = label;
+                        form.append(csrf, button);
+                        actions.appendChild(form);
+                    };
+                    if (job.cancel_url && job.status !== 'Stopping') action(job.cancel_url, 'Stop', 'btn-warning');
+                    if (job.can_restart && job.restart_url) action(job.restart_url, 'Restart', 'btn-secondary');
+                    if (job.job_url) {
+                        const link = document.createElement('a');
+                        link.href = job.job_url;
+                        link.className = 'btn btn-secondary btn-sm';
+                        link.textContent = 'Job details';
+                        link.dataset.scanAction = 'Job details';
+                        actions.appendChild(link);
+                    }
                     scanJobsTableBody.appendChild(row);
                 });
 
+                if (focusRow && focusAction) {
+                    const replacement = Array.from(scanJobsTableBody.querySelectorAll('tr')).find(row => row.dataset.scanId === focusRow);
+                    Array.from(replacement?.querySelectorAll('[data-scan-action]') || []).find(action => action.dataset.scanAction === focusAction)?.focus();
+                }
                 return isAnyJobRunning;
             })
             .catch(error => {
