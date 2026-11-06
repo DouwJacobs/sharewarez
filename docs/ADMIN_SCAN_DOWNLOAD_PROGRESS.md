@@ -711,3 +711,17 @@ CVE-2026-114605 (fixed 2.9.0); review/update both dependency locks and rerun the
 release gate. No dependency refresh, production SQL, publishing, deployment or
 proxy/mount changes were performed. The historical screenshot is not evidence of
 a proven incident cause.
+
+
+## 6 November 2026 — Docker release 1.16.3
+
+The complete release gate now passes on PostgreSQL 17.6, including the image
+build. The dnspython advisory is resolved in both dependency locks. Clean-checkout
+settings tests now supply portable theme preconditions. The exact image passed
+restricted-container startup, authenticated pages, verified backup, combined
+process failure/restart, 2 GiB direct/cached-ZIP interruption and range/hash checks,
+and an actual 83.91-second paced response with independent heartbeat maintenance.
+
+Version 1.16.3 and latest were pushed and their matching remote manifests verified.
+See [RELEASE_1.16.3.md](RELEASE_1.16.3.md) for source commit, digest and evidence.
+Production deployment, SQL, NAS/proxy changes and GitHub source push were not done.
