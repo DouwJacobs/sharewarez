@@ -165,4 +165,27 @@ timeout and unknown interruption. A reason records the observed boundary; it doe
 not establish a proxy or browser root cause. Reasons are fixed public labels and
 never include raw exception text, source paths or credentials. Download ingress
 validates or generates X-Request-ID and logs rejections with that ID and a route
-pattern; rejected admission does not create a quota-bearing attempt.
+pattern; rejected admission does not create a quota-bearing attempt.### Streaming liveness and resource ownership
+
+Both delivery paths renew an owner heartbeat every 10 seconds, independently of
+storage reads, bandwidth pacing and downstream sends. The stale-owner threshold
+remains 60 seconds. Byte progress is separate and normally saved about once per
+second while bytes move; a heartbeat never invents progress. Transient heartbeat
+bookkeeping failure retries, and a transfer that cannot confirm ownership before
+its stale deadline stops while preserving any earlier terminal reason.
+
+The initial read/write wait limit is five minutes. Planned bandwidth sleep is
+excluded, sliced into 0.25-second waits, and remains interruptible by disconnect
+or administrator stop. Timeout records stall_timeout. Bookkeeping has a separate
+bounded four-thread executor so blocked readers cannot starve heartbeat or quota,
+slot and lease cleanup. Descriptor close work uses a separate two-thread executor.
+
+File headers and body use one open handle and fstat. Truncation before the
+promised length is a source_read_error; it never emits a successful completion.
+Cancellation closes async generators and awaits ownership/watcher tasks. If a
+kernel read has not returned, its resource stays owned and closes once afterward;
+the application does not close/reuse its descriptor underneath a running read.
+Accounting and admission cleanup can finish while that safe reclamation waits.
+An application deadline cannot force an unresponsive kernel/mount operation to
+return. Validate kernel I/O recovery and the five-minute default on slow staging
+storage before release, with both supported processes and the real ingress.

@@ -101,14 +101,12 @@ def test_live_archive_generation_failure_has_unknown_response_length(app, db_ses
 
 
 def test_progress_store_failure_is_distinct(app, db_session, owner, tmp_path, monkeypatch):
-    import itertools
-    from types import SimpleNamespace
+    from sharewarez.utils.stream_control import TransferControl
     source = tmp_path / 'game.bin'
     source.write_bytes(b'data')
     application = LazyASGIApp()
     application._flask_app = app
-    ticks = itertools.count(step=2)
-    monkeypatch.setattr('asgi.time', SimpleNamespace(monotonic=lambda: next(ticks)))
+    monkeypatch.setattr(TransferControl, 'PROGRESS_INTERVAL', 0)
 
     def fail(*args):
         raise RuntimeError('private database details')
@@ -180,11 +178,15 @@ def test_explicit_peer_disconnect_is_recorded(app, db_session, owner, tmp_path):
     application = LazyASGIApp()
     application._flask_app = app
 
+    queue = asyncio.Queue()
+
     async def receive():
-        return {'type': 'http.disconnect'}
+        return await queue.get()
 
     async def send(message):
-        pass
+        if message['type'] == 'http.response.start':
+            await queue.put({'type': 'http.disconnect'})
+            await asyncio.sleep(0)
 
     asyncio.run(application._stream_file(receive, send, str(source), source.name, {'headers': []}, user_id=owner.id))
     db_session.expire_all()

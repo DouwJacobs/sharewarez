@@ -4,9 +4,10 @@ Provides memory-efficient streaming ZIP creation for multi-file games.
 """
 
 import os
-import asyncio
+import logging
 from typing import AsyncGenerator, Tuple, Optional, Dict, Any
 import zipstream
+from sharewarez.utils.stream_io import ThreadResource
 from sharewarez.metadata_files import is_local_metadata_filename
 from sharewarez.utils.download_sources import source_entries
 from sharewarez.utils.security import is_safe_path
@@ -74,29 +75,19 @@ async def async_generate_zipstream_chunks(
         excluded_folders = ['updates', 'extras']
     
     try:
-        # Verify source path exists
-        if not os.path.exists(source_path):
-            raise FileNotFoundError(f"Source path does not exist: {source_path}")
-        
-        iterator = await asyncio.to_thread(
-            _build_zipstream,
-            source_path,
-            compression_level,
-            enable_zip64,
-            excluded_folders,
-        )
-
-        # Pull one chunk at a time in a worker thread. This keeps memory bounded
-        # by consumer backpressure while leaving the event loop free for other users.
-        while True:
-            has_chunk, chunk = await asyncio.to_thread(_next_zipstream_chunk, iterator)
-            if not has_chunk:
-                break
-            if chunk:
-                yield chunk
+        resource = await ThreadResource.create(lambda: _build_zipstream(source_path, compression_level, enable_zip64, excluded_folders))
+        try:
+            while True:
+                has_chunk, chunk = await resource.call(_next_zipstream_chunk)
+                if not has_chunk:
+                    break
+                if chunk:
+                    yield chunk
+        finally:
+            await resource.aclose()
 
     except Exception as e:
-        log_system_event(f"Error in zipstream generation for {source_path}: {str(e)}")
+        logging.getLogger(__name__).error('Archive generation failed: %s', type(e).__name__)
         raise
 
 

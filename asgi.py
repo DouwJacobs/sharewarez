@@ -11,7 +11,6 @@ import re
 import json
 import logging
 import uuid
-import time
 from datetime import datetime, timezone
 from asgiref.wsgi import WsgiToAsgi
 
@@ -22,17 +21,19 @@ from sharewarez.utils.security import is_safe_path, get_allowed_base_directories
 from sharewarez.utils.event_logging import log_system_event
 from sharewarez.utils.download_limits import (
     acquire_queued_download_slot,
-    estimate_path_bytes,
+    heartbeat_transfer,
     finish_transfer,
     reserve_transfer,
     run_owned_in_thread,
-    throttle_chunks,
     update_transfer_progress,
 )
 from sharewarez.utils.download_cache import (
     ArchiveCacheError, acquire_archive_lease, resolved_archive_path,
 )
 from sharewarez.observability import normalize_request_id
+from sharewarez.utils.stream_control import BOOKKEEPING_EXECUTOR, TransferControl, finish_cleanup
+from sharewarez.utils.stream_io import FileSource
+from sharewarez.utils.download_sources import source_entries
 from sharewarez.utils.transfer_evidence import TransferFailure, observed_chunks, observed_send
 from sqlalchemy import select
 from sqlalchemy.exc import TimeoutError as PoolTimeoutError
@@ -122,8 +123,11 @@ class LazyASGIApp:
         supplied = dict(scope.get('headers', [])).get(b'x-request-id', b'').decode('ascii', 'ignore')
         scope['correlation_id'] = normalize_request_id(supplied)
         raw_send = send
+        response_started = False
         async def send(message):
+            nonlocal response_started
             if message['type'] == 'http.response.start':
+                response_started = True
                 message = {**message, 'headers': [*message.get('headers', []),
                            (b'x-request-id', scope['correlation_id'].encode('ascii'))]}
                 if message['status'] >= 400:
@@ -183,28 +187,17 @@ class LazyASGIApp:
                 elif path.startswith('/api/downloadrom/'):
                     await self._handle_rom_download(scope, receive, send, path, user_id, bandwidth_limit)
             finally:
-                await run_owned_in_thread(slot.release, lambda _: None)
+                await run_owned_in_thread(slot.release, lambda _: None, executor=BOOKKEEPING_EXECUTOR)
                 
-        except Exception as e:
-            # Use print instead of log_system_event to avoid context issues
-            print(f"Error in async download handler: {str(e)}")
-            
-            # Try to send error response, but handle case where response already started
-            try:
-                await self._send_error(send, 500, "Internal Server Error")
-            except Exception as error_e:
-                print(f"Could not send error response (response may have already started): {str(error_e)}")
-                # Try to close connection gracefully
-                try:
-                    await send({
-                        "type": "http.response.body",
-                        "body": b"",
-                        "more_body": False
-                    })
-                except Exception:
-                    # Connection handling failed, nothing more we can do
-                    pass
-    
+        except Exception as exc:
+            logging.getLogger('gamelibrary.download').error('Download handler failed: %s', type(exc).__name__, extra={'request_id': scope['correlation_id']})
+            if response_started:
+                # Let the ASGI server terminate an incomplete representation;
+                # never invent a second status or a successful end-of-body.
+                raise
+            with contextlib.suppress(Exception):
+                await self._send_error(send, 500, 'Internal Server Error')
+
     async def _admit_connected(self, receive, *args, **kwargs):
         disconnected = asyncio.Event()
         watcher = asyncio.create_task(self._watch_disconnect(receive, disconnected))
@@ -216,7 +209,7 @@ class LazyASGIApp:
             except asyncio.CancelledError:
                 return
             if slot is not None:
-                await run_owned_in_thread(slot.release, lambda _: None)
+                await run_owned_in_thread(slot.release, lambda _: None, executor=BOOKKEEPING_EXECUTOR)
         try:
             await asyncio.wait((watcher, admission), return_when=asyncio.FIRST_COMPLETED)
             if watcher.done():
@@ -348,7 +341,7 @@ class LazyASGIApp:
                     scope, user_id, bandwidth_limit, download_request_id=data['req_id'],
                     archive_id=data['archive_id'], etag=data['etag'], last_modified=data['modified'])
         finally:
-            await run_owned_in_thread(lambda: self._release_prepared_download(data), lambda _: None)
+            await run_owned_in_thread(lambda: self._release_prepared_download(data), lambda _: None, executor=BOOKKEEPING_EXECUTOR)
 
     def _sync_prepare_rom(self, game_uuid):
         with self._flask_app.app_context():
@@ -429,279 +422,185 @@ class LazyASGIApp:
                 disconnected.set()
                 return
 
+    def _sync_owner_heartbeat(self, transfer_id):
+        assert self._flask_app is not None
+        with self._flask_app.app_context():
+            return heartbeat_transfer(transfer_id)
+
+    async def _finish_delivery(self, control, source, transfer_id, state, completed, end_reason):
+        try:
+            await control.close()
+        finally:
+            try:
+                if source is not None:
+                    await source.aclose()
+            finally:
+                if transfer_id is not None:
+                    await run_owned_in_thread(lambda: self._sync_finish_transfer(transfer_id, state[0],
+                        'completed' if completed else 'interrupted',
+                        'completed' if completed else (control.reason if control.stopped.is_set() else end_reason)), lambda _: None, executor=BOOKKEEPING_EXECUTOR)
+
+    async def _deliver_body(self, generator, control, send, bandwidth_limit, state, *, archive=False, expected=None):
+        chunks = observed_chunks(generator, archive=archive)
+        try:
+            while True:
+                try:
+                    chunk = await control.wait(anext(chunks))
+                except StopAsyncIteration:
+                    break
+                control.check()
+                if not chunk:
+                    continue
+                if expected is not None and state[0] + len(chunk) > expected:
+                    raise TransferFailure('source_read_error')
+                await control.pace(len(chunk), bandwidth_limit)
+                await control.wait(observed_send(send, {'type': 'http.response.body', 'body': chunk, 'more_body': True}))
+                state[0] += len(chunk)
+                await control.progress(state[0])
+            control.check()
+            if expected is not None and state[0] != expected:
+                raise TransferFailure('source_read_error')
+            await control.wait(observed_send(send, {'type': 'http.response.body', 'body': b'', 'more_body': False}))
+        finally:
+            await chunks.aclose()
+
     async def _stream_file(
         self, receive, send, file_path, filename, scope, user_id=None,
         bandwidth_limit=0, download_request_id=None, game_uuid=None,
         archive_id=None, etag=None, last_modified=None,
     ):
-        """Stream a file asynchronously"""
-        transfer_id = None
+        transfer_id, source = None, None
+        state, completed, response_started = [0], False, False
         end_reason = 'unknown'
-        raw_send = send
-        async def send(message):
-            await observed_send(raw_send, message)
-        bytes_sent = 0
-        completed = False
-        response_started = False
-        externally_stopped = False
         correlation_id = normalize_request_id(scope.get('correlation_id', ''))
-        disconnected = asyncio.Event()
-        disconnect_task = asyncio.create_task(self._watch_disconnect(receive, disconnected))
+        control = TransferControl(receive, self._sync_owner_heartbeat, self._sync_update_transfer_progress)
+        async def send_response(message):
+            await control.wait(observed_send(send, message))
         try:
-            stat = await asyncio.to_thread(os.stat, file_path)
+            source = await control.wait(FileSource.open(file_path))
+            stat = await control.wait(source.stat())
             file_size = stat.st_size
-            request_headers = dict(scope.get("headers", []))
-            range_header = request_headers.get(b"range", b"").decode("ascii", "ignore")
+            request_headers = dict(scope.get('headers', []))
+            range_header = request_headers.get(b'range', b'').decode('ascii', 'ignore')
             etag = etag or f'"{file_size:x}-{stat.st_mtime_ns:x}"'
             modified_dt = last_modified or datetime.fromtimestamp(stat.st_mtime, timezone.utc)
             modified_http = modified_dt.strftime('%a, %d %b %Y %H:%M:%S GMT')
-            if_range = request_headers.get(b"if-range", b"").decode("ascii", "ignore").strip()
+            if_range = request_headers.get(b'if-range', b'').decode('ascii', 'ignore').strip()
             if range_header and if_range and if_range not in {etag, modified_http}:
                 range_header = ''
             try:
                 byte_range = parse_single_byte_range(range_header, file_size)
             except ValueError:
-                await self._send_error(
-                    send,
-                    416,
-                    "Requested range is not satisfiable",
-                    extra_headers=[(b"content-range", f"bytes */{file_size}".encode())],
-                )
+                await self._send_error(send_response, 416, 'Requested range is not satisfiable',
+                    extra_headers=[(b'content-range', f'bytes */{file_size}'.encode())])
                 return
-
-            status = 200
-            start = 0
-            length = file_size
+            status, start, length = 200, 0, file_size
             if byte_range:
                 start, end = byte_range
-                length = end - start + 1
-                status = 206
+                length, status = end - start + 1, 206
             if user_id is not None and scope.get('method') != 'HEAD':
-                transfer_id, _used_bytes, _quota_bytes = await run_owned_in_thread(
-                    lambda: self._sync_reserve_transfer(user_id, filename, length,
-                        download_request_id, game_uuid, archive_id, start, (start + length - 1), status,
-                        "cached_archive" if archive_id else "direct", length, correlation_id),
-                    self._cleanup_reservation,
-                )
+                transfer_id, _used, _quota = await control.wait(run_owned_in_thread(
+                    lambda: self._sync_reserve_transfer(user_id, filename, length, download_request_id,
+                        game_uuid, archive_id, start, start + length - 1, status,
+                        'cached_archive' if archive_id else 'direct', length, correlation_id),
+                    self._cleanup_reservation, executor=BOOKKEEPING_EXECUTOR))
                 if transfer_id is None:
-                    await self._send_error(
-                        send, 429, "Monthly download quota exceeded",
-                        extra_headers=[(b"retry-after", b"3600")],
-                    )
+                    await self._send_error(send_response, 429, 'Monthly download quota exceeded', extra_headers=[(b'retry-after', b'3600')])
                     return
-            async_generator, headers = await create_async_streaming_response(
-                file_path, filename, start=start, length=length
-            )
+            control.start(transfer_id)
+            generator, headers = await control.wait(create_async_streaming_response(
+                file_path, filename, start=start, length=length, file_source=source, file_stat=stat))
             if byte_range:
-                headers["content-range"] = f"bytes {start}-{end}/{file_size}"
-            headers['etag'] = etag
-            headers['last-modified'] = modified_http
-            
-            # Send HTTP response start
-            await send({
-                "type": "http.response.start",
-                "status": status,
-                "headers": [(k.encode(), v.encode()) for k, v in headers.items()]
-            })
+                headers['content-range'] = f'bytes {start}-{end}/{file_size}'
+            headers.update(etag=etag, **{'last-modified': modified_http})
+            await send_response({'type': 'http.response.start', 'status': status,
+                                 'headers': [(key.encode(), value.encode()) for key, value in headers.items()]})
             response_started = True
             if scope.get('method') == 'HEAD':
-                await send({"type": "http.response.body", "body": b"", "more_body": False})
-                completed = True
-                return
-            
-            # Stream file chunks
-            progress_updated_at = time.monotonic()
-            async for chunk in throttle_chunks(observed_chunks(async_generator), bandwidth_limit):
-                if disconnected.is_set():
-                    break
-                if transfer_id is not None and time.monotonic() - progress_updated_at >= 1:
-                    still_active = await asyncio.to_thread(
-                        self._sync_update_transfer_progress, transfer_id, bytes_sent
-                    )
-                    if not still_active:
-                        externally_stopped = True
-                        break
-                    progress_updated_at = time.monotonic()
-                await send({
-                    "type": "http.response.body",
-                    "body": chunk,
-                    "more_body": True
-                })
-                bytes_sent += len(chunk)
-            if disconnected.is_set() or externally_stopped:
-                return
-            
-            # End response
-            await send({
-                "type": "http.response.body",
-                "body": b"",
-                "more_body": False
-            })
+                await send_response({'type': 'http.response.body', 'body': b'', 'more_body': False})
+            else:
+                await self._deliver_body(generator, control, send, bandwidth_limit, state, expected=length)
             completed = True
-            
-        except Exception as e:
-            end_reason = e.reason if isinstance(e, TransferFailure) else 'source_read_error'
-            logging.getLogger('gamelibrary.download').error('File transfer failed: %s (%s)', end_reason, type(e).__name__, extra={'request_id': correlation_id})
-            if not response_started:
-                await self._send_error(send, 500, "Error streaming file")
+        except Exception as exc:
+            end_reason = exc.reason if isinstance(exc, TransferFailure) else 'source_read_error'
+            logging.getLogger('gamelibrary.download').error('File transfer failed: %s (%s)', end_reason, type(exc).__name__, extra={'request_id': correlation_id})
+            if not response_started and not control.stopped.is_set():
+                with contextlib.suppress(TransferFailure):
+                    await self._send_error(send_response, 500, 'Error streaming file')
         finally:
-            disconnect_task.cancel()
-            with contextlib.suppress(asyncio.CancelledError):
-                await disconnect_task
-            if transfer_id is not None:
-                await asyncio.to_thread(
-                    self._sync_finish_transfer, transfer_id, bytes_sent,
-                    'completed' if completed else 'interrupted',
-                    'completed' if completed else ('peer_disconnect' if disconnected.is_set() else end_reason),
-                )
-    
+            await finish_cleanup(self._finish_delivery(control, source, transfer_id, state, completed, end_reason))
+
     def _sync_archive_exclusions(self):
         assert self._flask_app is not None
         from sharewarez.utils.download_cache import _excluded_folder_names
         with self._flask_app.app_context():
             return sorted(_excluded_folder_names())
 
+    def _sync_validate_live_source(self, source_path):
+        assert self._flask_app is not None
+        allowed = get_allowed_base_directories(self._flask_app)
+        if not allowed:
+            return 500, 'Server configuration error'
+        if not is_safe_path(source_path, allowed)[0]:
+            return 403, 'Access denied'
+        if not os.path.isdir(source_path):
+            return 404, 'Source path not found'
+        return None
+
     async def _handle_streaming_download(
         self, receive, send, download_request_id, file_location, game_name,
         source_path, user_id, bandwidth_limit=0, method='GET', correlation_id=None,
     ):
-        """Handle zipstream downloads for multi-file games"""
+        assert self._flask_app is not None
         correlation_id = normalize_request_id(correlation_id or '')
         transfer_id = None
+        state, completed, response_started = [0], False, False
         end_reason = 'unknown'
-        raw_send = send
-        async def send(message):
-            await observed_send(raw_send, message)
-        bytes_sent = 0
-        completed = False
-        response_started = False
-        externally_stopped = False
-        disconnected = asyncio.Event()
-        disconnect_task = asyncio.create_task(self._watch_disconnect(receive, disconnected))
+        control = TransferControl(receive, self._sync_owner_heartbeat, self._sync_update_transfer_progress)
+        async def send_response(message):
+            await control.wait(observed_send(send, message))
         try:
-            # Validate source path is within allowed directories
-            allowed_bases = get_allowed_base_directories(self._flask_app)
-            if not allowed_bases:
-                await self._send_error(send, 500, "Server configuration error")
+            rejected = await control.wait(asyncio.to_thread(self._sync_validate_live_source, source_path))
+            if rejected:
+                await self._send_error(send_response, *rejected)
                 return
-                
-            is_safe, error_message = is_safe_path(source_path, allowed_bases)
-            if not is_safe:
-                # Use print instead of log_system_event to avoid context issues
-                print(f"Security violation - streaming source outside allowed directories: {source_path[:100]}")
-                await self._send_error(send, 403, "Access denied")
-                return
-            
-            if not os.path.exists(source_path):
-                await self._send_error(send, 404, "Source path not found")
-                return
-            
-            # Get configuration parameters
-            chunk_size = self._flask_app.config.get('ZIPSTREAM_CHUNK_SIZE', 65536) if self._flask_app else 65536
-            compression_level = self._flask_app.config.get('ZIPSTREAM_COMPRESSION_LEVEL', 0) if self._flask_app else 0
-            enable_zip64 = self._flask_app.config.get('ZIPSTREAM_ENABLE_ZIP64', True) if self._flask_app else True
-            
-            excluded_folders = await asyncio.to_thread(self._sync_archive_exclusions)
-
-            # Generate filename from the original file/folder name
-            if file_location:
-                base_name = os.path.basename(file_location)
-                filename = f"{base_name}.zip" if not base_name.lower().endswith('.zip') else base_name
-            else:
-                filename = f"{game_name}.zip" if game_name else "download.zip"
-
-            if method == 'HEAD':
-                _generator, headers = async_generate_zipstream_response(
-                    source_path, filename, chunk_size, compression_level, enable_zip64,
-                    excluded_folders=excluded_folders
-                )
-                await send({
-                    "type": "http.response.start", "status": 200,
-                    "headers": [(key.encode(), value.encode()) for key, value in headers.items()],
-                })
-                response_started = True
-                await send({"type": "http.response.body", "body": b"", "more_body": False})
-                completed = True
-                return
-
-            expected_bytes = await asyncio.to_thread(estimate_path_bytes, source_path)
-            transfer_id, _used_bytes, _quota_bytes = await run_owned_in_thread(
-                lambda: self._sync_reserve_transfer(user_id, filename, expected_bytes, download_request_id, None,
-                    delivery_kind='live_archive', http_status=200, correlation_id=correlation_id),
-                self._cleanup_reservation,
-            )
-            if transfer_id is None:
-                await self._send_error(
-                    send, 429, "Monthly download quota exceeded",
-                    extra_headers=[(b"retry-after", b"3600")],
-                )
-                return
-            
-            print(f"Starting zipstream download: {filename}")
-            
-            # Create zipstream response
-            async_generator, headers = async_generate_zipstream_response(
-                source_path, filename, chunk_size, compression_level, enable_zip64,
-                excluded_folders=excluded_folders
-            )
-            
-            # Send HTTP response start
-            await send({
-                "type": "http.response.start",
-                "status": 200,
-                "headers": [(k.encode(), v.encode()) for k, v in headers.items()]
-            })
+            config = self._flask_app.config
+            chunk_size = config.get('ZIPSTREAM_CHUNK_SIZE', 65536)
+            compression = config.get('ZIPSTREAM_COMPRESSION_LEVEL', 0)
+            zip64 = config.get('ZIPSTREAM_ENABLE_ZIP64', True)
+            exclusions = await control.wait(asyncio.to_thread(self._sync_archive_exclusions))
+            base = os.path.basename(file_location) if file_location else (game_name or 'download')
+            filename = base if base.lower().endswith('.zip') else f'{base}.zip'
+            if method != 'HEAD':
+                def estimate():
+                    return sum(entry['size'] for entry in source_entries(source_path, exclusions))
+                expected = await control.wait(asyncio.to_thread(estimate))
+                transfer_id, _used, _quota = await control.wait(run_owned_in_thread(
+                    lambda: self._sync_reserve_transfer(user_id, filename, expected, download_request_id,
+                        delivery_kind='live_archive', http_status=200, correlation_id=correlation_id),
+                    self._cleanup_reservation, executor=BOOKKEEPING_EXECUTOR))
+                if transfer_id is None:
+                    await self._send_error(send_response, 429, 'Monthly download quota exceeded', extra_headers=[(b'retry-after', b'3600')])
+                    return
+            control.start(transfer_id)
+            generator, headers = async_generate_zipstream_response(source_path, filename, chunk_size, compression, zip64, excluded_folders=exclusions)
+            await send_response({'type': 'http.response.start', 'status': 200,
+                                 'headers': [(key.encode(), value.encode()) for key, value in headers.items()]})
             response_started = True
-            
-            # Stream ZIP chunks
-            progress_updated_at = time.monotonic()
-            async for chunk in throttle_chunks(observed_chunks(async_generator, archive=True), bandwidth_limit):
-                if disconnected.is_set():
-                    break
-                if transfer_id is not None and time.monotonic() - progress_updated_at >= 1:
-                    still_active = await asyncio.to_thread(
-                        self._sync_update_transfer_progress, transfer_id, bytes_sent
-                    )
-                    if not still_active:
-                        externally_stopped = True
-                        break
-                    progress_updated_at = time.monotonic()
-                await send({
-                    "type": "http.response.body",
-                    "body": chunk,
-                    "more_body": True
-                })
-                bytes_sent += len(chunk)
-            if disconnected.is_set() or externally_stopped:
-                return
-            
-            # End response
-            await send({
-                "type": "http.response.body",
-                "body": b"",
-                "more_body": False
-            })
-            
-            print(f"Completed zipstream download: {filename}")
+            if method == 'HEAD':
+                await send_response({'type': 'http.response.body', 'body': b'', 'more_body': False})
+            else:
+                await self._deliver_body(generator, control, send, bandwidth_limit, state, archive=True)
             completed = True
-            
-        except Exception as e:
-            end_reason = e.reason if isinstance(e, TransferFailure) else 'archive_generation_error'
-            logging.getLogger('gamelibrary.download').error('Archive transfer failed: %s (%s)', end_reason, type(e).__name__, extra={'request_id': correlation_id})
-            
-            if not response_started:
-                await self._send_error(send, 500, "Error streaming ZIP file")
+        except Exception as exc:
+            end_reason = exc.reason if isinstance(exc, TransferFailure) else 'archive_generation_error'
+            logging.getLogger('gamelibrary.download').error('Archive transfer failed: %s (%s)', end_reason, type(exc).__name__, extra={'request_id': correlation_id})
+            if not response_started and not control.stopped.is_set():
+                with contextlib.suppress(TransferFailure):
+                    await self._send_error(send_response, 500, 'Error streaming ZIP file')
         finally:
-            disconnect_task.cancel()
-            with contextlib.suppress(asyncio.CancelledError):
-                await disconnect_task
-            if transfer_id is not None:
-                await asyncio.to_thread(
-                    self._sync_finish_transfer, transfer_id, bytes_sent,
-                    'completed' if completed else 'interrupted',
-                    'completed' if completed else ('peer_disconnect' if disconnected.is_set() else end_reason),
-                )
-    
+            await finish_cleanup(self._finish_delivery(control, None, transfer_id, state, completed, end_reason))
+
     async def _send_error(self, send, status_code, message, extra_headers=None):
         """Send an HTTP error response"""
         response_body = json.dumps({"error": message}).encode()

@@ -359,4 +359,70 @@ verified its result. Mobile document client/scroll widths both measure 375 px;
 the history table owns its internal scroller. Viewport reset and tabs closed.
 Evidence: transfer-reasons-mobile.jpg in the task visualization folder.
 
-T07-T11 remain open. Next: stream liveness, cancellation and fixed-length integrity.
+T07-T11 remain open. Next: stream liveness, cancellation and fixed-length integrity.## T07 completed locally: liveness, cancellation and representation integrity
+
+Baseline: 5c19eb31. Both direct/cached files and live ZIPs now share
+utils/stream_control.py: a transfer-owned heartbeat every 10 seconds, independent
+of reader, pacing and downstream send, with the existing 60-second stale limit.
+Heartbeat SQL only renews last_activity_at. Byte progress retains approximately
+one-second cadence; last_progress_at advances only with reported bytes. A
+transient heartbeat failure retries; unresolved authority loss stops before the
+stale deadline. In-flight heartbeat calls never overlap for the same transfer.
+A bounded four-thread bookkeeping executor keeps ownership and quota/lease/slot
+cleanup available when storage-reader threads are saturated.
+
+Each read and downstream write has an initial 300-second wait budget. Intentional
+rate-limit sleep has its own budget and is sliced at 0.25 seconds. Disconnect and
+authoritative stop interrupt read/send/pacing waits; stall_timeout identifies an
+I/O deadline. Heartbeat and watcher tasks are cancelled and awaited in finally.
+Repeated cancellation cannot abandon the complete finalizer. Late handler failure
+never emits another status or a synthetic successful end-of-body after headers.
+
+utils/stream_io.py owns a single open file for fstat, headers, seeks and body;
+path replacement after headers cannot switch representations. A short promised
+length raises source_read_error and never completes. Blocking calls and ZIP
+iteration run off the event loop, and generators close on every exit. A kernel
+read cannot be forcibly cancelled by Python: after consumer cancellation its
+resource remains owned until that call returns, then closes exactly once on a
+separate bounded close executor. Accounting/slot cleanup uses bookkeeping workers
+and does not wait for that kernel read. Late open results are reclaimed too.
+This is safe deferred ownership, not a claim that an unresponsive mount can be
+interrupted by an application timeout. No production mount/proxy changes.
+
+Live archive byte estimates now use the same safe manifest/exclusions as delivery.
+Archive failure diagnostics no longer write synchronous DB logs on the ASGI loop.
+HEAD, 206, 416, If-Range, cached archive ETags and owner checks remain intact.
+Changed: asgi.py, async_streaming.py, utils/download_limits.py,
+utils/transfer_evidence.py, utils/zipstream.py, new stream_control.py/stream_io.py;
+new test_stream_liveness.py and evidence tests adjusted to disconnect after
+reservation and to force the progress cadence explicitly. No migration (head
+remains 20261106_34).
+
+Initial regressions reproduced silent short EOF and headers/body reading different
+path versions. Final PostgreSQL modules (fresh gamelibrary_t07_test per module):
+test_stream_liveness.py 28, test_transfer_evidence.py 14,
+test_download_admission_audit.py 4, test_download_ranges.py 18,
+test_zipstream_async.py 2, test_download_limits.py 9,
+test_download_maintenance.py 2, test_download_cache.py 7: **84 passed**.
+Controllable-clock tests exercise 10/60/300-second boundaries, planned pacing
+past five minutes, transient and hanging bookkeeping, and stop during every wait.
+Actual direct/live paths survive simulated 70-second I/O waits with DB heartbeat
+renewal and no invented byte progress, then complete or retain admin_stop. Tests
+cover reader-executor starvation, late open/read cleanup, repeated cancellation,
+truncated-file persistence and no second response. Real ASGI admission + cached
+ZIP build tests hash interrupted prefix + 206 remainder for both a 5 MB file and
+its cached ZIP, assert two attempts and exact accounting, closed descriptors,
+zero queued admissions, no held slots/archive advisory leases and zero dedicated
+pool checkouts. Ruff, required four-module Mypy plus new I/O/control and streaming
+modules, and diff checks pass. No UI markup/style changed in this ticket.
+
+**Before release:** repeat on a slow staging storage mount with the existing web
+and worker processes. Verify a live low-rate transfer past 60 seconds stays
+active, planned pacing past 300 seconds is not a stall, a genuinely blocked read
+or send reaches stall_timeout, and administrator stop/disconnect releases quota
+and admission promptly. Observe whether the mount's kernel I/O returns and its
+retained descriptor closes. Hash prefix + resumed output for a file and cached
+ZIP through the real staging ingress. Validate the initial 300-second default
+there; changing production proxy/mount settings remains separate operator work.
+
+T08-T11 remain open. Next: one shared member action/state resolver.

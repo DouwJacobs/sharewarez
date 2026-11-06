@@ -28,9 +28,13 @@ def download_lock_engine(engine):
         return dedicated
 
 
-async def run_owned_in_thread(operation, cleanup, on_cancel=None):
+async def run_owned_in_thread(operation, cleanup, on_cancel=None, *, executor=None):
     """On cancellation, reclaim resources produced by an in-flight worker."""
-    task = asyncio.create_task(asyncio.to_thread(operation))
+    async def run(function):
+        if executor is None:
+            return await asyncio.to_thread(function)
+        return await asyncio.get_running_loop().run_in_executor(executor, function)
+    task = asyncio.create_task(run(operation))
     try:
         return await asyncio.shield(task)
     except asyncio.CancelledError:
@@ -41,7 +45,7 @@ async def run_owned_in_thread(operation, cleanup, on_cancel=None):
         async def reclaim():
             try:
                 result = await task
-                await asyncio.to_thread(cleanup, result)
+                await run(lambda: cleanup(result))
             except Exception:
                 pass
         cleanup_task = asyncio.create_task(reclaim())
@@ -327,6 +331,17 @@ def update_transfer_progress(transfer_id, bytes_sent):
                 last_progress_at=case((DownloadTransfer.bytes_sent < max(0, bytes_sent), datetime.now(timezone.utc)),
                                       else_=DownloadTransfer.last_progress_at))
     )
+    db.session.commit()
+    return result.rowcount > 0
+
+
+def heartbeat_transfer(transfer_id):
+    """Renew ownership without inventing byte progress."""
+    from sharewarez import db
+    from sharewarez.models import DownloadTransfer
+    result = db.session.execute(update(DownloadTransfer).where(
+        DownloadTransfer.id == transfer_id, DownloadTransfer.status == 'active'
+    ).values(last_activity_at=datetime.now(timezone.utc)))
     db.session.commit()
     return result.rowcount > 0
 

@@ -7,7 +7,7 @@ import asyncio
 import logging
 import os
 import mimetypes
-import aiofiles
+from sharewarez.utils.stream_io import FileSource
 from werkzeug.utils import secure_filename
 from sharewarez.utils.zipstream import async_generate_zipstream_chunks
 
@@ -96,60 +96,29 @@ def get_content_type_for_file(file_path, filename):
     return mime_type if mime_type else 'application/octet-stream'
 
 
-async def async_generate_file_chunks(file_path, chunk_size=2097152, start=0, length=None):
-    """
-    Async generator that yields file chunks for streaming downloads.
-    
-    Args:
-        file_path (str): Absolute path to the file to stream
-        chunk_size (int): Size of each chunk in bytes (default 2MB)
-        
-    Yields:
-        bytes: File chunks of specified size
-        
-    Raises:
-        FileNotFoundError: If file doesn't exist
-        PermissionError: If file cannot be read
-        IOError: If other I/O errors occur during reading
-    """
-    
+async def async_generate_file_chunks(file_path, chunk_size=2097152, start=0, length=None, file_source=None):
+    own_source = file_source is None
+    source = file_source or await FileSource.open(file_path)
     try:
-        file_size = await asyncio.to_thread(os.path.getsize, file_path)
-        log_system_event(f"Starting async file stream: {os.path.basename(file_path)} ({file_size:,} bytes, {chunk_size:,} byte chunks)", 
-                        event_type='download', event_level='information')
-        
-        async with aiofiles.open(file_path, 'rb') as file:
-            if start:
-                await file.seek(start)
-            remaining = length
-            while remaining is None or remaining > 0:
-                read_size = chunk_size if remaining is None else min(chunk_size, remaining)
-                chunk = await file.read(read_size)
-                if not chunk:
-                    break
-                yield chunk
-                if remaining is not None:
-                    remaining -= len(chunk)
-                
-        log_system_event(f"Completed async file stream: {os.path.basename(file_path)}", 
-                        event_type='download', event_level='information')
-                        
-    except FileNotFoundError:
-        log_system_event(f"File not found for async streaming: {file_path[:100]}", 
-                        event_type='download', event_level='error')
-        raise
-    except PermissionError:
-        log_system_event(f"Permission denied for async streaming: {file_path[:100]}", 
-                        event_type='download', event_level='error')
-        raise
-    except Exception as e:
-        log_system_event(f"I/O error during async streaming: {str(e)}", 
-                        event_type='download', event_level='error')
-        raise
+        if start:
+            await source.seek(start)
+        remaining = length
+        while remaining is None or remaining > 0:
+            chunk = await source.read(chunk_size if remaining is None else min(chunk_size, remaining))
+            if not chunk:
+                if remaining:
+                    raise OSError('Source ended before the promised response length.')
+                break
+            yield chunk
+            if remaining is not None:
+                remaining -= len(chunk)
+    finally:
+        if own_source:
+            await source.aclose()
 
 
 async def create_async_streaming_response(
-    file_path, filename, chunk_size=2097152, start=0, length=None
+    file_path, filename, chunk_size=2097152, start=0, length=None, file_source=None, file_stat=None
 ):
     """
     Create an async streaming response for file downloads.
@@ -175,7 +144,7 @@ async def create_async_streaming_response(
             secure_name = "download.zip"
             
         # Get file size for Content-Length header
-        file_size = await asyncio.to_thread(os.path.getsize, file_path)
+        file_size = file_stat.st_size if file_stat is not None else await asyncio.to_thread(os.path.getsize, file_path)
         
         # Determine correct content-type based on file extension
         content_type = get_content_type_for_file(file_path, filename)
@@ -193,7 +162,7 @@ async def create_async_streaming_response(
         
         # Return the async generator and headers
         async_generator = async_generate_file_chunks(
-            file_path, chunk_size, start=start, length=response_length
+            file_path, chunk_size, start=start, length=response_length, file_source=file_source
         )
         return async_generator, headers
         

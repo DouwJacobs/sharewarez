@@ -33,6 +33,10 @@ async def observed_chunks(chunks, *, archive=False):
         raise TransferFailure('source_read_error') from exc
     except Exception as exc:
         raise TransferFailure('archive_generation_error' if archive else 'source_read_error') from exc
+    finally:
+        close = getattr(chunks, 'aclose', None)
+        if close:
+            await close()
 
 
 async def observed_send(send, message):

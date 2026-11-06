@@ -210,4 +210,19 @@ per page. Identify uses the generation and relative filename; a new listing,
 changed library/root, removed file or changed eligibility invalidates the old
 selection. Return to Scan Management, choose the target and List Games again.
 Listing does not test write permissions or write local metadata. Metadata writes
-remain part of saving an identification when enabled.
+remain part of saving an identification when enabled.### Slow-stream verification before release
+
+TransferControl owns 10-second heartbeats and a 60-second authoritative ownership
+budget. Read and downstream send waits initially allow 300 seconds; planned rate
+limiting is excluded. An owner that cannot renew before stale expiry stops with
+progress_store_error unless another terminal reason won first. Independent
+bookkeeping threads remain usable during reader-pool saturation.
+
+On staging, run both web and the existing worker. Keep a real low-rate file and
+cached-ZIP transfer active beyond 60 seconds and intentional pacing beyond five
+minutes. Inject a read/send stall, verify stall_timeout, then exercise stop and
+peer disconnect. Confirm terminal reason, bytes/quota, admission and archive lease
+release, and SHA-256 of interrupted prefix + 206 remainder. For a blocked native
+read, confirm its retained descriptor closes when the mount returns: Python
+cancellation cannot abort that kernel call. Validate the initial timeout against
+this mount and ingress before release. No proxy or mount tuning is implied.
