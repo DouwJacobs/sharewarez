@@ -21,7 +21,8 @@
                             <span class="download-archive-progress"{% if view.status != 'processing' %} hidden{% endif %}><span><span style="width: {{ view.archive_progress or 0 }}%"></span></span><small>{{ view.archive_progress or 0 }}% prepared</small></span>
                             <small class="download-failure-reason"{% if not view.message %} hidden{% endif %}>{{ view.message }}</small>
                             <small class="download-transfer-detail"{% if not view.active_transfer %} hidden{% endif %}>{% if view.active_transfer %}{{ view.active_transfer.bytes_sent_label }} streamed{% if view.active_transfer.expected_bytes_label %} of {{ view.active_transfer.expected_bytes_label }}{% endif %}{% endif %}</small>
-                            <small class="download-latest-attempt"{% if view.active_transfer or not view.latest_attempt %} hidden{% endif %}>{% if view.latest_attempt %}Last attempt: {{ view.latest_attempt.end_reason_label }}{% endif %}</small>
+                            <small class="download-latest-attempt"{% if view.active_transfer or not view.latest_attempt %} hidden{% endif %}>{% if view.latest_attempt %}Last attempt: {{ view.latest_attempt.summary }}{% endif %}</small>
+                            <small class="download-recovery-advice"{% if not view.recovery_message %} hidden{% endif %}>{{ view.recovery_message }}</small>
                             <small class="download-expiry{% if view.expiring_soon %} is-urgent{% endif %}"{% if view.status != 'available' or not view.expires_at %} hidden{% endif %}>{{ view.expiry_label }}</small>
                         </td>
                         <td data-label="Size" class="download-size">{{ view.size_label }}</td>

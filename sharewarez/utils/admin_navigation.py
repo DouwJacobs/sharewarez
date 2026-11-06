@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from flask import request, url_for
 
 
-ADMIN_NAVIGATION = (
+ADMIN_NAVIGATION: tuple[dict[str, Any], ...] = (
     {
         'key': 'overview',
         'label': 'Overview',
@@ -151,6 +153,12 @@ ADMIN_NAVIGATION = (
                 'description': 'Configure global features and workflow policies.',
                 'icon': 'fa-sliders', 'endpoint': 'admin2.settings',
                 'keywords': 'settings configuration policies features notifications interface',
+                'search_links': (
+                    {'key': 'notification-rules', 'label': 'Notification rules',
+                     'description': 'Configure event destinations in Application settings.',
+                     'query_args': {'section': 'notifications'},
+                     'keywords': 'notification rules alerts events delivery'},
+                ),
                 'match_paths': ('/admin/new_server_settings',),
             },
             {
@@ -232,4 +240,13 @@ def build_admin_navigation(settings):
 
 
 def flatten_admin_navigation(settings):
-    return [item for group in build_admin_navigation(settings) for item in group['items']]
+    destinations = []
+    for group in build_admin_navigation(settings):
+        for item in group['items']:
+            destinations.append(item)
+            # Section shortcuts remain searchable without duplicating navigation.
+            for shortcut in item.get('search_links', ()):
+                target = {**item, **shortcut}
+                target['url'] = url_for(item['endpoint'], **target.get('query_args', {}))
+                destinations.append(target)
+    return destinations

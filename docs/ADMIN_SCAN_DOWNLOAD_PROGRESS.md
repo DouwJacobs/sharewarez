@@ -642,3 +642,72 @@ webhooks-reload-mobile.jpg and hltb-disabled-mobile.jpg in the task directory.
 
 T11's full scan/download journeys and completion audit remain. The goal stays
 active; production release, publishing, SQL/proxy/mount changes remain excluded.
+
+## 6 November 2026 — T11 integrated journeys and completion audit
+
+T11 starts at `56e96fd5`; the original baseline remains `505c1756`. The complete
+acceptance matrix, actual job/scan IDs, HTTP range evidence, hashes, quota values,
+browser observations and separate release prerequisites are recorded in
+[ADMIN_SCAN_DOWNLOAD_VERIFICATION.md](ADMIN_SCAN_DOWNLOAD_VERIFICATION.md).
+
+The browser scan journey covered partial root browsing, native Files-mode listing,
+two independent equal-title identities, schedule creation/Run now, independent web
+restart, cancellation, worker restart dispatch and scoped cleanup with B offline.
+Cancelled work removed zero entries and saved no fingerprint. Its fresh queued
+replacement matched two entries and removed exactly the eligible missing A record;
+B and the other library were retained.
+
+The member journey used native CSRF forms to reach Preparing, the actual worker
+to build nested assets, and real TCP consumers at ASGI ingress for interruption and
+same-link 206 recovery. Reassembled direct-file and immutable-ZIP SHA-256 matched
+exactly. History hiding retained all six observed attempts and the member evidence;
+remaining quota stayed 964,347,756 bytes. An unmatched username returned zero rows.
+A real web restart and fixture SSE outage preserved canonical labels under polling.
+Default desktop and 390x844 checks passed without document horizontal overflow.
+Temporary preview web/worker processes and browser tabs were stopped/closed.
+
+Integration exposed and fixed a post-commit manual-identification failure: the
+image thread closed over an expired request ORM object. It now receives a captured
+scalar UUID and independent app/session context. The real-thread regression fails
+before the fix; native save then succeeded. Global search also regressed when T10
+removed a duplicate menu entry; a settings-owned search-only Notification rules
+shortcut restores its destination while keeping one Configure entry and admin-only
+authorization. Browser search opened the correct settings section.
+
+Final presentation gaps are closed: sub-KiB transfers show bytes; admin disclosures
+include exact UTC times, content identity, response/range/expected length and
+correlation; latest member evidence includes measured bytes and representation-aware
+browser-resume/restart guidance. Initial HTML, SSE and polling share that guidance.
+Expanded details survive reconciliation, while focused controls retain their guard.
+Legacy isolated template tests now supply the CSRF context introduced by T05 and
+locate the intended mobile rule independently of later media blocks.
+
+### Verification
+
+The repository-wide sweep ran all 146 Python modules independently, then reran
+modules affected by final fixes. Final results: **2,182 passed, zero failed or
+skipped**. The initial sweep found three compatibility modules addressed above
+(search, mobile navigation assertions, isolated download-row CSRF context). Two
+unrelated legacy expiry modules also failed with the disposable cluster's inherited
+Africa/Johannesburg session time zone: aware values written to legacy naive
+columns were shifted on storage. Both passed with test-only PGOPTIONS setting
+session timezone=UTC, matching the release image default; no authentication code,
+production DB settings or historical timestamps were changed. This observed UTC
+assumption must be verified for the deployed DB before release. The final result
+combines the full sweep and those documented fresh-database reruns.
+
+All four JavaScript files passed `node --test`: 19 runner cases, including the
+favorites file's six internal behavior cases. Windows Node's UNC argument issue
+was bypassed with a byte-for-byte verified local staging copy; authored assets and
+served preview copies were compared again. Ruff, seven-module Mypy (four required
+plus navigation/evidence/state helpers), compileall, 95-template accessibility,
+72-pin lock reproducibility, pip check, version 1.16.2, single head 20261106_35 and
+`git diff --check` passed. No migration was needed for these final fixes.
+
+The production release gate remains separate: Docker/Compose/image/PostgreSQL 17.6
+checks and deployed-proxy multi-GB/slow-mount acceptance are still required before
+release. The independent dependency audit flagged existing dnspython 2.8.0
+CVE-2026-114605 (fixed 2.9.0); review/update both dependency locks and rerun the
+release gate. No dependency refresh, production SQL, publishing, deployment or
+proxy/mount changes were performed. The historical screenshot is not evidence of
+a proven incident cause.

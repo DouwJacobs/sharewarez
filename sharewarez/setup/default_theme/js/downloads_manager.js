@@ -17,6 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
             failure:cell.querySelector('.download-failure-reason'),
             detail:cell.querySelector('.download-transfer-detail'),
             latest:cell.querySelector('.download-latest-attempt'),
+            recovery:cell.querySelector('.download-recovery-advice'),
             expiry:cell.querySelector('.download-expiry')});
     });
     if (!views.size) { ui.text(connection, 'No download links to monitor'); return; }
@@ -53,7 +54,8 @@ document.addEventListener('DOMContentLoaded', () => {
             view.detail.hidden = !transfer;
             if (transfer) ui.text(view.detail,(transfer.bytes_sent_label || '0 B') + ' streamed' + (transfer.expected_bytes_label ? ' of ' + transfer.expected_bytes_label : ''));
             view.latest.hidden = Boolean(transfer) || !item.latest_attempt;
-            if (item.latest_attempt) ui.text(view.latest,'Last attempt: ' + item.latest_attempt.end_reason_label);
+            if (item.latest_attempt) ui.text(view.latest,'Last attempt: ' + (item.latest_attempt.summary || item.latest_attempt.end_reason_label));
+            view.recovery.hidden = !item.recovery_message; ui.text(view.recovery,item.recovery_message || '');
             view.expiry.hidden = item.status !== 'available' || !item.expires_at;
             ui.text(view.expiry,item.expiry_label || ''); view.expiry.classList.toggle('is-urgent',Boolean(item.expiring_soon));
             if (item.size_label) ui.text(view.row.querySelector('.download-size'),item.size_label);

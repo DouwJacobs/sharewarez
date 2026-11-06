@@ -1,5 +1,5 @@
 import os
-from flask import render_template, redirect, url_for, flash, copy_current_request_context, session, request, current_app
+from flask import render_template, redirect, url_for, flash, session, request, current_app
 from flask_login import login_required, current_user
 from sharewarez.forms import AddGameForm
 from sharewarez.models import Game, GameExternalIdentity, Library, UnmatchedFolder, Category, Developer, Publisher
@@ -244,15 +244,18 @@ def add_game_manual():
                 event_level='information'
             )
             # Trigger image refresh after adding the game
-            @copy_current_request_context
+            image_game_uuid = new_game.uuid
+            image_app = current_app._get_current_object()
             def refresh_images_in_thread():
-                refresh_images_in_background(new_game.uuid)
+                # Pass scalar identity, never a request-owned ORM object/session.
+                with image_app.app_context():
+                    refresh_images_in_background(image_game_uuid)
 
             # Start the background process for refreshing images
             thread = Thread(target=refresh_images_in_thread, daemon=True)
             thread.start()
             log_system_event(
-                f"Image refresh background task started for game '{game_name}' (UUID: {new_game.uuid})",
+                f"Image refresh background task started for game '{game_name}' (UUID: {image_game_uuid})",
                 event_type='task',
                 event_level='debug'
             )

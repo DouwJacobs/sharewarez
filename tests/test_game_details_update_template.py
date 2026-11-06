@@ -2,6 +2,7 @@ from pathlib import Path
 from types import SimpleNamespace
 
 from jinja2 import Environment
+from markupsafe import Markup
 
 
 def _render_file_row(file_data, file_type):
@@ -14,6 +15,7 @@ def _render_file_row(file_data, file_type):
     )
     template.globals['url_for'] = lambda endpoint, **values: '/download'
     return template.render(
+        form=SimpleNamespace(csrf_token=Markup('<input name="csrf_token" value="fixture-csrf" type="hidden">')),
         file_data=file_data,
         file_type=file_type,
         current_user=SimpleNamespace(role='user'),
@@ -31,6 +33,8 @@ def test_structured_update_uses_display_name_without_file_path():
     assert 'Update 1.0.4' in rendered
     assert 'Download' in rendered
     assert 'fa-download' in rendered
+    assert 'method="post"' in rendered
+    assert 'value="fixture-csrf"' in rendered
 
 
 def test_legacy_extra_falls_back_to_path_basename():
@@ -75,7 +79,8 @@ def test_game_details_uses_storefront_product_structure():
 
 def test_game_details_mobile_storefront_uses_shared_outer_gutter():
     css = Path('sharewarez/setup/default_theme/css/games/game_details.css').read_text(encoding='utf-8')
-    storefront_mobile = css.rsplit('@media (max-width: 768px)', 1)[1]
+    storefront_mobile = next(block for block in css.split('@media (max-width: 768px)')[1:]
+                             if '.game-details-page { width:' in block)
 
     assert '.game-details-page { width: 100% !important; margin: 0 0 24px !important; }' in storefront_mobile
     assert 'width: 100% !important;' in storefront_mobile

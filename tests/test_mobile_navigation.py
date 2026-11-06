@@ -26,8 +26,8 @@ def test_mobile_navigation_order_has_admin_controls():
 
     assert template.count('class="form-select mobile-nav-slot"') == 1
     assert '{% for slot in range(1, 5) %}' in template
-    assert "mobileNavOrder:" in javascript
-    assert "new Set(settings.mobileNavOrder)" in javascript
+    assert "result.mobileNavOrder = selected.concat" in javascript
+    assert "new Set(selected).size !== selected.length" in javascript
 
 
 def test_mobile_pages_use_one_shared_outer_gutter():
@@ -138,7 +138,7 @@ def test_ui_consistency_feature_uses_shared_theme_and_navigation_patterns():
     assert settings.count('app-surface settings-section') >= 3
     assert 'settings-panel-page' in settings
     assert 'import form_field' in settings
-    assert "page_header('Settings'" in settings
+    assert "page_header('Account Settings'" in settings
     assert 'form_field(form.library_view' in settings
     assert 'GameStack' not in settings
     assert '@media (max-width: 768px)' in settings_css

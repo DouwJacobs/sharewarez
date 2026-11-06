@@ -20,7 +20,9 @@
         if (selection && !selection.isCollapsed && selection.anchorNode && region.contains(selection.anchorNode)) return;
         if (data.html !== lastHTML) {
             // The fragment is same-origin Jinja HTML with all user fields escaped.
+            const expanded = new Set(Array.from(region.querySelectorAll('details[data-transfer-details][open]')).map(node => node.dataset.transferDetails));
             region.innerHTML = data.html;
+            region.querySelectorAll('details[data-transfer-details]').forEach(node => { node.open = expanded.has(node.dataset.transferDetails); });
             lastHTML = data.html;
             document.dispatchEvent(new Event('delivery-updated'));
         }

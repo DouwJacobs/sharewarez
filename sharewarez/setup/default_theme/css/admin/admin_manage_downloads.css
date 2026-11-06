@@ -392,3 +392,12 @@
 .downloads-page #deliveryResults td:last-child .btn { margin: .15rem; }
 
 .downloads-page .downloads-filter-bar { padding: .5rem 0 1.25rem; border: 0; border-bottom: 1px solid var(--theme-border-color, var(--border-light)); border-radius: 0; background: transparent; }
+.downloads-page .transfer-history-table .file-name-cell { white-space: normal; overflow: visible; overflow-wrap: anywhere; }
+.downloads-page .transfer-evidence { margin-top: .35rem; min-width: 220px; }
+.downloads-page .transfer-evidence > summary { cursor: pointer; min-height: 42px; padding-block: .5rem; }
+.downloads-page .transfer-evidence dl { margin: .5rem 0; }
+.downloads-page .transfer-evidence dt { color: var(--theme-text-secondary); font-size: .8rem; }
+.downloads-page .transfer-evidence dd { margin: 0 0 .5rem; overflow-wrap: anywhere; }
+.downloads-page .transfer-evidence p, .downloads-page .download-recovery-advice { color: var(--theme-text-secondary); font-size: .8rem; }
+.downloads-page .download-recovery-advice { display: block; max-width: 28rem; margin-top: .35rem; }
+@media (max-width: 768px) { .downloads-page .transfer-evidence > summary { min-height: 44px; } }

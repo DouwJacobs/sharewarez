@@ -44,3 +44,18 @@ async def observed_send(send, message):
         await send(message)
     except Exception as exc:
         raise TransferFailure('downstream_write_error') from exc
+
+
+def transfer_byte_label(value):
+    from sharewarez.utils.functions import format_size
+    value = max(0, int(value or 0))
+    return f'{value} B' if value < 1024 else format_size(value)
+
+
+def utc_timestamp(value):
+    if value is None:
+        return 'Not recorded'
+    from datetime import timezone
+    if value.tzinfo is None:
+        value = value.replace(tzinfo=timezone.utc)
+    return value.astimezone(timezone.utc).replace(tzinfo=None).isoformat(sep=' ') + ' UTC'

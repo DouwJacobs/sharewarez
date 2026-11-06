@@ -21,6 +21,21 @@
                     <td class="file-name-cell"><strong>{{ transfer.filename }}</strong>{% if transfer.is_resumed %}<small>Resumed</small>{% endif %}<small>Attempt #{{ transfer.id }}{% if transfer.download_request_id %} · Link #{{ transfer.download_request_id }}{% endif %}</small>
                         {% set game = transfer.game or (transfer.download_request.game if transfer.download_request else none) %}
                         {% if game %}<a class="downloads-game-link" href="{{ url_for('games.game_details', game_uuid=game.uuid) }}">{{ game.name }}</a>{% else %}<span class="text-muted">Legacy record</span>{% endif %}
+                        <details class="transfer-evidence" data-transfer-details="{{ transfer.id }}"><summary>Attempt details</summary>
+                            <dl>
+                                <dt>Started</dt><dd>{{ metric.started_utc }}</dd><dt>Ended</dt><dd>{{ metric.ended_utc }}</dd>
+                                <dt>Owner heartbeat</dt><dd>{{ metric.heartbeat_utc }}</dd><dt>Last byte progress</dt><dd>{{ metric.progress_utc }}</dd>
+                                <dt>Game ID</dt><dd>{{ transfer.game_uuid or 'Not recorded' }}</dd>
+                                <dt>Content</dt><dd>{% if transfer.download_request %}{{ transfer.download_request.content_type or 'game' }} · {{ transfer.download_request.content_title or (game.name if game else 'Not recorded') }}{% else %}Link no longer retained{% endif %}</dd>
+                                <dt>Content record ID</dt><dd>{% if transfer.download_request %}{{ transfer.download_request.game_update_id or transfer.download_request.game_extra_id or transfer.game_uuid or 'Not recorded' }}{% else %}Not recorded{% endif %}</dd>
+                                <dt>Delivery</dt><dd>{{ transfer.delivery_kind or 'Not recorded' }}</dd><dt>Intended HTTP status</dt><dd>{{ transfer.http_status or 'Not recorded' }}</dd>
+                                <dt>Range</dt><dd>{{ metric.range_label }}</dd><dt>Server-sent bytes</dt><dd>{{ transfer.bytes_sent }} ({{ metric.bytes_sent_label }})</dd>
+                                <dt>Expected response bytes</dt><dd>{{ transfer.expected_response_bytes if transfer.expected_response_bytes is not none else 'Unknown' }}</dd>
+                                <dt>Correlation</dt><dd>{{ transfer.correlation_id or 'Not recorded' }}</dd>
+                                {% if transfer.ended_by_user_id %}<dt>Stopped by</dt><dd>Administrator #{{ transfer.ended_by_user_id }}</dd>{% endif %}
+                            </dl>
+                            <p>Completion describes this HTTP response. It does not confirm a complete file saved by the browser.</p>
+                        </details>
                     </td>
                     <td>{{ status_badge(transfer.status) }}{% if transfer.status != 'active' %}<small class="d-block">{{ transfer.end_reason_label }}</small>{% endif %}</td>
                     <td>{{ metric.bytes_sent_label }}{% if metric.expected_bytes_label %}<small>of {{ metric.expected_bytes_label }}</small>{% endif %}{% if transfer.status == 'active' %}

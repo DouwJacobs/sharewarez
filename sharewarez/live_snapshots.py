@@ -13,6 +13,7 @@ from sharewarez import db
 from sharewarez.models import DownloadArchive, DownloadRequest, DownloadTransfer, User
 from sharewarez.utils.functions import format_duration, format_size
 from sharewarez.transfer_rates import transfer_rates
+from sharewarez.utils.transfer_evidence import transfer_byte_label, utc_timestamp
 
 
 class LiveAccessDenied(Exception):
@@ -90,8 +91,8 @@ def transfer_payload(transfer, now, *, admin=False):
     result = {
         "id": transfer.id, "download_request_id": transfer.download_request_id,
         "bytes_sent": sent, "expected_bytes": expected,
-        "bytes_sent_label": format_size(sent) if sent else "0 B",
-        "expected_bytes_label": format_size(expected) if expected else None,
+        "bytes_sent_label": transfer_byte_label(sent),
+        "expected_bytes_label": transfer_byte_label(expected) if expected else None,
         "progress": min(100, round(sent / expected * 100, 1)) if expected else None,
         "elapsed_seconds": int(elapsed), "elapsed_label": format_duration(elapsed),
         "average_speed": sent / elapsed if elapsed > 0 else None,
@@ -108,7 +109,10 @@ def transfer_payload(transfer, now, *, admin=False):
         "ended_at": transfer.ended_at.isoformat() if transfer.ended_at else None,
     }
     if admin:
-        result.update(username=transfer.user.name, filename=transfer.filename, ended_by_user_id=transfer.ended_by_user_id)
+        result.update(username=transfer.user.name, filename=transfer.filename, ended_by_user_id=transfer.ended_by_user_id,
+                      started_utc=utc_timestamp(transfer.started_at), ended_utc=utc_timestamp(transfer.ended_at),
+                      heartbeat_utc=utc_timestamp(transfer.last_activity_at), progress_utc=utc_timestamp(transfer.last_progress_at),
+                      range_label=f'{transfer.range_start}–{transfer.range_end}' if transfer.range_start is not None and transfer.range_end is not None else 'Not recorded')
     return result
 
 

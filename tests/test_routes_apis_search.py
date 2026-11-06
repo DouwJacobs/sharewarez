@@ -105,3 +105,12 @@ def test_admin_search_returns_centralized_admin_destinations(client, search_reco
         and result['url'] == '/admin/settings?section=notifications'
         for result in results
     )
+
+
+def test_member_search_does_not_expose_admin_section_shortcuts(client, search_records, db_session):
+    user, _, _ = search_records
+    user.role = 'user'
+    db_session.commit()
+    login(client, user)
+    results = client.get('/api/global-search?q=notification rules').get_json()['results']
+    assert not any(result['type'] == 'Admin' for result in results)

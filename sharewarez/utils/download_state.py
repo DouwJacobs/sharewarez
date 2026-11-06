@@ -12,6 +12,7 @@ from sharewarez.utils.download_cache import ArchiveCacheError, archive_policy, b
 from sharewarez.utils.download_limits import calculate_download_expiry
 from sharewarez.utils.download_sources import direct_package_path
 from sharewarez.utils.functions import format_size
+from sharewarez.utils.transfer_evidence import transfer_byte_label
 
 _AUTO = object()
 
@@ -72,8 +73,9 @@ def attempt_payload(row):
         expected = row.reserved_bytes
     return {'id': row.id, 'download_request_id': row.download_request_id, 'status': row.status,
             'end_reason': row.end_reason, 'end_reason_label': row.end_reason_label,
-            'bytes_sent': row.bytes_sent, 'bytes_sent_label': format_size(row.bytes_sent) if row.bytes_sent else '0 B',
-            'expected_bytes': expected, 'expected_bytes_label': format_size(expected) if expected is not None else None,
+            'bytes_sent': row.bytes_sent, 'bytes_sent_label': transfer_byte_label(row.bytes_sent),
+            'summary': row.end_reason_label + ' · ' + transfer_byte_label(row.bytes_sent) + ' server-sent',
+            'expected_bytes': expected, 'expected_bytes_label': transfer_byte_label(expected) if expected is not None else None,
             'progress': min(100, round(row.bytes_sent / expected * 100, 1)) if expected else None,
             'delivery_kind': row.delivery_kind, 'correlation_id': row.correlation_id}
 
@@ -108,7 +110,7 @@ def download_state(link, policy=None, *, active=_AUTO, latest=_AUTO, now=None):
     result = {'id': link.id, 'status': link.status, 'stored_status': link.status, 'delivery_kind': link.delivery_kind,
               'size_label': format_size(link.download_size), 'expires_at': expiry.isoformat() if expiry else None,
               'active_transfer': attempt_payload(active), 'latest_attempt': attempt_payload(latest),
-              'retry_label': 'Retry', 'message': '', 'archive_progress': progress,
+              'retry_label': 'Retry', 'message': '', 'recovery_message': '', 'archive_progress': progress,
               'expiry_label': 'Available until ' + expiry.astimezone(timezone.utc).strftime('%d %b %Y %H:%M UTC') if expiry else '',
               'archive': {'state': archive.state, 'progress': progress, 'failure_message': archive_failure_message(archive) if archive.state == 'failed' else None} if archive else None}
 
@@ -117,6 +119,15 @@ def download_state(link, policy=None, *, active=_AUTO, latest=_AUTO, now=None):
                       delivery_class=delivery_class, allowed_actions=actions, message=message,
                       available='download' in actions, fallback_available='fallback' in actions,
                       expiring_soon=bool(expiry and status == 'available' and 0 < (expiry - now).total_seconds() <= 86400))
+        if status == 'available' and latest and latest.status in {'interrupted', 'cancelled'}:
+            same_file = latest.delivery_kind == 'direct' and result['delivery_kind'] == 'direct'
+            same_archive = latest.delivery_kind == 'cached_archive' and archive and latest.archive_id == archive.id
+            if delivery_class == 'resumable' and (same_file or same_archive):
+                result['recovery_message'] = "Use your browser's Downloads list when it offers Resume. Download here starts a new response."
+            elif delivery_class == 'streaming':
+                result['recovery_message'] = 'Live ZIPs restart from the beginning. Download again to start a new response.'
+            elif delivery_class == 'resumable':
+                result['recovery_message'] = 'This prepared file differs from the earlier stream. Download again to start a new response.'
         return result
 
     if active:

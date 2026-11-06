@@ -831,3 +831,27 @@ test, inherited disabled scan options, disclosure opening and guide readability.
 Mobile fields/actions measure 44 px, with one outer gutter and no document
 horizontal overflow; wide guide/history tables retain their own scroller. See
 SETTINGS_OWNERSHIP.md and ADMIN_SCAN_DOWNLOAD_PROGRESS.md for the contract/evidence.
+
+### Integrated recovery and evidence review (6 November 2026)
+
+Activity rows now have an inline Attempt details disclosure: exact UTC start/end,
+owner heartbeat and byte-progress times, content identity, intended HTTP status,
+range, original expected response length, exact server-sent bytes and correlation.
+It states that a completed HTTP response does not confirm a browser-saved file.
+Small transfers display bytes below 1 KiB. Expanded evidence is restored during
+bounded fragment refresh; focus, selections, forms and modals keep their guards.
+
+My downloads includes measured bytes beside the latest attempt. Interrupted
+fixed-file/cached responses explain browser Downloads Resume versus a new site
+response; changed representations and live ZIPs explain an explicit restart.
+One shared state payload supplies initial HTML, SSE and polling guidance.
+
+Computer Use verified native scan and download submissions, the real worker's
+preparation/result, real HTTP interruption and range recovery, filtered hiding,
+retained member evidence, forced polling fallback, and default desktop/390x844
+presentation. The new detail uses flat definition lists and theme tokens within
+the existing table scroller; no nested surface or document horizontal overflow.
+The mobile detail summary has a 44 px minimum target. Global search again finds
+Notification rules at the single Application settings owner, without a duplicate
+Configure entry. See ADMIN_SCAN_DOWNLOAD_VERIFICATION.md for hashes, IDs and the
+separate production release prerequisites.

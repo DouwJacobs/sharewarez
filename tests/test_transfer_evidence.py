@@ -260,3 +260,22 @@ def test_progress_timestamp_advances_only_with_reported_bytes(app, db_session, o
     db_session.refresh(row)
     assert row.last_progress_at > progress
     assert row.ended_by_user_id is None
+
+def test_one_byte_attempt_is_not_rounded_to_zero(app, db_session, owner):
+    from sharewarez.live_snapshots import transfer_payload
+    from sharewarez.utils.download_state import attempt_payload
+    attempt = DownloadTransfer(user_id=owner.id, filename='probe.bin', status='completed', bytes_sent=1,
+        reserved_bytes=1, expected_response_bytes=1, delivery_kind='direct', http_status=206,range_start=0,range_end=0)
+    db_session.add(attempt); db_session.commit()
+    assert transfer_payload(attempt, datetime.now(timezone.utc), admin=True)['bytes_sent_label'] == '1 B'
+    assert attempt_payload(attempt)['expected_bytes_label'] == '1 B'
+
+@pytest.mark.parametrize('timestamp,expected', [
+    (None, 'Not recorded'),
+    (datetime(2026, 11, 6, 12), '2026-11-06 12:00:00 UTC'),
+    (datetime(2026, 11, 6, 14, 0, 0, 123456, tzinfo=timezone(timedelta(hours=2))),
+     '2026-11-06 12:00:00.123456 UTC'),
+])
+def test_attempt_evidence_normalizes_timestamp_to_explicit_utc(timestamp, expected):
+    from sharewarez.utils.transfer_evidence import utc_timestamp
+    assert utc_timestamp(timestamp) == expected

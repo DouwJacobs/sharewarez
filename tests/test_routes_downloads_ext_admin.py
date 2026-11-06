@@ -702,3 +702,18 @@ class TestDeliveryViews:
         assert db_session.get(DownloadRequest, link_id) is not None
         attempt = db_session.scalar(select(DownloadTransfer).where(DownloadTransfer.download_request_id == link_id))
         assert attempt is not None and attempt.status == 'active'
+
+    def test_attempt_detail_exposes_exact_utc_range_and_response_evidence(self, client, admin_user, db_session, regular_user, sample_download_request):
+        from bs4 import BeautifulSoup
+        attempt = DownloadTransfer(user_id=regular_user.id,download_request_id=sample_download_request.id,filename='probe.bin',
+            status='completed',bytes_sent=1,reserved_bytes=1,expected_response_bytes=1,delivery_kind='direct',http_status=206,
+            range_start=123,range_end=123,correlation_id='fixture-correlation',end_reason='completed',
+            started_at=datetime(2026,11,6,12,0,tzinfo=timezone.utc),ended_at=datetime(2026,11,6,12,1,tzinfo=timezone.utc))
+        db_session.add(attempt);db_session.commit()
+        with client.session_transaction() as session:
+            session['_user_id']=str(admin_user.id)
+        page=BeautifulSoup(client.get(f'/admin/manage-downloads?view=activity&request_id={sample_download_request.id}').data,'html.parser')
+        detail=page.select_one(f'[data-transfer-id="{attempt.id}"] details[data-transfer-details]')
+        assert detail is not None
+        text=detail.get_text(' ',strip=True)
+        assert all(value in text for value in ('2026-11-06 12:00:00 UTC','2026-11-06 12:01:00 UTC','123–123','206','1 B','fixture-correlation'))

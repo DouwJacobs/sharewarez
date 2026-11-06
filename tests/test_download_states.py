@@ -485,3 +485,50 @@ def test_double_retry_posts_accept_one_transition(state_link, app, db_session, m
     archive = link.archive
     jobs = [job for job in db_session.query(BackgroundJob).filter_by(task_name='download.archive.build').all() if job.payload.get('archive_id') == archive.id]
     assert len(jobs) == 1 and link.status == 'processing'
+
+def test_interrupted_resumable_link_explains_browser_resume_consistently(state_link, db_session):
+    from bs4 import BeautifulSoup
+    from sharewarez.utils.download_state import download_state
+    from sharewarez.live_snapshots import snapshot_data
+    client, link, settings, root = state_link
+    link.status='available';link.delivery_kind='direct';link.file_location=link.zip_file_path=str(root/'one.bin')
+    db_session.add(DownloadTransfer(user_id=link.user_id,download_request_id=link.id,filename='one.bin',status='interrupted',bytes_sent=1,reserved_bytes=1,delivery_kind='direct',end_reason='peer_disconnect'))
+    db_session.commit()
+    expected=download_state(link)['recovery_message']
+    assert "browser's Downloads" in expected and 'new response' in expected
+    page=BeautifulSoup(client.get('/downloads').data,'html.parser')
+    assert page.select_one(f'[data-download-id="{link.id}"] .download-recovery-advice').get_text(strip=True) == expected
+    assert client.get(f'/api/downloads/status?ids={link.id}').json['downloads'][0]['recovery_message'] == expected
+    assert snapshot_data('downloads',[link.id],link.user_id)['downloads'][0]['recovery_message'] == expected
+
+@pytest.mark.parametrize('representation', ['same_cache', 'earlier_stream', 'live_zip'])
+def test_interrupted_recovery_guidance_tracks_representation(state_link, db_session, representation):
+    from types import SimpleNamespace
+    from sharewarez.utils.download_cache import build_archive
+    from sharewarez.utils.download_state import download_state, prepare_download
+    client, link, settings, root = state_link
+    if representation == 'live_zip':
+        settings.settings = {**settings.settings, 'archiveCacheMode': 'off'}
+    prepare_download(link)
+    db_session.commit()
+    if link.archive_id:
+        archive = link.archive
+        build_archive(SimpleNamespace(job_id=archive.build_job_id, heartbeat=lambda *args: None,
+                                      check_cancelled=lambda: None), archive.id)
+        db_session.refresh(link)
+    attempt = DownloadTransfer(user_id=link.user_id, download_request_id=link.id,
+        filename='interrupted.zip', status='interrupted', end_reason='peer_disconnect', bytes_sent=1,
+        delivery_kind='cached_archive' if representation == 'same_cache' else 'live_archive',
+        archive_id=link.archive_id if representation == 'same_cache' else None)
+    db_session.add(attempt); db_session.commit()
+    message = download_state(link)['recovery_message']
+    if representation == 'same_cache':
+        assert "browser's Downloads" in message
+    elif representation == 'earlier_stream':
+        assert 'differs from the earlier stream' in message and "browser's Downloads" not in message
+    else:
+        assert 'restart from the beginning' in message and "browser's Downloads" not in message
+    active = DownloadTransfer(user_id=link.user_id, download_request_id=link.id,
+                              filename='active.zip', status='active')
+    db_session.add(active); db_session.commit()
+    assert download_state(link)['recovery_message'] == ''

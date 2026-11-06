@@ -105,3 +105,31 @@ test('filtered admin connections retain their own query on reconnect', async () 
     assert.equal(first.sources[1].url, first.sources[0].url);
     first.client.close(); second.client.close();
 });
+
+test('admin reconciliation keeps expanded evidence and defers while a control has focus', () => {
+    let handlers, html = 'initial', updates = 0;
+    let details = [{dataset:{transferDetails:'6'}, open:true}];
+    const count = {};
+    const region = {dataset:{view:'activity'}, contains: node => node === 'inside',
+        get innerHTML() { return html; },
+        set innerHTML(value) { html = value; details = ['6','7'].map(id => ({dataset:{transferDetails:id}, open:false})); },
+        querySelector: () => null,
+        querySelectorAll: selector => selector.includes('[open]') ? details.filter(node => node.open) : details};
+    const document = {hidden:false, activeElement:'outside',
+        getElementById: id => id === 'deliveryResults' ? region : {},
+        querySelector: selector => selector.includes('ui-page-count') ? count : null,
+        addEventListener() {}, dispatchEvent() { updates++; }};
+    const window = {location:{search:'?view=activity&request_id=1'}, getSelection: () => null, addEventListener() {},
+        DownloadLive:{text: (node,value) => { node.textContent = value; }, connect: value => { handlers=value; }}};
+    vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../sharewarez/setup/default_theme/js/admin_transfer_live.js'), 'utf8'),
+        {document,window,URLSearchParams,AbortController,Event:class {},setTimeout,clearTimeout});
+    handlers.render({html:'updated',total:2});
+    assert.equal(details[0].open,true);
+    assert.equal(details[1].open,false);
+    assert.equal(count.textContent,'2 attempts');
+    assert.equal(updates,1);
+    document.activeElement='inside';
+    handlers.render({html:'deferred',total:3});
+    assert.equal(html,'updated');
+    assert.equal(updates,1);
+});
