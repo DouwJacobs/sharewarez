@@ -513,9 +513,12 @@ class TestSectionSettings:
         assert client.post('/admin/settings', json=data).status_code == 400
 
     @pytest.mark.parametrize('stale_endpoint', ['/admin/settings','/admin/download-cache/policy','/admin/branding','/admin/themes/site-default'])
-    def test_stale_session_reload_preserves_concurrent_legacy_post(self, app, admin_user, db_session, global_settings, stale_endpoint):
+    def test_stale_session_reload_preserves_concurrent_legacy_post(self, app, admin_user, db_session, global_settings, stale_endpoint, monkeypatch):
         from concurrent.futures import ThreadPoolExecutor
         from threading import Event
+        # This exercises settings serialization, independently of installed assets.
+        monkeypatch.setattr('sharewarez.routes_admin_ext.themes.ThemeManager.get_theme',
+                            lambda manager, theme_id: {'name': 'Fixture default'} if theme_id == 'default' else None)
         uid, sid = admin_user.id, global_settings.id
         db_session.commit()
         loaded, release = Event(), Event()
