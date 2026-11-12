@@ -1,6 +1,7 @@
 .admin-workspace-nav {
     position: relative;
     z-index: 70;
+    flex-wrap: wrap;
     display: flex;
     box-sizing: border-box;
     width: min(1440px, 100%);
@@ -75,8 +76,7 @@
     box-shadow: var(--shadow-card, 0 22px 56px rgba(0, 0, 0, .42));
 }
 
-.admin-workspace-group:last-child .admin-workspace-menu { right: 0; left: auto; }
-.admin-workspace-menu > p { margin: 3px 8px 7px; color: var(--theme-text-muted, var(--text-muted)); font-size: .68rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+.admin-workspace-group:nth-last-child(-n+2) .admin-workspace-menu { right: 0; left: auto; }
 .admin-workspace-menu > a {
     display: grid;
     grid-template-columns: auto minmax(0, 1fr);
@@ -110,26 +110,27 @@
 .admin-workspace-menu strong { font-size: .84rem; }
 .admin-workspace-menu small { margin-top: 2px; color: var(--theme-text-muted, var(--text-muted)); font-size: .71rem; font-weight: 500; line-height: 1.3; }
 
-@media (max-width: 1200px) {
-    .admin-workspace-nav {
-        flex-wrap: wrap;
-        justify-content: flex-start;
-    }
-}
+.admin-page-picker { display: none; }
 
 @media (max-width: 768px) {
     .admin-workspace-nav {
-        flex-wrap: nowrap;
         width: 100%;
         margin: 8px 0 12px;
-        overflow-x: auto;
         border-radius: 13px;
-        scrollbar-width: none;
     }
-    .admin-workspace-nav::-webkit-scrollbar { display: none; }
-    .admin-workspace-overview,
-    .admin-workspace-group > summary { min-height: 38px; padding: 7px 10px; font-size: .76rem; }
-    .admin-workspace-menu { position: fixed; top: 74px; right: 12px !important; left: 12px !important; width: auto; max-height: calc(100dvh - 150px); overflow-y: auto; }
+    .admin-workspace-nav.has-page-picker > :is(.admin-workspace-overview, .admin-workspace-group) {
+        display: none;
+    }
+    .admin-workspace-nav.has-page-picker .admin-page-picker {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 6px;
+        width: 100%;
+    }
+    .admin-page-picker select { width: 100%; min-width: 0; }
+    .admin-workspace-group { position: static; }
+    .admin-workspace-group .admin-workspace-menu { inset-inline: 0; width: auto; }
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -57,32 +57,7 @@ ADMIN_NAVIGATION: tuple[dict[str, Any], ...] = (
     {
         'key': 'community',
         'label': 'Community',
-        'icon': 'fa-comments',
-        'items': (
-            {
-                'key': 'requests', 'label': 'Game requests',
-                'description': 'Review community demand and update request status.',
-                'icon': 'fa-paper-plane', 'endpoint': 'game_requests.admin_requests',
-                'keywords': 'requests demand editions members', 'feature_flag': 'enable_game_requests',
-            },
-            {
-                'key': 'issues', 'label': 'Game issues',
-                'description': 'Review reports, reply to users, and track resolutions.',
-                'icon': 'fa-bug', 'endpoint': 'issues.admin_issues',
-                'keywords': 'issues bugs reports problems support', 'feature_flag': 'enable_game_issues',
-            },
-            {
-                'key': 'downloads', 'label': 'Download delivery',
-                'description': 'Review transfer activity and manage reusable download links.',
-                'icon': 'fa-download', 'endpoint': 'download.manage_downloads',
-                'keywords': 'downloads delivery transfers queue files',
-            },
-        ),
-    },
-    {
-        'key': 'people',
-        'label': 'People',
-        'icon': 'fa-user-shield',
+        'icon': 'fa-users',
         'items': (
             {
                 'key': 'users', 'label': 'Users',
@@ -102,6 +77,71 @@ ADMIN_NAVIGATION: tuple[dict[str, Any], ...] = (
                 'icon': 'fa-list-check', 'endpoint': 'admin2.whitelist',
                 'keywords': 'allowlist emails registration access',
             },
+            {
+                'key': 'requests', 'label': 'Game requests',
+                'description': 'Review community demand and update request status.',
+                'icon': 'fa-paper-plane', 'endpoint': 'game_requests.admin_requests',
+                'keywords': 'requests demand editions members', 'feature_flag': 'enable_game_requests',
+            },
+            {
+                'key': 'issues', 'label': 'Game issues',
+                'description': 'Review reports, reply to users, and track resolutions.',
+                'icon': 'fa-bug', 'endpoint': 'issues.admin_issues',
+                'keywords': 'issues bugs reports problems support', 'feature_flag': 'enable_game_issues',
+            },
+        ),
+    },
+    {
+        'key': 'appearance',
+        'label': 'Appearance',
+        'icon': 'fa-palette',
+        'items': (
+            {
+                'key': 'branding', 'label': 'Branding',
+                'description': 'Update the site name, logo, and identity.',
+                'icon': 'fa-signature', 'endpoint': 'admin2.branding',
+                'keywords': 'appearance logo title identity',
+            },
+            {
+                'key': 'themes', 'label': 'Themes',
+                'description': 'Install, build, edit, and select visual themes.',
+                'icon': 'fa-palette', 'endpoint': 'admin2.manage_themes',
+                'keywords': 'appearance colors visual design builder',
+            },
+            {
+                'key': 'attract-mode', 'label': 'Attract mode',
+                'description': 'Configure idle trailer playback and presentation.',
+                'icon': 'fa-tv', 'endpoint': 'admin2.attract_mode_settings_page',
+                'keywords': 'appearance trailers idle display experience',
+            },
+        ),
+    },
+    {
+        'key': 'messaging',
+        'label': 'Messaging',
+        'icon': 'fa-envelope',
+        'items': (
+            {
+                'key': 'newsletter', 'label': 'Newsletter',
+                'description': 'Compose and review library announcements.',
+                'icon': 'fa-newspaper', 'endpoint': 'admin2.newsletter',
+                'keywords': 'communication campaigns announcements email',
+                'feature_flag': 'enable_newsletter',
+            },
+            {
+                'key': 'email-templates', 'label': 'Email templates',
+                'description': 'Customize transactional email content.',
+                'icon': 'fa-envelope', 'endpoint': 'admin2.email_templates',
+                'keywords': 'communication messages templates email notifications',
+            },
+            {
+                'key': 'notification-rules', 'label': 'Notification rules',
+                'description': 'Choose which user and admin events send alerts.',
+                'icon': 'fa-bell', 'endpoint': 'admin2.settings',
+                'query_args': {'section': 'notifications'},
+                'keywords': 'notifications email push discord requests issues downloads alerts',
+                'match_paths': ('/admin/new_server_settings',),
+            },
         ),
     },
     {
@@ -109,6 +149,12 @@ ADMIN_NAVIGATION: tuple[dict[str, Any], ...] = (
         'label': 'Operations',
         'icon': 'fa-server',
         'items': (
+            {
+                'key': 'downloads', 'label': 'Downloads',
+                'description': 'Monitor downloads and manage download links.',
+                'icon': 'fa-download', 'endpoint': 'download.manage_downloads',
+                'keywords': 'downloads delivery transfers queue files',
+            },
             {
                 'key': 'download-cache', 'label': 'Download cache',
                 'description': 'Manage resumable archive preparation and storage.',
@@ -144,8 +190,8 @@ ADMIN_NAVIGATION: tuple[dict[str, Any], ...] = (
         ),
     },
     {
-        'key': 'configure',
-        'label': 'Configure',
+        'key': 'settings',
+        'label': 'Settings',
         'icon': 'fa-sliders',
         'items': (
             {
@@ -153,13 +199,8 @@ ADMIN_NAVIGATION: tuple[dict[str, Any], ...] = (
                 'description': 'Configure global features and workflow policies.',
                 'icon': 'fa-sliders', 'endpoint': 'admin2.settings',
                 'keywords': 'settings configuration policies features notifications interface',
-                'search_links': (
-                    {'key': 'notification-rules', 'label': 'Notification rules',
-                     'description': 'Configure event destinations in Application settings.',
-                     'query_args': {'section': 'notifications'},
-                     'keywords': 'notification rules alerts events delivery'},
-                ),
                 'match_paths': ('/admin/new_server_settings',),
+                'exclude_query': {'section': 'notifications'},
             },
             {
                 'key': 'integrations', 'label': 'Integrations',
@@ -167,37 +208,6 @@ ADMIN_NAVIGATION: tuple[dict[str, Any], ...] = (
                 'icon': 'fa-plug', 'endpoint': 'admin2.integrations',
                 'keywords': 'smtp email igdb discord webhook credentials',
                 'match_paths': ('/admin/smtp_settings', '/admin/igdb_settings', '/admin/discord_settings'),
-            },
-            {
-                'key': 'branding', 'label': 'Branding',
-                'description': 'Update the site name, logo, and identity.',
-                'icon': 'fa-signature', 'endpoint': 'admin2.branding',
-                'keywords': 'appearance logo title identity',
-            },
-            {
-                'key': 'themes', 'label': 'Themes',
-                'description': 'Install, build, edit, and select visual themes.',
-                'icon': 'fa-palette', 'endpoint': 'admin2.manage_themes',
-                'keywords': 'appearance colors visual design builder',
-            },
-            {
-                'key': 'attract-mode', 'label': 'Attract mode',
-                'description': 'Configure idle trailer playback and presentation.',
-                'icon': 'fa-tv', 'endpoint': 'admin2.attract_mode_settings_page',
-                'keywords': 'appearance trailers idle display experience',
-            },
-            {
-                'key': 'newsletter', 'label': 'Newsletter',
-                'description': 'Compose and review library announcements.',
-                'icon': 'fa-newspaper', 'endpoint': 'admin2.newsletter',
-                'keywords': 'communication campaigns announcements email',
-                'feature_flag': 'enable_newsletter',
-            },
-            {
-                'key': 'email-templates', 'label': 'Email templates',
-                'description': 'Customize transactional email content.',
-                'icon': 'fa-envelope', 'endpoint': 'admin2.email_templates',
-                'keywords': 'communication messages templates email notifications',
             },
         ),
     },

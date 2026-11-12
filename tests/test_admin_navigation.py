@@ -5,13 +5,13 @@ def test_admin_navigation_metadata_has_unique_groups_and_destinations():
     group_keys = [group['key'] for group in ADMIN_NAVIGATION]
     item_keys = [item['key'] for group in ADMIN_NAVIGATION for item in group['items']]
 
-    assert group_keys == ['overview', 'library', 'community', 'people', 'operations', 'configure']
+    assert group_keys == ['overview', 'library', 'community', 'appearance', 'messaging', 'operations', 'settings']
     assert len(group_keys) == len(set(group_keys))
     assert len(item_keys) == len(set(item_keys))
     assert all(item['label'] and item['description'] and item['icon'] for group in ADMIN_NAVIGATION for item in group['items'])
 
 
-def test_notification_deep_link_activates_the_single_settings_destination(app):
+def test_notification_rules_are_a_distinct_active_admin_destination(app):
     settings = {
         'enable_game_requests': True,
         'enable_game_issues': True,
@@ -21,12 +21,16 @@ def test_notification_deep_link_activates_the_single_settings_destination(app):
     with app.test_request_context('/admin/settings?section=notifications'):
         groups = build_admin_navigation(settings)
 
-    configure = next(group for group in groups if group['key'] == 'configure')
-    application_settings = next(item for item in configure['items'] if item['key'] == 'settings')
-    assert not any(item['key'] == 'notification-rules' for item in configure['items'])
-    assert application_settings['url'] == '/admin/settings'
-    assert application_settings['active'] is True
-    assert configure['active'] is True
+    messaging = next(group for group in groups if group['key'] == 'messaging')
+    settings_group = next(group for group in groups if group['key'] == 'settings')
+    notification_rules = next(item for item in messaging['items'] if item['key'] == 'notification-rules')
+    application_settings = next(item for item in settings_group['items'] if item['key'] == 'settings')
+
+    assert notification_rules['url'] == '/admin/settings?section=notifications'
+    assert notification_rules['active'] is True
+    assert application_settings['active'] is False
+    assert messaging['active'] is True
+    assert settings_group['active'] is False
 
 
 def test_feature_flags_remove_disabled_admin_destinations(app):

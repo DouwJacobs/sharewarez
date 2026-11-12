@@ -3,9 +3,9 @@
 {% block styles %}{{ super() }}<link rel="stylesheet" href="{{ 'css/admin/admin_manage_downloads.css'|theme_asset }}">{% endblock %}
 {% block content %}
 <main class="app-page downloads-page" aria-labelledby="download-delivery-title">
-    {{ page_header('Download delivery', 'Review delivery attempts and manage reusable links.', 'Administration', 'fa-shield-halved', pagination.total, 'attempt' if filters.view == 'activity' else 'link', 'download-delivery-title', class_name='downloads-page-header') }}
+    {{ page_header('Downloads', 'Monitor downloads and manage download links.', 'Administration', 'fa-shield-halved', pagination.total, 'attempt' if filters.view == 'activity' else 'link', 'download-delivery-title', class_name='downloads-page-header') }}
     <div class="app-surface downloads-panel admin_manage_downloads-requests">
-        <nav class="app-page-actions delivery-tabs" aria-label="Download delivery views">
+        <nav class="app-page-actions delivery-tabs" aria-label="Download views">
             {% for view, label in [('activity', 'Activity'), ('links', 'Links')] %}<a class="btn {{ 'btn-primary' if filters.view == view else 'btn-secondary' }}" href="{{ filters.tab_url(view) }}"{% if filters.view == view %} aria-current="page"{% endif %}>{{ label }}</a>{% endfor %}
         </nav>
         <p id="activeTransferConnection" class="active-transfer-empty" role="status">Connecting live updates…</p>

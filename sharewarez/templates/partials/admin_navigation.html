@@ -1,4 +1,17 @@
 <nav class="admin-workspace-nav" aria-label="Administrator workspace">
+    <div class="admin-page-picker">
+        <select aria-label="Admin page" class="form-select" required>
+            <option value="">Choose an admin page</option>
+            {% for group in admin_navigation %}
+            <optgroup label="{{ group.label }}">
+                {% for item in group['items'] %}
+                <option value="{{ item.url }}"{% if item.active %} selected{% endif %}>{{ item.label }}</option>
+                {% endfor %}
+            </optgroup>
+            {% endfor %}
+        </select>
+        <button type="button" class="btn btn-secondary">Go</button>
+    </div>
     {% for group in admin_navigation %}
         {% if group.key == 'overview' %}
         {% set overview = group['items'][0] %}
@@ -9,7 +22,6 @@
         <details class="admin-workspace-group{% if group.active %} active{% endif %}">
             <summary><i class="fas {{ group.icon }}" aria-hidden="true"></i><span>{{ group.label }}</span><i class="fas fa-chevron-down admin-workspace-chevron" aria-hidden="true"></i></summary>
             <div class="admin-workspace-menu">
-                <p>{{ group.label }}</p>
                 {% for item in group['items'] %}
                 <a href="{{ item.url }}"{% if item.active %} class="active" aria-current="page"{% endif %}>
                     <span class="admin-workspace-menu-icon"><i class="fas {{ item.icon }}" aria-hidden="true"></i></span>
@@ -26,6 +38,11 @@
     const nav = document.currentScript.previousElementSibling;
     if (!nav || !nav.classList.contains('admin-workspace-nav')) return;
 
+    const picker = nav.querySelector('.admin-page-picker select');
+    nav.querySelector('.admin-page-picker button').addEventListener('click', () => {
+        if (picker.reportValidity()) window.location.assign(picker.value);
+    });
+    nav.classList.add('has-page-picker');
     const groups = [...nav.querySelectorAll('.admin-workspace-group')];
     groups.forEach(group => group.addEventListener('toggle', () => {
         if (!group.open) return;
@@ -39,8 +56,11 @@
     });
     nav.addEventListener('keydown', event => {
         if (event.key !== 'Escape') return;
-        groups.forEach(group => { group.open = false; });
-        nav.querySelector('summary:focus')?.focus();
+        const group = groups.find(group => group.open);
+        if (group) {
+            group.open = false;
+            group.querySelector('summary').focus();
+        }
     });
 })();
 </script>
