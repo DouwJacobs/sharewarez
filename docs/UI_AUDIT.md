@@ -855,3 +855,17 @@ The mobile detail summary has a 44 px minimum target. Global search again finds
 Notification rules at the single Application settings owner, without a duplicate
 Configure entry. See ADMIN_SCAN_DOWNLOAD_VERIFICATION.md for hashes, IDs and the
 separate production release prerequisites.
+
+## Admin navigation release 1.16.4
+
+Library, Community, Appearance, Messaging, Operations, and Settings group
+related pages alongside the direct Overview link. At mobile widths a grouped
+page picker selects the current destination and an explicit Go button navigates.
+Desktop Escape closes the disclosure and restores focus to its summary.
+Downloads is the shared navigation, heading, breadcrumb, and cross-link label.
+
+The full local quality gate passed with its container stage enabled.
+All 2,182 Python tests across 146 modules and 19 JavaScript runner cases passed.
+The clean committed release image passed readiness, liveness, version, non-root,
+capability, and combined web/worker checks. The browser reached sign-in only,
+so authenticated desktop/mobile visual verification remains incomplete.
