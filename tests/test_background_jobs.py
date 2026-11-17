@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta, timezone
 from uuid import uuid4
-from unittest.mock import patch
+from unittest.mock import ANY, patch
+from types import SimpleNamespace
 
 import pytest
 from sqlalchemy import delete, func, select, update
@@ -469,3 +470,56 @@ def test_admin_can_manage_scan_schedule(client, app, db_session, jobs_admin, tmp
     assert response.get_json()['is_enabled'] is False
 
     assert client.delete(f'/api/scan-schedules/{schedule_id}').status_code == 204
+
+
+def test_artwork_refresh_survives_worker_restart_and_retries_failures(app, db_session):
+    from sharewarez.models import Game, Library
+    from sharewarez.platform import LibraryPlatform
+    from sharewarez.utils.image_jobs import enqueue_image_refresh
+    library = Library(name='Durable artwork ' + uuid4().hex, platform=LibraryPlatform.PCWIN)
+    game = Game(name='Durable artwork game', library=library, igdb_id=int(uuid4().hex[:7], 16))
+    db_session.add(game)
+    db_session.commit()
+    job = enqueue_image_refresh(game.uuid, replace_existing=True, expected_igdb_id=game.igdb_id,
+                                refresh_reason='reidentify')
+    claimed = claim_next('old-image-worker', queue='images')
+    assert claimed.id == job.id
+    recover_stale_jobs(stale_after_seconds=0)
+    db_session.refresh(job)
+    assert job.status == 'queued' and job.payload['replace_existing']
+    with patch('sharewarez.utils.scanning.refresh_images_in_background', return_value=(False, 'Provider unavailable')):
+        execute(claim_next('image-worker', queue='images'), 'image-worker')
+    db_session.refresh(job)
+    assert job.status == 'queued'
+    assert 'Provider unavailable' in job.error_message
+    job.available_at = datetime.now(timezone.utc) - timedelta(seconds=1)
+    db_session.commit()
+    with patch('sharewarez.utils.scanning.refresh_images_in_background', return_value=(True, None)) as refresh:
+        execute(claim_next('image-worker', queue='images'), 'image-worker')
+    db_session.refresh(job)
+    assert job.status == 'completed'
+    refresh.assert_called_once_with(game.uuid, replace_existing=True, expected_igdb_id=game.igdb_id,
+                                    audit_user_id=None, refresh_reason='reidentify')
+    db_session.delete(game)
+    db_session.delete(library)
+    db_session.commit()
+
+
+def test_artwork_job_does_not_apply_obsolete_identity(app, db_session):
+    from sharewarez.models import Game, Library
+    from sharewarez.platform import LibraryPlatform
+    from sharewarez.utils.image_jobs import enqueue_image_refresh
+    library = Library(name='Stale artwork ' + uuid4().hex, platform=LibraryPlatform.PCWIN)
+    game = Game(name='Reidentified game', library=library, igdb_id=int(uuid4().hex[:7], 16))
+    db_session.add(game)
+    db_session.commit()
+    job = enqueue_image_refresh(game.uuid, replace_existing=True, expected_igdb_id=game.igdb_id + 1)
+    with patch('sharewarez.utils.scanning.refresh_images_in_background') as refresh:
+        execute(claim_next('image-worker', queue='images'), 'image-worker')
+    db_session.refresh(job)
+    assert job.status == 'completed'
+    assert job.result['skipped']
+    refresh.assert_not_called()
+    db_session.delete(game)
+    db_session.delete(library)
+    db_session.commit()

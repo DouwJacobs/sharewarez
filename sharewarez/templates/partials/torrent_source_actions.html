@@ -1,0 +1,23 @@
+{% if torrent_sources %}
+<section class="game-torrent-sources" aria-labelledby="torrent-sources-title">
+  <h2 id="torrent-sources-title">Magnet links &amp; torrents</h2>
+  <p>Opens in your torrent client.</p>
+  {% for source in torrent_sources %}
+  <div class="torrent-source-item">
+    <div class="torrent-source-description"><h3>{{ source.label }}</h3>
+    {% if source.payload_bytes is not none %}<p>Torrent payload: {{ source.payload_bytes }} bytes</p>{% endif %}
+    </div>
+    <div class="torrent-source-buttons" role="group" aria-label="Actions for {{ source.label }}">
+    {% if source.kind == 'magnet' %}
+      <button class="btn btn-secondary torrent-source-icon" type="button" title="Open magnet" aria-label="Open magnet: {{ source.label }}" data-magnet-action="open" data-url="{{ url_for('games.torrent_magnet', game_uuid=game.uuid, source_id=source.id) }}"><i class="fas fa-magnet" aria-hidden="true"></i></button>
+      <button class="btn btn-secondary torrent-source-icon" type="button" title="Copy magnet" aria-label="Copy magnet: {{ source.label }}" data-magnet-action="copy" data-url="{{ url_for('games.torrent_magnet', game_uuid=game.uuid, source_id=source.id) }}"><i class="fas fa-copy" aria-hidden="true"></i></button>
+    {% else %}
+      <a class="btn btn-secondary torrent-source-icon" title="Download torrent" aria-label="Download torrent: {{ source.label }}" href="{{ url_for('games.torrent_file', game_uuid=game.uuid, source_id=source.id) }}"><i class="fas fa-download" aria-hidden="true"></i></a>
+    {% endif %}
+    </div>
+  </div>
+  {% endfor %}
+  <p role="status" aria-live="polite" data-torrent-action-status></p>
+</section>
+<script src="{{ 'js/torrent_sources.js'|theme_asset }}" defer></script>
+{% endif %}

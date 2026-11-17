@@ -1,4 +1,3 @@
-from contextlib import nullcontext
 from uuid import uuid4
 from unittest.mock import patch
 
@@ -38,9 +37,8 @@ def game_library(db_session):
     return library
 
 
-@pytest.mark.parametrize("real_thread", [False, True])
 def test_manual_game_uses_local_identity_without_fake_igdb_id(
-    client, db_session, admin_user, game_library, monkeypatch, real_thread,
+    client, db_session, admin_user, game_library,
 ):
     with client.session_transaction() as session:
         session['_user_id'] = str(admin_user.id)
@@ -55,27 +53,12 @@ def test_manual_game_uses_local_identity_without_fake_igdb_id(
         'status': 'RELEASED',
         'category': 'MAIN_GAME',
     }
-    from flask import has_request_context
-    from threading import Thread
-    observations = []
-    parent_session = db_session()
-    def refresh(game_uuid):
-        observations.append((has_request_context(), db_session() is parent_session,
-                             db_session.scalar(select(Game).where(Game.uuid == game_uuid)) is not None))
-    def start_and_join(thread):
-        original_start(thread)
-        thread.join(timeout=5)
-        assert not thread.is_alive()
-    original_start = Thread.start
-    if real_thread:
-        monkeypatch.setattr('sharewarez.routes_games_ext.add.refresh_images_in_background', refresh)
-        monkeypatch.setattr(Thread, 'start', start_and_join)
     with (
         patch('sharewarez.routes_games_ext.add.is_scan_job_running', return_value=False),
         patch('sharewarez.routes_games_ext.add.get_allowed_base_directories', return_value=['/games']),
         patch('sharewarez.routes_games_ext.add.is_safe_path', return_value=(True, None)),
         patch('sharewarez.routes_games_ext.add.read_first_nfo_content', return_value=None),
-        patch('sharewarez.routes_games_ext.add.Thread.start') if not real_thread else nullcontext(),
+        patch('sharewarez.routes_games_ext.add.enqueue_image_refresh') as artwork,
     ):
         response = client.post('/add_game_manual', data=form_data)
 
@@ -107,5 +90,4 @@ def test_manual_game_uses_local_identity_without_fake_igdb_id(
     assert identity.external_id == game.uuid
     assert identity.canonical is True
 
-    if real_thread:
-        assert observations == [(False, False, True)]
+    artwork.assert_not_called()

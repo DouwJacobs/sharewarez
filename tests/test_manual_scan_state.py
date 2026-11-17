@@ -161,7 +161,7 @@ def test_equal_titles_can_both_be_saved_independently(manual_storage, db_session
     for name in ('Game.iso', 'Game.zip'):
         (root / name).touch()
     choices = selections(listing(client, library))
-    with patch('sharewarez.routes_games_ext.add.Thread.start'), patch('sharewarez.routes_games_ext.add.read_first_nfo_content', return_value=None):
+    with patch('sharewarez.routes_games_ext.add.enqueue_image_refresh'), patch('sharewarez.routes_games_ext.add.read_first_nfo_content', return_value=None):
         for choice in choices:
             response = client.post(identify_url(choice), data={**choice, 'full_disk_path': str(root / choice['candidate_path']),
                 'manual_identity': '1', 'igdb_id': '', 'name': 'Game', 'status': 'RELEASED', 'category': 'MAIN_GAME'})
@@ -185,7 +185,7 @@ def test_manual_identify_rechecks_hltb_policy_after_listing(manual_storage, db_s
     choice = selections(listing(client, library, fetch_hltb='on' if include_times else '', force_hltb_refetch='on'))[0]
     settings.enable_hltb_integration = enabled_at_identify
     db_session.commit()
-    with patch('sharewarez.routes_games_ext.add.Thread.start'), patch('sharewarez.routes_games_ext.add.read_first_nfo_content',return_value=None), patch('sharewarez.utils.hltb.update_game_hltb_sync') as lookup:
+    with patch('sharewarez.routes_games_ext.add.enqueue_image_refresh'), patch('sharewarez.routes_games_ext.add.read_first_nfo_content',return_value=None), patch('sharewarez.utils.hltb.update_game_hltb_sync') as lookup:
         response = client.post(identify_url(choice), data={**choice,'full_disk_path':str(root/'Game.iso'),'manual_identity':'1','igdb_id':'','name':'Game','status':'RELEASED','category':'MAIN_GAME'})
     assert response.status_code == 302
     assert lookup.call_count == int(enabled_at_identify and include_times)

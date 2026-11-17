@@ -81,6 +81,7 @@ def unmatched_folders():
     
     unmatched_data = [{
         'id': folder.id,
+        'attach_url': url_for('games.attach_local_candidate', folder_id=folder.id) if folder.candidate_game_uuid else None,
         'folder_path': folder.folder_path,
         'status': folder.status,
         'library_name': library_name,

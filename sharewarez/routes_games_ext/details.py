@@ -279,6 +279,8 @@ def game_details(game_uuid):
         return render_template(
             'games/game_details.html',
             game=game_data,
+            torrent_sources=game.torrent_sources,
+            has_local_source=bool(game.full_disk_path),
             form=csrf_form,
             library_uuid=library_uuid,
             is_admin=current_user.role == 'admin',

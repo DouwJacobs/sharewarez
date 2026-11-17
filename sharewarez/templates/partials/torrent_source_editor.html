@@ -1,0 +1,49 @@
+<section class="game-edit-section torrent-editor" aria-labelledby="torrent-editor-title" data-torrent-editor data-game="{{ game_uuid|default('') }}">
+  <h2 id="torrent-editor-title">Magnet links &amp; torrents</h2>
+  {% if torrent_source_error %}<p id="torrent-source-error" role="alert" tabindex="-1" data-source-error>{{ torrent_source_error }}</p>{% endif %}
+  <p>Public sources only. Members open these in their own torrent clients. Do not share personal tracker credentials. Magnets cannot be checked automatically for private-tracker access.</p>
+  {% if torrent_sources %}<p class="torrent-editor-save-help">Label, replacement, and removal actions on saved sources apply immediately. Cancel does not undo them. New sources below are added with Save changes.</p>{% else %}<p class="torrent-editor-save-help">New sources are added when you save the game.</p>{% endif %}
+  {% for source in torrent_sources|default([]) %}
+  <div class="torrent-existing" data-source-id="{{ source.id }}" data-revision="{{ source.revision }}">
+    <label for="source-existing-{{ source.id }}" data-source-kind-label>{{ source.kind|capitalize }} source label</label>
+    <input id="source-existing-{{ source.id }}" class="form-control" value="{{ source.label }}" maxlength="160">
+    <button type="button" class="btn btn-secondary" data-source-rename>Save label</button>
+    <details><summary>Replace source</summary>
+      <label for="replace-magnet-{{ source.id }}">New magnet link</label><textarea class="form-control" id="replace-magnet-{{ source.id }}" data-replace-magnet></textarea>
+      <label for="replace-file-{{ source.id }}">Or new torrent file</label><input class="form-control" type="file" accept=".torrent" id="replace-file-{{ source.id }}" data-replace-file>
+      <label><input type="checkbox" data-replace-public> This replacement is public and has no personal tracker credentials.</label>
+      <label><input type="checkbox" data-replace-variants> Keep separate if another source has matching content.</label>
+      <button type="button" class="btn btn-secondary" data-source-replace>Replace source</button>
+    </details>
+    <button type="button" class="btn btn-danger" data-source-remove>Remove source</button>
+    {% if not form.full_disk_path.data %}
+    <label for="final-source-action-{{ source.id }}">If this is the final source</label>
+    <select class="form-control" id="final-source-action-{{ source.id }}" data-final-source-action>
+      <option value="retain">Keep the game as a catalog entry</option>
+      <option value="delete">Delete the game from the library</option>
+    </select>
+    {% endif %}
+  </div>
+  {% endfor %}
+  <div data-source-rows>
+    {% set entered_labels = request.form.getlist('source_label') %}
+    {% set entered_magnets = request.form.getlist('source_magnet') %}
+    {% for label in entered_labels or [''] %}
+    <div class="game-edit-grid torrent-source-row" {% if torrent_source_error_index == loop.index %}aria-describedby="torrent-source-error"{% endif %}>
+      <div class="form-group"><label for="source-label-{{ loop.index }}">Source label</label><input class="form-control" id="source-label-{{ loop.index }}" name="source_label" value="{{ label }}" maxlength="160"></div>
+      <div class="form-group"><label for="source-file-{{ loop.index }}">Or upload torrent</label><input class="form-control" id="source-file-{{ loop.index }}" name="source_file" type="file" accept=".torrent"><p>Maximum 10 MiB. Reselect files after a validation error.</p></div>
+      <div class="form-group torrent-source-magnet"><label for="source-magnet-{{ loop.index }}">Magnet link</label><textarea class="form-control" id="source-magnet-{{ loop.index }}" name="source_magnet" rows="4">{{ entered_magnets[loop.index0] if loop.index0 < entered_magnets|length else '' }}</textarea></div>
+      <div class="torrent-source-actions"><button type="button" class="btn btn-secondary" data-remove-source-row>Remove new source</button></div>
+    </div>
+    {% endfor %}
+  </div>
+  <div class="torrent-editor-footer">
+    <button type="button" class="btn btn-secondary" data-add-source-row>Add source</button>
+    <div class="torrent-source-confirmations">
+      <label><input type="checkbox" name="sources_public" value="1" {% if request.form.get('sources_public') == '1' %}checked{% endif %}><span>I confirm new sources are public and contain no personal tracker credentials.</span></label>
+      <label><input type="checkbox" name="sources_variants_confirm" value="1" {% if request.form.get('sources_variants_confirm') == '1' %}checked{% endif %}><span>Keep separate sources when content matches an existing source but tracker data differs.</span></label>
+    </div>
+  </div>
+  <p data-source-status role="status" aria-live="polite"></p>
+</section>
+<script src="{{ 'js/torrent_sources.js'|theme_asset }}" defer></script>

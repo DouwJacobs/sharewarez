@@ -104,13 +104,14 @@ def process_game_with_fallback(game_name, full_disk_path, scan_job_id, library_u
 
 
 
-def log_unmatched_folder(scan_job_id, folder_path, matched_status, library_uuid=None):
+def log_unmatched_folder(scan_job_id, folder_path, matched_status, library_uuid=None, candidate_game_uuid=None):
     existing_unmatched_folder = db.session.execute(select(UnmatchedFolder).filter_by(folder_path=folder_path)).scalar_one_or_none()
 
     if existing_unmatched_folder is None:
         unmatched_folder = UnmatchedFolder(
             folder_path=folder_path,
             scan_job_id=scan_job_id,
+            candidate_game_uuid=candidate_game_uuid,
             failed_time=datetime.now(timezone.utc),
             content_type='Games',
             library_uuid=library_uuid,
@@ -128,6 +129,9 @@ def log_unmatched_folder(scan_job_id, folder_path, matched_status, library_uuid=
             raise
             print(f"[UNMATCHED ERROR] Failed to log unmatched folder due to a database error: {folder_path}")
     else:
+        if candidate_game_uuid:
+            existing_unmatched_folder.candidate_game_uuid = candidate_game_uuid
+            db.session.commit()
         print(f"[UNMATCHED SKIPPED] Unmatched folder already logged for: {folder_path}. Status: {existing_unmatched_folder.status}")
         
 

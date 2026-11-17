@@ -36,6 +36,9 @@ def _reconcile(u, detail_id, target, extensions, candidates, patterns, library_u
     u.filesystem_fingerprint(target.path)
     games = db.session.execute(select(Game).where(Game.library_uuid == library_uuid)).scalars().all()
     for game in games:
+        # A lost mounted copy must not remove the game's remote sources/history.
+        if game.torrent_sources:
+            continue
         if not target.owns_stored_path(game.full_disk_path):
             continue
         extension = os.path.splitext(game.full_disk_path)[1][1:].lower()

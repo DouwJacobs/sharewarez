@@ -21,6 +21,7 @@ operator references by purpose.
 - [Invitation-led onboarding](INVITATIONS.md)
 - [Public API](PUBLIC_API.md)
 - [Download delivery](DOWNLOADS.md)
+- [Magnet links and torrent-only games: implementation spec](TORRENT_SOURCES_SPEC.md)
 
 ## Operations and security
 

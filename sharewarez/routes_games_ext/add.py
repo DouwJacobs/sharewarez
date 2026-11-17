@@ -1,4 +1,5 @@
 import os
+import json
 from flask import render_template, redirect, url_for, flash, session, request, current_app
 from flask_login import login_required, current_user
 from sharewarez.forms import AddGameForm
@@ -6,26 +7,34 @@ from sharewarez.models import Game, GameExternalIdentity, Library, UnmatchedFold
 from sharewarez.metadata_files import DEFAULT_LOCAL_METADATA_FILENAME
 from sharewarez.utils.functions import read_first_nfo_content, PLATFORM_IDS
 from sharewarez.utils.auth import admin_required
-from sharewarez.utils.scanning import is_scan_job_running, refresh_images_in_background
+from sharewarez.utils.scanning import is_scan_job_running
+from sharewarez.utils.image_jobs import enqueue_image_refresh
+from sharewarez.utilities import refresh_game_metadata_and_updates
+from sharewarez.utils.metadata_provenance import EDITABLE_PROVIDER_FIELDS, mark_manual_changes
 from sharewarez.utils.event_logging import log_system_event
 from sharewarez.utils.security import is_safe_path, get_allowed_base_directories, sanitize_path_for_logging
 from sharewarez.utils.functions import sanitize_string_input
 from sharewarez.utils.game_core import check_existing_game_by_igdb_id
 from sharewarez.utils.tags import assign_game_tags
 from sharewarez import db
-from threading import Thread
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import select
-from uuid import uuid4
+from uuid import uuid4, UUID
+from werkzeug.exceptions import RequestEntityTooLarge
 
 from . import games_bp
+from sharewarez.utils.torrent_service import prepare_form_sources, attach_prepared, discard_attachments
+from sharewarez.utils.torrent_storage import acquire_source_mutation_lock
 
 
 @games_bp.route('/add_game_manual', methods=['GET', 'POST'])
 @login_required
 @admin_required
 def add_game_manual():
-    if is_scan_job_running():
+    if request.method == 'POST':
+        acquire_source_mutation_lock()
+    submitted_mode = request.form.get('source_mode') if request.method == 'POST' else request.args.get('source_mode')
+    if submitted_mode != 'torrent' and is_scan_job_running():
         flash('Cannot add a new game while a scan job is running. Please try again later.', 'error')
         log_system_event(
             f"Admin {current_user.name} attempted to add game while scan job is running",
@@ -85,6 +94,9 @@ def add_game_manual():
         platform_id = None
     
     if request.method == 'GET':
+        form.entry_uuid.data = str(uuid4())
+        if request.args.get('source_mode') == 'torrent':
+            form.source_mode.data = 'torrent'
         if full_disk_path:
             form.full_disk_path.data = full_disk_path
             form.name.data = game_name
@@ -92,13 +104,33 @@ def add_game_manual():
             form.library_uuid.data = library_uuid
     
     if form.validate_on_submit():
+        try:
+            entry_uuid = str(UUID(form.entry_uuid.data)) if form.entry_uuid.data else str(uuid4())
+        except (ValueError, TypeError):
+            flash('Invalid game submission. Reload the form and try again.', 'error')
+            return redirect(url_for('games.add_game_manual'))
+        existing_entry = db.session.execute(select(Game).where(Game.uuid == entry_uuid)).scalar_one_or_none()
+        if existing_entry:
+            return redirect(url_for('games.game_details', game_uuid=existing_entry.uuid))
+        prepared_sources = []
+        try:
+            prepared_sources = prepare_form_sources(request.form, request.files)
+            if form.source_mode.data == 'torrent':
+                form.full_disk_path.data = None
+                if not prepared_sources:
+                    raise ValueError('Add at least one magnet link or torrent file.')
+            elif not (form.full_disk_path.data or '').strip():
+                raise ValueError('A local game requires a disk path.')
+        except (ValueError, RequestEntityTooLarge) as exc:
+            form.source_mode.errors = list(form.source_mode.errors) + [str(exc)]
+            return render_template('admin/admin_game_identify.html', form=form, action='add', library_name=library_name, platform_name=platform_name, platform_id=platform_id, torrent_source_error=str(exc), torrent_source_error_index=getattr(exc, 'row_index', None)), 413 if isinstance(exc, RequestEntityTooLarge) else 200
         # Validate full_disk_path security
         allowed_bases = get_allowed_base_directories(current_app)
-        if not allowed_bases:
+        if form.full_disk_path.data and not allowed_bases:
             flash('Service configuration error: No allowed base directories configured.', 'error')
             return render_template('admin/admin_game_identify.html', form=form, library_uuid=library_uuid, library_name=library_name, platform_name=platform_name, platform_id=platform_id)
 
-        is_safe, error_message = is_safe_path(form.full_disk_path.data, allowed_bases)
+        is_safe, error_message = is_safe_path(form.full_disk_path.data, allowed_bases) if form.full_disk_path.data else (True, '')
         if not is_safe:
             sanitized_path = sanitize_path_for_logging(form.full_disk_path.data)
             log_system_event(
@@ -119,7 +151,7 @@ def add_game_manual():
             flash('A game with this IGDB ID already exists.', 'error')
             return render_template('admin/admin_game_identify.html', form=form, library_uuid=library_uuid, library_name=library_name, platform_name=platform_name, platform_id=platform_id)
         
-        game_uuid = str(uuid4())
+        game_uuid = entry_uuid
         identity_provider = 'local' if is_custom_game else 'igdb'
         identity_external_id = game_uuid if is_custom_game else str(form.igdb_id.data)
         new_game = Game(
@@ -140,6 +172,7 @@ def add_game_manual():
             category=form.category.data,
             status=form.status.data,
             first_release_date=form.first_release_date.data,
+            aggregated_rating=form.aggregated_rating.data,
             video_urls=form.video_urls.data,
             library_uuid=form.library_uuid.data
         )
@@ -181,10 +214,12 @@ def add_game_manual():
                     db.session.add(publisher)
                     db.session.flush()
                 new_game.publisher = publisher
-        new_game.nfo_content = read_first_nfo_content(form.full_disk_path.data)
+        new_game.nfo_content = read_first_nfo_content(form.full_disk_path.data) if form.full_disk_path.data else None
 
+        attachment_keys = []
         try:
             db.session.add(new_game)
+            attachment_keys = attach_prepared(new_game, prepared_sources, current_user.id)
             
             # Handle unmatched folder deletion in same transaction for consistency
             unmatched_folder = None
@@ -193,8 +228,51 @@ def add_game_manual():
                 if unmatched_folder:
                     db.session.delete(unmatched_folder)
             
-            # Commit both operations together
+            if not is_custom_game:
+                enqueue_image_refresh(new_game.uuid, expected_igdb_id=new_game.igdb_id,
+                                      audit_user_id=current_user.id, commit=False)
+            # Commit the game, sources, and durable artwork request together.
             db.session.commit()
+            attachment_keys = []  # Committed attachments must survive later UI/artwork failures.
+
+            if not is_custom_game:
+                # Complete provider relationships/classifications as well as scalar
+                # fields. Submitted values remain authoritative when an admin edits
+                # the populated form before saving.
+                try:
+                    manual_fields = json.loads(form.metadata_manual_fields.data or '[]')
+                    manual_fields = set(manual_fields) if isinstance(manual_fields, list) and all(isinstance(item, str) for item in manual_fields) else set()
+                except (ValueError, TypeError):
+                    manual_fields = set()
+                tracking_active = form.metadata_tracking_active.data == '1'
+                def preserve_field(field, populated):
+                    return field in manual_fields if tracking_active else populated or field in manual_fields
+                submitted_values = {field: getattr(new_game, field) for field in EDITABLE_PROVIDER_FIELDS
+                                    if field in request.form and preserve_field(field, getattr(new_game, field) not in (None, ''))}
+                submitted_companies = {field: getattr(new_game, field) for field in ('developer', 'publisher')
+                                       if field in request.form and preserve_field(field, getattr(new_game, field) is not None)}
+                submitted_classifications = {field: list(getattr(new_game, field)) for field in
+                                             ('genres', 'themes', 'game_modes', 'platforms', 'player_perspectives')
+                                             if preserve_field(field, bool(request.form.getlist(field)))}
+                try:
+                    refresh_game_metadata_and_updates(new_game.uuid)
+                    provider_values = {field: getattr(new_game, field) for field in EDITABLE_PROVIDER_FIELDS}
+                    submitted_date = submitted_values.get('first_release_date')
+                    provider_date = provider_values.get('first_release_date')
+                    if submitted_date and provider_date and submitted_date.date() == provider_date.date():
+                        # The editor owns a calendar date, not a database timezone offset.
+                        provider_values['first_release_date'] = submitted_date
+                    for field, value in {**submitted_values, **submitted_companies, **submitted_classifications}.items():
+                        setattr(new_game, field, value)
+                    mark_manual_changes(new_game, provider_values)
+                    db.session.commit()
+                except Exception:
+                    db.session.rollback()
+                    for field, value in {**submitted_values, **submitted_companies, **submitted_classifications}.items():
+                        setattr(new_game, field, value)
+                    db.session.commit()
+                    current_app.logger.warning('Metadata enrichment failed for newly added game %s', new_game.uuid)
+                    flash('Game saved. Metadata enrichment could not finish; use Save & refresh to retry.', 'warning')
 
             # After successful commit, write local metadata file if enabled
             from sharewarez.utils.local_metadata import write_local_metadata
@@ -203,7 +281,7 @@ def add_game_manual():
             settings = db.session.execute(select(GlobalSettings)).scalar_one_or_none()
             print(f"[LOCAL METADATA] Settings check - settings exists: {settings is not None}, write_local_metadata: {settings.write_local_metadata if settings else 'N/A'}")
 
-            if settings and settings.write_local_metadata:
+            if settings and settings.write_local_metadata and new_game.full_disk_path:
                 metadata_filename = (
                     settings.local_metadata_filename or DEFAULT_LOCAL_METADATA_FILENAME
                 )
@@ -243,31 +321,16 @@ def add_game_manual():
                 event_type='game',
                 event_level='information'
             )
-            # Trigger image refresh after adding the game
-            image_game_uuid = new_game.uuid
-            image_app = current_app._get_current_object()
-            def refresh_images_in_thread():
-                # Pass scalar identity, never a request-owned ORM object/session.
-                with image_app.app_context():
-                    refresh_images_in_background(image_game_uuid)
-
-            # Start the background process for refreshing images
-            thread = Thread(target=refresh_images_in_thread, daemon=True)
-            thread.start()
-            log_system_event(
-                f"Image refresh background task started for game '{game_name}' (UUID: {image_game_uuid})",
-                event_type='task',
-                event_level='debug'
-            )
             
             if from_unmatched:
                 return redirect(url_for('main.admin_scan_management', active_tab='unmatched'))
             else:
-                return redirect(url_for('library.library'))
+                return redirect(url_for('games.game_details', game_uuid=new_game.uuid))
         except SQLAlchemyError as e:
             db.session.rollback()
+            discard_attachments(attachment_keys)
             log_system_event(
-                f"Database error adding game '{game_name}' by admin {current_user.name}: {str(e)[:200]}",
+                f"Database error adding game by admin {current_user.name}: {type(e).__name__}",
                 event_type='error',
                 event_level='error'
             )

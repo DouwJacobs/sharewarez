@@ -255,8 +255,10 @@ ruff==0.16.2
     # via -r requirements-dev.in
 sortedcontainers==2.4.0
     # via cyclonedx-python-lib
-soupsieve==2.9.2
-    # via beautifulsoup4
+soupsieve==4.1.1
+    # via
+    #   -r requirements.in
+    #   beautifulsoup4
 sqlalchemy==2.0.51
     # via
     #   alembic

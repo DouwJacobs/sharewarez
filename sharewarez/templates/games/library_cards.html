@@ -61,8 +61,15 @@
                             <span class="game-cover game-cover-placeholder"><i class="fas fa-gamepad" aria-hidden="true"></i><strong>{{ game.name|game_monogram }}</strong><small>{{ game.name }}</small></span>
                         </a>
                     {% endif %}
-                    {% if game.has_local_override %}
-                    <div class="local-metadata-badge" title="Uses local metadata or images">L</div>
+                    {% if game.has_local_override or game.has_torrent_sources %}
+                    <div class="library-card-badges">
+                        {% if game.has_local_override %}<span class="local-metadata-badge" title="Uses local metadata or images">L</span>{% endif %}
+                        {% if game.has_torrent_sources %}
+                        {% set source_description = 'Magnet/torrent only — no local files' if not game.has_local_source else 'Magnet/torrent available' %}
+                        {% set source_action = 'Open magnet in your torrent client' if game.single_magnet_source_id else 'View magnet/torrent sources' %}
+                        <a class="library-source-badge{% if not game.has_local_source %} library-source-badge--only{% endif %}" href="{{ url_for('games.game_details', game_uuid=game.uuid) }}#torrent-sources-title" {% if game.single_magnet_source_id %}data-card-magnet-url="{{ url_for('games.torrent_magnet', game_uuid=game.uuid, source_id=game.single_magnet_source_id) }}"{% endif %} aria-label="{{ source_action }}: {{ game.name }}. {{ source_description }}" title="{{ source_action }} · {{ source_description }}"><i class="fas fa-magnet" aria-hidden="true"></i></a>
+                        {% endif %}
+                    </div>
                     {% endif %}
                     <div id="details-{{ game.uuid }}" class="popup-game-details hidden" aria-hidden="true">
                         <!-- Details and screenshots will be injected here by JavaScript -->

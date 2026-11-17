@@ -38,7 +38,7 @@ def test_scan_lifecycle_fresh_bootstrap_matches_head(app, db_session):
     db_session.commit()
     db_session.refresh(row)
     assert row.folders_unmatched == 0 and row.scan_options == {'fetch_hltb': False}
-    assert current_revision(app.config['SQLALCHEMY_DATABASE_URI']) == head_revision() == '20261106_35'
+    assert current_revision(app.config['SQLALCHEMY_DATABASE_URI']) == head_revision() == '20261117_36'
 
 
 @pytest.fixture(autouse=True)
@@ -303,7 +303,7 @@ def test_transfer_evidence_upgrade_preserves_populated_previous_schema(app, db_s
     db_session.commit()
     command.downgrade(alembic_config(uri), '20261105_33')
     command.upgrade(alembic_config(uri), 'head')
-    assert current_revision(uri) == head_revision() == '20261106_35'
+    assert current_revision(uri) == head_revision() == '20261117_36'
 
 
 def test_transfer_evidence_upgrade_accepts_metadata_created_columns(app, db_session):

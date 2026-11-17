@@ -34,6 +34,42 @@ def maintain_downloads(app, stopping, interval=15):
         stopping.wait(interval)
 
 
+def maintain_images(app, stopping, interval=5):
+    """Drain queued artwork independently of long-running scans."""
+    from sharewarez.utils.game_core import download_pending_images
+    from sharewarez.models import Image
+
+    last_image_id = 0
+    image_worker_id = f'{worker_identity()}:images'
+    while not stopping.is_set():
+        with app.app_context():
+            try:
+                image_job = claim_next(image_worker_id, queue='images')
+                if image_job is not None:
+                    execute(image_job, image_worker_id)
+                    continue
+                image_ids = db.session.execute(
+                    select(Image.id).where(
+                        Image.is_downloaded.is_(False), Image.id > last_image_id,
+                    ).order_by(Image.id).limit(50)
+                ).scalars().all()
+                # Continue past failed downloads so they cannot starve new games.
+                if image_ids:
+                    last_image_id = image_ids[-1]
+                    download_pending_images(
+                        batch_size=50, delay_between_downloads=0, app=app,
+                        image_ids=image_ids,
+                    )
+                else:
+                    last_image_id = 0
+            except Exception:
+                db.session.rollback()
+                app.logger.exception('Image queue maintenance failed')
+            finally:
+                db.session.remove()
+        stopping.wait(interval)
+
+
 def run_worker():
     app = create_app()
     worker_id = worker_identity()
@@ -73,6 +109,8 @@ def run_worker():
                         try:
                             from sharewarez.utils.download_cache import cleanup_cache
                             cleanup_cache()
+                            from sharewarez.utils.torrent_storage import cleanup_unreferenced
+                            cleanup_unreferenced()
                         except Exception:
                             app.logger.exception('Automatic download-cache cleanup failed')
                             db.session.rollback()
@@ -95,6 +133,10 @@ def run_worker():
             target=maintain_downloads, args=(app, stopping), name='download-maintenance', daemon=True,
         )
         maintenance_thread.start()
+        image_thread = threading.Thread(
+            target=maintain_images, args=(app, stopping), name='image-maintenance', daemon=True,
+        )
+        image_thread.start()
 
         while not stopping.is_set():
             monotonic_now = time.monotonic()
@@ -114,6 +156,7 @@ def run_worker():
         for thread in archive_threads:
             thread.join(timeout=5)
         maintenance_thread.join(timeout=5)
+        image_thread.join(timeout=5)
         app.logger.info("Background worker %s stopped", worker_id)
 
 

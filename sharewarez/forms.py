@@ -238,6 +238,9 @@ class AddGameForm(FlaskForm):
     # Existing fields
     igdb_id = IntegerField('IGDB ID', validators=[Optional(), NumberRange(min=1, max=9999999999)], widget=TextInput())
     manual_identity = HiddenField(default='0')
+    metadata_manual_fields = HiddenField(default='[]', validators=[Optional(), Length(max=4096)])
+    metadata_tracking_active = HiddenField(default='0')
+    entry_uuid = HiddenField()
     name = StringField('Name', validators=[DataRequired()])
     summary = TextAreaField('Summary', validators=[Optional()])
     storyline = TextAreaField('Storyline', validators=[Optional()])
@@ -246,7 +249,9 @@ class AddGameForm(FlaskForm):
     edition_name = StringField('Edition Name', validators=[Optional(), Length(max=255)])
 
     url = StringField('URL', validators=[Optional(), URL(), safe_url_validator])
-    full_disk_path = StringField('Full Disk Path', validators=[DataRequired()], widget=TextInput())
+    source_mode = SelectField('Game files', choices=[('local', 'Local files'), ('torrent', 'Magnet / torrent')], default='local')
+    detach_local = BooleanField('Remove the existing local-files association')
+    full_disk_path = StringField('Full Disk Path', validators=[Optional()], widget=TextInput())
     video_urls = StringField('Video URLs', validators=[Optional(), comma_separated_urls])
     aggregated_rating = FloatField('Aggregated Rating', validators=[Optional()])
     first_release_date = DateField('First Release Date', format='%Y-%m-%d', validators=[Optional()])

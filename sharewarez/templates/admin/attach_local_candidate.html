@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% block title %}Attach local game files{% endblock %}
+{% block content %}
+<main class="app-page app-page--standard">
+  <header class="app-page-header"><h1>Attach local files to existing game</h1></header>
+  <section class="app-surface">
+    <h2>{{ game.name }}</h2>
+    <dl><dt>Game library</dt><dd>{{ game.library.name }}</dd><dt>Scanned library</dt><dd>{{ folder.library.name if folder.library else 'Unknown' }}</dd><dt>Local path</dt><dd>{{ folder.folder_path }}</dd></dl>
+    <p>The game stays in its current library. Its metadata, favorites, and torrent sources are preserved. You can move the game separately after attaching files.</p>
+    {% if game.full_disk_path %}<p>This game already has a local path. Edit the game to review and change its local files.</p>{% else %}
+    <form method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-primary" type="submit">Attach local files</button></form>
+    {% endif %}
+    <a class="btn btn-secondary" href="{{ url_for('games.game_details', game_uuid=game.uuid) }}">Back to game</a>
+  </section>
+</main>
+{% endblock %}

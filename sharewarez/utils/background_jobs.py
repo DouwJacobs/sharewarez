@@ -21,6 +21,7 @@ JOB_DISPLAY_NAMES = {
     'library.scan': 'Library scan',
     'library.bulk_metadata_refresh': 'Bulk metadata refresh',
     'library.bulk_image_refresh': 'Bulk image refresh',
+    'game.refresh_images': 'Refresh game artwork',
     'notifications.send_email': 'Send notification email',
     'notifications.send_push': 'Send browser notification',
     'notifications.send_discord': 'Send Discord notification',
@@ -431,6 +432,32 @@ def library_scan_task(context, payload):
         if row and row.outcome not in {'failed', 'partial', 'cancelled'}:
             finish_scan(detail_id, 'partial' if row.folders_success + row.folders_unmatched else 'failed', str(exc))
         raise
+
+
+@register_task('game.refresh_images')
+def game_image_refresh_task(context, payload):
+    from sharewarez.models import Game
+    from sharewarez.utils.scanning import refresh_images_in_background
+
+    game = db.session.execute(select(Game).where(Game.uuid == payload['game_uuid'])).scalar_one_or_none()
+    if game is None:
+        return {'skipped': True, 'reason': 'Game was removed'}
+    expected_id = payload.get('expected_igdb_id')
+    if expected_id is not None and str(game.igdb_id) != str(expected_id):
+        return {'skipped': True, 'reason': 'Game identity changed'}
+    if not game.igdb_id and not any(identity.provider != 'local' for identity in game.external_identities):
+        return {'skipped': True, 'reason': 'Custom game has no artwork provider'}
+    context.heartbeat(10, 'Finding and downloading game artwork')
+    result = refresh_images_in_background(
+        game.uuid, replace_existing=bool(payload.get('replace_existing')),
+        expected_igdb_id=expected_id, audit_user_id=payload.get('audit_user_id'),
+        refresh_reason=payload.get('refresh_reason', 'background'),
+    )
+    succeeded, error = result if isinstance(result, tuple) else (bool(result), None)
+    if not succeeded:
+        raise RuntimeError(error or 'Artwork refresh did not complete')
+    context.heartbeat(99, 'Artwork refresh completed')
+    return {'game_uuid': game.uuid, 'refreshed': True}
 
 
 @register_task('library.bulk_metadata_refresh')

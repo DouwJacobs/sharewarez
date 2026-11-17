@@ -483,6 +483,8 @@ class TestGetGamesFunction:
     @patch('sharewarez.routes_library.format_size')
     def test_get_games_formats_size(self, mock_format_size, app, db_session, test_game):
         """Test get_games formats game size."""
+        test_game.full_disk_path = '/games/size-format-fixture'
+        db_session.commit()
         mock_format_size.return_value = "1.0 MB"
         
         with app.app_context():

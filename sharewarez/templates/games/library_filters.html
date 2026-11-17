@@ -29,6 +29,15 @@
       <form id="filterForm">
         <div class="library-filter-fields">
           <div class="form-group">
+            <label for="sourceSelect">Game sources</label>
+            <select class="form-control" id="sourceSelect">
+              <option value="">All sources</option>
+              <option value="local" {% if filters.get('source') == 'local' %}selected{% endif %}>Local files</option>
+              <option value="torrent" {% if filters.get('source') == 'torrent' %}selected{% endif %}>Magnet/torrent</option>
+              <option value="torrent_only" {% if filters.get('source') == 'torrent_only' %}selected{% endif %}>Magnet/torrent only</option>
+            </select>
+          </div>
+          <div class="form-group">
             <label for="libraryNameSelect">Library</label>
             <select class="form-control" id="libraryNameSelect">
               <option value="">All Libraries</option>

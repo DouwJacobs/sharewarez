@@ -18,7 +18,7 @@ import urllib.parse
 library_bp = Blueprint('library', __name__)
 
 FILTER_KEYS = {'library_uuid', 'genre', 'rating', 'game_mode', 'player_perspective',
-               'theme', 'tag', 'collection', 'family', 'category'}
+               'theme', 'tag', 'collection', 'family', 'category', 'source'}
 
 
 def normalize_filters(values):
@@ -30,6 +30,8 @@ def normalize_filters(values):
             continue
         value = str(value).strip()
         if not value or len(value) > 256:
+            continue
+        if key == 'source' and value not in {'local', 'torrent', 'torrent_only'}:
             continue
         if key == 'rating':
             try:
@@ -64,6 +66,8 @@ def filter_chips(filters):
         args.pop('page', None)
         args.pop('render', None)
         display = value
+        if key == 'source':
+            display = {'local': 'Local files', 'torrent': 'Magnet/torrent', 'torrent_only': 'Magnet/torrent only'}.get(value, value)
         if key == 'library_uuid':
             display = db.session.scalar(select(Library.name).where(Library.uuid == value)) or 'Unavailable library'
         if key == 'collection':
@@ -178,7 +182,7 @@ def save_library_preferences():
             return jsonify({'error': 'Enter a view name of at least two characters.'}), 400
         allowed_keys = {
             'library_uuid', 'genre', 'rating', 'game_mode', 'player_perspective',
-            'theme', 'tag', 'collection', 'family', 'sort_by', 'sort_order',
+            'theme', 'tag', 'collection', 'family', 'sort_by', 'sort_order', 'source',
             'per_page', 'view', 'filters',
         }
         pairs = [(key, value) for key, value in urllib.parse.parse_qsl(query) if key in allowed_keys]
@@ -223,6 +227,13 @@ def get_games(page=1, per_page=20, sort_by='name', sort_order='asc', **filters):
         query = query.filter(Game.library.has(Library.uuid == filters['library_uuid']))
 
     # Filtering logic
+    local_source = and_(Game.full_disk_path.isnot(None), func.trim(Game.full_disk_path) != '')
+    if filters.get('source') == 'local':
+        query = query.where(local_source)
+    elif filters.get('source') == 'torrent':
+        query = query.where(Game.torrent_sources.any())
+    elif filters.get('source') == 'torrent_only':
+        query = query.where(~local_source, Game.torrent_sources.any())
     if filters.get('library_uuid'):
         query = query.filter(Game.library_uuid == filters['library_uuid'])
 
@@ -274,6 +285,16 @@ def serialize_library_cards(games, current_user_id):
     """Build the shared card context for Library and Favorites."""
     # Get all user statuses for games in this page (batch query for performance)
     game_uuids = [game.uuid for game in games]
+    from sharewarez.models import GameTorrentSource
+    source_rows = db.session.execute(
+        select(GameTorrentSource.game_uuid, GameTorrentSource.id, GameTorrentSource.kind)
+        .where(GameTorrentSource.game_uuid.in_(game_uuids))
+    ).all() if game_uuids else []
+    torrent_game_uuids = {row.game_uuid for row in source_rows}
+    magnet_source_ids = {}
+    for row in source_rows:
+        if row.kind == 'magnet':
+            magnet_source_ids.setdefault(row.game_uuid, []).append(row.id)
     cover_urls = {}
     if game_uuids:
         cover_rows = db.session.execute(
@@ -305,13 +326,13 @@ def serialize_library_cards(games, current_user_id):
         cover_url = cover_urls.get(game.uuid, "newstyle/default_cover.jpg")
         genres = [genre.name for genre in game.genres]
         tags = [tag.name for tag in game.tags]
-        game_size_formatted = format_size(game.size)
+        game_size_formatted = format_size(game.size) if game.full_disk_path else 'No local files'
         first_release_date_formatted = game.first_release_date.strftime('%Y-%m-%d') if game.first_release_date else 'Not available'
 
         # Check if game has local metadata or images
         from sharewarez.utils.local_metadata import has_local_metadata, has_local_images
         has_local_override = False
-        if settings:
+        if settings and game.full_disk_path:
             if (settings.use_local_metadata and has_local_metadata(game.full_disk_path, settings.local_metadata_filename or DEFAULT_LOCAL_METADATA_FILENAME)) or \
                (settings.use_local_images and has_local_images(game.full_disk_path)):
                 has_local_override = True
@@ -329,6 +350,10 @@ def serialize_library_cards(games, current_user_id):
             'summary': game.summary,
             'url': game.url,
             'size': game_size_formatted,
+            'has_local_source': bool(game.full_disk_path),
+            'has_torrent_sources': game.uuid in torrent_game_uuids,
+            'single_magnet_source_id': (magnet_source_ids[game.uuid][0]
+                                        if len(magnet_source_ids.get(game.uuid, [])) == 1 else None),
             'genres': genres,
             'tags': tags,
             'is_favorite': current_user_id in [user.id for user in game.favorited_by],

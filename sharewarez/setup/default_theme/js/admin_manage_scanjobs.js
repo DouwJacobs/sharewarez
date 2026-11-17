@@ -378,6 +378,13 @@ document.addEventListener('DOMContentLoaded', function() {
                         <td data-label="Actions" class="scan-row-actions">${actionsColumn}</td>
                     `;
                     unmatchedTableBody.appendChild(row);
+                    if (folder.attach_url) {
+                        const link = document.createElement('a');
+                        link.className = 'btn btn-secondary';
+                        link.href = folder.attach_url;
+                        link.textContent = 'Attach local files to existing game';
+                        row.lastElementChild.append(link);
+                    }
                 });
                 // Attach event listeners to the new forms
                 attachDeleteFolderFormListeners();

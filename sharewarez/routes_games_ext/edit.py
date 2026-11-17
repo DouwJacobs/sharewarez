@@ -1,5 +1,6 @@
 from flask import render_template, redirect, url_for, flash, copy_current_request_context, request, abort, current_app
 from flask_login import login_required, current_user
+from werkzeug.exceptions import RequestEntityTooLarge
 from sharewarez.forms import AddGameForm
 from sharewarez.models import (
     Game, GameExternalIdentity, Library, Category, Developer, Publisher, Status,
@@ -7,7 +8,7 @@ from sharewarez.models import (
 from sharewarez.metadata_files import DEFAULT_LOCAL_METADATA_FILENAME
 from sharewarez.utils.functions import read_first_nfo_content, get_folder_size_in_bytes_updates, format_size, PLATFORM_IDS
 from sharewarez.utils.auth import admin_required
-from sharewarez.utils.scanning import is_scan_job_running, refresh_images_in_background
+from sharewarez.utils.image_jobs import enqueue_image_refresh
 from sharewarez.utils.security import is_safe_path, get_allowed_base_directories, sanitize_path_for_logging
 from sharewarez.utils.event_logging import log_system_event
 from sharewarez.utils.tags import assign_game_tags
@@ -17,7 +18,6 @@ from sharewarez.utils.metadata_provenance import (
     EDITABLE_PROVIDER_FIELDS, apply_provider_candidate, mark_manual_changes,
     metadata_conflicts,
 )
-from threading import Thread
 from datetime import datetime, timezone
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 from sqlalchemy import select
@@ -25,12 +25,16 @@ from urllib.parse import urlparse
 import re
 
 from . import games_bp
+from sharewarez.utils.torrent_service import prepare_form_sources, attach_prepared, discard_attachments
+from sharewarez.utils.torrent_storage import acquire_source_mutation_lock
 
 
 @games_bp.route('/game_edit/<game_uuid>', methods=['GET', 'POST'])
 @login_required
 @admin_required
 def game_edit(game_uuid):
+    if request.method == 'POST':
+        acquire_source_mutation_lock(game_uuid)
     game = db.session.execute(select(Game).filter_by(uuid=game_uuid)).scalars().first() or abort(404)
     metadata_before = {field: getattr(game, field) for field in EDITABLE_PROVIDER_FIELDS}
     form = AddGameForm(obj=game)
@@ -38,6 +42,7 @@ def game_edit(game_uuid):
     # StringField from ``obj``. Supply the display values explicitly so the
     # edit form never renders SQLAlchemy's ``<Developer …>`` representation.
     if request.method == 'GET':
+        form.source_mode.data = 'local' if game.full_disk_path else 'torrent'
         form.developer.data = game.developer.name if game.developer else ''
         form.publisher.data = game.publisher.name if game.publisher else ''
         form.tags.data = ', '.join(tag.name for tag in game.tags)
@@ -53,36 +58,48 @@ def game_edit(game_uuid):
     platform_name = game.library.platform.value
     library_name = game.library.name
 
+    source_error = None
+    source_error_index = None
     def render_editor():
         """Render every edit outcome with the same location and conflict context."""
         return render_template(
             'admin/admin_game_identify.html', form=form, game_uuid=game_uuid,
             platform_id=platform_id, platform_name=platform_name,
             library_name=library_name, action="edit",
-            metadata_conflicts=metadata_conflicts(game),
+            metadata_conflicts=metadata_conflicts(game), torrent_sources=game.torrent_sources,
+            existing_local_path=game.full_disk_path,
+            torrent_source_error=source_error, torrent_source_error_index=source_error_index,
         )
 
     current_app.logger.debug(f"game_edit1 Platform ID: {platform_id}, Platform Name: {platform_name} Library Name: {library_name}")
     if form.validate_on_submit():
+        try:
+            prepared_sources = prepare_form_sources(request.form, request.files, game.uuid)
+            if form.source_mode.data == 'torrent':
+                if game.full_disk_path and not form.detach_local.data:
+                    # Adding an alternative source must not detach mounted files.
+                    form.full_disk_path.data = game.full_disk_path
+                else:
+                    form.full_disk_path.data = None
+            elif not (form.full_disk_path.data or '').strip():
+                raise ValueError('A local game requires a disk path.')
+        except (ValueError, RequestEntityTooLarge) as exc:
+            source_error = str(exc)
+            source_error_index = getattr(exc, 'row_index', None)
+            flash(str(exc), 'error')
+            return render_editor(), 413 if isinstance(exc, RequestEntityTooLarge) else 200
         is_manual_game = form.manual_identity.data == '1'
         if not is_manual_game and form.igdb_id.data is None:
             form.igdb_id.errors.append('Choose an IGDB game or use Custom game.')
             return render_editor()
-        if is_scan_job_running():
-            flash('Cannot edit the game while a scan job is running. Please try again later.', 'error')
-            current_app.logger.warning(f"Attempt to edit a game while a scan job is running by user: {current_user.name}")
-            db.session.rollback()
-            # Re-render the template with the current form data
-            return render_editor()
-
         # Validate full_disk_path security
         allowed_bases = get_allowed_base_directories(current_app)
-        if not allowed_bases:
+        if form.full_disk_path.data and not allowed_bases:
             flash('Service configuration error: No allowed base directories configured.', 'error')
             db.session.rollback()
             return render_editor()
 
-        is_safe, error_message = is_safe_path(form.full_disk_path.data, allowed_bases)
+        is_safe, error_message = is_safe_path(form.full_disk_path.data, allowed_bases) if form.full_disk_path.data else (True, '')
         if not is_safe:
             current_app.logger.error(f"Security error: Game path validation failed for {sanitize_path_for_logging(form.full_disk_path.data)}: {error_message}")
             flash(f"Access denied: {error_message}", 'error')
@@ -308,22 +325,25 @@ def game_edit(game_uuid):
         
         # Updating size with error handling
         try:
-            # Re-validate path before file operations
-            is_safe, error_message = is_safe_path(game.full_disk_path, allowed_bases)
-            if not is_safe:
-                current_app.logger.error(f"Path validation failed during file operations: {error_message}")
-                flash(f"Access denied: {error_message}", 'error')
-                db.session.rollback()
-                return render_editor()
+            if game.full_disk_path:
+                # Re-validate path before file operations
+                is_safe, error_message = is_safe_path(game.full_disk_path, allowed_bases)
+                if not is_safe:
+                    current_app.logger.error(f"Path validation failed during file operations: {error_message}")
+                    flash(f"Access denied: {error_message}", 'error')
+                    db.session.rollback()
+                    return render_editor()
             
-            current_app.logger.info(f"Calculating folder size for {sanitize_path_for_logging(game.full_disk_path)}")
-            new_folder_size_bytes = get_folder_size_in_bytes_updates(game.full_disk_path)
-            current_app.logger.info(f"New folder size: {format_size(new_folder_size_bytes)}")
-            game.size = new_folder_size_bytes
+                current_app.logger.info(f"Calculating folder size for {sanitize_path_for_logging(game.full_disk_path)}")
+                new_folder_size_bytes = get_folder_size_in_bytes_updates(game.full_disk_path)
+                current_app.logger.info(f"New folder size: {format_size(new_folder_size_bytes)}")
+                game.size = new_folder_size_bytes
             
-            # Safe NFO reading with error handling
-            game.nfo_content = read_first_nfo_content(game.full_disk_path)
+                # Safe NFO reading with error handling
+                game.nfo_content = read_first_nfo_content(game.full_disk_path)
             
+            else:
+                game.size = 0
         except (OSError, PermissionError, FileNotFoundError) as e:
             current_app.logger.error(f"File operation error for path {sanitize_path_for_logging(game.full_disk_path)}: {e}")
             flash('Error accessing game files. Please check permissions.', 'error')
@@ -337,8 +357,16 @@ def game_edit(game_uuid):
         game.date_identified = datetime.now(timezone.utc)
         mark_manual_changes(game, metadata_before)
                
+        attachment_keys = []
         try:
+            attachment_keys = attach_prepared(game, prepared_sources, current_user.id)
+            if igdb_id_changed and game.igdb_id is not None:
+                enqueue_image_refresh(
+                    game_uuid, replace_existing=True, expected_igdb_id=game.igdb_id,
+                    audit_user_id=current_user.id, refresh_reason='reidentify', commit=False,
+                )
             db.session.commit()
+            attachment_keys = []
             log_system_event(f"Game {game.name} updated by admin {current_user.name}", event_type='game', event_level='information')
 
             # Update local metadata file if enabled
@@ -347,7 +375,7 @@ def game_edit(game_uuid):
             settings = db.session.execute(
                 select(GlobalSettings).order_by(GlobalSettings.id).limit(1)
             ).scalar_one_or_none()
-            if settings and settings.write_local_metadata:
+            if settings and settings.write_local_metadata and game.full_disk_path:
                 metadata_filename = (
                     settings.local_metadata_filename or DEFAULT_LOCAL_METADATA_FILENAME
                 )
@@ -390,18 +418,6 @@ def game_edit(game_uuid):
                     audit_user=audit_user_id,
                 )
 
-                @copy_current_request_context
-                def refresh_images_in_thread():
-                    refresh_images_in_background(
-                        game_uuid,
-                        replace_existing=True,
-                        expected_igdb_id=expected_igdb_id,
-                        audit_user_id=audit_user_id,
-                        refresh_reason='reidentify',
-                    )
-
-                thread = Thread(target=refresh_images_in_thread, daemon=True)
-                thread.start()
                 current_app.logger.info(
                     'Replacement image refresh started for game UUID %s and IGDB ID %s',
                     game_uuid, expected_igdb_id,
@@ -467,12 +483,14 @@ def game_edit(game_uuid):
             return redirect(url_for('games.game_details', game_uuid=game_uuid))
         except IntegrityError as e:
             db.session.rollback()
-            current_app.logger.error(f"Database integrity error: {e}")
+            discard_attachments(attachment_keys)
+            current_app.logger.error('Database integrity error while editing game: %s', type(e).__name__)
             flash('Database integrity error. Please check for duplicate values.', 'error')
             return render_editor()
         except SQLAlchemyError as e:
             db.session.rollback()
-            current_app.logger.error(f"Database error during commit: {e}")
+            discard_attachments(attachment_keys)
+            current_app.logger.error('Database error during game commit: %s', type(e).__name__)
             flash('An error occurred while updating the game. Please try again.', 'error')
             return render_editor()
 

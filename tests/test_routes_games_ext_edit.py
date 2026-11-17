@@ -370,17 +370,28 @@ class TestGameEditInputValidation:
 class TestGameEditErrorHandling:
     """Test error handling and transaction management."""
     
-    def test_scan_job_running_blocks_edit(self, client, admin_user, test_game, form_data):
-        """Test that editing is blocked when scan job is running."""
+    def test_scan_job_running_allows_edit(self, client, admin_user, test_game, form_data):
+        """A running library scan must not block saving existing game values."""
+        from sharewarez.models import ScanJob
+        scan = ScanJob(status='Running', library_uuid=test_game.library_uuid)
+        db.session.add(scan)
+        db.session.commit()
+        form_data['igdb_id'] = str(test_game.igdb_id)
         with client.session_transaction() as sess:
             sess['_user_id'] = str(admin_user.id)
             sess['_fresh'] = True
         
-        with patch('sharewarez.routes_games_ext.edit.is_scan_job_running', return_value=True):
-            response = client.post(f'/game_edit/{test_game.uuid}', data=form_data)
-        
-        assert response.status_code == 200  # Renders form with error
-        assert b'Cannot edit the game while a scan job is running' in response.data
+        try:
+            with patch('sharewarez.routes_games_ext.edit.is_safe_path', return_value=(True, None)), \
+                 patch('sharewarez.routes_games_ext.edit.get_allowed_base_directories', return_value=['/allowed']):
+                response = client.post(f'/game_edit/{test_game.uuid}', data=form_data)
+            assert response.status_code == 302
+            db.session.refresh(test_game)
+            assert test_game.name == form_data['name']
+            assert test_game.summary == form_data['summary']
+        finally:
+            db.session.delete(scan)
+            db.session.commit()
     
     def test_database_rollback_on_integrity_error(self, client, admin_user, test_game, form_data, test_library):
         """Test that database rollback occurs on integrity errors."""
@@ -556,14 +567,6 @@ class TestGameEditSuccessScenarios:
         form_data['action'] = 'save_and_refresh'
         events = []
 
-        class ImmediateThread:
-            def __init__(self, target, daemon):
-                self.target = target
-                self.daemon = daemon
-
-            def start(self):
-                self.target()
-
         def refresh_metadata(game_uuid):
             events.append(('metadata', game_uuid))
             return SimpleNamespace(
@@ -588,13 +591,9 @@ class TestGameEditSuccessScenarios:
                  side_effect=refresh_metadata,
              ) as refresh, \
              patch(
-                 'sharewarez.routes_games_ext.edit.refresh_images_in_background',
+                 'sharewarez.routes_games_ext.edit.enqueue_image_refresh',
                  side_effect=refresh_images,
              ) as image_refresh, \
-             patch(
-                 'sharewarez.routes_games_ext.edit.Thread',
-                 side_effect=lambda **kwargs: ImmediateThread(**kwargs),
-             ), \
              patch(
                  'sharewarez.routes_games_ext.edit.log_system_event',
              ) as system_event:
@@ -607,9 +606,9 @@ class TestGameEditSuccessScenarios:
             replace_existing=True,
             expected_igdb_id=int(form_data['igdb_id']),
             audit_user_id=admin_user.id,
-            refresh_reason='reidentify',
+            refresh_reason='reidentify', commit=False,
         )
-        assert [event[0] for event in events] == ['metadata', 'images']
+        assert [event[0] for event in events] == ['images', 'metadata']
         reidentify_events = [
             logged_call for logged_call in system_event.call_args_list
             if logged_call.kwargs.get('event_type') == 'image_refresh'
@@ -638,8 +637,8 @@ class TestGameEditSuccessScenarios:
         
         # Verify image refresh logic exists
         assert 'igdb_id_changed' in source
-        assert 'refresh_images_in_background' in source
-        assert 'Thread' in source
+        assert 'enqueue_image_refresh' in source
+        assert 'Thread' not in source
     
     def test_creating_new_developer(self, client, admin_user, test_game, form_data):
         """Test creating a new developer during game update."""

@@ -231,6 +231,41 @@ class Game(db.Model):
         return f"<Game id={self.id}, name={self.name}>"
 
 
+class GameTorrentSource(db.Model):
+    __tablename__ = 'game_torrent_sources'
+    __table_args__ = (
+        db.UniqueConstraint('game_uuid', 'fingerprint', name='uq_game_torrent_fingerprint'),
+        db.CheckConstraint("kind IN ('magnet', 'torrent')", name='ck_torrent_kind'),
+        db.CheckConstraint("(kind = 'magnet' AND magnet_uri IS NOT NULL AND storage_key IS NULL) OR "
+                           "(kind = 'torrent' AND magnet_uri IS NULL AND storage_key IS NOT NULL)",
+                           name='ck_torrent_content'),
+        db.CheckConstraint('payload_bytes IS NULL OR payload_bytes >= 0', name='ck_torrent_payload'),
+        db.CheckConstraint('length(trim(label)) > 0', name='ck_torrent_label'),
+        db.CheckConstraint('info_hash_v1 IS NOT NULL OR info_hash_v2 IS NOT NULL', name='ck_torrent_hash'),
+        db.CheckConstraint("kind != 'torrent' OR (file_bytes IS NOT NULL AND file_bytes > 0 AND file_bytes <= 10485760 AND file_sha256 IS NOT NULL)", name='ck_torrent_file'),
+    )
+    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid4()))
+    game_uuid = db.Column(db.String(36), db.ForeignKey('games.uuid', ondelete='CASCADE'), nullable=False, index=True)
+    kind = db.Column(db.String(10), nullable=False)
+    label = db.Column(db.String(160), nullable=False)
+    magnet_uri = db.Column(db.Text)
+    storage_key = db.Column(db.String(64))
+    original_filename = db.Column(db.String(255))
+    info_hash_v1 = db.Column(db.String(40), index=True)
+    info_hash_v2 = db.Column(db.String(64), index=True)
+    fingerprint = db.Column(db.String(64), nullable=False)
+    file_sha256 = db.Column(db.String(64))
+    file_bytes = db.Column(db.BigInteger)
+    payload_bytes = db.Column(db.BigInteger)
+    created_by = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'))
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), nullable=False)
+    revision = db.Column(db.Integer, default=1, nullable=False)
+    game = db.relationship('Game', backref=db.backref('torrent_sources', cascade='all, delete-orphan',
+                           order_by=lambda: [GameTorrentSource.created_at, GameTorrentSource.id]))
+    __mapper_args__ = {'version_id_col': revision}
+
+
 class GameExternalIdentity(db.Model):
     __tablename__ = 'game_external_identities'
     __table_args__ = (
@@ -1156,6 +1191,7 @@ class UnmatchedFolder(db.Model):
     library_uuid = db.Column(db.String(36), ForeignKey('libraries.uuid', ondelete="CASCADE"), nullable=True)
     scan_job_id = db.Column(db.String(36), db.ForeignKey('scan_jobs.id'))
     folder_path = db.Column(db.String)
+    candidate_game_uuid = db.Column(db.String(36), db.ForeignKey('games.uuid', ondelete='SET NULL'), nullable=True)
     failed_time = db.Column(db.DateTime)
     content_type = db.Column(db.Enum('Games', name='unmatched_folder_content_type_enum'))
     status = db.Column(db.Enum('Pending', 'Ignore', 'Duplicate', 'Unmatched', name='unmatched_folder_status_enum'))

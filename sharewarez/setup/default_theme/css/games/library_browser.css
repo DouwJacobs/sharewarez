@@ -778,6 +778,12 @@
     -webkit-line-clamp: 2;
 }
 .library-game-copy { display: grid; min-width: 0; gap: 3px; }
+.game-library-container .library-card-badges { position: absolute; bottom: 10px; left: 10px; display: flex; align-items: center; gap: 6px; z-index: 12; }
+.game-library-container .library-card-badges .local-metadata-badge { position: static; }
+.game-library-container .library-source-badge { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; box-sizing: border-box; border: 1px solid var(--theme-border-color); border-radius: 9px; background: var(--theme-card-background); color: var(--theme-text-secondary); font-size: .85rem; box-shadow: 0 2px 8px rgba(0, 0, 0, .2); }
+.game-library-container .library-source-badge--only { color: var(--theme-primary-color); }
+.library-view-list .library-card-badges { bottom: 6px; left: 6px; gap: 4px; flex-direction: column; align-items: flex-start; }
+.library-view-list .library-source-badge { width: 24px; height: 24px; border-radius: 6px; font-size: .75rem; }
 .library-game-metadata { display: none; overflow: hidden; color: var(--theme-text-secondary); font-size: .69rem; line-height: 1.35; text-overflow: ellipsis; white-space: nowrap; }
 .game-library-container.library-view-compact { grid-template-columns: repeat(auto-fill, minmax(138px, 1fr)); gap: 13px; }
 .library-view-compact .library-game-title { font-size: .78rem; }
@@ -946,3 +952,13 @@
         padding: 0;
     }
 }
+
+/* Source badges are actions, with the same touch area as other card actions. */
+.game-library-container a.library-source-badge { width: 42px; height: 42px; text-decoration: none; }
+.game-library-container a.library-source-badge:hover { border-color: var(--theme-primary-color); color: var(--theme-primary-color); }
+.game-library-container a.library-source-badge:focus-visible { outline: 2px solid var(--theme-primary-color); outline-offset: 3px; }
+.game-library-container a.library-source-badge[aria-busy="true"] { opacity: .65; cursor: progress; }
+@media (max-width: 768px) { .game-library-container a.library-source-badge { width: 44px; height: 44px; } }
+.library-source-feedback { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; color: var(--theme-text-secondary); font-size: .75rem; line-height: 1.4; }
+.game-library-container .library-source-copy { width: 42px; min-width: 42px; height: 42px; padding: 0; }
+@media (max-width: 768px) { .game-library-container .library-source-copy { width: 44px; min-width: 44px; height: 44px; } }

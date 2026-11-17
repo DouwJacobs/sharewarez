@@ -11,6 +11,13 @@ document.addEventListener('DOMContentLoaded', function() {
     const platformId = document.querySelector('#platform_id').textContent; 
     const igdbIdInput = document.querySelector('#igdb_id');
     const manualIdentityInput = document.querySelector('#manual_identity');
+    const manualMetadataInput = document.querySelector('#metadata_manual_fields');
+    document.querySelector('#metadata_tracking_active').value = '1';
+    const editableMetadataFields = new Set(['name', 'summary', 'storyline', 'url', 'video_urls', 'first_release_date',
+        'aggregated_rating', 'category', 'status', 'developer', 'publisher', 'genres', 'themes', 'game_modes', 'platforms', 'player_perspectives']);
+    let manualMetadataFields;
+    try { manualMetadataFields = new Set(JSON.parse(manualMetadataInput.value || '[]')); }
+    catch (error) { manualMetadataFields = new Set(); }
     const fullPathInput = document.querySelector('#full_disk_path');
     const nameInput = document.querySelector('#name');
     const urlInput = document.querySelector('#url');
@@ -60,11 +67,9 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelector('#add-non-existing-game').addEventListener('click', function() {
         if (!allowIdentityReplacement()) return;
         formIsDirty = true;
-        // Disable IGDB search functionality
-        document.querySelector('#search-igdb-btn').disabled = true;
-        document.querySelector('#search-igdb').disabled = true;
+        // Keep lookup available so a custom entry can later be matched to IGDB.
         igdbIdInput.value = '';
-        igdbIdInput.readOnly = true;
+        igdbIdInput.readOnly = false;
         manualIdentityInput.value = '1';
         showFeedback(igdbIdFeedback, 'A local identity will be created when you save.', true);
 
@@ -107,7 +112,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function checkFieldsAndToggleSubmit() {
         const igdbIdIsValid = manualIdentityInput.value === '1' || (igdbIdInput.value.trim().length > 0 && /^\d+$/.test(igdbIdInput.value));
-        const fullPathIsValid = fullPathInput.value.trim().length > 0;
+        const fullPathIsValid = document.getElementById('source_mode')?.value === 'torrent' || fullPathInput.value.trim().length > 0;
         const nameIsValid = nameInput.value.trim().length > 0;
         const libraryUuidIsValid = libraryUuidInput.value.trim().length > 0;
 
@@ -122,106 +127,32 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function updateFormWithGameData(gameData) {
-        console.log("Received game data:", gameData); // Print out the gameData object
-        function updateMultiSelect(containerId, values) {
-            const checkboxes = document.querySelectorAll(`${containerId} input[type="checkbox"]`);
-            const selectedNames = new Set((values || []).map(value =>
-                (typeof value === 'string' ? value : value.name || '').trim().toLowerCase()
-            ));
-            checkboxes.forEach(checkbox => {
-                const label = checkbox.closest('label');
-                const name = label ? label.textContent.trim().toLowerCase() : '';
-                checkbox.checked = selectedNames.has(name);
+        const values = gameData.form_values;
+        if (!values) throw new Error('Game identification returned incomplete form data. Please reload and try again.');
+        for (const field of ['igdb_id', 'name', 'summary', 'storyline', 'url', 'video_urls',
+                             'first_release_date', 'aggregated_rating', 'developer', 'publisher']) {
+            const input = document.getElementById(field);
+            if (input) input.value = values[field] ?? '';
+        }
+        for (const field of ['category', 'status']) {
+            const input = document.getElementById(field);
+            if (values[field] && [...input.options].some(option => option.value === values[field])) {
+                input.value = values[field];
+            }
+        }
+        for (const field of ['genres', 'game_modes', 'themes', 'platforms', 'player_perspectives']) {
+            const selected = new Set((values[field] || []).map(value => value.trim().toLowerCase()));
+            document.querySelectorAll(`#${field}-container input[type="checkbox"]`).forEach(input => {
+                input.checked = selected.has(input.closest('label').textContent.trim().toLowerCase());
             });
         }
-
-        updateMultiSelect('#genres-container', gameData.genres);
-        updateMultiSelect('#game_modes-container', gameData.game_modes);
-        updateMultiSelect('#themes-container', gameData.themes);
-        updateMultiSelect('#platforms-container', gameData.platforms);
-        updateMultiSelect('#player_perspectives-container', gameData.player_perspectives);
         updateSelectionCounts();
-
-        // Update Category select field - using original field names to match scanning code
-        const categorySelect = document.querySelector('#category'); // Assuming #category is the ID of the select
-        if (gameData.category !== undefined && categorySelect) {
-            // Map IGDB category ID to select option value
-            categorySelect.value = gameData.category; // Direct numeric mapping
-        }
-
-        // Update Status select field - using original field names to match scanning code
-        const statusSelect = document.querySelector('#status'); // Assuming #status is the ID of the select
-        if (gameData.status !== undefined && statusSelect) {
-            // Map IGDB status ID to select option value
-            statusSelect.value = gameData.status; // Direct numeric mapping
-        }
-
-        // Assuming gameData.involved_companies is an array of company IDs
-        if (gameData.involved_companies && gameData.involved_companies.length > 0) {
-            // Map each companyId to a fetch promise
-            const companyFetchPromises = gameData.involved_companies.map(companyId =>
-                fetch(`/api/get_company_role?game_igdb_id=${gameData.id}&company_id=${companyId}`)
-                    .then(response => response.json())
-            );
-
-            // Wait for all fetch promises to resolve
-            Promise.all(companyFetchPromises)
-                .then(results => {
-                    // Flags to check if we found any developer or publisher
-                    let foundDeveloper = false;
-                    let foundPublisher = false;
-
-                    results.forEach(data => {
-                        if (data.error) {
-                            console.error('Error:', data.error);
-                        } else {
-                            // Check the role and update the corresponding field
-                            if (data.role === 'Developer') {
-                                const developerInput = document.querySelector('#developer');
-                                developerInput.value = data.company_name;
-                                foundDeveloper = true;
-                            } else if (data.role === 'Publisher') {
-                                const publisherInput = document.querySelector('#publisher');
-                                publisherInput.value = data.company_name;
-                                foundPublisher = true;
-                            }
-                        }
-                    });
-
-                    // Set to 'Not Found' if no developer or publisher was found
-                    if (!foundDeveloper) {
-                        document.querySelector('#developer').value = 'Not Found';
-                    }
-                    if (!foundPublisher) {
-                        document.querySelector('#publisher').value = 'Not Found';
-                    }
-                })
-                .catch(error => console.error('Error processing company roles:', error));
-        } else {
-            // If no involved companies, set developer and publisher to 'Not Found'
-            document.querySelector('#developer').value = 'Not Found';
-            document.querySelector('#publisher').value = 'Not Found';
-        }
-
-        // Update for video URLs
-        const videoURLsInput = document.querySelector('#video_urls');
-        if (gameData.videos && gameData.videos.length > 0) {
-            // Form the YouTube URLs and join them with commas, ensuring they start with https://
-            const videoURLs = gameData.videos.map(video => {
-                // Check if video.url is defined to avoid TypeError
-                if (video.url) {
-                    let url = video.url;
-                    if (!url.startsWith('http://') && !url.startsWith('https://')) {
-                        url = 'https://' + url; // Prepend https:// if no scheme is present
-                    }
-                    return url;
-                }
-                return ''; // Return an empty string or a placeholder URL if video.url is undefined
-            }).filter(url => url !== '').join(','); // Filter out any empty strings to avoid invalid URLs in the list
-            videoURLsInput.value = videoURLs; // Populate the input field with corrected YouTube URLs
-        } else {
-            videoURLsInput.value = ''; // Clear the field if there are no videos
-        }
+        manualMetadataFields.clear();
+        manualMetadataInput.value = '[]';
+        manualIdentityInput.value = '0';
+        formIsDirty = true;
+        checkFieldsAndToggleSubmit();
+        focusField(nameInput);
     }
 
     function showFeedback(element, message, isSuccess) {
@@ -239,68 +170,44 @@ document.addEventListener('DOMContentLoaded', function() {
         triggerClickOnEnter(event, document.querySelector('#search-igdb-btn'));
     });
 
-    igdbIdSearchButton.addEventListener('click', function() {
-        const igdbId = igdbIdInput.value;
-        if (igdbId) {
-            setSearchLoading(igdbIdSearchButton, igdbIdSearchStatus, true, 'Looking up game…');
-            fetch(`/api/search_igdb_by_id?igdb_id=${igdbId}`)
-                .then(response => response.json())
-                .then(data => {
-                    console.log("API Response (IGDB id Search):", data);
-                    
-                    if (data.error) {
-                        console.error('Error:', data.error);
-                        $.notify("Game not found", {
-                            className: 'error',
-                            position: 'top center'
-                        });
-                        igdbIdSearchStatus.textContent = 'No game was found for that IGDB ID.';
-                    } else {
-                        const gameDetailsCollapse = document.querySelector('#gameDetails');
-                        if (gameDetailsCollapse) {
-                            const bootstrapCollapse = new bootstrap.Collapse(gameDetailsCollapse, {
-                                show: true
-                            });
-                        }
-                        
-                        setTimeout(() => {
-                            if (!allowIdentityReplacement()) return;
-                            formIsDirty = true;
-                            manualIdentityInput.value = '0';
-                            // Update form fields
-                            nameInput.value = data.name;
-                            document.querySelector('#summary').value = data.summary || '';
-                            document.querySelector('#storyline').value = data.storyline || '';
-                    const instInput1 = document.querySelector('#install_instructions'); if (instInput1) instInput1.value = data.install_instructions || '';
-                            urlInput.value = data.url || '';
-                            document.querySelector('#video_urls').value = data.video_urls || '';
-                            
-                            checkFieldsAndToggleSubmit();
-                            igdbIdSearchStatus.textContent = 'Game details loaded.';
-                        }, 300);
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    igdbIdSearchStatus.textContent = 'Unable to look up that IGDB ID. Please try again.';
-                })
-                .finally(() => setSearchLoading(igdbIdSearchButton, igdbIdSearchStatus, false));
-        } else {
+    igdbIdSearchButton.addEventListener('click', async function() {
+        const igdbId = igdbIdInput.value.trim();
+        if (!igdbId) {
             igdbIdSearchStatus.textContent = 'Enter an IGDB ID to look up a game.';
+            return;
+        }
+        setSearchLoading(igdbIdSearchButton, igdbIdSearchStatus, true, 'Looking up game…');
+        try {
+            const response = await fetch(`/api/search_igdb_by_id?igdb_id=${encodeURIComponent(igdbId)}`, {signal: AbortSignal.timeout(45000)});
+            const data = await response.json();
+            if (!response.ok || data.error) throw new Error(data.error || 'Unable to look up that IGDB ID.');
+            if (!allowIdentityReplacement()) return;
+            updateFormWithGameData(data);
+            igdbIdSearchStatus.textContent = 'Game details loaded.';
+        } catch (error) {
+            igdbIdSearchStatus.textContent = error.name === 'TimeoutError' ? 'IGDB lookup timed out. Please try again.' : error.message;
+        } finally {
+            setSearchLoading(igdbIdSearchButton, igdbIdSearchStatus, false);
         }
     });
 
     igdbNameSearchButton.addEventListener('click', function() {
-        const gameName = nameInput.value;
+        const gameName = nameInput.value.trim();
         const platformId = document.querySelector('#platform_id').textContent; // Retrieve the platform ID from the HTML
 
         console.log(`Initiating IGDB search for name: ${gameName}`);
         if (gameName) {
             setSearchLoading(igdbNameSearchButton, igdbNameSearchStatus, true, 'Searching IGDB…');
-            fetch(`/api/search_igdb_by_name?name=${encodeURIComponent(gameName)}&platform_id=${encodeURIComponent(platformId)}`)
-                .then(response => response.json())
+            const searchParams = new URLSearchParams({name: gameName, platform_id: platformId, library_uuid: libraryUuidInput.value});
+            fetch(`/api/search_igdb_by_name?${searchParams}`, {signal: AbortSignal.timeout(45000)})
+                .then(async response => {
+                    if (!response.ok) throw new Error('IGDB search is temporarily unavailable. Please try again.');
+                    const data = await response.json();
+                    if (data.error) throw new Error(data.error);
+                    if (!Array.isArray(data.results)) throw new Error('IGDB returned an unexpected response. Please try again.');
+                    return data;
+                })
                 .then(data => {
-                    console.log("API Response (IGDB name Search):", data);
                     const resultsContainer = document.querySelector('#search-results');
                     resultsContainer.innerHTML = '';
                     if (data.results && data.results.length > 0) {
@@ -343,25 +250,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                 if (!allowIdentityReplacement()) return;
                                 formIsDirty = true;
                                 manualIdentityInput.value = '0';
-                                // Update form with game data upon selection
                                 updateFormWithGameData(game);
-    
-                                // Ensure the collapsible section is expanded
-                                const gameDetailsCollapse = document.querySelector('#gameDetails');
-                                if (gameDetailsCollapse) {
-                                    const bootstrapCollapse = new bootstrap.Collapse(gameDetailsCollapse, {
-                                        show: true
-                                    });
-                                }
-                                
-                                // Update essential fields
-                                igdbIdInput.value = game.id;
-                                nameInput.value = game.name;
-                                document.querySelector('#summary').value = game.summary || '';
-                                document.querySelector('#storyline').value = game.storyline || '';
-                         const instInput2 = document.querySelector('#install_instructions'); if (instInput2) instInput2.value = game.install_instructions || '';
-                                document.querySelector('#url').value = game.url || '';
-                                checkFieldsAndToggleSubmit();
                                 resultsContainer.innerHTML = ''; // Clear results after selection
                                 focusField(nameInput);
                             });
@@ -377,7 +266,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 })
                 .catch(error => {
                     console.error('Error:', error);
-                    igdbNameSearchStatus.textContent = 'Unable to search IGDB. Please try again.';
+                    document.querySelector('#search-results').replaceChildren();
+                    igdbNameSearchStatus.textContent = error.message || 'Unable to search IGDB. Please try again.';
                 })
                 .finally(() => setSearchLoading(igdbNameSearchButton, igdbNameSearchStatus, false));
         } else {
@@ -391,6 +281,8 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     fullPathInput.addEventListener('input', checkFieldsAndToggleSubmit);
+    document.getElementById('source_mode')?.addEventListener('change', checkFieldsAndToggleSubmit);
+    libraryUuidInput.addEventListener('change', checkFieldsAndToggleSubmit);
     nameInput.addEventListener('input', checkFieldsAndToggleSubmit);
 
     igdbIdInput.addEventListener('blur', function() {
@@ -475,7 +367,13 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    gameEditForm?.addEventListener('input', () => { formIsDirty = true; });
+    gameEditForm?.addEventListener('input', event => {
+        formIsDirty = true;
+        if (editableMetadataFields.has(event.target.name)) {
+            manualMetadataFields.add(event.target.name);
+            manualMetadataInput.value = JSON.stringify([...manualMetadataFields]);
+        }
+    });
     gameEditForm?.addEventListener('change', () => { formIsDirty = true; });
     document.querySelectorAll('.metadata-conflict-actions').forEach(form => {
         form.addEventListener('submit', event => {
@@ -524,6 +422,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 actionInput.value = submittedButton.value;
             }
 
+            if (document.getElementById('detach_local')?.checked &&
+                !window.confirm('Remove this game’s association with its local files? The files stay on disk, but local downloads from this game will stop.')) {
+                event.preventDefault();
+                return;
+            }
             formIsSubmitting = true;
 
             const spinner = document.getElementById('saveSpinner');

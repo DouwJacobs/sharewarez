@@ -31,31 +31,10 @@ import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # IGDB API mapping dictionaries for category, status, and player perspective
-category_mapping = {
-    0: Category.MAIN_GAME,
-    1: Category.DLC_ADDON,
-    2: Category.EXPANSION,
-    3: Category.BUNDLE,
-    4: Category.STANDALONE_EXPANSION,
-    5: Category.MOD,
-    6: Category.EPISODE,
-    7: Category.SEASON,
-    8: Category.REMAKE,
-    9: Category.REMASTER,
-    10: Category.EXPANDED_GAME,
-    11: Category.PORT,
-    12: Category.PACK,
-    13: Category.UPDATE
-}
+from sharewarez.utils.igdb_forms import CATEGORY_NAMES, STATUS_NAMES
 
-status_mapping = {
-    1: Status.RELEASED,
-    2: Status.ALPHA,
-    3: Status.BETA,
-    4: Status.EARLY_ACCESS,
-    6: Status.OFFLINE,
-    7: Status.CANCELLED
-}
+category_mapping = {key: Category[name] for key, name in CATEGORY_NAMES.items()}
+status_mapping = {key: Status[name] for key, name in STATUS_NAMES.items()}
 
 
 def _igdb_provider():
@@ -634,7 +613,7 @@ def retrieve_and_save_game(game_name, full_disk_path, scan_job_id=None, library_
                 if duplicate:
                     log_unmatched_folder(
                         scan_job_id, full_disk_path, 'Duplicate',
-                        library_uuid=library_uuid,
+                        library_uuid=library_uuid, candidate_game_uuid=duplicate.game_uuid,
                     )
                     return None
                 new_game = create_game_instance_from_metadata(
@@ -664,12 +643,12 @@ def retrieve_and_save_game(game_name, full_disk_path, scan_job_id=None, library_
 
                 # Check for duplicate
                 existing_game_with_same_igdb_id = db.session.execute(
-                    select(Game).filter(Game.igdb_id == igdb_id, Game.full_disk_path != full_disk_path)
+                    select(Game).filter(Game.igdb_id == igdb_id, db.or_(Game.full_disk_path.is_(None), Game.full_disk_path != full_disk_path))
                 ).scalar_one_or_none()
 
                 if existing_game_with_same_igdb_id:
                     print(f"Duplicate game found with same IGDB ID {igdb_id} but different folder path.")
-                    log_unmatched_folder(scan_job_id, full_disk_path, 'Duplicate', library_uuid=library_uuid)
+                    log_unmatched_folder(scan_job_id, full_disk_path, 'Duplicate', library_uuid=library_uuid, candidate_game_uuid=existing_game_with_same_igdb_id.uuid)
                     return None
 
                 # Create game from IGDB data (continue with existing logic at line 472)
@@ -825,6 +804,7 @@ def retrieve_and_save_game(game_name, full_disk_path, scan_job_id=None, library_
         if duplicate:
             log_unmatched_folder(
                 scan_job_id, full_disk_path, 'Duplicate', library_uuid=library_uuid,
+                candidate_game_uuid=duplicate.game_uuid,
             )
             return None
         folder_size_bytes = get_folder_size_in_bytes_updates(full_disk_path)
@@ -854,11 +834,11 @@ def retrieve_and_save_game(game_name, full_disk_path, scan_job_id=None, library_
             print(f"Found game {game_name} with IGDB ID {igdb_id}")
 
         # Check for existing game with the same IGDB ID but different folder path
-        existing_game_with_same_igdb_id = db.session.execute(select(Game).filter(Game.igdb_id == igdb_id, Game.full_disk_path != full_disk_path)).scalar_one_or_none()
+        existing_game_with_same_igdb_id = db.session.execute(select(Game).filter(Game.igdb_id == igdb_id, db.or_(Game.full_disk_path.is_(None), Game.full_disk_path != full_disk_path))).scalar_one_or_none()
         if existing_game_with_same_igdb_id:
             print(f"Duplicate game found with same IGDB ID {igdb_id} but different folder path. Logging as duplicate.")
             matched_status = 'Duplicate'
-            log_unmatched_folder(scan_job_id, full_disk_path, matched_status, library_uuid=library_uuid)
+            log_unmatched_folder(scan_job_id, full_disk_path, matched_status, library_uuid=library_uuid, candidate_game_uuid=existing_game_with_same_igdb_id.uuid)
             return None
         else:
             nfo_content = read_first_nfo_content(full_disk_path)            
@@ -1009,6 +989,8 @@ def check_existing_game_by_path(full_disk_path):
     Returns:
     - The existing Game object if found, None otherwise.
     """
+    if not isinstance(full_disk_path, str) or not full_disk_path.strip():
+        return None
     existing_game_by_path = db.session.execute(select(Game).filter_by(full_disk_path=full_disk_path)).scalar_one_or_none()
     if existing_game_by_path:
         print(f"Skipping {existing_game_by_path.name} on {full_disk_path} (path already in library).")
@@ -1112,6 +1094,8 @@ def remove_from_lib(game_uuid):
         bool: True if successful, False otherwise
     """
     try:
+        from sharewarez.utils.torrent_storage import acquire_source_mutation_lock
+        acquire_source_mutation_lock(game_uuid)
         # Get the game
         game = db.session.execute(select(Game).filter_by(uuid=game_uuid)).scalar_one_or_none()
         if not game:
@@ -1137,6 +1121,8 @@ def remove_from_lib(game_uuid):
 
 def delete_game(game_identifier):
     """Delete a game by UUID or Game object.""" 
+    from sharewarez.utils.torrent_storage import acquire_source_mutation_lock
+    acquire_source_mutation_lock()
     game_to_delete = None
     if isinstance(game_identifier, Game):
         game_to_delete = game_identifier
@@ -1157,6 +1143,7 @@ def delete_game(game_identifier):
 
     try:
         print(f"Found game to delete: {game_to_delete}")
+        acquire_source_mutation_lock(game_uuid_str)
         db.session.execute(delete(GameURL).filter_by(game_uuid=game_uuid_str))
         delete_associations_for_game(game_to_delete)
         # This association has no relationship on Game, so older rows are not
@@ -1202,7 +1189,7 @@ def heal_image_download_url(image):
         print(f"Error healing download URL for image {image.id}: {e}")
     return False
 
-def download_pending_images(batch_size=10, delay_between_downloads=1, app=None):
+def download_pending_images(batch_size=10, delay_between_downloads=1, app=None, *, image_ids=None):
     """Download images that are queued but not yet downloaded."""
     if app is None:
         app = current_app._get_current_object()
@@ -1210,7 +1197,10 @@ def download_pending_images(batch_size=10, delay_between_downloads=1, app=None):
     try:
         with app.app_context():
             # Get pending images
-            pending_images = db.session.execute(select(Image).filter_by(is_downloaded=False).limit(batch_size)).scalars().all()
+            query = select(Image).filter_by(is_downloaded=False).order_by(Image.id)
+            if image_ids is not None:
+                query = query.where(Image.id.in_(image_ids))
+            pending_images = db.session.execute(query.limit(batch_size)).scalars().all()
             
             if not pending_images:
                 print("No pending images to download.")

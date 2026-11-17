@@ -49,6 +49,7 @@ letsrebuild.md
 *~
 
 # Testing (keep tests/ for unit testing, but exclude test artifacts)
+scripts/torrent_preview.py
 .coverage
 .pytest_cache/
 htmlcov/

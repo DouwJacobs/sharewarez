@@ -227,6 +227,7 @@ def handle_auto_scan(auto_form):
             {
                 'force_scan': True,
                 'folder_path': full_path,
+                'force_scan': True,
                 'scan_mode': scan_mode,
                 'library_uuid': library_uuid,
                 'remove_missing': remove_missing,

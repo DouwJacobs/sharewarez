@@ -371,7 +371,7 @@
                 </div>
 
                 <nav class="game-mobile-actions" aria-label="Game actions">
-                    <button type="submit" form="gameDownloadForm"><i class="fas fa-download" aria-hidden="true"></i><span>Get game</span></button>
+                    {% if has_local_source %}<button type="submit" form="gameDownloadForm"><i class="fas fa-download" aria-hidden="true"></i><span>Get game</span></button>{% endif %}
                     <button class="favorite-btn favorite-btn-mobile" type="button" data-game-uuid="{{ game.uuid }}" data-is-favorite="{{ is_favorite|lower }}" data-game-name="{{ game.name }}"><i class="fas fa-heart" aria-hidden="true"></i><span class="favorite-btn-label">{% if is_favorite %}Favorited{% else %}Favorite{% endif %}</span></button>
                     {% if show_play_status %}
                     <button class="game-status-btn game-status-btn-mobile" type="button" data-game-uuid="{{ game.uuid }}" data-current-status="{{ user_status or '' }}" title="{{ status_label or 'No Status' }}" aria-label="Set play status for {{ game.name }}. Current status: {{ status_label or 'No Status' }}" aria-haspopup="menu" aria-expanded="false">
@@ -485,15 +485,16 @@
 
                     {# Download Section #}
                     <div class="game-card-downloads">
+                        {% include 'partials/torrent_source_actions.html' %}
                         <div class="game-storefront-acquisition">
-                            <span class="game-storefront-owned"><i class="fas fa-box-open" aria-hidden="true"></i> Ready to download</span>
-                            <div><strong>{{ game.size or 'Unknown' }}</strong><small>Download size</small></div>
+                            <span class="game-storefront-owned"><i class="fas fa-box-open" aria-hidden="true"></i> {{ 'Local files' if has_local_source else 'No local files' }}</span>
+                            {% if has_local_source %}<div><strong>{{ game.size or 'Unknown' }}</strong><small>Local download size</small></div>{% endif %}
                         </div>
                         <div class="download-buttons">
-                            <form id="gameDownloadForm" action="{{ url_for('download.download_game', game_uuid=game.uuid) }}" method="post" class="download-form">
+                            {% if has_local_source %}<form id="gameDownloadForm" action="{{ url_for('download.download_game', game_uuid=game.uuid) }}" method="post" class="download-form">
                                 <button type="submit" class="button-glass-download" data-game-uuid="{{ game.uuid }}"><i class="fas fa-download" aria-hidden="true"></i> Download</button>
                                 {{ form.csrf_token }}
-                            </form>
+                            </form>{% endif %}
 
                             <div class="download-buttons-spacer">
                                 <script>

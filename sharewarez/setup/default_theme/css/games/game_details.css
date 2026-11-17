@@ -514,6 +514,11 @@ body.modal-open {
 }
 
 /* ── Download Section ────────────────────────────────────── */
+.game-details-page .game-torrent-sources { min-width: 0; margin-bottom: 20px; overflow-wrap: anywhere; }
+.game-details-page .game-torrent-sources h2 { font-size: 1.15rem; margin-bottom: 8px; }
+.game-details-page .game-torrent-sources h3 { font-size: 1rem; margin: 16px 0 8px; }
+.game-details-page .game-torrent-sources .btn { margin-bottom: 8px; }
+
 .game-card-downloads {
     display: flex;
     flex-direction: row;
@@ -2267,3 +2272,12 @@ pre {
     #extrasModal .extras-table { display: table; min-width: 0; table-layout: fixed; }
     #extrasModal .extras-download-button { min-height: 44px; }
 }
+.game-details-page .torrent-source-item { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px 20px; padding: 16px 0; border-bottom: 1px solid var(--theme-border-color); }
+.game-details-page .torrent-source-description { min-width: 0; flex: 1 1 140px; }
+.game-details-page .torrent-source-description h3 { margin: 0; }
+.game-details-page .torrent-source-description p { margin: 6px 0 0; font-size: .85rem; color: var(--theme-text-secondary); }
+.game-details-page .torrent-source-buttons { display: flex; gap: 8px; }
+.game-details-page .game-torrent-sources .torrent-source-icon { width: 42px; min-width: 42px; height: 42px; padding: 0; margin: 0; display: inline-flex; align-items: center; justify-content: center; }
+.game-details-page [data-torrent-action-status]:empty { display: none; }
+.game-details-page [data-torrent-action-status]:not(:empty) { margin-top: 12px; }
+@media (max-width: 768px) { .game-details-page .game-torrent-sources .torrent-source-icon { width: 44px; min-width: 44px; height: 44px; } }

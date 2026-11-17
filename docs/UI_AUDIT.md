@@ -869,3 +869,36 @@ All 2,182 Python tests across 146 modules and 19 JavaScript runner cases passed.
 The clean committed release image passed readiness, liveness, version, non-root,
 capability, and combined web/worker checks. The browser reached sign-in only,
 so authenticated desktop/mobile visual verification remains incomplete.
+
+## Admin page navigation
+
+Overview links directly to the dashboard. Library, Community, Appearance, Messaging, Operations, and Settings group related destinations. At 768 px and below, the same enabled destinations appear in a grouped page picker. The current destination is selected, and Go opens the chosen page. The disclosure links remain available when JavaScript is disabled.
+
+## Magnet and torrent sources — 16 November 2026
+
+Library exposes an administrator-only Add game action. The existing game editor
+supports a visible destination-library selector, Local files / Magnet / torrent
+choice, multiple labeled source rows, public-source affirmation, replacement,
+label editing, and explicit final-source removal behavior. Source rows remain flat
+within the existing form surface. Game Details provides distinct source actions;
+pathless games omit local download controls. Source badges live in the shared
+card's text region so grid, compact, and list retain their existing structure.
+
+The disposable default-theme preview verified custom magnet-only creation,
+torrent-upload creation, adding a second source, label editing, replacement,
+member selection/copy feedback, and local/torrent-only filtering. Authenticated
+member torrent-file requests returned HTTP 200 with the original attachment;
+the browser download-event helper timed out after the successful server response.
+Backend tests separately verify the response bytes and authorization.
+
+Desktop and 390 × 844 checks found no document-level horizontal overflow. Source
+buttons measured 42 px on desktop and 44 px on mobile. Mobile keyboard Tab focus
+was visible. Invalid magnets retained source text, focused the inline error, and
+saved after correction. Refreshed list cards preserve their two-column structure.
+Temporary viewport overrides were reset. Other themes were not individually
+reviewed; source controls use the shared theme rules and tokens.
+
+The browser journey exposed a shared database session in the pre-existing artwork
+refresh thread. Game creation now starts that work in a separate application
+context using a captured game UUID. See `TORRENT_SOURCES_SPEC.md` for lifecycle
+requirements and the feature's final verification evidence.

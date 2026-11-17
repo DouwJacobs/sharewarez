@@ -33,7 +33,7 @@ from sharewarez.models import (
 )
 from sharewarez.utils.functions import load_scanning_filter_patterns, format_size, PLATFORM_IDS
 from sharewarez.utilities import (
-    handle_auto_scan, handle_manual_scan, scan_and_add_games,
+    handle_auto_scan, handle_manual_scan,
     refresh_game_metadata_and_updates,
 )
 from sharewarez.utils.auth import admin_required
@@ -957,6 +957,8 @@ def delete_library_background(library_uuid, job_id):
             
             # Finally delete the library itself
             library_name = library.name
+            from sharewarez.utils.torrent_storage import acquire_source_mutation_lock
+            acquire_source_mutation_lock()
             db.session.delete(library)
             
             # Commit all changes

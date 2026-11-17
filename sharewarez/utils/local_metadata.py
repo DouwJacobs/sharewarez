@@ -34,6 +34,8 @@ def read_local_metadata(full_disk_path, filename=DEFAULT_LOCAL_METADATA_FILENAME
         "version": "1.0"
     }
     """
+    if not isinstance(full_disk_path, str) or not full_disk_path.strip():
+        return None
     try:
         # Security check
         if current_app:
@@ -126,6 +128,8 @@ def write_local_metadata(full_disk_path, igdb_id=None, game_title=None, manually
     Returns:
         bool: True if successful, False otherwise
     """
+    if not isinstance(full_disk_path, str) or not full_disk_path.strip():
+        return False
     try:
         provider = str(provider or ('igdb' if igdb_id is not None else '')).strip().lower()
         external_id = str(external_id if external_id is not None else igdb_id or '').strip()
@@ -224,6 +228,8 @@ def has_local_metadata(full_disk_path, filename=DEFAULT_LOCAL_METADATA_FILENAME)
     Returns:
         bool: True if metadata file exists
     """
+    if not isinstance(full_disk_path, str) or not full_disk_path.strip():
+        return False
     try:
         if not os.path.isdir(full_disk_path):
             return False
@@ -246,6 +252,8 @@ def delete_local_metadata(full_disk_path, filename=DEFAULT_LOCAL_METADATA_FILENA
     Returns:
         bool: True if deleted or didn't exist, False on error
     """
+    if not isinstance(full_disk_path, str) or not full_disk_path.strip():
+        return True
     try:
         for candidate in metadata_filename_candidates(filename):
             metadata_path = os.path.join(full_disk_path, candidate)
@@ -274,6 +282,8 @@ def get_local_cover_path(full_disk_path):
     Returns:
         str or None: Absolute path to cover image, or None if not found
     """
+    if not isinstance(full_disk_path, str) or not full_disk_path.strip():
+        return None
     try:
         if not os.path.isdir(full_disk_path):
             return None
@@ -308,6 +318,8 @@ def get_local_screenshots(full_disk_path):
     Returns:
         list: List of absolute paths to screenshot images (sorted by number)
     """
+    if not isinstance(full_disk_path, str) or not full_disk_path.strip():
+        return []
     try:
         if not os.path.isdir(full_disk_path):
             return []
@@ -343,6 +355,8 @@ def has_local_images(full_disk_path):
     Returns:
         bool: True if local cover or screenshots exist
     """
+    if not isinstance(full_disk_path, str) or not full_disk_path.strip():
+        return False
     return (get_local_cover_path(full_disk_path) is not None or
             len(get_local_screenshots(full_disk_path)) > 0)
 

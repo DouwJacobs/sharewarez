@@ -8,10 +8,13 @@ import os
 from pathlib import Path
 import subprocess
 import sys
+import tempfile
 from urllib.parse import unquote, urlparse
 
 from config import Config
 from sharewarez.utils.migrations import current_revision
+from sharewarez.utils.torrent_backup import create_sidecar, verify_sidecar, restore_sidecar, sidecar, referenced_attachments
+from sharewarez.utils.torrent_storage import exclusive_source_storage
 
 
 def _connection(database_uri):
@@ -65,10 +68,17 @@ def verify_backup(path):
     if not result.stdout or '; Archive created at ' not in result.stdout:
         raise RuntimeError('PostgreSQL archive validation returned an invalid catalog.')
     manifest_path = dump_path.with_suffix('.json')
+    requires_attachments = 'game_torrent_sources' in result.stdout
+    if requires_attachments and not manifest_path.is_file():
+        raise RuntimeError('Torrent-source backups require their JSON manifest and attachment sidecar.')
     if manifest_path.exists():
         manifest = json.loads(manifest_path.read_text(encoding='utf-8'))
         if manifest.get('sha256') != _sha256(dump_path):
             raise RuntimeError('Backup checksum does not match its manifest.')
+        if requires_attachments and not manifest.get('torrent_sha256'):
+            raise RuntimeError('Torrent-source backup manifest is missing its attachment checksum.')
+        if manifest.get('torrent_sha256'):
+            verify_sidecar(dump_path, manifest['torrent_sha256'])
     return True
 
 
@@ -85,10 +95,25 @@ def prune_backups(directory=None, retain=None):
     for dump_path in backups[retain:]:
         manifest_path = dump_path.with_suffix('.json')
         dump_path.unlink()
+        sidecar(dump_path).unlink(missing_ok=True)
         if manifest_path.exists():
             manifest_path.unlink()
         removed.append(dump_path.name)
     return removed
+
+
+def _fsync_file(path):
+    with path.open('rb') as stream:
+        os.fsync(stream.fileno())
+
+
+def _fsync_directory(path):
+    if os.name != 'nt':
+        descriptor = os.open(path, os.O_RDONLY)
+        try:
+            os.fsync(descriptor)
+        finally:
+            os.close(descriptor)
 
 
 def create_backup(database_uri=None, directory=None, *, reason='manual', retain=None):
@@ -98,30 +123,46 @@ def create_backup(database_uri=None, directory=None, *, reason='manual', retain=
     timestamp = datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S%fZ')
     safe_reason = ''.join(char if char.isalnum() or char in '-_' else '-' for char in reason)[:40]
     dump_path = directory / f'gamelibrary-{timestamp}-{safe_reason}.dump'
-    temporary_path = dump_path.with_suffix('.dump.partial')
-    try:
-        _run([
-            'pg_dump', '--format=custom', '--compress=6', '--no-owner',
-            '--no-privileges', '--file', str(temporary_path), *connection_args,
-        ], env)
-        verify_backup(temporary_path)
-        temporary_path.replace(dump_path)
-        manifest = {
-            'format': 1, 'created_at': datetime.now(timezone.utc).isoformat(),
-            'database': database_name, 'reason': reason,
-            'alembic_revision': current_revision(database_uri),
-            'size': dump_path.stat().st_size, 'sha256': _sha256(dump_path),
-            'filename': dump_path.name,
-        }
-        dump_path.with_suffix('.json').write_text(
-            json.dumps(manifest, indent=2) + '\n', encoding='utf-8'
-        )
-        verify_backup(dump_path)
-        prune_backups(directory, retain)
-        return dump_path
-    finally:
-        if temporary_path.exists():
-            temporary_path.unlink()
+    # A final .dump is the completion marker. A crash before the last rename
+    # leaves only staging/orphan sidecars, never a restorable incomplete backup.
+    published = []
+    with exclusive_source_storage(database_uri) as connection, tempfile.TemporaryDirectory(
+        prefix='.gamelibrary-backup-', dir=directory,
+    ) as staging:
+        staged_dump = Path(staging) / dump_path.name
+        completed = False
+        try:
+            _run([
+                'pg_dump', '--format=custom', '--compress=6', '--no-owner',
+                '--no-privileges', '--file', str(staged_dump), *connection_args,
+            ], env)
+            torrent_digest = create_sidecar(staged_dump, referenced_attachments(connection))
+            manifest = {
+                'format': 1, 'created_at': datetime.now(timezone.utc).isoformat(),
+                'database': database_name, 'reason': reason,
+                'alembic_revision': current_revision(database_uri),
+                'size': staged_dump.stat().st_size, 'sha256': _sha256(staged_dump),
+                'filename': dump_path.name, 'torrent_sha256': torrent_digest,
+            }
+            staged_manifest = staged_dump.with_suffix('.json')
+            staged_manifest.write_text(json.dumps(manifest, indent=2) + '\n', encoding='utf-8')
+            verify_backup(staged_dump)
+            for staged, target in (
+                (sidecar(staged_dump), sidecar(dump_path)),
+                (staged_manifest, dump_path.with_suffix('.json')),
+                (staged_dump, dump_path),
+            ):
+                _fsync_file(staged)
+                staged.replace(target)
+                published.append(target)
+                _fsync_directory(directory)
+            completed = True
+        finally:
+            if not completed:
+                for path in reversed(published):
+                    path.unlink(missing_ok=True)
+    prune_backups(directory, retain)
+    return dump_path
 
 
 def restore_backup(path, database_uri=None, *, confirmation=None):
@@ -129,11 +170,16 @@ def restore_backup(path, database_uri=None, *, confirmation=None):
     connection_args, env, database_name = _connection(database_uri)
     if confirmation != database_name:
         raise ValueError(f'Restore confirmation must exactly match database name {database_name!r}.')
-    verify_backup(path)
-    _run([
-        'pg_restore', '--clean', '--if-exists', '--no-owner', '--no-privileges',
-        '--exit-on-error', *connection_args, str(Path(path).resolve()),
-    ], env)
+    with exclusive_source_storage(database_uri):
+        verify_backup(path)
+        manifest_path = Path(path).with_suffix('.json')
+        manifest = json.loads(manifest_path.read_text()) if manifest_path.exists() else {}
+        if manifest.get('torrent_sha256'):
+            restore_sidecar(path, manifest['torrent_sha256'])
+        _run([
+            'pg_restore', '--clean', '--if-exists', '--no-owner', '--no-privileges',
+            '--exit-on-error', '--single-transaction', *connection_args, str(Path(path).resolve()),
+        ], env)
 
 
 def _parser():

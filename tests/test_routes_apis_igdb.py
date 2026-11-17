@@ -455,7 +455,7 @@ class TestSearchIgdbById:
         # Verify API call with correct query
         expected_query = f"""
         fields id, name, cover, summary, url, release_dates.date, platforms.name, genres.name, themes.name, game_modes.name,
-               screenshots, artworks, videos.video_id, first_release_date, aggregated_rating, involved_companies, player_perspectives.name,
+               screenshots, artworks, videos.video_id, first_release_date, aggregated_rating, involved_companies.company.name, involved_companies.developer, involved_companies.publisher, player_perspectives.name,
                aggregated_rating_count, rating, rating_count, slug, status, category, total_rating, 
                total_rating_count, storyline, {IGDB_RELATIONSHIP_QUERY_FIELDS};
         where id = 12345;
@@ -533,7 +533,7 @@ class TestSearchIgdbByName:
         
         # Verify API call
         expected_query = f'''fields id, name, cover, summary, url, release_dates.date, platforms.name, genres.name, themes.name, game_modes.name,
-                          screenshots, artworks, videos.video_id, first_release_date, aggregated_rating, involved_companies, player_perspectives.name,
+                          screenshots, artworks, videos.video_id, first_release_date, aggregated_rating, involved_companies.company.name, involved_companies.developer, involved_companies.publisher, player_perspectives.name,
                           aggregated_rating_count, rating, rating_count, slug, status, category, total_rating, 
                           total_rating_count, storyline, {IGDB_RELATIONSHIP_QUERY_FIELDS};search "Test Game"; limit 10;'''
         mock_api_request.assert_called_once_with('https://api.igdb.com/v4/games', expected_query)
@@ -555,7 +555,7 @@ class TestSearchIgdbByName:
         
         # Verify API call includes platform filter
         expected_query = f'''fields id, name, cover, summary, url, release_dates.date, platforms.name, genres.name, themes.name, game_modes.name,
-                          screenshots, artworks, videos.video_id, first_release_date, aggregated_rating, involved_companies, player_perspectives.name,
+                          screenshots, artworks, videos.video_id, first_release_date, aggregated_rating, involved_companies.company.name, involved_companies.developer, involved_companies.publisher, player_perspectives.name,
                           aggregated_rating_count, rating, rating_count, slug, status, category, total_rating, 
                           total_rating_count, storyline, {IGDB_RELATIONSHIP_QUERY_FIELDS};search "Test Game"; where platforms = (6); limit 10;'''
         mock_api_request.assert_called_once_with('https://api.igdb.com/v4/games', expected_query)
@@ -574,7 +574,7 @@ class TestSearchIgdbByName:
         
         # Should ignore invalid platform_id and not include it in query
         expected_query = f'''fields id, name, cover, summary, url, release_dates.date, platforms.name, genres.name, themes.name, game_modes.name,
-                          screenshots, artworks, videos.video_id, first_release_date, aggregated_rating, involved_companies, player_perspectives.name,
+                          screenshots, artworks, videos.video_id, first_release_date, aggregated_rating, involved_companies.company.name, involved_companies.developer, involved_companies.publisher, player_perspectives.name,
                           aggregated_rating_count, rating, rating_count, slug, status, category, total_rating, 
                           total_rating_count, storyline, {IGDB_RELATIONSHIP_QUERY_FIELDS};search "Test Game"; limit 10;'''
         mock_api_request.assert_called_once_with('https://api.igdb.com/v4/games', expected_query)
@@ -593,6 +593,48 @@ class TestSearchIgdbByName:
         
         data = response.get_json()
         assert data['error'] == 'Search failed'
+
+
+class TestNameSearchLibraryContext:
+    @patch('sharewarez.routes_apis.igdb.make_igdb_api_request')
+    def test_selected_library_overrides_stale_platform(self, api, client, admin_user, db_session):
+        library = Library(name='Name search platform', platform=LibraryPlatform.PCWIN)
+        db_session.add(library)
+        db_session.commit()
+        api.return_value = []
+        with client.session_transaction() as session:
+            session['_user_id'] = str(admin_user.id)
+            session['_fresh'] = True
+        response = client.get('/api/search_igdb_by_name', query_string={
+            'name': 'Hitman', 'library_uuid': library.uuid, 'platform_id': '4',
+        })
+        assert response.status_code == 200
+        assert 'where platforms = (6);' in api.call_args.args[1]
+        db_session.delete(library)
+        db_session.commit()
+
+    @patch('sharewarez.routes_apis.igdb.make_igdb_api_request')
+    def test_quotes_in_game_name_remain_search_text(self, api, client, admin_user):
+        api.return_value = []
+        with client.session_transaction() as session:
+            session['_user_id'] = str(admin_user.id)
+            session['_fresh'] = True
+        name = '  Game "Deluxe" \\ Edition  '
+        response = client.get('/api/search_igdb_by_name', query_string={'name': name})
+        assert response.status_code == 200
+        assert f'search {json.dumps(name.strip())};' in api.call_args.args[1]
+
+    @patch('sharewarez.routes_apis.igdb.make_igdb_api_request')
+    def test_missing_library_does_not_search_wrong_platform(self, api, client, admin_user):
+        with client.session_transaction() as session:
+            session['_user_id'] = str(admin_user.id)
+            session['_fresh'] = True
+        response = client.get('/api/search_igdb_by_name', query_string={
+            'name': 'Hitman', 'library_uuid': str(uuid4()),
+        })
+        assert response.status_code == 404
+        assert 'error' in response.get_json()
+        api.assert_not_called()
 
 
 class TestCheckIgdbId:

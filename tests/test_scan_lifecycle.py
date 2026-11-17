@@ -1,4 +1,7 @@
 from datetime import datetime, timezone
+from threading import Event
+from sharewarez.job_worker import maintain_images
+from sharewarez.models import Image
 from unittest.mock import patch
 from uuid import uuid4
 
@@ -396,3 +399,64 @@ def test_scheduled_hltb_choices_survive_global_disable_before_execution(scan_run
     assert again.status == 'completed'
     assert provider.call_count == 1 and provider.call_args.kwargs['fetch_hltb'] is True
     force_lookup.assert_called_once()
+
+
+def test_image_maintenance_downloads_pending_artwork(app, db_session, tmp_path):
+    library = Library(name=f'images-{uuid4().hex}', platform=LibraryPlatform.PCWIN)
+    db.session.add(library)
+    db.session.flush()
+    game = Game(name='New scanned game', library_uuid=library.uuid)
+    db.session.add(game)
+    db.session.flush()
+    image = Image(game_uuid=game.uuid, image_type='cover', url='queued-cover.jpg',
+                  download_url='https://example.test/cover.jpg', is_downloaded=False)
+    db.session.add(image)
+    db.session.commit()
+    image_id = image.id
+    stopping = Event()
+
+    def downloaded(*args, **kwargs):
+        stopping.set()
+        return True
+
+    app.config['IMAGE_SAVE_PATH'] = str(tmp_path)
+    with patch('sharewarez.utils.functions.download_image', side_effect=downloaded) as download:
+        maintain_images(app, stopping, interval=0)
+    db.session.expire_all()
+    assert db.session.get(Image, image_id).is_downloaded
+    download.assert_any_call('https://example.test/cover.jpg', str(tmp_path / 'queued-cover.jpg'))
+    db.session.delete(db.session.get(Image, image_id))
+    db.session.delete(game)
+    db.session.delete(library)
+    db.session.commit()
+
+
+def test_artwork_worker_runs_while_default_scan_queue_is_busy(app, db_session):
+    from sharewarez.utils.image_jobs import enqueue_image_refresh
+    library = Library(name=f'independent-images-{uuid4().hex}', platform=LibraryPlatform.PCWIN)
+    game = Game(name='Artwork during scan', library=library, igdb_id=int(uuid4().hex[:7], 16))
+    db_session.add(game)
+    db_session.commit()
+    scan = enqueue('system.noop', queue='default')
+    scan.status = 'running'
+    scan.locked_by = 'busy-scan-worker'
+    db_session.commit()
+    image_job = enqueue_image_refresh(game.uuid)
+    image_job_id, scan_id, game_id, library_id = image_job.id, scan.id, game.id, library.uuid
+    stopping = Event()
+
+    def refreshed(*args, **kwargs):
+        stopping.set()
+        return True, None
+
+    with patch('sharewarez.utils.scanning.refresh_images_in_background', side_effect=refreshed) as refresh:
+        maintain_images(app, stopping, interval=0)
+    db_session.expire_all()
+    assert refresh.call_count == 1
+    assert db_session.get(BackgroundJob, image_job_id).status == 'completed'
+    assert db_session.get(BackgroundJob, scan_id).status == 'running'
+    db_session.delete(db_session.get(BackgroundJob, image_job_id))
+    db_session.delete(db_session.get(BackgroundJob, scan_id))
+    db_session.delete(db_session.get(Game, game_id))
+    db_session.delete(db_session.get(Library, library_id))
+    db_session.commit()

@@ -43,8 +43,15 @@
   </section>
   {% endif %}
 
-  <form method="post" action="" class="game_edit-form app-surface" novalidate>
-    {{ form.hidden_tag() }}{{ form.library_uuid(class="form-control", hidden=true) }}{{ form.manual_identity() }}
+  <form method="post" action="" class="game_edit-form app-surface" enctype="multipart/form-data" novalidate>
+    {{ form.hidden_tag() }}
+    <div class="game-edit-grid">
+      <div class="form-group"><label for="library_uuid">Library</label>{{ form.library_uuid(class="form-control") }}{{ errors(form.library_uuid) }}</div>
+      <div class="form-group"><label for="source_mode">Game files</label>{{ form.source_mode(class="form-control") }}<p>Choose Magnet / torrent when there are no local game files. Existing local files stay attached unless you explicitly remove their association.</p></div>
+    </div>
+    {% if existing_local_path %}<label class="torrent-detach-local">{{ form.detach_local() }}<span>Remove the existing local-files association when saving. Files stay on disk; local downloading from this game will stop.</span></label>{% endif %}
+    {% if not form.library_uuid.choices %}<p>Create a library before saving a game. <a href="{{ url_for('admin2.add_library') }}">Create library</a></p>{% endif %}
+    {% include 'partials/torrent_source_editor.html' %}
     {% if form.errors %}<section class="game-edit-error-summary" role="alert" aria-labelledby="game-edit-errors-title"><h2 id="game-edit-errors-title">Check the highlighted fields</h2><ul>{% for field_name, field_errors in form.errors.items() %}{% if field_name != 'csrf_token' %}<li><a href="#{{ field_name }}">{{ form[field_name].label.text }}: {{ field_errors[0] }}</a></li>{% endif %}{% endfor %}</ul></section>{% endif %}
     {{ actions('top') }}
 

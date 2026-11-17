@@ -50,12 +50,14 @@ services:
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
       - LOG_FORMAT=${LOG_FORMAT:-json}
       - JOB_POLL_SECONDS=${JOB_POLL_SECONDS:-1}
+      - TORRENT_STORAGE_DIR=/data/torrent-sources
       - ALLOW_PRIVATE_WEBHOOK_TARGETS=${ALLOW_PRIVATE_WEBHOOK_TARGETS:-false}
     volumes:
       - "${DATA_FOLDER_WAREZ}:/storage:ro"
       - "${LIBRARY_HOST_PATH:-./data/library}:/app/sharewarez/static/library"
       - "${BACKUP_HOST_PATH:-./data/backups}:/backups"
       - "${DOWNLOAD_CACHE_VOLUME:-download_cache}:/cache/downloads"
+      - "${TORRENT_STORAGE_VOLUME:-torrent_sources}:/data/torrent-sources"
     depends_on:
       db:
         condition: service_healthy
@@ -91,4 +93,6 @@ volumes:
   db_data:
     driver: local
   download_cache:
+    driver: local
+  torrent_sources:
     driver: local

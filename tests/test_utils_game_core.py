@@ -144,7 +144,7 @@ def mock_igdb_response():
         'rating': 88.2,
         'rating_count': 50,
         'slug': 'test-game',
-        'status': 1,  # Released
+        'status': 0,  # Released
         'category': 0,  # Main game
         'total_rating': 87.0,
         'total_rating_count': 150,
@@ -182,21 +182,21 @@ class TestDataMappings:
         
     def test_status_mapping_values(self):
         """Test status mapping contains expected values."""
-        assert status_mapping[1] == Status.RELEASED
+        assert status_mapping[0] == Status.RELEASED
         assert status_mapping[2] == Status.ALPHA
         assert status_mapping[3] == Status.BETA
         assert status_mapping[4] == Status.EARLY_ACCESS
-        assert status_mapping[6] == Status.OFFLINE
-        assert status_mapping[7] == Status.CANCELLED
+        assert status_mapping[5] == Status.OFFLINE
+        assert status_mapping[6] == Status.CANCELLED
         
     def test_category_mapping_completeness(self):
         """Test category mapping covers all expected keys."""
-        expected_keys = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]
+        expected_keys = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 14]
         assert set(category_mapping.keys()) == set(expected_keys)
         
     def test_status_mapping_completeness(self):
         """Test status mapping covers expected keys."""
-        expected_keys = [1, 2, 3, 4, 6, 7]
+        expected_keys = [0, 2, 3, 4, 5, 6]
         assert set(status_mapping.keys()) == set(expected_keys)
 
 

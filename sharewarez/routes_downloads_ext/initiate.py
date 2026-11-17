@@ -21,6 +21,9 @@ def _initiate(game, content_type='game', record=None):
     form = FlaskForm()
     if request.method == 'POST' and not form.validate_on_submit():
         abort(400)
+    if content_type == 'game' and not game.full_disk_path:
+        flash('Local game files are unavailable. Use a magnet or torrent source on the game page.', 'info')
+        return redirect(url_for('games.game_details', game_uuid=game.uuid))
     try:
         if request.method in {'GET', 'HEAD'}:
             title = game.name if record is None else (getattr(record, 'title', None) or getattr(record, 'name', None) or game.name)

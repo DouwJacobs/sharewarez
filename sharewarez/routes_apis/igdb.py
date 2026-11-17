@@ -1,9 +1,12 @@
 # /sharewarez/routes_apis/igdb.py
+import json
+
 from flask import jsonify, request
 from flask_login import login_required
 from sharewarez.utils.igdb_api import make_igdb_api_request, get_cover_thumbnail_url
 from sharewarez.utils.game_core import check_existing_game_by_igdb_id
 from sharewarez.utils.game_relationships import IGDB_RELATIONSHIP_QUERY_FIELDS
+from sharewarez.utils.igdb_forms import with_form_values
 from . import apis_bp
 
 @apis_bp.route('/get_company_role', methods=['GET'])
@@ -72,13 +75,13 @@ def get_cover_thumbnail():
 @login_required
 def search_igdb_by_id():
     igdb_id = request.args.get('igdb_id')
-    if not igdb_id:
+    if not igdb_id or not igdb_id.isdigit():
         return jsonify({"error": "IGDB ID is required"}), 400
     endpoint_url = "https://api.igdb.com/v4/games"
     # Use the same field format as working scanning code
     query_params = f"""
         fields id, name, cover, summary, url, release_dates.date, platforms.name, genres.name, themes.name, game_modes.name,
-               screenshots, artworks, videos.video_id, first_release_date, aggregated_rating, involved_companies, player_perspectives.name,
+               screenshots, artworks, videos.video_id, first_release_date, aggregated_rating, involved_companies.company.name, involved_companies.developer, involved_companies.publisher, player_perspectives.name,
                aggregated_rating_count, rating, rating_count, slug, status, category, total_rating, 
                total_rating_count, storyline, {IGDB_RELATIONSHIP_QUERY_FIELDS};
         where id = {igdb_id};
@@ -89,7 +92,7 @@ def search_igdb_by_id():
 
     if response:
         game_data = response[0] if response else {}
-        return jsonify(game_data)
+        return jsonify(with_form_values(game_data))
     else:
         return jsonify({"error": "Game not found"}), 404
 
@@ -97,17 +100,27 @@ def search_igdb_by_id():
 @apis_bp.route('/search_igdb_by_name')
 @login_required
 def search_igdb_by_name():
-    game_name = request.args.get('name')
+    game_name = (request.args.get('name') or '').strip()
     platform_id = request.args.get('platform_id')
+    library_uuid = request.args.get('library_uuid')
+    if library_uuid:
+        from sqlalchemy import select
+        from sharewarez import db
+        from sharewarez.models import Library
+        from sharewarez.utils.functions import PLATFORM_IDS
+        library = db.session.execute(select(Library).filter_by(uuid=library_uuid)).scalar_one_or_none()
+        if not library:
+            return jsonify({'error': 'Selected library no longer exists.'}), 404
+        platform_id = str(PLATFORM_IDS.get(library.platform.name, ''))
 
     if game_name:
         # Use the same field format as working scanning code  
         query_fields = f"""fields id, name, cover, summary, url, release_dates.date, platforms.name, genres.name, themes.name, game_modes.name,
-                          screenshots, artworks, videos.video_id, first_release_date, aggregated_rating, involved_companies, player_perspectives.name,
+                          screenshots, artworks, videos.video_id, first_release_date, aggregated_rating, involved_companies.company.name, involved_companies.developer, involved_companies.publisher, player_perspectives.name,
                           aggregated_rating_count, rating, rating_count, slug, status, category, total_rating, 
                           total_rating_count, storyline, {IGDB_RELATIONSHIP_QUERY_FIELDS};"""
         
-        query_filter = f'search "{game_name}";'
+        query_filter = f'search {json.dumps(game_name)};'
         
         # Check if a platform_id was provided and is valid
         if platform_id and platform_id.isdigit():
@@ -119,7 +132,7 @@ def search_igdb_by_name():
         results = make_igdb_api_request('https://api.igdb.com/v4/games', query)
 
         if 'error' not in results:
-            return jsonify({'results': results})
+            return jsonify({'results': [with_form_values(game) for game in results]})
         else:
             return jsonify({'error': results['error']})
     return jsonify({'error': 'No game name provided'})

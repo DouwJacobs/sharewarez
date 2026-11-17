@@ -419,3 +419,35 @@
         flex-basis: 100%;
     }
 }
+
+/* Source fields and actions remain separate even with long magnet URIs. */
+.game-identify-page .torrent-editor { min-width: 0; }
+.torrent-editor > h2 { margin: 0 0 12px; }
+.torrent-editor > p { margin: 0 0 24px; color: var(--theme-text-secondary); line-height: 1.6; }
+.torrent-editor [data-source-rows] { display: grid; gap: 24px; }
+.torrent-editor .torrent-source-row { align-items: start; }
+.torrent-source-row + .torrent-source-row { border-top: 1px solid var(--theme-border-color); padding-top: 24px; }
+.torrent-source-row .torrent-source-magnet { grid-column: 1 / -1; }
+.torrent-editor .form-group { margin: 0; }
+.torrent-editor .form-group > p { margin: 8px 0 0; font-size: .85rem; line-height: 1.5; color: var(--theme-text-secondary); }
+.game-identify-page .torrent-editor textarea.form-control { box-sizing: border-box; width: 100%; max-width: 100%; padding: 12px; line-height: 1.5; overflow-wrap: anywhere; white-space: pre-wrap; }
+.game-identify-page .torrent-editor input[type="file"] { box-sizing: border-box; width: 100%; max-width: 100%; height: auto; padding: 0; line-height: 1.5; }
+.torrent-source-actions { grid-column: 1 / -1; display: flex; justify-content: flex-end; gap: 12px; }
+.torrent-editor-footer { display: grid; justify-items: start; gap: 24px; margin-top: 24px; }
+.torrent-source-confirmations { display: grid; gap: 16px; }
+.torrent-source-confirmations > label, .torrent-existing details label:has(input[type="checkbox"]) { display: grid; grid-template-columns: 20px minmax(0, 1fr); align-items: start; gap: 10px; margin: 0; line-height: 1.5; }
+.torrent-editor input[type="checkbox"] { width: 18px; height: 18px; margin: 3px 0 0; }
+.torrent-editor [data-source-status]:empty { display: none; }
+.torrent-editor [data-source-status]:not(:empty) { margin: 20px 0 0; }
+.torrent-existing { display: grid; gap: 12px; padding-bottom: 24px; margin-bottom: 24px; border-bottom: 1px solid var(--theme-border-color); min-width: 0; }
+.torrent-existing > button { justify-self: start; }
+.torrent-existing details[open] { display: grid; gap: 16px; }
+.torrent-existing details > button { justify-self: start; }
+@media (max-width: 768px) {
+    .torrent-source-actions { justify-content: flex-start; }
+    .torrent-editor-footer { gap: 20px; }
+}
+
+.game-identify-page .torrent-detach-local { display: grid; grid-template-columns: 20px minmax(0, 1fr); gap: 10px; align-items: start; margin-top: 20px; line-height: 1.5; }
+.game-identify-page .torrent-detach-local input { margin-top: 4px; }
+.torrent-editor .torrent-editor-save-help { font-size: .85rem; }

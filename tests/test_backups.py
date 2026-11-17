@@ -3,11 +3,20 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
+from contextlib import nullcontext
 
 from sharewarez import backups
 
 
 DATABASE_URI = 'postgresql://backup-user:backup-password@db.example:5433/gamelibrary'
+
+
+@pytest.fixture(autouse=True)
+def fake_source_coordination(monkeypatch):
+    # These unit cases fake PostgreSQL utilities; real advisory locking is
+    # exercised separately against the isolated PostgreSQL test database.
+    monkeypatch.setattr(backups, 'exclusive_source_storage', lambda uri: nullcontext(None))
+    monkeypatch.setattr(backups, 'referenced_attachments', lambda connection: {})
 
 
 def fake_postgres_tools(command, env, *, capture=False):
@@ -73,6 +82,69 @@ def test_restore_validates_then_invokes_pg_restore(tmp_path, monkeypatch):
     assert commands[0][:2] == ['pg_restore', '--list']
     assert '--clean' in commands[1]
     assert '--exit-on-error' in commands[1]
+    assert '--single-transaction' in commands[1]
+
+
+def test_failed_sidecar_never_publishes_database_dump(tmp_path, monkeypatch):
+    monkeypatch.setattr(backups, '_run', fake_postgres_tools)
+    def fail_sidecar(*args):
+        raise OSError('attachment unreadable')
+    monkeypatch.setattr(backups, 'create_sidecar', fail_sidecar)
+    with pytest.raises(OSError, match='unreadable'):
+        backups.create_backup(DATABASE_URI, tmp_path)
+    assert list(tmp_path.iterdir()) == []
+
+
+def test_dump_is_published_only_after_manifest_and_sidecar(tmp_path, monkeypatch):
+    monkeypatch.setattr(backups, '_run', fake_postgres_tools)
+    monkeypatch.setattr(backups, 'current_revision', lambda uri: 'revision-test')
+    original_replace = Path.replace
+    published = []
+    def checked_replace(source, target):
+        target = Path(target)
+        if target.parent == tmp_path:
+            published.append(target.suffix)
+            if target.suffix == '.dump':
+                assert target.with_suffix('.json').is_file()
+                assert backups.sidecar(target).is_file()
+        return original_replace(source, target)
+    monkeypatch.setattr(Path, 'replace', checked_replace)
+    backup = backups.create_backup(DATABASE_URI, tmp_path)
+    assert published == ['.zip', '.json', '.dump']
+    assert backups.verify_backup(backup)
+
+
+def test_publication_failure_removes_partial_artifacts(tmp_path, monkeypatch):
+    monkeypatch.setattr(backups, '_run', fake_postgres_tools)
+    monkeypatch.setattr(backups, 'current_revision', lambda uri: 'revision-test')
+    original_replace = Path.replace
+    def fail_manifest(source, target):
+        if Path(target).parent == tmp_path and Path(target).suffix == '.json':
+            raise OSError('publication failed')
+        return original_replace(source, target)
+    monkeypatch.setattr(Path, 'replace', fail_manifest)
+    with pytest.raises(OSError, match='publication failed'):
+        backups.create_backup(DATABASE_URI, tmp_path)
+    assert list(tmp_path.iterdir()) == []
+
+
+def test_torrent_schema_requires_complete_backup_artifacts(tmp_path, monkeypatch):
+    monkeypatch.setattr(backups, '_run', lambda *a, **k: SimpleNamespace(
+        stdout='; Archive created at test\n123; 1259 1 TABLE public game_torrent_sources owner\n'))
+    dump = tmp_path / 'incomplete.dump'
+    dump.write_bytes(b'archive')
+    with pytest.raises(RuntimeError, match='manifest'):
+        backups.verify_backup(dump)
+    dump.with_suffix('.json').write_text(json.dumps({'sha256': backups._sha256(dump)}))
+    with pytest.raises(RuntimeError, match='attachment checksum'):
+        backups.verify_backup(dump)
+
+
+def test_historical_database_only_backup_still_verifies(tmp_path, monkeypatch):
+    monkeypatch.setattr(backups, '_run', fake_postgres_tools)
+    dump = tmp_path / 'historical.dump'
+    dump.write_bytes(b'archive')
+    assert backups.verify_backup(dump)
 
 
 def test_backup_rejects_non_postgresql_database():

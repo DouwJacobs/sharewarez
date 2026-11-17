@@ -234,3 +234,30 @@ CSRF token and an actor-bound, one-hour review token for the complete normalized
 filter/page and count. Missing/tampered filters are rejected; a changed count
 returns 409 and requires a new review. The legacy `/clear` URL now hides rather
 than deleting attempts. Permanent retention remains a separate policy decision.
+
+# Magnet and torrent sources
+
+Administrators can select **Magnet / torrent** in Add game manually, choose any
+library, and add labeled public magnet links or `.torrent` uploads without a
+mounted game path. The existing Custom game option works without a metadata
+provider. Games with local files can also have torrent sources. Game Edit owns
+source labels, replacement, removal, and adding further sources.
+
+Signed-in members use **Open magnet**, **Copy magnet**, or **Download torrent**
+on Game Details. Their own torrent client handles the game download. These actions
+do not create Sharewarez download requests, consume local-download quotas, or
+increment completed-download counts. Sharewarez does not track swarm health or
+download progress. Public sources require administrator confirmation; private
+torrent flags are rejected, but magnet links cannot establish tracker privacy.
+
+The Library source filter distinguishes local files, magnet/torrent sources, and
+magnet/torrent-only entries. A game with both appears in both applicable filters.
+Games without local files display that fact instead of a zero-byte local download.
+Remove-missing scans preserve pathless games and games with torrent sources.
+Scan identity matches offer explicit attachment of local files to the existing
+game, keeping its UUID and library. A separate move can change the library later.
+
+Uploads are limited to 10 MiB and validated offline. Source data is retrieved
+through signed-in application routes, never public static URLs. Mount
+configuration is required only when associating actual local game files.
+See [the implementation specification](TORRENT_SOURCES_SPEC.md) for the contract.

@@ -219,6 +219,7 @@ $(document).ready(function() {
         var filters = {
             library_uuid: $('#libraryNameSelect').val() || undefined,
             collection: $('#collectionSelect').val() || undefined,
+            source: $('#sourceSelect').val() || undefined,
             family: urlParams.family || undefined,
             page: page,
             filters: '1',
@@ -354,6 +355,7 @@ $(document).ready(function() {
         var filters = {
             library_uuid: $('#libraryNameSelect').val(),
             collection: $('#collectionSelect').val(),
+            source: $('#sourceSelect').val(),
             genre: $('#genreSelect').val(),
             theme: $('#themeSelect').val(),
             tag: $('#tagSelect').val(),
@@ -371,7 +373,7 @@ $(document).ready(function() {
     });
 
     $('#clearFilters').click(function() {
-        $('#libraryNameSelect, #collectionSelect, #genreSelect, #themeSelect, #tagSelect, #gameModeSelect, #playerPerspectiveSelect').val('');
+        $('#sourceSelect, #libraryNameSelect, #collectionSelect, #genreSelect, #themeSelect, #tagSelect, #gameModeSelect, #playerPerspectiveSelect').val('');
         $('#ratingSlider').val(0);
         $('#ratingValue').text('0');
         $('#sortSelect').val('name');

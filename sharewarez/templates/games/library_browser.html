@@ -9,6 +9,7 @@
 <script src="{{ 'js/popup_menu.js'|theme_asset }}"></script>
 <script src="{{ 'js/library_slideshow.js'|theme_asset }}"></script>
 <script src="{{ 'js/library_pagination.js'|theme_asset }}"></script>
+<script src="{{ 'js/library_sources.js'|theme_asset }}" defer></script>
 <script src="{{ 'js/favorites_manager.js'|theme_asset }}"></script>
 <script src="{{ 'js/game_status_manager.js'|theme_asset }}"></script>
 <script src="{{ 'js/library_preferences.js'|theme_asset }}"></script>
@@ -22,6 +23,7 @@
                 <h1>Browse games</h1>
             </div>
             <div class="library-browser-actions">
+                {% if is_admin %}<a class="btn btn-primary" href="{{ url_for('games.add_game_manual', source_mode='torrent', library_uuid=library_uuid or '') }}">Add game</a>{% endif %}
                 <p class="library-browser-count">{{ total }} game{% if total != 1 %}s{% endif %}</p>
                 <div class="library-view-switcher" role="group" aria-label="Library view">
                     {% for value, icon, label in [('grid', 'fa-table-cells-large', 'Grid'), ('compact', 'fa-table-cells', 'Compact'), ('list', 'fa-list', 'List')] %}<button type="button" data-library-view="{{ value }}" class="{% if library_view == value %}active{% endif %}" aria-pressed="{{ 'true' if library_view == value else 'false' }}" title="{{ label }} view"><i class="fas {{ icon }}" aria-hidden="true"></i><span class="visually-hidden">{{ label }} view</span></button>{% endfor %}
