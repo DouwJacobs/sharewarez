@@ -23,7 +23,7 @@ document.addEventListener('DOMContentLoaded', () => {
     navOptions();
     function values(panel, validate = false) {
         const result = {};
-        for (const input of panel.querySelectorAll('input[id], select[id]')) {
+        for (const input of panel.querySelectorAll('input[id], select[id], textarea[id]')) {
             if (input.classList.contains('mobile-nav-slot')) continue;
             if (input.type === 'checkbox') result[input.id] = input.checked;
             else if (input.type === 'number') {
@@ -54,6 +54,22 @@ document.addEventListener('DOMContentLoaded', () => {
         status.classList.toggle('alert-success', !failed);
         status.style.display = 'block';
     }
+    const testSources = document.getElementById('testTorrentCatalogues');
+    if (testSources) testSources.addEventListener('click', async () => {
+        const result = document.getElementById('torrentCatalogueTestResult');
+        testSources.disabled = true;
+        result.textContent = 'Checking sources…';
+        try {
+            const response = await fetch('/admin/torrent-catalogues/test', {
+                method: 'POST', headers: CSRFUtils.getHeaders({'Content-Type': 'application/json'}),
+                body: JSON.stringify({urls: document.getElementById('torrentCatalogueUrls').value})
+            });
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.error || 'Could not check sources.');
+            result.textContent = data.results.map(item => item.message).join(' ');
+        } catch (error) { result.textContent = error.message; }
+        finally { testSources.disabled = false; }
+    });
     function activate(section, push = false) {
         const selected = panels.find(panel => panel.dataset.settingsPanel === section) || panels[0];
         active = selected.dataset.settingsPanel;

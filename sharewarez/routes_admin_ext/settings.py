@@ -1,7 +1,7 @@
 # /sharewarez/routes_admin_ext/settings.py
 from flask import render_template, request, jsonify, abort
 from flask_login import login_required, current_user
-from sharewarez.models import GlobalSettings, WebhookDelivery, WebhookEndpoint
+from sharewarez.models import GlobalSettings, WebhookDelivery, WebhookEndpoint, Library
 from sharewarez.settings_defaults import (
     DEFAULT_DOWNLOAD_BATCH_SIZE,
     DEFAULT_DOWNLOAD_THREADS,
@@ -63,6 +63,27 @@ def validate_settings_data(settings_data):
     if not isinstance(settings_data, dict):
         errors.append("Settings data must be a JSON object")
         return errors
+    if 'autoFulfillTorrentRequests' in settings_data and not isinstance(settings_data['autoFulfillTorrentRequests'], bool):
+        errors.append('Automatic torrent fulfilment must be enabled or disabled.')
+    if 'torrentPreferLatestUpload' in settings_data and not isinstance(settings_data['torrentPreferLatestUpload'], bool):
+        errors.append('Most recent upload selection must be enabled or disabled.')
+    if 'torrentCatalogueUrls' in settings_data:
+        urls = settings_data['torrentCatalogueUrls']
+        if not isinstance(urls, str) or len(urls) > 10000:
+            errors.append('Catalogue URLs must be text with at most 10000 characters.')
+        else:
+            from sharewarez.utils.torrent_catalogues import validate_catalogue_url
+            lines = [line.strip() for line in urls.splitlines() if line.strip()]
+            if len(lines) > 5:
+                errors.append('Configure at most 5 catalogue URLs.')
+            for line in lines:
+                try:
+                    validate_catalogue_url(line)
+                except ValueError:
+                    errors.append('Each catalogue must be a public HTTP(S) URL without credentials or a fragment.')
+                    break
+    if 'torrentDestinationLibraryUuid' in settings_data and not isinstance(settings_data['torrentDestinationLibraryUuid'], str):
+        errors.append('Choose a valid destination library.')
     policy = settings_data.get('notificationPolicy')
     if policy is not None:
         if not isinstance(policy, dict) or set(policy) - set(event_catalog()):
@@ -288,6 +309,17 @@ def update_settings():
         # Get or create settings record
         settings_record = get_or_create_settings_record()
 
+        torrent_keys = {'autoFulfillTorrentRequests', 'torrentCatalogueUrls', 'torrentDestinationLibraryUuid'}
+        if torrent_keys.intersection(new_settings):
+            combined = {**build_current_settings(settings_record), **new_settings}
+            destination = combined.get('torrentDestinationLibraryUuid', '')
+            if destination and db.session.get(Library, destination) is None:
+                db.session.rollback()
+                return jsonify({'errors': ['The destination library no longer exists.']}), 400
+            if combined.get('autoFulfillTorrentRequests') and (not destination or not combined.get('torrentCatalogueUrls', '').strip()):
+                db.session.rollback()
+                return jsonify({'errors': ['Choose a destination library and at least one catalogue URL before enabling automation.']}), 400
+
         # Update settings fields
         update_settings_fields(settings_record, new_settings)
 
@@ -308,6 +340,29 @@ def update_settings():
         db.session.rollback()
         logging.error(f"Error updating settings: {str(e)}")
         return jsonify({'error': 'Failed to update settings'}), 500
+
+
+@admin2_bp.route('/admin/torrent-catalogues/test', methods=['POST'])
+@login_required
+@admin_required
+def test_torrent_catalogues():
+    from sharewarez.utils.torrent_catalogues import fetch_catalogue, validate_catalogue_url
+    data = request.get_json(silent=True)
+    urls = data.get('urls') if isinstance(data, dict) else None
+    if not isinstance(urls, str) or len(urls) > 10000:
+        return jsonify({'error': 'Enter up to five catalogue URLs, one per line.'}), 400
+    lines = list(dict.fromkeys(line.strip() for line in urls.splitlines() if line.strip()))
+    if not 1 <= len(lines) <= 5:
+        return jsonify({'error': 'Enter between one and five catalogue URLs.'}), 400
+    results = []
+    for index, url in enumerate(lines, 1):
+        try:
+            validate_catalogue_url(url)
+            catalogue = fetch_catalogue(url, force_refresh=True)
+            results.append({'ok': True, 'message': f"Source {index}: {catalogue['name']} — {len(catalogue['downloads'])} entries available."})
+        except ValueError as error:
+            results.append({'ok': False, 'message': f'Source {index}: {error}'})
+    return jsonify({'results': results})
 
 
 @admin2_bp.route('/admin/settings', methods=['GET', 'POST'])
@@ -333,6 +388,7 @@ def settings():
                 initial_section=initial_section,
                 notification_events=event_catalog(),
                 notification_policy=notification_policy(),
+                torrent_libraries=db.session.execute(select(Library).order_by(Library.name)).scalars().all(),
             )
         except Exception as e:
             logging.error(f"Error retrieving settings: {str(e)}")

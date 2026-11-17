@@ -57,7 +57,7 @@ def notify_new_request(record, joined_existing=False):
         log_system_event(f'New request notification failed: {error}', event_type='game_request', event_level='error')
 
 
-def notify_request_updated(record, satisfied_links=None):
+def notify_request_updated(record, satisfied_links=None, *, commit=True):
     preferences = get_request_settings()
     try:
         recipients = list(satisfied_links if satisfied_links is not None else record.active_requesters)
@@ -102,7 +102,10 @@ def notify_request_updated(record, satisfied_links=None):
                     continue
                 notified_user_ids.add(link.user_id)
                 link.last_notified_status = record.status
-        db.session.commit()
+        if commit:
+            db.session.commit()
     except Exception as error:
+        if not commit:
+            raise
         db.session.rollback()
         log_system_event(f'Request update notification failed: {error}', event_type='game_request', event_level='error')

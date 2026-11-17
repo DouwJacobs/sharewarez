@@ -309,6 +309,8 @@ def create_or_join_metadata_request(
     if game_request.status == 'cancelled':
         game_request.status = 'pending'
         game_request.resolved_at = None
+    from sharewarez.utils.torrent_requests import queue_lookup
+    queue_lookup(game_request, user)
     db.session.commit()
     return game_request, link
 

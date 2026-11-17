@@ -151,6 +151,9 @@ def manage_user_api(user_id):
         state = data.get('state', True)
         is_email_verified = data.get('is_email_verified', True)
         about = data.get('about', '')
+        can_auto_fulfill = data.get('can_auto_fulfill_torrent_requests', False)
+        if not isinstance(can_auto_fulfill, bool):
+            return jsonify({'success': False, 'message': 'Automatic torrent request permission must be true or false'}), 400
 
         valid, error = validate_username(username)
         if not valid:
@@ -184,6 +187,7 @@ def manage_user_api(user_id):
                 role=role,
                 state=state,
                 is_email_verified=is_email_verified,
+                can_auto_fulfill_torrent_requests=can_auto_fulfill,
                 about=about if about else None,
                 user_id=str(uuid4())
             )
@@ -222,6 +226,7 @@ def manage_user_api(user_id):
             'state': user.state,
             'about': user.about,
             'is_email_verified': user.is_email_verified,
+            'can_auto_fulfill_torrent_requests': user.can_auto_fulfill_torrent_requests,
             'monthly_download_quota_gb': (
                 None if user.monthly_download_quota_bytes is None
                 else user.monthly_download_quota_bytes / 1_000_000_000
@@ -245,6 +250,14 @@ def manage_user_api(user_id):
             return jsonify({'success': False, 'message': 'Cannot modify your own role'}), 403
 
         changes = []
+
+        if 'can_auto_fulfill_torrent_requests' in data:
+            permission = data['can_auto_fulfill_torrent_requests']
+            if not isinstance(permission, bool):
+                return jsonify({'success': False, 'message': 'Automatic torrent request permission must be true or false'}), 400
+            if permission != user.can_auto_fulfill_torrent_requests:
+                changes.append(f'automatic torrent request permission to {permission}')
+                user.can_auto_fulfill_torrent_requests = permission
 
         if 'email' in data:
             new_email = data['email'].strip().lower()
@@ -296,6 +309,9 @@ def manage_user_api(user_id):
             valid, error = validate_about(new_about)
             if not valid:
                 return jsonify({'success': False, 'message': error}), 400
+            # Empty optional text is absent, not a shared value in the legacy
+            # unique about column. The edit form always submits this field.
+            new_about = new_about if new_about and new_about.strip() else None
             if new_about != user.about:
                 changes.append("about field")
                 user.about = new_about
@@ -325,13 +341,18 @@ def manage_user_api(user_id):
                     event_type='audit', event_level='information'
                 )
             return jsonify({'success': True})
-        except IntegrityError:
+        except IntegrityError as error:
             db.session.rollback()
             log_system_event(
                 f"Admin {current_user.name} failed to modify user {user.name}: Database integrity error",
                 event_type='audit', event_level='error'
             )
-            return jsonify({'success': False, 'message': 'Email address already in use'}), 400
+            constraint = getattr(getattr(error.orig, 'diag', None), 'constraint_name', None)
+            message = {
+                'users_email_key': 'Email address already in use',
+                'users_about_key': 'This About text is already used by another account.',
+            }.get(constraint, 'User details conflict with an existing account.')
+            return jsonify({'success': False, 'message': message}), 400
         except Exception as e:
             db.session.rollback()
             log_system_event(

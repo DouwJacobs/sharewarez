@@ -463,6 +463,7 @@ class User(db.Model):
     )
     token_creation_time = db.Column(db.DateTime, nullable=True)
     invite_quota = db.Column(db.Integer, default=0) 
+    can_auto_fulfill_torrent_requests = db.Column(db.Boolean, nullable=False, default=False, server_default=db.false())
     monthly_download_quota_bytes = db.Column(db.BigInteger, nullable=True)
     api_tokens = db.relationship('ApiToken', back_populates='user', cascade='all, delete-orphan')
     notifications = db.relationship(
@@ -904,6 +905,8 @@ class GameRequest(db.Model):
     platforms = db.Column(JSONEncodedDict, nullable=True)
     first_release_date = db.Column(db.DateTime, nullable=True)
     status = db.Column(db.String(32), nullable=False, default='pending', index=True)
+    torrent_lookup_status = db.Column(db.String(32), nullable=True)
+    torrent_lookup_message = db.Column(db.Text, nullable=True)
     public_response = db.Column(db.Text, nullable=True)
     internal_note = db.Column(db.Text, nullable=True)
     issue_category = db.Column(db.String(32), nullable=True)

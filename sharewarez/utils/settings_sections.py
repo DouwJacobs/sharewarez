@@ -5,7 +5,7 @@ SECTION_KEYS = {
     'downloads': frozenset(('maxConcurrentDownloadsPerUser', 'downloadBandwidthLimitMbps', 'defaultMonthlyDownloadQuotaGb', 'downloadQueueWaitSeconds', 'downloadRequestExpirationHours')),
     'metadata': frozenset(('enableHltbIntegration', 'hltbRateLimitDelay', 'useLocalMetadata', 'writeLocalMetadata', 'useLocalImages', 'localMetadataFilename')),
     'interface': frozenset(('showSystemLogo', 'showHelpButton', 'enableWebLinksOnDetailsPage', 'showVersion', 'showDiscovery', 'showFavorites', 'showTrailers', 'mobileNavOrder')),
-    'requests': frozenset(('enableGameRequests', 'enableGameIssues', 'allowRequestNotes', 'allowRequestAnyEdition', 'maxActiveRequestsPerUser')),
+    'requests': frozenset(('enableGameRequests', 'enableGameIssues', 'allowRequestNotes', 'allowRequestAnyEdition', 'maxActiveRequestsPerUser', 'autoFulfillTorrentRequests', 'torrentPreferLatestUpload', 'torrentCatalogueUrls', 'torrentDestinationLibraryUuid')),
     'notifications': frozenset(('notificationPolicy',)),
 }
 

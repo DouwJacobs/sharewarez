@@ -34,6 +34,7 @@ document.addEventListener('DOMContentLoaded', function() {
             role: document.getElementById('editRole').value,
             state: document.getElementById('editState').checked,
             is_email_verified: document.getElementById('editEmailVerified').checked,
+            can_auto_fulfill_torrent_requests: document.getElementById('editAutoFulfillTorrentRequests').checked,
             password: document.getElementById('editPassword').value,
             about: document.getElementById('editAbout').value,
             monthly_download_quota_gb: (function() {
@@ -54,6 +55,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 document.getElementById('editRole').value = data.role;
                 document.getElementById('editState').checked = data.state;
                 document.getElementById('editEmailVerified').checked = data.is_email_verified;
+                document.getElementById('editAutoFulfillTorrentRequests').checked = data.can_auto_fulfill_torrent_requests === true;
                 document.getElementById('editAbout').value = data.about || '';
                 document.getElementById('editMonthlyDownloadQuotaGb').value = data.monthly_download_quota_gb ?? '';
                 document.getElementById('editPassword').value = '';

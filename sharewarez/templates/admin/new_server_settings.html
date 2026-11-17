@@ -108,6 +108,18 @@
                                 <label class="settings-toggle"><input type="checkbox" id="allowRequestAnyEdition"><span><strong>Any edition</strong><small>Allow requests without a specific edition.</small></span></label>
                             </div>
                             <div class="settings-field-block"><label for="maxActiveRequestsPerUser">Maximum active requests per user</label><p>Limits unresolved requests from each account.</p><input type="number" class="form-control" id="maxActiveRequestsPerUser" min="1" max="100"></div>
+                            <div class="settings-subsection">
+                                <h4>Automatic torrent fulfilment</h4>
+                                <p>Matching new-game requests become library entries with magnet or torrent actions. Grant permission for individual accounts in <a href="{{ url_for('admin2.manage_users') }}">Users</a>.</p>
+                                <div class="settings-option-list">
+                                    <label class="settings-toggle"><input type="checkbox" id="autoFulfillTorrentRequests"><span><strong>Automatically fulfil eligible requests</strong><small>Requires both this setting and the requesting user's permission.</small></span></label>
+                                    <label class="settings-toggle"><input type="checkbox" id="torrentPreferLatestUpload"><span><strong>Choose the most recent upload</strong><small>When several releases match, use the one with the latest catalogue upload date. Missing, invalid, or tied dates still require admin review. Upload date does not guarantee the newest game version.</small></span></label>
+                                </div>
+                                <div class="settings-field-block"><label for="torrentDestinationLibraryUuid">Destination library</label><p>Select the library for automatically created games.</p><select class="form-select" id="torrentDestinationLibraryUuid"><option value="">Choose a library</option>{% for library in torrent_libraries %}<option value="{{ library.uuid }}">{{ library.name }}</option>{% endfor %}</select></div>
+                                <div class="settings-field-block"><label for="torrentCatalogueUrls">Public catalogue URLs</label><p id="torrentCatalogueUrlsHelp">One Hydra-compatible JSON URL per line, up to five. Configure public sources without personal tracker credentials. Uncertain matches remain pending for review.</p><textarea class="form-control" id="torrentCatalogueUrls" rows="4" maxlength="10000" aria-describedby="torrentCatalogueUrlsHelp"></textarea></div>
+                                <button type="button" class="btn btn-secondary" id="testTorrentCatalogues">Test sources</button>
+                                <p id="torrentCatalogueTestResult" role="status" aria-live="polite"></p>
+                            </div>
                         </section>
 
                         <section class="settings-panel" data-settings-panel="notifications" aria-labelledby="settings-notifications-title" hidden>

@@ -570,4 +570,14 @@
 .admin-requests-page > .requests-hero { padding: 0; margin-bottom: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
 .request-edition-chip--update { background: rgba(var(--theme-accent-rgb, 139, 112, 246), .16); color: var(--theme-primary-color, var(--theme-primary, #9b87f5)); }
 .request-detail-game-link { color: var(--theme-primary-color, var(--theme-primary, #9b87f5)); font-weight: 700; }
+
+.admin-request-details-page .torrent-release-form { display: grid; gap: 1rem; }
+.admin-request-details-page .torrent-release-form fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
+.admin-request-details-page .torrent-release-form legend { margin-bottom: 1rem; }
+.admin-request-details-page .torrent-release-choice { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: start; gap: .75rem; padding-block: .75rem; margin: 0; cursor: pointer; }
+.admin-request-details-page .torrent-release-choice + .torrent-release-choice { border-top: 1px solid var(--theme-border-color, var(--border-color)); }
+.admin-request-details-page .torrent-release-choice input { margin-top: .25rem; }
+.admin-request-details-page .torrent-release-choice small { display: block; margin-top: .5rem; overflow-wrap: anywhere; color: var(--theme-text-muted, var(--text-muted)); }
+.admin-request-details-page .torrent-retry-form { margin-top: .75rem; }
+.admin-request-details-page :is(.torrent-release-form, .torrent-retry-form) > .btn { width: 100%; }
 .requester-card blockquote { white-space: pre-line; word-break: break-word; color: var(--theme-text-primary, #f5f7ff); }

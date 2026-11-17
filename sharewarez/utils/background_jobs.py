@@ -17,6 +17,8 @@ JobHandler = Callable[["JobContext", dict], dict | None]
 _handlers: dict[str, JobHandler] = {}
 
 JOB_DISPLAY_NAMES = {
+    'requests.torrent_lookup': 'Find torrent for game request',
+    'requests.torrent_enrich': 'Enrich automatically fulfilled game',
     'system.noop': 'System check',
     'library.scan': 'Library scan',
     'library.bulk_metadata_refresh': 'Bulk metadata refresh',
@@ -596,3 +598,37 @@ def library_bulk_image_refresh_task(context, payload):
         'games_failed': failed,
         'failures': failures,
     }
+
+
+@register_task('requests.torrent_lookup')
+def torrent_request_lookup(context, payload):
+    from sharewarez.utils.torrent_requests import execute_lookup
+    return execute_lookup(context, payload)
+
+
+@register_task('requests.torrent_enrich')
+def torrent_request_enrich(context, payload):
+    from sharewarez.models import Game
+    from sharewarez.utilities import refresh_game_metadata_and_updates
+    context.check_cancelled(force=True)
+    game = db.session.execute(select(Game).where(Game.uuid == payload['game_uuid'])).scalar_one_or_none()
+    if game is None:
+        return {'skipped': True}
+    if game.igdb_id:
+        refresh_game_metadata_and_updates(game.uuid)
+    else:
+        from sharewarez.utils.game_requests import fetch_metadata_game
+        from sharewarez.utils.metadata_provenance import merge_provider_metadata
+        identity = next((item for item in game.external_identities if item.canonical), None)
+        if identity is None:
+            return {'skipped': True}
+        snapshot = fetch_metadata_game(identity.provider, identity.external_id)
+        if snapshot is None:
+            raise RuntimeError('Metadata provider returned no game')
+        merge_provider_metadata(game, {key: value for key, value in {
+            'name': snapshot.get('game_name'), 'summary': snapshot.get('summary'),
+            'first_release_date': snapshot.get('first_release_date'), 'rating': snapshot.get('rating'),
+            'rating_count': snapshot.get('rating_count'), 'url': snapshot.get('website'),
+        }.items() if value is not None}, provider=identity.provider)
+        db.session.commit()
+    return {'game_uuid': payload['game_uuid']}

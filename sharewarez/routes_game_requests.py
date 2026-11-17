@@ -336,9 +336,13 @@ def admin_request_details(request_id):
             )
             .order_by(GameRequest.game_name)
         ).scalars().all()
+    from sharewarez.utils.torrent_requests import candidate_job
+    lookup_job = candidate_job(request_id) if game_request.torrent_lookup_status == 'ambiguous' else None
     return render_template(
         'admin/admin_game_request_details.html',
         game_request=game_request,
+        torrent_candidates=(lookup_job.result or {}).get('candidates', []) if lookup_job else [],
+        torrent_candidate_job=lookup_job.id if lookup_job else None,
         alternatives=alternatives,
         statuses=REQUEST_STATUSES,
         return_status=request.args.get('status', ''),
@@ -372,6 +376,50 @@ def request_library_games():
             for game in games
         ]
     })
+
+
+@game_requests_bp.route('/admin/game-requests/<int:request_id>/retry-torrent', methods=['POST'])
+@login_required
+@admin_required
+def admin_retry_torrent_lookup(request_id):
+    from sharewarez.utils.torrent_requests import queue_lookup
+    game_request = db.session.get(GameRequest, request_id) or abort(404)
+    if game_request.request_type != 'new_game' or game_request.status != 'pending':
+        flash('Only pending new-game requests can be retried. Return a reviewed request to Pending before using automation.', 'error')
+    else:
+        eligible = next((link.user for link in game_request.active_requesters
+                         if link.user.state and link.user.can_auto_fulfill_torrent_requests), None)
+        if eligible is None:
+            flash('No active requester has permission for automatic torrent fulfilment.', 'error')
+        elif queue_lookup(game_request, eligible, retry=True):
+            db.session.commit()
+            flash('Torrent source lookup queued.', 'success')
+        else:
+            db.session.rollback()
+            flash('Lookup was not queued. Check automation settings or existing queued work.', 'warning')
+    return redirect(url_for('game_requests.admin_request_details', request_id=request_id))
+
+
+@game_requests_bp.route('/admin/game-requests/<int:request_id>/select-torrent', methods=['POST'])
+@login_required
+@admin_required
+def admin_select_torrent_source(request_id):
+    from sharewarez.utils.torrent_requests import candidate_job, queue_lookup
+    game_request = db.session.get(GameRequest, request_id) or abort(404)
+    lookup = candidate_job(request_id)
+    candidates = (lookup.result or {}).get('candidates', []) if lookup else []
+    index = request.form.get('candidate_index', type=int)
+    if (game_request.torrent_lookup_status != 'ambiguous' or lookup is None
+            or request.form.get('candidate_job') != lookup.id
+            or index is None or not 0 <= index < len(candidates)):
+        flash('The source choices changed. Refresh this request and choose again.', 'error')
+    elif queue_lookup(game_request, current_user, retry=True, selected_entry=candidates[index]):
+        db.session.commit()
+        flash('Selected release queued. The game will appear when its source has been validated.', 'success')
+    else:
+        db.session.rollback()
+        flash('Source was not queued. Check request status, configured sources, and existing work.', 'warning')
+    return redirect(url_for('game_requests.admin_request_details', request_id=request_id))
 
 
 @game_requests_bp.route('/admin/game-requests/<int:request_id>', methods=['POST'])

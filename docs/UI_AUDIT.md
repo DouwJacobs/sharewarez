@@ -902,3 +902,26 @@ The browser journey exposed a shared database session in the pre-existing artwor
 refresh thread. Game creation now starts that work in a separate application
 context using a captured game UUID. See `TORRENT_SOURCES_SPEC.md` for lifecycle
 requirements and the feature's final verification evidence.
+
+## Automatic torrent request fulfilment — 17 November 2026
+
+Application Settings → Community adds the global automation toggle, destination
+library selector, public Hydra catalogue URLs, and Test sources action. Users →
+Edit owns the individual automation permission. Request details shows lookup
+status/reason and a Retry source lookup action for pending new-game requests.
+All additions reuse the existing controls, form sections, and request panels.
+
+Computer Use verified these controls against a separate disposable PostgreSQL
+database and loopback-only preview at port 55018. The preview automatically
+authenticated a disposable administrator and did not use production accounts.
+Actual settings save succeeded, a source DNS failure appeared as readable inline
+feedback, the individual permission persisted after saving/reopening the edit
+dialog, and an actual Retry POST changed lookup status from No Match to Queued.
+No worker was run for this UI fixture; lookup execution is covered separately.
+
+The default desktop and 390 × 844 mobile views had equal document client/scroll
+widths (1265/1265 and 375/375 respectively). Destination select and Test sources
+measured 42 px on desktop and approximately 44 px on mobile. The user permission
+and its explanation remained readable in the mobile edit dialog. Keyboard Tab
+reached the catalogue textarea and Test sources action. Temporary viewport
+overrides were reset. Other themes were not individually inspected.

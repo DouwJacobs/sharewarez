@@ -58,6 +58,37 @@
         </section>
 
         <aside class="request-detail-sidebar">
+            {% if game_request.request_type == 'new_game' %}
+            <section class="request-panel" aria-labelledby="torrent-lookup-heading">
+                <div class="request-section-heading"><div><p class="eyebrow">Automation</p><h2 id="torrent-lookup-heading">Torrent source lookup</h2></div></div>
+                <p><strong>Status:</strong> {{ (game_request.torrent_lookup_status or 'Not queued')|replace('_', ' ')|title }}</p>
+                {% if torrent_candidates %}<p>Multiple releases matched. Choose the release to add to the library.</p>
+                {% elif game_request.torrent_lookup_message %}<p>{{ game_request.torrent_lookup_message }}</p>{% endif %}
+                {% if torrent_candidates and game_request.status == 'pending' %}
+                <form class="torrent-release-form" method="post" action="{{ url_for('game_requests.admin_select_torrent_source', request_id=game_request.id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="candidate_job" value="{{ torrent_candidate_job }}">
+                    <fieldset>
+                        <legend>Choose a release</legend>
+                        {% for candidate in torrent_candidates %}
+                        <label class="torrent-release-choice"><input type="radio" name="candidate_index" value="{{ loop.index0 }}" required>
+                            <span><strong>{{ candidate.title }}</strong>
+                            <small>{{ candidate.source_name }}{% if candidate.fileSize %} · {{ candidate.fileSize }}{% endif %}{% if candidate.uploadDate %} · Uploaded {{ candidate.uploadDate }}{% endif %}</small>
+                            </span>
+                        </label>
+                        {% endfor %}
+                    </fieldset>
+                    <button class="btn btn-primary" type="submit">Use release &amp; fulfil</button>
+                </form>
+                {% endif %}
+                {% if game_request.status == 'pending' %}
+                <form class="torrent-retry-form" method="post" action="{{ url_for('game_requests.admin_retry_torrent_lookup', request_id=game_request.id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button class="btn btn-secondary" type="submit">Retry source lookup</button>
+                </form>
+                {% endif %}
+            </section>
+            {% endif %}
             <section class="request-panel">
                 <div class="request-section-heading"><div><p class="eyebrow">Community</p><h2>Requesters</h2></div></div>
                 <div class="requester-list">{% for link in game_request.requesters if link.withdrawn_at is none %}<article class="requester-card"><div class="requester-avatar"><i class="fas fa-user"></i></div><div><strong>{{ link.user.name }}</strong>{% if link.satisfied_at %}<p>Satisfied{% if link.satisfied_by_game %} by {{ link.satisfied_by_game.name }}{% endif %}</p>{% elif link.accept_any_edition %}<p>Any edition accepted</p>{% else %}<p>Exact edition requested</p>{% endif %}{% if link.requester_note %}<blockquote>{{ link.requester_note|urlize(target="_blank") }}</blockquote>{% endif %}</div></article>{% else %}<p>No active requesters.</p>{% endfor %}</div>
