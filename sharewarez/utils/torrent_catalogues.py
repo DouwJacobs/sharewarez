@@ -9,6 +9,7 @@ from threading import Lock
 from time import monotonic
 import unicodedata
 from urllib.parse import urljoin, urlsplit
+from sharewarez.utils.torrent_sources import validate_magnet
 
 import urllib3
 
@@ -35,7 +36,10 @@ def validate_catalogue_url(value):
                 or any(ord(c) < 33 or ord(c) == 127 for c in value)):
             raise ValueError()
         parsed.port
-    except ValueError as error:
+        host = parsed.hostname.encode('idna').decode('ascii')
+        if not host or '..' in host:
+            raise ValueError()
+    except (ValueError, UnicodeError) as error:
         raise CatalogueError('Use an HTTP(S) source URL without credentials or a fragment.') from error
     return value
 
@@ -45,7 +49,7 @@ def _public_addresses(host, port):
         addresses = sorted({item[4][0] for item in socket.getaddrinfo(host, port, type=socket.SOCK_STREAM)})
         if not addresses or any(not ipaddress.ip_address(address).is_global for address in addresses):
             raise CatalogueError('Source must resolve only to public internet addresses.')
-        return addresses
+        return sorted(addresses, key=lambda address: (ipaddress.ip_address(address).version, address))
     except (socket.gaierror, ValueError) as error:
         raise CatalogueError('Source hostname could not be resolved to a public address.') from error
 
@@ -138,6 +142,10 @@ def parse_catalogue(data):
         for uri in entry['uris']:
             uri = uri.strip()
             if uri.startswith('magnet:'):
+                try:
+                    validate_magnet(uri)
+                except (ValueError, UnicodeError):
+                    continue
                 uris.append(uri)
             elif uri.startswith(('https://', 'http://')):
                 try:
@@ -204,7 +212,7 @@ def _upload_date(value):
 def match_catalogues(title, catalogues, *, prefer_latest_upload=False):
     key = _title_key(title)
     matches = []
-    seen = set()
+    seen = {}
     if key:
         for catalogue in catalogues:
             for entry in catalogue['downloads']:
@@ -212,8 +220,14 @@ def match_catalogues(title, catalogues, *, prefer_latest_upload=False):
                     continue
                 signature = (entry['title'].casefold(), tuple(sorted(entry['uris'])))
                 if signature in seen:
+                    existing = matches[seen[signature]]
+                    new_date = _upload_date(entry.get('uploadDate'))
+                    old_date = _upload_date(existing.get('uploadDate'))
+                    if new_date is not None and (old_date is None or new_date > old_date):
+                        matches[seen[signature]] = dict(entry, source_name=catalogue['name'],
+                            source_url=catalogue.get('source_url', ''))
                     continue
-                seen.add(signature)
+                seen[signature] = len(matches)
                 matches.append(dict(entry, source_name=catalogue['name'],
                                     source_url=catalogue.get('source_url', '')))
     if len(matches) == 1:

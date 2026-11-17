@@ -5,7 +5,7 @@ const vm = require('node:vm');
 const path = require('node:path');
 
 function harness(options = {}) {
-    const listeners = {}, attributes = {}, copied = [];
+    const listeners = {}, attributes = {}, copied = [], calls = [];
     let feedback, requests = 0;
     const createElement = tag => ({tag, dataset: {}, children: [], listeners: {}, textContent: '',
         setAttribute(name, value) { this[name] = value; },
@@ -19,28 +19,29 @@ function harness(options = {}) {
         removeAttribute: name => { delete attributes[name]; }};
     const window = {location: {href: '/library'}};
     const magnet = 'magnet:?xt=urn:btih:' + '1'.repeat(40);
-    const context = {window, document: {createElement, addEventListener: (name, handler) => { listeners[name] = handler; }},
+    const context = {window, CSRFUtils: {getHeaders: () => ({'X-CSRFToken': 'test'})}, document: {createElement, addEventListener: (name, handler) => { listeners[name] = handler; }},
         navigator: {clipboard: {writeText: async value => { copied.push(value); }}}, AbortSignal,
         fetch: async (...args) => {
             requests++;
+            calls.push(args);
             return options.fetch ? options.fetch(...args) : {ok: true, json: async () => ({magnet})};
         }};
     vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../sharewarez/setup/default_theme/js/library_sources.js'), 'utf8'), context);
     const click = (extra = {}) => listeners.click({button: 0, target: {closest: () => options.noAction ? null : link},
         preventDefault() {}, stopPropagation() {}, ...extra});
-    return {click, window, magnet, copied, attributes, feedback: () => feedback, requests: () => requests};
+    return {click, window, magnet, copied, attributes, calls, feedback: () => feedback, requests: () => requests};
 }
 
-test('single magnet uses the authenticated response and provides a working copy fallback', async () => {
+test('single magnet opens the authenticated source without adding a card prompt or copy button', async () => {
     const h = harness();
     await h.click();
     assert.equal(h.requests(), 1);
+    assert.equal(h.calls[0][1].method, 'POST');
+    assert.equal(h.calls[0][1].headers['X-CSRFToken'], 'test');
     assert.equal(h.window.location.href, h.magnet);
     assert.equal(h.attributes['aria-busy'], undefined);
-    assert.equal(h.feedback().children[0].textContent, 'Client did not open?');
-    await h.feedback().children[1].listeners.click();
-    assert.deepEqual(h.copied, [h.magnet]);
-    assert.equal(h.feedback().children[0].textContent, 'Magnet copied.');
+    assert.equal(h.feedback(), undefined);
+    assert.deepEqual(h.copied, []);
 });
 
 test('multi-source links and modified clicks keep native navigation', async () => {

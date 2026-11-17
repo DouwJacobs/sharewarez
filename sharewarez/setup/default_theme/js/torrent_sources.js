@@ -92,7 +92,10 @@
     button.disabled = true;
     const status = document.querySelector('[data-torrent-action-status]');
     try {
-      const response = await fetch(button.dataset.url, {cache: 'no-store', signal: AbortSignal.timeout(30000)});
+      const response = await fetch(button.dataset.url, {
+        method: button.dataset.magnetAction === 'open' ? 'POST' : 'GET',
+        headers: CSRFUtils.getHeaders(), cache: 'no-store', signal: AbortSignal.timeout(30000)
+      });
       if (!response.ok) throw new Error('This source is unavailable.');
       const data = await response.json();
       if (button.dataset.magnetAction === 'copy') {

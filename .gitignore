@@ -82,6 +82,7 @@ letsrebuild.md
 # Testing (keep tests/ for unit testing, but exclude test artifacts)
 .coverage
 .pytest_cache/
+.validation/
 htmlcov/
 
 # Static uploads and generated files (these should be mounted as volumes or generated)

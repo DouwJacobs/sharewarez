@@ -26,6 +26,7 @@ db_data/
 instance/
 
 # Logs
+.validation/
 logs/
 *.log
 
@@ -48,7 +49,8 @@ letsrebuild.md
 *.swo
 *~
 
-# Testing (keep tests/ for unit testing, but exclude test artifacts)
+# Development tests and preview servers are not part of the runtime image.
+tests/
 scripts/torrent_preview.py
 .coverage
 .pytest_cache/

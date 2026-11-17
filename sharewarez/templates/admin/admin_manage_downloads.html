@@ -7,6 +7,7 @@
     <div class="app-surface downloads-panel admin_manage_downloads-requests">
         <nav class="app-page-actions delivery-tabs" aria-label="Download views">
             {% for view, label in [('activity', 'Activity'), ('links', 'Links')] %}<a class="btn {{ 'btn-primary' if filters.view == view else 'btn-secondary' }}" href="{{ filters.tab_url(view) }}"{% if filters.view == view %} aria-current="page"{% endif %}>{{ label }}</a>{% endfor %}
+            <a class="btn btn-secondary" href="{{ url_for('download.manage_downloads', view='torrents', user=filters.user, per_page=filters.per_page) }}">Torrents &amp; magnets</a>
         </nav>
         <p id="activeTransferConnection" class="active-transfer-empty" role="status">Connecting live updates…</p>
         <form class="downloads-filter-bar downloads-filter-bar--unified" method="get" aria-label="Filter download activity">

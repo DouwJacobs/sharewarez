@@ -1,11 +1,5 @@
 FROM python:3.12-slim
 
-ARG APP_VERSION
-LABEL org.opencontainers.image.title="GameLibrary" \
-      org.opencontainers.image.version="${APP_VERSION}" \
-      org.opencontainers.image.source="https://github.com/DouwJacobs/sharewarez"
-ENV APP_VERSION=${APP_VERSION}
-
 WORKDIR /app
 
 # Install system dependencies
@@ -19,6 +13,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
+
+# Version metadata belongs after expensive dependency layers so a release bump
+# does not invalidate apt/pip caches.
+ARG APP_VERSION
+LABEL org.opencontainers.image.title="GameLibrary" \
+      org.opencontainers.image.version="${APP_VERSION}" \
+      org.opencontainers.image.source="https://github.com/DouwJacobs/sharewarez"
+ENV APP_VERSION=${APP_VERSION}
 
 COPY --chown=gamelibrary:gamelibrary . .
 

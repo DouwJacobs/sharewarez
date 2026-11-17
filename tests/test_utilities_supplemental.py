@@ -2,11 +2,38 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 from flask import Flask
+from sharewarez.models import Game, GlobalSettings
 
 from sharewarez.utilities import (
     _scan_enabled_supplemental_content,
     refresh_game_metadata_and_updates,
 )
+
+
+def metadata_queries(game, settings):
+    """Respond to the queried entity without freezing the number of reads."""
+    def execute(statement):
+        entity = statement.column_descriptions[0]['entity']
+        if entity is Game:
+            return SimpleNamespace(scalar_one_or_none=lambda: game)
+        if entity is GlobalSettings:
+            return SimpleNamespace(scalars=lambda: SimpleNamespace(first=lambda: settings))
+        raise AssertionError('Unexpected metadata query')
+    return execute
+
+
+def test_identity_change_during_igdb_fetch_does_not_apply_stale_metadata():
+    game = SimpleNamespace(uuid='game', igdb_id=123, name='Current identity')
+    settings = SimpleNamespace(update_folder_name='updates', extras_folder_name='extras',
+                               enable_game_updates=False, enable_game_extras=False)
+    def fetch(external_id):
+        game.igdb_id = 456
+        return [{'name': 'Stale provider name'}]
+    with Flask(__name__).app_context(), \
+         patch('sharewarez.utilities.db.session.execute', side_effect=metadata_queries(game, settings)), \
+         patch('sharewarez.utilities.fetch_game_by_igdb_id', side_effect=fetch):
+        assert refresh_game_metadata_and_updates(game.uuid, expected_igdb_id=123) is False
+    assert game.name == 'Current identity'
 
 
 def test_enabled_updates_are_scanned_for_existing_game():
@@ -49,10 +76,7 @@ def test_metadata_refresh_updates_igdb_fields_and_repairs_developer_placeholder(
         enable_game_updates=False, enable_game_extras=False,
         enable_hltb_integration=False,
     )
-    results = [
-        SimpleNamespace(scalar_one_or_none=lambda: game),
-        SimpleNamespace(scalars=lambda: SimpleNamespace(first=lambda: settings)),
-    ]
+
     metadata = {
         'name': 'Updated name',
         'rating': 84.5,
@@ -67,7 +91,7 @@ def test_metadata_refresh_updates_igdb_fields_and_repairs_developer_placeholder(
 
     app = Flask(__name__)
     with app.app_context(), \
-         patch('sharewarez.utilities.db.session.execute', side_effect=results), \
+         patch('sharewarez.utilities.db.session.execute', side_effect=metadata_queries(game, settings)), \
          patch('sharewarez.utilities.db.session.commit'), \
          patch('sharewarez.utilities.os.path.exists', return_value=True), \
          patch('sharewarez.utilities.os.path.isdir', return_value=True), \
@@ -103,14 +127,11 @@ def test_metadata_refresh_succeeds_when_game_path_is_unavailable():
         update_folder_name='updates', extras_folder_name='extras',
         enable_game_updates=True, enable_game_extras=True, enable_hltb_integration=True,
     )
-    results = [
-        SimpleNamespace(scalar_one_or_none=lambda: game),
-        SimpleNamespace(scalars=lambda: SimpleNamespace(first=lambda: settings)),
-    ]
+
 
     app = Flask(__name__)
     with app.app_context(), \
-         patch('sharewarez.utilities.db.session.execute', side_effect=results), \
+         patch('sharewarez.utilities.db.session.execute', side_effect=metadata_queries(game, settings)), \
          patch('sharewarez.utilities.db.session.commit'), \
          patch('sharewarez.utilities.os.path.isdir', return_value=False), \
              patch('sharewarez.utilities.fetch_game_by_igdb_id', return_value=[{'name': 'Updated name'}]), \

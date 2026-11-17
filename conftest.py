@@ -26,6 +26,19 @@ else:
 
 from sharewarez import cache, create_app, db
 
+
+@pytest.fixture(autouse=True)
+def inexpensive_fixture_passwords(monkeypatch, request):
+    """Exercise real Argon2 without paying production work factors per fixture.
+
+    The explicit password_policy test retains the production hasher. Production
+    code and its configuration are never changed by this test-only fixture.
+    """
+    if request.node.get_closest_marker('password_policy'):
+        return
+    from argon2 import PasswordHasher
+    monkeypatch.setattr('sharewarez.models.ph', PasswordHasher(time_cost=1, memory_cost=1024, parallelism=1))
+
 @pytest.fixture(scope='function')
 def app():
     """Create and configure a test app using the test database."""
@@ -81,7 +94,9 @@ def app():
     # Client-only route tests do not request the db_session fixture. Ensure the
     # isolated test database has a schema and starts with an empty local cache.
     with app.app_context():
-        db.create_all()
+        from sqlalchemy import inspect
+        if not inspect(db.engine).has_table('users'):
+            db.create_all()
         cache.clear()
 
     yield app
@@ -93,11 +108,9 @@ def app():
 def db_session(app):
     """Create a database session for testing with simple cleanup."""
     with app.app_context():
-        # Create all tables for tests
-        db.create_all()
+        # The app fixture already prepared the schema. Repeating create_all here
+        # adds a full metadata introspection pass to every database-backed test.
         yield db.session
-        # Optionally drop all tables after test (commented out for performance)
-        # db.drop_all()
 
 @pytest.fixture(scope='function')
 def client(app):

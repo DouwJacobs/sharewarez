@@ -6,7 +6,7 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm.exc import StaleDataError
 from sharewarez import db
-from sharewarez.models import Game, GameTorrentSource, UnmatchedFolder
+from sharewarez.models import Game, GameTorrentSource, TorrentSourceAccess, UnmatchedFolder
 from sharewarez.utils.auth import admin_required
 from sharewarez.utils.event_logging import log_system_event
 from sharewarez.utils.torrent_service import prepare_source, attach_prepared, discard_attachments, confirm_hash_variants
@@ -174,12 +174,22 @@ def torrent_source_edit(game_uuid, source_id):
         raise
 
 
-@games_bp.route('/games/<game_uuid>/torrent-sources/<source_id>/magnet')
+def record_source_access(source, action):
+    db.session.add(TorrentSourceAccess(user_id=current_user.id, user_name=current_user.name,
+        game_uuid=source.game_uuid, game_name=source.game.name,
+        source_id=source.id, source_label=source.label, action=action,
+        file_bytes=source.file_bytes if action == 'torrent_file' else None))
+    db.session.commit()
+
+
+@games_bp.route('/games/<game_uuid>/torrent-sources/<source_id>/magnet', methods=['GET', 'POST'])
 @login_required
 def torrent_magnet(game_uuid, source_id):
     source = source_for(game_uuid, source_id)
     if source.kind != 'magnet':
         abort(404)
+    if request.method == 'POST':
+        record_source_access(source, 'magnet_handoff')
     return jsonify(magnet=source.magnet_uri)
 
 
@@ -193,5 +203,8 @@ def torrent_file(game_uuid, source_id):
         data = verified_attachment(source)
     except (FileNotFoundError, ValueError):
         return jsonify(error='Torrent attachment is unavailable. Contact an administrator.'), 404
-    return send_file(BytesIO(data), mimetype='application/x-bittorrent', as_attachment=True,
+    response = send_file(BytesIO(data), mimetype='application/x-bittorrent', as_attachment=True,
                      download_name=source.original_filename or 'game.torrent', max_age=0)
+    if request.method == 'GET':
+        record_source_access(source, 'torrent_file')
+    return response

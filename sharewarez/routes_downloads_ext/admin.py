@@ -2,7 +2,7 @@ from flask import render_template, redirect, url_for, flash, request, jsonify, c
 from datetime import datetime, timezone
 from flask_login import current_user, login_required
 from sharewarez.forms import CsrfProtectForm
-from sharewarez.models import DownloadQueueEntry, DownloadRequest, DownloadTransfer
+from sharewarez.models import DownloadQueueEntry, DownloadRequest, DownloadTransfer, TorrentSourceAccess
 from sqlalchemy import select, update
 from sqlalchemy.orm import joinedload
 from sharewarez.utils.auth import admin_required
@@ -19,7 +19,33 @@ from . import download_bp
 @login_required
 @admin_required
 def manage_downloads():
+    if request.args.get('view') == 'torrents':
+        return torrent_download_activity()
     return render_template('admin/admin_manage_downloads.html', **delivery_context())
+
+
+def torrent_download_activity():
+    username = (request.args.get('user') or '').strip()
+    action = (request.args.get('action') or '').strip()
+    try:
+        page = int(request.args.get('page', '1'))
+        per_page = int(request.args.get('per_page', '25'))
+        if len(username) > 255 or page < 1 or page > 1000000 or not 10 <= per_page <= 100:
+            raise ValueError()
+        if action not in ('', 'magnet_handoff', 'torrent_file'):
+            raise ValueError()
+    except ValueError:
+        abort(400, 'Invalid torrent activity filters')
+    query = select(TorrentSourceAccess)
+    if username:
+        escaped = username.replace('\\', '\\\\').replace('%', '\\%').replace('_', '\\_')
+        query = query.where(TorrentSourceAccess.user_name.ilike(f'%{escaped}%', escape='\\'))
+    if action:
+        query = query.where(TorrentSourceAccess.action == action)
+    pagination = db.paginate(query.order_by(TorrentSourceAccess.created_at.desc(), TorrentSourceAccess.id.desc()),
+                             page=page, per_page=per_page, error_out=False)
+    return render_template('admin/admin_torrent_downloads.html', pagination=pagination,
+                           username=username, action=action, per_page=per_page)
 
 
 def parsed_filters(args):

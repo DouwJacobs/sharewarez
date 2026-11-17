@@ -67,7 +67,7 @@
                         {% if game.has_torrent_sources %}
                         {% set source_description = 'Magnet/torrent only — no local files' if not game.has_local_source else 'Magnet/torrent available' %}
                         {% set source_action = 'Open magnet in your torrent client' if game.single_magnet_source_id else 'View magnet/torrent sources' %}
-                        <a class="library-source-badge{% if not game.has_local_source %} library-source-badge--only{% endif %}" href="{{ url_for('games.game_details', game_uuid=game.uuid) }}#torrent-sources-title" {% if game.single_magnet_source_id %}data-card-magnet-url="{{ url_for('games.torrent_magnet', game_uuid=game.uuid, source_id=game.single_magnet_source_id) }}"{% endif %} aria-label="{{ source_action }}: {{ game.name }}. {{ source_description }}" title="{{ source_action }} · {{ source_description }}"><i class="fas fa-magnet" aria-hidden="true"></i></a>
+                        <a class="library-source-badge{% if not game.has_local_source %} library-source-badge--only{% endif %}" href="{{ url_for('games.game_details', game_uuid=game.uuid) }}#torrent-sources-title" {% if game.single_magnet_source_id %}data-card-magnet-url="{{ url_for('games.torrent_magnet', game_uuid=game.uuid, source_id=game.single_magnet_source_id) }}"{% endif %} aria-label="{{ source_action }}: {{ game.name }}. {{ source_description }}" title="{{ source_action }} · {{ source_description }}"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 4h4v4H5zm10 0h4v4h-4zM5 10h4v3a3 3 0 0 0 6 0v-3h4v3a7 7 0 0 1-14 0z"/></svg></a>
                         {% endif %}
                     </div>
                     {% endif %}

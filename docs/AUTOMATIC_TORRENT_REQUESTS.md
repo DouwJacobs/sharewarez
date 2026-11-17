@@ -62,7 +62,10 @@ durable jobs. Game payloads are not downloaded onto the server.
 Request details show the lookup outcome and source attribution. The retry action
 is available for pending requests after work ends, provided at least one active
 requester still has permission. Return a manually reviewed request to Pending
-before explicitly retrying automation. Transient catalogue failures use the job
+before explicitly retrying automation. Partial catalogue outages block automatic selection until the complete lookup
+can be assessed; explicit saved admin choices remain available. Request lookups
+have their own queue consumer so library scans do not delay them. Transient
+catalogue and remote torrent-file failures use the job
 queue's bounded three-attempt backoff. Job details retain unexpected errors.
 
 Migration `20261117_37` adds the denied-by-default account permission and separate

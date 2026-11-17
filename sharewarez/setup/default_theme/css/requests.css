@@ -64,8 +64,8 @@
     justify-content: center;
     line-height: 1;
 }
-.request-search-wrap input:focus,
-.request-search-wrap input:focus-visible {
+#content .requests-page .request-search-wrap input:focus,
+#content .requests-page .request-search-wrap input:focus-visible {
     border: 0 !important;
     outline: 0 !important;
     box-shadow: none !important;

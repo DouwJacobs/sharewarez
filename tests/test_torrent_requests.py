@@ -61,6 +61,13 @@ def test_disabled_automation_does_not_queue(torrent_request, field, value):
     assert queue_lookup(case.request, case.user) is None
 
 
+def test_new_authorized_submission_can_resume_previously_skipped_lookup(torrent_request):
+    case = torrent_request
+    case.request.torrent_lookup_status = 'skipped'
+    case.session.commit()
+    assert queue_lookup(case.request, case.user) is not None
+
+
 def test_permission_defaults_to_denied_and_cannot_trigger_queue(torrent_request):
     case = torrent_request
     case.user.can_auto_fulfill_torrent_requests = False
@@ -203,6 +210,114 @@ def test_source_failure_records_reason_and_allows_worker_retry(torrent_request):
         run_lookup(case, fetch=fail, match={'status': 'not_found', 'entry': None})
     assert case.request.torrent_lookup_status == 'source_error'
     assert case.request.status == 'pending'
+
+
+def test_partial_catalogue_failure_never_fulfils_from_incomplete_matches(torrent_request):
+    case = torrent_request
+    case.settings.settings = {**case.settings.settings,
+        'torrentCatalogueUrls': 'https://example.com/catalogue.json\nhttps://example.com/other.json'}
+    case.session.commit()
+    def fetch(url):
+        if url.endswith('/other.json'):
+            raise OSError('Temporary outage')
+        return {}
+    with pytest.raises(RuntimeError, match='catalogue unavailable'):
+        run_lookup(case, fetch=fetch)
+    assert case.request.status == 'pending'
+    assert case.session.query(Game).filter_by(name=case.request.game_name).count() == 0
+
+
+def test_transient_torrent_fetch_failure_can_be_retried(torrent_request):
+    case = torrent_request
+    entry = {'title': case.request.game_name, 'uris': ['https://example.com/release.torrent'],
+             'source_name': 'Public source', 'source_url': 'https://example.com/catalogue.json'}
+    with patch('sharewarez.utils.torrent_catalogues.fetch_bytes', side_effect=OSError('Temporary outage')):
+        with pytest.raises(RuntimeError, match='torrent file unavailable'):
+            run_lookup(case, match={'status': 'matched', 'entry': entry})
+    assert case.request.status == 'pending' and case.request.torrent_lookup_status == 'source_error'
+
+
+@pytest.mark.parametrize('change', ['before', 'during'])
+def test_queued_enrichment_cannot_apply_metadata_to_a_changed_identity(torrent_request, change):
+    from sharewarez.utils.background_jobs import torrent_request_enrich
+    case = torrent_request
+    result, _ = run_lookup(case)
+    game = case.request.fulfilled_game
+    identity = game.external_identities[0]
+    expected_id = identity.external_id
+    if change == 'before':
+        identity.external_id = uuid4().hex
+        case.session.commit()
+    def fetch(provider, external_id):
+        identity.external_id = uuid4().hex
+        case.session.commit()
+        return {'game_name': 'Must not apply'}
+    with patch('sharewarez.utils.game_requests.fetch_metadata_game', side_effect=fetch):
+        outcome = torrent_request_enrich(context(), {'game_uuid': game.uuid,
+            'expected_provider': 'rawg', 'expected_external_id': expected_id})
+    assert outcome['skipped'] is True
+    assert game.name == case.request.game_name
+
+
+def test_unrelated_settings_change_does_not_discard_a_valid_lookup(torrent_request):
+    case = torrent_request
+    def fetch(url):
+        case.settings.settings = {**case.settings.settings, 'showHelpButton': False}
+        case.session.commit()
+        return {}
+    result, _ = run_lookup(case, fetch=fetch)
+    assert result['status'] == 'fulfilled'
+
+
+def test_legacy_igdb_request_retains_its_verified_identity(torrent_request):
+    case = torrent_request
+    case.request.metadata_provider = None
+    case.request.provider_game_id = None
+    case.request.igdb_id = 1_500_000_000 + uuid4().int % 400_000_000
+    case.session.commit()
+    result, _ = run_lookup(case)
+    assert result['status'] == 'fulfilled'
+    game = case.request.fulfilled_game
+    assert game.igdb_id == case.request.igdb_id
+    assert game.external_identities[0].provider == 'igdb'
+
+
+def test_unexpected_worker_failure_does_not_leave_request_looking_up(torrent_request):
+    from sharewarez.utils.background_jobs import execute
+    case = torrent_request
+    job = queue_lookup(case.request, case.user)
+    job.status = 'running'
+    job.locked_by = 'audit-worker'
+    job.attempts = 1
+    case.session.commit()
+    with patch('sharewarez.utils.torrent_catalogues.fetch_catalogue', side_effect=RuntimeError('Unexpected transport failure')):
+        execute(job, 'audit-worker')
+    assert case.request.torrent_lookup_status == 'source_error'
+    assert job.status == 'queued'  # Bounded durable retry is retained.
+
+
+def test_request_queue_can_fulfil_while_a_scan_is_running(torrent_request, app):
+    from threading import Event
+    from sharewarez.job_worker import maintain_request_lookups
+    case = torrent_request
+    scan = BackgroundJob(task_name='library.scan', status='running', locked_by='busy-scan-worker')
+    case.session.add(scan)
+    job = queue_lookup(case.request, case.user)
+    job.created_at = datetime(2000, 1, 1, tzinfo=timezone.utc)
+    case.session.commit()
+    assert job.queue == 'requests'
+    stopping = Event()
+    def fetch(url):
+        stopping.set()
+        return {'name': 'Test', 'source_url': url, 'downloads': [
+            {'title': case.request.game_name, 'uris': ['magnet:?xt=urn:btih:' + 'c' * 40]}]}
+    with patch('sharewarez.utils.torrent_catalogues.fetch_catalogue', side_effect=fetch), \
+         patch('sharewarez.utils.request_notifications.notify_request_updated'):
+        maintain_request_lookups(app, stopping)
+    case.session.expire_all()
+    assert job.status == 'completed'
+    assert case.request.status == 'fulfilled'
+    assert scan.status == 'running'
 
 
 def test_attachment_failure_rolls_back_new_game(torrent_request):

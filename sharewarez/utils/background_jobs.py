@@ -603,7 +603,18 @@ def library_bulk_image_refresh_task(context, payload):
 @register_task('requests.torrent_lookup')
 def torrent_request_lookup(context, payload):
     from sharewarez.utils.torrent_requests import execute_lookup
-    return execute_lookup(context, payload)
+    try:
+        return execute_lookup(context, payload)
+    except Exception as error:
+        db.session.rollback()
+        from sharewarez.models import GameRequest
+        record = db.session.get(GameRequest, payload['request_id'])
+        if record and record.status == 'pending' and record.torrent_lookup_status in {'queued', 'looking_up'}:
+            record.torrent_lookup_status = 'skipped' if isinstance(error, JobCancelled) else 'source_error'
+            record.torrent_lookup_message = ('Lookup cancelled. Retry to search again.' if isinstance(error, JobCancelled)
+                else 'Lookup did not finish. Check the background job for details or retry the request.')
+            db.session.commit()
+        raise
 
 
 @register_task('requests.torrent_enrich')
@@ -614,17 +625,32 @@ def torrent_request_enrich(context, payload):
     game = db.session.execute(select(Game).where(Game.uuid == payload['game_uuid'])).scalar_one_or_none()
     if game is None:
         return {'skipped': True}
+    identity = next((item for item in game.external_identities if item.canonical), None)
+    provider = identity.provider if identity else 'igdb' if game.igdb_id else None
+    external_id = identity.external_id if identity else str(game.igdb_id) if game.igdb_id else None
+    expected = (payload.get('expected_provider', provider), payload.get('expected_external_id', external_id))
+    if (provider, external_id) != expected:
+        return {'skipped': True, 'reason': 'Game identity changed'}
+    context.heartbeat(10, 'Refreshing requested game metadata')
     if game.igdb_id:
-        refresh_game_metadata_and_updates(game.uuid)
+        refresh_game_metadata_and_updates(game.uuid, expected_igdb_id=game.igdb_id)
     else:
         from sharewarez.utils.game_requests import fetch_metadata_game
         from sharewarez.utils.metadata_provenance import merge_provider_metadata
-        identity = next((item for item in game.external_identities if item.canonical), None)
         if identity is None:
             return {'skipped': True}
         snapshot = fetch_metadata_game(identity.provider, identity.external_id)
         if snapshot is None:
             raise RuntimeError('Metadata provider returned no game')
+        context.check_cancelled(force=True)
+        game = db.session.execute(select(Game).where(Game.uuid == payload['game_uuid']).with_for_update()
+                                  .execution_options(populate_existing=True)).scalar_one_or_none()
+        if game is None:
+            return {'skipped': True}
+        db.session.expire(game, ['external_identities'])
+        identity = next((item for item in game.external_identities if item.canonical), None)
+        if identity is None or (identity.provider, identity.external_id) != expected:
+            return {'skipped': True, 'reason': 'Game identity changed'}
         merge_provider_metadata(game, {key: value for key, value in {
             'name': snapshot.get('game_name'), 'summary': snapshot.get('summary'),
             'first_release_date': snapshot.get('first_release_date'), 'rating': snapshot.get('rating'),

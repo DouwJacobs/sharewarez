@@ -954,11 +954,10 @@
 }
 
 /* Source badges are actions, with the same touch area as other card actions. */
-.game-library-container a.library-source-badge { width: 42px; height: 42px; text-decoration: none; }
+.game-library-container a.library-source-badge { display: inline-flex; align-items: center; justify-content: center; width: 42px; height: 42px; padding: 0; line-height: 1; text-decoration: none; }
+.game-library-container a.library-source-badge > svg { display: block; flex: none; width: 24px; height: 24px; margin: 0; fill: currentColor; pointer-events: none; }
 .game-library-container a.library-source-badge:hover { border-color: var(--theme-primary-color); color: var(--theme-primary-color); }
 .game-library-container a.library-source-badge:focus-visible { outline: 2px solid var(--theme-primary-color); outline-offset: 3px; }
 .game-library-container a.library-source-badge[aria-busy="true"] { opacity: .65; cursor: progress; }
 @media (max-width: 768px) { .game-library-container a.library-source-badge { width: 44px; height: 44px; } }
 .library-source-feedback { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; color: var(--theme-text-secondary); font-size: .75rem; line-height: 1.4; }
-.game-library-container .library-source-copy { width: 42px; min-width: 42px; height: 42px; padding: 0; }
-@media (max-width: 768px) { .game-library-container .library-source-copy { width: 44px; min-width: 44px; height: 44px; } }

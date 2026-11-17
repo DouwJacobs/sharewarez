@@ -925,3 +925,21 @@ measured 42 px on desktop and approximately 44 px on mobile. The user permission
 and its explanation remained readable in the mobile edit dialog. Keyboard Tab
 reached the catalogue textarea and Test sources action. Temporary viewport
 overrides were reset. Other themes were not individually inspected.
+
+### Request search and torrent activity follow-up
+
+The Requests composite search now overrides the shared keyboard focus outline at
+the inner input's ownership boundary; its outer shell retains the focus highlight.
+Browser inspection confirmed `:focus-visible` on the input with no inner outline
+or shadow on desktop and 390 × 844. Card magnet actions no longer add a persistent
+client/copy prompt; their icon box is explicitly centered. Mobile measurement
+showed a 44 × 44 target and zero horizontal/vertical center deviation.
+
+Admin Downloads adds a Torrents & magnets view with bounded username/action
+filters and pagination. It records authenticated magnet-open POST actions and
+successful torrent-file GET responses in a separate persistent history table;
+copy/read GETs and HEAD requests are excluded. No progress or torrent completion
+is inferred. A temporary populated preview verified desktop/mobile rendering,
+375 px client/scroll widths, and the shared mobile table presentation. Preview
+rows were removed and viewport overrides reset. Backend tests cover access,
+CSRF, filters, retained history after source/game deletion, and migration rollback.

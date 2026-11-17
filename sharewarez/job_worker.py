@@ -70,6 +70,26 @@ def maintain_images(app, stopping, interval=5):
         stopping.wait(interval)
 
 
+def maintain_request_lookups(app, stopping, interval=1):
+    """A library scan must not block newly requested source-only games."""
+    request_worker_id = f'{worker_identity()}:requests'
+    while not stopping.is_set():
+        claimed = False
+        with app.app_context():
+            try:
+                job = claim_next(request_worker_id, queue='requests')
+                if job is not None:
+                    claimed = True
+                    execute(job, request_worker_id)
+            except Exception:
+                db.session.rollback()
+                app.logger.exception('Torrent request queue failed')
+            finally:
+                db.session.remove()
+        if not claimed:
+            stopping.wait(interval)
+
+
 def run_worker():
     app = create_app()
     worker_id = worker_identity()
@@ -137,6 +157,10 @@ def run_worker():
             target=maintain_images, args=(app, stopping), name='image-maintenance', daemon=True,
         )
         image_thread.start()
+        request_thread = threading.Thread(
+            target=maintain_request_lookups, args=(app, stopping), name='torrent-requests', daemon=True,
+        )
+        request_thread.start()
 
         while not stopping.is_set():
             monotonic_now = time.monotonic()
@@ -157,6 +181,7 @@ def run_worker():
             thread.join(timeout=5)
         maintenance_thread.join(timeout=5)
         image_thread.join(timeout=5)
+        request_thread.join(timeout=5)
         app.logger.info("Background worker %s stopped", worker_id)
 
 

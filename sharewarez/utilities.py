@@ -65,7 +65,7 @@ def _scan_enabled_supplemental_content(game_name, full_disk_path, library_uuid,
         print(f"Extras scanning disabled, skipping for game: {game_name}")
 
 
-def refresh_game_metadata_and_updates(game_uuid):
+def refresh_game_metadata_and_updates(game_uuid, *, expected_igdb_id=None):
     """Refresh IGDB, HLTB, filesystem, and supplemental metadata for one game."""
     game = db.session.execute(select(Game).filter_by(uuid=game_uuid)).scalar_one_or_none()
     if not game:
@@ -80,10 +80,17 @@ def refresh_game_metadata_and_updates(game_uuid):
     if not game.igdb_id or game.igdb_id >= 2000000420:
         raise ValueError('This game does not have a refreshable IGDB ID')
 
-    response = fetch_game_by_igdb_id(game.igdb_id)
+    fetched_id = game.igdb_id
+    if expected_igdb_id is not None and str(fetched_id) != str(expected_igdb_id):
+        return False
+    response = fetch_game_by_igdb_id(fetched_id)
     if not response:
         raise RuntimeError('IGDB returned no metadata for this game')
     metadata = response[0]
+    game = db.session.execute(select(Game).where(Game.uuid == game_uuid).with_for_update()
+                              .execution_options(populate_existing=True)).scalar_one_or_none()
+    if game is None or game.igdb_id != fetched_id:
+        return False
 
     scalar_fields = (
         'name', 'summary', 'storyline', 'url', 'slug',

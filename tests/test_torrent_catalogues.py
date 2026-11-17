@@ -171,3 +171,25 @@ def test_cache_force_refresh_and_mutation_isolation():
         service.fetch_catalogue('https://example.com/source.json', force_refresh=True)
         assert fetch.call_count == 2
     service._cache.clear()
+
+
+def test_invalid_magnets_cannot_be_selected_as_the_newest_release():
+    source = service.parse_catalogue({'name': 'Test', 'downloads': [
+        {'title': 'A Game – v1.0', 'uris': [MAGNET], 'uploadDate': '2025-01-01'},
+        {'title': 'A Game – v1.1', 'uris': ['magnet:?xt=bad'], 'uploadDate': '2026-01-01'},
+    ]})
+    result = service.match_catalogues('A Game', [source], prefer_latest_upload=True)
+    assert result['entry']['title'] == 'A Game – v1.0'
+
+
+def test_duplicate_source_order_does_not_change_latest_upload_selection():
+    first = dated_releases('2025-01-01', '2025-06-01')
+    mirror = dated_releases('2026-01-01')
+    for sources in ([first, mirror], [mirror, first]):
+        result = service.match_catalogues('A Game', sources, prefer_latest_upload=True)
+        assert result['entry']['title'] == 'A Game – v1.0'
+
+
+def test_malformed_idna_hostname_is_a_friendly_catalogue_error():
+    with pytest.raises(service.CatalogueError):
+        service.validate_catalogue_url('https://' + 'a' * 64 + '.example/catalogue.json')

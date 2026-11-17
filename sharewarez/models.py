@@ -266,6 +266,22 @@ class GameTorrentSource(db.Model):
     __mapper_args__ = {'version_id_col': revision}
 
 
+class TorrentSourceAccess(db.Model):
+    """Issued external-client handoffs; these do not measure torrent progress."""
+    __tablename__ = 'torrent_source_accesses'
+    __table_args__ = (db.CheckConstraint("action IN ('magnet_handoff', 'torrent_file')", name='ck_torrent_access_action'),)
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'), index=True)
+    game_uuid = db.Column(db.String(36), db.ForeignKey('games.uuid', ondelete='SET NULL'), index=True)
+    source_id = db.Column(db.String(36), db.ForeignKey('game_torrent_sources.id', ondelete='SET NULL'), index=True)
+    user_name = db.Column(db.String(64), nullable=False)
+    game_name = db.Column(db.Text, nullable=False)
+    source_label = db.Column(db.String(160), nullable=False)
+    action = db.Column(db.String(24), nullable=False)
+    file_bytes = db.Column(db.BigInteger)
+    created_at = db.Column(db.DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc), index=True)
+
+
 class GameExternalIdentity(db.Model):
     __tablename__ = 'game_external_identities'
     __table_args__ = (

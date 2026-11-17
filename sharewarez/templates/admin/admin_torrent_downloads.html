@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% from "partials/ui_components.html" import page_header %}
+{% block styles %}{{ super() }}<link rel="stylesheet" href="{{ 'css/admin/admin_manage_downloads.css'|theme_asset }}">{% endblock %}
+{% block content %}
+<main class="app-page downloads-page" aria-labelledby="torrent-downloads-title">
+    {{ page_header('Downloads', 'Review magnet clicks and torrent-file downloads.', 'Administration', 'fa-shield-halved', pagination.total, 'event', 'torrent-downloads-title', class_name='downloads-page-header') }}
+    <section class="app-surface downloads-panel">
+        <nav class="app-page-actions delivery-tabs" aria-label="Download views">
+            <a class="btn btn-secondary" href="{{ url_for('download.manage_downloads', view='activity', user=username, per_page=per_page) }}">Activity</a>
+            <a class="btn btn-secondary" href="{{ url_for('download.manage_downloads', view='links', user=username, per_page=per_page) }}">Links</a>
+            <a class="btn btn-primary" aria-current="page" href="{{ url_for('download.manage_downloads', view='torrents', user=username, per_page=per_page) }}">Torrents &amp; magnets</a>
+        </nav>
+        <p class="active-transfer-empty">Magnet clicks and torrent-file downloads are recorded here. Copying a magnet is not counted. Progress and completion in the user's torrent client are not tracked.</p>
+        <form class="downloads-filter-bar downloads-filter-bar--unified" method="get" aria-label="Filter torrent activity">
+            <input type="hidden" name="view" value="torrents">
+            <label>Username<input class="form-control" type="search" name="user" value="{{ username }}" placeholder="All users"></label>
+            <label>Action<select class="form-select" name="action"><option value="">All actions</option><option value="magnet_handoff"{% if action == 'magnet_handoff' %} selected{% endif %}>Magnet link clicked</option><option value="torrent_file"{% if action == 'torrent_file' %} selected{% endif %}>Torrent file served</option></select></label>
+            <label>Rows per page<select class="form-select" name="per_page">{% for size in [10,25,50,100] %}<option value="{{ size }}"{% if per_page == size %} selected{% endif %}>{{ size }}</option>{% endfor %}{% if per_page not in [10,25,50,100] %}<option value="{{ per_page }}" selected>{{ per_page }}</option>{% endif %}</select></label>
+            <div class="downloads-filter-actions"><button class="btn btn-primary btn-sm" type="submit">Apply filters</button><a class="btn btn-secondary btn-sm" href="{{ url_for('download.manage_downloads', view='torrents') }}">Clear</a></div>
+        </form>
+        {% if pagination.items %}
+        <div class="table-responsive">
+            <table class="table downloads-table">
+                <thead><tr><th scope="col">When</th><th scope="col">User</th><th scope="col">Game</th><th scope="col">Source</th><th scope="col">Action</th></tr></thead>
+                <tbody>{% for event in pagination.items %}<tr>
+                    <td data-label="When">{{ event.created_at|friendly_datetime }}</td>
+                    <td data-label="User">{{ event.user_name }}</td>
+                    <td data-label="Game">{% if event.game_uuid %}<a class="downloads-game-link" href="{{ url_for('games.game_details', game_uuid=event.game_uuid) }}">{{ event.game_name }}</a>{% else %}{{ event.game_name }}{% endif %}</td>
+                    <td data-label="Source">{{ event.source_label }}</td>
+                    <td data-label="Action"><span>{{ 'Magnet link clicked' if event.action == 'magnet_handoff' else 'Torrent file served' }}{% if event.file_bytes is not none %}<small class="d-block">{{ event.file_bytes|filesizeformat }} torrent metadata</small>{% endif %}</span></td>
+                </tr>{% endfor %}</tbody>
+            </table>
+        </div>
+        {% else %}<p class="active-transfer-empty">No torrent or magnet activity matches these filters.</p>{% endif %}
+        {% if pagination.pages > 1 %}
+        <nav class="sw-pagination" aria-label="Torrent activity pagination">
+            {% if pagination.has_prev %}<a class="btn btn-secondary btn-sm" href="{{ url_for('download.manage_downloads', view='torrents', user=username, action=action, per_page=per_page, page=pagination.prev_num) }}">Previous</a>{% endif %}
+            <span>Page {{ pagination.page }} of {{ pagination.pages }}</span>
+            {% if pagination.has_next %}<a class="btn btn-secondary btn-sm" href="{{ url_for('download.manage_downloads', view='torrents', user=username, action=action, per_page=per_page, page=pagination.next_num) }}">Next</a>{% endif %}
+        </nav>{% endif %}
+    </section>
+</main>
+{% endblock %}

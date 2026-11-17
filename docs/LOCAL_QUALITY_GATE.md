@@ -1,45 +1,30 @@
 # Local production quality gate
 
-GameLibrary release validation runs locally and does not depend on GitHub CI.
-Install the compiled development environment, then run the single gate:
+Run `bash scripts/quality-gate.sh` for normal development feedback. It selects
+regressions for affected domains and runs them concurrently in isolated,
+disposable PostgreSQL databases. Unknown production changes and shared
+configuration fall back to the full suite.
 
 ```bash
 python -m pip install -r requirements-dev.txt
-./scripts/quality-gate.sh
+bash scripts/quality-gate.sh                 # affected tests and shared checks
+bash scripts/quality-gate.sh --full          # complete retained regression suite
+bash scripts/quality-gate.sh --release       # affected checks, dependency audit, image build
+bash scripts/quality-gate.sh --dependencies  # verify lock resolution and dependency audit
 ```
 
-The gate verifies that the production lockfile still resolves exactly from the
-committed pins and input constraints, audits dependencies,
-runs correctness lint and focused static typing, compiles Python sources, starts
-an isolated PostgreSQL 17.6 database, runs every test module against a freshly
-recreated database to prevent legacy state leakage, applies migrations to a
-freshly initialized schema, checks the single Alembic head and authoritative
-version, validates Compose, builds the production container, and smoke-compiles
-the packaged application.
+See [validation modes and isolation](VALIDATION.md) for selection rules, tooling,
+reports, worker limits and exact-release publishing. Dependency lock resolution
+also runs automatically when requirements change. Use
+`bash scripts/lock-dependencies.sh` when intentionally refreshing dependencies,
+and commit input constraints and compiled locks together.
 
-The schema baseline intentionally contains no DDL. For a fresh database, the
-gate creates the current model schema and stamps it at the active Alembic head
-before confirming that `db upgrade` is clean. Later revisions remain the
-upgrade path for existing installations that were stamped at the baseline.
+The gate checks lint, accessibility, focused static typing, Python compilation,
+all JavaScript runners, migration bootstrap, version and Compose configuration.
+A fresh schema uses current models and is stamped at the active Alembic head;
+historical upgrades are covered separately by migration tests and release drills.
 
-Set `SKIP_CONTAINER_BUILD=true` only for fast development feedback. It is not a
-valid release result. `TEST_DB_PORT` and `QUALITY_IMAGE_TAG` may be overridden
-when their defaults conflict with local services.
-
-Lock validation is intentionally reproducible: newly published package versions
-do not invalidate a previously reviewed lockfile. Use
-`./scripts/lock-dependencies.sh` when intentionally refreshing dependencies; the
-gate still fails when an input change requires the committed pins to change.
-
-## Updating dependencies
-
-Edit `requirements.in` or `requirements-dev.in`, then run:
-
-```bash
-./scripts/lock-dependencies.sh
-python -m pip install -r requirements-dev.txt
-./scripts/quality-gate.sh
-```
-
-Commit input and compiled lockfiles together. Review version changes and audit
-results rather than accepting automated upgrades blindly.
+`SKIP_CONTAINER_BUILD=true` can separate a release validation run from its image
+build, but a release still requires an exact committed image build and container
+smoke check before publication. The full suite is reserved for shared changes,
+release audits and periodic regression checks.

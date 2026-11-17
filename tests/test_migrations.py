@@ -38,7 +38,7 @@ def test_scan_lifecycle_fresh_bootstrap_matches_head(app, db_session):
     db_session.commit()
     db_session.refresh(row)
     assert row.folders_unmatched == 0 and row.scan_options == {'fetch_hltb': False}
-    assert current_revision(app.config['SQLALCHEMY_DATABASE_URI']) == head_revision() == '20261117_36'
+    assert current_revision(app.config['SQLALCHEMY_DATABASE_URI']) == head_revision()
 
 
 @pytest.fixture(autouse=True)
@@ -280,12 +280,14 @@ def test_transfer_evidence_upgrade_preserves_populated_previous_schema(app, db_s
     from uuid import uuid4
     from sharewarez.models import DownloadTransfer, User
     uri = app.config['SQLALCHEMY_DATABASE_URI']
-    command.downgrade(alembic_config(uri), '20261105_33')
     owner = User(name=uuid4().hex, email=f'{uuid4().hex}@example.test', password_hash='unused', role='user')
     actor = User(name=uuid4().hex, email=f'{uuid4().hex}@example.test', password_hash='unused', role='admin')
     db_session.add_all([owner, actor])
     db_session.commit()
-    transfer_id = db_session.execute(text("INSERT INTO download_transfers (user_id, filename, reserved_bytes, bytes_sent, status, started_at, last_activity_at, is_resumed) VALUES (:owner, 'legacy.bin', 7, 7, 'interrupted', now(), now(), false) RETURNING id"), {'owner': owner.id}).scalar_one()
+    owner_id, actor_id = owner.id, actor.id
+    db_session.commit()
+    command.downgrade(alembic_config(uri), '20261105_33')
+    transfer_id = db_session.execute(text("INSERT INTO download_transfers (user_id, filename, reserved_bytes, bytes_sent, status, started_at, last_activity_at, is_resumed) VALUES (:owner, 'legacy.bin', 7, 7, 'interrupted', now(), now(), false) RETURNING id"), {'owner': owner_id}).scalar_one()
     db_session.commit()
     command.upgrade(alembic_config(uri), 'head')
     row = db_session.get(DownloadTransfer, transfer_id)
@@ -293,7 +295,7 @@ def test_transfer_evidence_upgrade_preserves_populated_previous_schema(app, db_s
     assert all(getattr(row, field) is None for field in ('end_reason', 'delivery_kind', 'expected_response_bytes', 'correlation_id', 'ended_by_user_id', 'last_progress_at'))
     assert row.end_reason_label == 'Reason unavailable'
     row.end_reason = 'admin_stop'
-    row.ended_by_user_id = actor.id
+    row.ended_by_user_id = actor_id
     row.expected_response_bytes = 8_000_000_000
     db_session.commit()
     db_session.delete(actor)
@@ -303,7 +305,7 @@ def test_transfer_evidence_upgrade_preserves_populated_previous_schema(app, db_s
     db_session.commit()
     command.downgrade(alembic_config(uri), '20261105_33')
     command.upgrade(alembic_config(uri), 'head')
-    assert current_revision(uri) == head_revision() == '20261117_36'
+    assert current_revision(uri) == head_revision()
 
 
 def test_transfer_evidence_upgrade_accepts_metadata_created_columns(app, db_session):
@@ -323,10 +325,12 @@ def test_hide_history_upgrade_retains_accounting_and_downgrade(app, db_session):
     from sharewarez.models import DownloadTransfer, User
     from sqlalchemy import inspect
     uri = app.config['SQLALCHEMY_DATABASE_URI']
-    command.downgrade(alembic_config(uri), '20261106_34')
     owner = User(name=uuid4().hex, email=uuid4().hex + '@example.test', password_hash='unused', role='user')
     db_session.add(owner); db_session.commit()
-    transfer_id = db_session.execute(text("INSERT INTO download_transfers (user_id, filename, reserved_bytes, bytes_sent, status, started_at, last_activity_at, is_resumed, end_reason) VALUES (:owner, 'retained.bin', 123, 123, 'interrupted', now(), now(), false, 'peer_disconnect') RETURNING id"), {'owner': owner.id}).scalar_one()
+    owner_id = owner.id
+    db_session.commit()
+    command.downgrade(alembic_config(uri), '20261106_34')
+    transfer_id = db_session.execute(text("INSERT INTO download_transfers (user_id, filename, reserved_bytes, bytes_sent, status, started_at, last_activity_at, is_resumed, end_reason) VALUES (:owner, 'retained.bin', 123, 123, 'interrupted', now(), now(), false, 'peer_disconnect') RETURNING id"), {'owner': owner_id}).scalar_one()
     db_session.commit()
     command.upgrade(alembic_config(uri), 'head')
     row = db_session.get(DownloadTransfer, transfer_id)
