@@ -24,7 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function values(panel, validate = false) {
         const result = {};
         for (const input of panel.querySelectorAll('input[id], select[id], textarea[id]')) {
-            if (input.classList.contains('mobile-nav-slot')) continue;
+            if (input.classList.contains('mobile-nav-slot') || input.type === 'file') continue;
             if (input.type === 'checkbox') result[input.id] = input.checked;
             else if (input.type === 'number') {
                 const valid = input.value.trim() && Number.isFinite(Number(input.value));

@@ -119,6 +119,22 @@
                                 <div class="settings-field-block"><label for="torrentCatalogueUrls">Public catalogue URLs</label><p id="torrentCatalogueUrlsHelp">One Hydra-compatible JSON URL per line, up to five. Configure public sources without personal tracker credentials. Uncertain matches remain pending for review.</p><textarea class="form-control" id="torrentCatalogueUrls" rows="4" maxlength="10000" aria-describedby="torrentCatalogueUrlsHelp"></textarea></div>
                                 <button type="button" class="btn btn-secondary" id="testTorrentCatalogues">Test sources</button>
                                 <p id="torrentCatalogueTestResult" role="status" aria-live="polite"></p>
+                                <div class="settings-subsection">
+                                    <h4>Upload a catalogue</h4>
+                                    <p>Download the JSON file from your preferred source in your browser, then upload it here. Uploads are saved immediately and included in database backups. Replace the file yourself when a newer catalogue is available.</p>
+                                    <p>Uploaded entries are used alongside saved URLs. Remove any blocked URL from the list above and save settings to prevent it blocking lookup.</p>
+                                    <div class="settings-field-block">
+                                        <label for="torrentCatalogueFile">Catalogue JSON file</label>
+                                        <p id="torrentCatalogueFileHelp">Hydra-compatible JSON, up to 20 MiB. A successful upload replaces the previous uploaded catalogue.</p>
+                                        <input type="file" class="form-control" id="torrentCatalogueFile" accept=".json,application/json" aria-describedby="torrentCatalogueFileHelp">
+                                    </div>
+                                    <p id="uploadedCatalogueSummary" class="catalogue-upload-summary"></p>
+                                    <div class="app-page-actions">
+                                        <button type="button" class="btn btn-secondary" id="uploadTorrentCatalogue">Upload catalogue</button>
+                                        <button type="button" class="btn btn-danger" id="removeTorrentCatalogue" hidden>Remove uploaded catalogue</button>
+                                    </div>
+                                    <p id="torrentCatalogueUploadResult" role="status" aria-live="polite"></p>
+                                </div>
                             </div>
                         </section>
 
@@ -136,8 +152,10 @@
    
 <!-- Embed current_settings as JSON in a script tag -->
 <script id="currentSettings" type="application/json">{{ current_settings|tojson }}</script>
+<script id="uploadedCatalogue" type="application/json">{{ uploaded_catalogue|tojson }}</script>
 <script id="csrf_token" type="application/json">{{ csrf_token() }}</script>
 
 <script src="{{ 'js/admin_manage_server_settings.js'|theme_asset }}"></script>
+<script src="{{ 'js/torrent_catalogue_upload.js'|theme_asset }}"></script>
 
 {% endblock %}

@@ -83,3 +83,36 @@ schema. Five settings JavaScript tests, Ruff, the 98-template accessibility audi
 and `git diff --check` passed. Desktop/mobile admin interaction evidence is in
 `UI_AUDIT.md`. Live fulfilment with the example HydraLinks source remains dependent
 on that source returning accessible JSON rather than browser verification HTML.
+
+## Manual JSON catalogue upload
+
+Under **Application Settings > Community > Upload a catalogue**, choose a
+Hydra-compatible `.json` file downloaded in your browser and press **Upload
+catalogue**. Files are limited to 20 MiB and must contain at least one usable
+magnet or public torrent-file entry. HTML challenge pages and malformed files
+are rejected without replacing the saved snapshot.
+
+One uploaded snapshot is supported. A successful upload saves immediately,
+shows its source name, usable entry count, original filename and import time,
+and replaces the previous snapshot. Other unsaved settings drafts are retained.
+Upload a newer file yourself to refresh it. The most-recent-upload matching
+policy continues to compare each release's `uploadDate`, not the import time.
+
+Uploads and configured URL catalogues are combined for lookup. To use only the
+uploaded catalogue, clear **Public catalogue URLs** and save settings. In
+particular, remove any URL returning 403: incomplete remote results intentionally
+block automatic selection even if an uploaded catalogue matches. **Test sources**
+checks the uploaded snapshot as well as any entered URLs.
+
+The existing global switch, destination library, per-user permission, conservative
+matching and admin selection rules also apply to uploaded entries. An uploaded
+catalogue alone satisfies the source prerequisite for enabling automation.
+Removing the only catalogue while automation is enabled requires disabling
+automation or first saving another URL. Existing library games are retained.
+
+The raw snapshot is stored privately in PostgreSQL, so normal database backups
+include it; no separate catalogue volume is needed. Only metadata is rendered in
+settings. Imports are administrator-only and CSRF-protected, with bounded reads,
+content integrity checks and stale-replacement protection. Replacing a snapshot
+invalidates saved candidate choices and stops in-flight fulfilment using the old
+snapshot. Migration `20261117_39` adds the snapshot table.

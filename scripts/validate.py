@@ -40,6 +40,7 @@ RULES = (
     ('sharewarez/templates/*', 'themes'),
 )
 MODEL_GROUPS = {'User': ('accounts', 'requests', 'torrents'),
+                'UploadedTorrentCatalogue': ('torrents', 'settings'),
                 'GameRequest': ('requests',), 'GameRequestUser': ('requests',),
                 'GameTorrentSource': ('torrents', 'library'), 'TorrentSourceAccess': ('torrents', 'downloads')}
 FOUNDATIONS = {'config.py', 'asgi.py', 'entrypoint.sh', 'startweb-docker.sh', 'pytest.ini',

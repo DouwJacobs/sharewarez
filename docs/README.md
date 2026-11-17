@@ -30,6 +30,7 @@ operator references by purpose.
 - [Local quality gate](LOCAL_QUALITY_GATE.md)
 - [Affected validation and release checks](VALIDATION.md)
 - [Release 1.18.0](RELEASE_1.18.0.md)
+- [Release 1.18.1](RELEASE_1.18.1.md)
 - [Database migrations](DATABASE_MIGRATIONS.md)
 - [Backup and restore](BACKUP_RESTORE.md)
 - [Container runtime security](CONTAINER_SECURITY.md)

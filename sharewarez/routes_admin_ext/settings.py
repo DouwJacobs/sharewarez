@@ -1,7 +1,7 @@
 # /sharewarez/routes_admin_ext/settings.py
 from flask import render_template, request, jsonify, abort
 from flask_login import login_required, current_user
-from sharewarez.models import GlobalSettings, WebhookDelivery, WebhookEndpoint, Library
+from sharewarez.models import GlobalSettings, WebhookDelivery, WebhookEndpoint, Library, UploadedTorrentCatalogue
 from sharewarez.settings_defaults import (
     DEFAULT_DOWNLOAD_BATCH_SIZE,
     DEFAULT_DOWNLOAD_THREADS,
@@ -316,9 +316,10 @@ def update_settings():
             if destination and db.session.get(Library, destination) is None:
                 db.session.rollback()
                 return jsonify({'errors': ['The destination library no longer exists.']}), 400
-            if combined.get('autoFulfillTorrentRequests') and (not destination or not combined.get('torrentCatalogueUrls', '').strip()):
+            has_uploaded = db.session.get(UploadedTorrentCatalogue, 1) is not None
+            if combined.get('autoFulfillTorrentRequests') and (not destination or not (combined.get('torrentCatalogueUrls', '').strip() or has_uploaded)):
                 db.session.rollback()
-                return jsonify({'errors': ['Choose a destination library and at least one catalogue URL before enabling automation.']}), 400
+                return jsonify({'errors': ['Choose a destination library and add a catalogue URL or upload a JSON catalogue before enabling automation.']}), 400
 
         # Update settings fields
         update_settings_fields(settings_record, new_settings)
@@ -347,13 +348,15 @@ def update_settings():
 @admin_required
 def test_torrent_catalogues():
     from sharewarez.utils.torrent_catalogues import fetch_catalogue, validate_catalogue_url
+    from sharewarez.utils.torrent_catalogue_uploads import uploaded_metadata, read_uploaded_catalogue
     data = request.get_json(silent=True)
     urls = data.get('urls') if isinstance(data, dict) else None
     if not isinstance(urls, str) or len(urls) > 10000:
         return jsonify({'error': 'Enter up to five catalogue URLs, one per line.'}), 400
     lines = list(dict.fromkeys(line.strip() for line in urls.splitlines() if line.strip()))
-    if not 1 <= len(lines) <= 5:
-        return jsonify({'error': 'Enter between one and five catalogue URLs.'}), 400
+    uploaded = uploaded_metadata()
+    if len(lines) > 5 or (not lines and not uploaded):
+        return jsonify({'error': 'Enter up to five catalogue URLs or upload a JSON catalogue.'}), 400
     results = []
     for index, url in enumerate(lines, 1):
         try:
@@ -362,7 +365,72 @@ def test_torrent_catalogues():
             results.append({'ok': True, 'message': f"Source {index}: {catalogue['name']} — {len(catalogue['downloads'])} entries available."})
         except ValueError as error:
             results.append({'ok': False, 'message': f'Source {index}: {error}'})
+    if uploaded:
+        try:
+            catalogue = read_uploaded_catalogue(uploaded)
+            results.append({'ok': True, 'message': f"Uploaded catalogue: {catalogue['name']} — {len(catalogue['downloads'])} entries available."})
+        except ValueError as error:
+            results.append({'ok': False, 'message': str(error)})
     return jsonify({'results': results})
+
+
+@admin2_bp.route('/admin/torrent-catalogues/upload', methods=['POST', 'DELETE'])
+@login_required
+@admin_required
+def uploaded_torrent_catalogue():
+    import hashlib
+    from werkzeug.utils import secure_filename
+    from sharewarez.utils.torrent_catalogues import parse_catalogue, MAX_CATALOGUE_BYTES
+    from sharewarez.utils.torrent_catalogue_uploads import uploaded_metadata
+
+    content, catalogue, filename = None, None, None
+    if request.method == 'POST':
+        upload = request.files.get('file')
+        if upload is None or not upload.filename or not upload.filename.lower().endswith('.json'):
+            return jsonify(error='Choose a Hydra-compatible .json catalogue file.'), 400
+        content = upload.stream.read(MAX_CATALOGUE_BYTES + 1)
+        if len(content) > MAX_CATALOGUE_BYTES:
+            return jsonify(error='Catalogue exceeds 20 MiB.'), 413
+        try:
+            catalogue = parse_catalogue(content)
+            if not catalogue['downloads']:
+                raise ValueError('Catalogue contains no usable magnet or torrent entries.')
+        except ValueError as error:
+            return jsonify(error=str(error)), 400
+        filename = secure_filename(upload.filename)[:255] or 'catalogue.json'
+        revision = request.form.get('revision')
+    else:
+        data = request.get_json(silent=True)
+        revision = data.get('revision') if isinstance(data, dict) else None
+
+    # Use the settings writer lock so replacements cannot race final fulfilment.
+    settings_record = get_or_create_settings_record()
+    record = db.session.execute(select(UploadedTorrentCatalogue).where(UploadedTorrentCatalogue.id == 1)
+        .with_for_update().execution_options(populate_existing=True)).scalar_one_or_none()
+    if revision != (record.sha256 if record else ''):
+        db.session.rollback()
+        return jsonify(error='The uploaded catalogue changed. Reload settings before replacing or removing it.'), 409
+    if request.method == 'DELETE':
+        settings = build_current_settings(settings_record)
+        if settings.get('autoFulfillTorrentRequests') and not settings.get('torrentCatalogueUrls', '').strip():
+            db.session.rollback()
+            return jsonify(error='Disable automatic fulfilment or save a catalogue URL before removing the only catalogue.'), 400
+        if record:
+            db.session.delete(record)
+        message = 'Uploaded catalogue removed. Existing library games are unchanged.'
+    else:
+        if record is None:
+            record = UploadedTorrentCatalogue(id=1)
+            db.session.add(record)
+        record.name, record.filename = catalogue['name'], filename
+        record.sha256 = hashlib.sha256(content).hexdigest()
+        record.content, record.entry_count = content, len(catalogue['downloads'])
+        record.uploaded_at = datetime.now(timezone.utc)
+        noun = 'entry' if record.entry_count == 1 else 'entries'
+        message = f"Uploaded {record.name}: {record.entry_count:,} usable {noun}."
+    db.session.commit()
+    log_system_event(f'Torrent catalogue {"uploaded" if request.method == "POST" else "removed"} by user {current_user.id}', event_type='audit')
+    return jsonify(message=message, catalogue=uploaded_metadata())
 
 
 @admin2_bp.route('/admin/settings', methods=['GET', 'POST'])
@@ -376,6 +444,7 @@ def settings():
     """
     if request.method == 'GET':
         try:
+            from sharewarez.utils.torrent_catalogue_uploads import uploaded_metadata
             settings_record = db.session.execute(select(GlobalSettings)).scalars().first()
             current_settings = build_current_settings(settings_record)
             initial_section = request.args.get('section', 'general')
@@ -389,6 +458,7 @@ def settings():
                 notification_events=event_catalog(),
                 notification_policy=notification_policy(),
                 torrent_libraries=db.session.execute(select(Library).order_by(Library.name)).scalars().all(),
+                uploaded_catalogue=uploaded_metadata(),
             )
         except Exception as e:
             logging.error(f"Error retrieving settings: {str(e)}")

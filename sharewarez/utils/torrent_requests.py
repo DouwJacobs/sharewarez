@@ -11,18 +11,19 @@ from sharewarez.models import BackgroundJob, GameRequest, GameRequestUser, Globa
 from sharewarez.utils.background_jobs import enqueue
 from sharewarez.utils.game_requests import _existing_game
 from sharewarez.utils.torrent_service import attach_prepared, discard_attachments, prepare_source
+from sharewarez.utils.torrent_catalogue_uploads import with_uploaded_catalogue, source_identifiers, read_uploaded_catalogue
 
 
 def configuration():
     record = db.session.execute(select(GlobalSettings).order_by(GlobalSettings.id)).scalars().first()
-    return dict(record.settings or {}) if record else {}
+    return with_uploaded_catalogue(dict(record.settings or {}) if record else {})
 
 
 def lookup_configuration(settings):
     """Only configuration that affects the selected release can invalidate work."""
     return (settings.get('enableGameRequests', True), settings.get('autoFulfillTorrentRequests', False),
             settings.get('torrentPreferLatestUpload', False), settings.get('torrentDestinationLibraryUuid', ''),
-            tuple(settings.get('torrentCatalogueUrls', '').split()))
+            tuple(source_identifiers(settings)))
 
 
 def eligible(game_request, user, settings):
@@ -43,7 +44,7 @@ def allowed(game_request, user, settings, selected_entry=None):
         and settings.get('autoFulfillTorrentRequests') is True
         and game_request.request_type == 'new_game' and game_request.status == 'pending'
         and game_request.active_requesters
-        and selected_entry.get('source_url') in settings.get('torrentCatalogueUrls', '').split())
+        and selected_entry.get('source_url') in source_identifiers(settings))
 
 
 def queue_lookup(game_request, user, *, retry=False, selected_entry=None):
@@ -115,6 +116,12 @@ def execute_lookup(context, payload):
             catalogues.append(fetch_catalogue(url))
         except (ValueError, OSError) as exc:
             errors.append(type(exc).__name__)
+    if not selected and settings.get('_uploaded_catalogue'):
+        context.heartbeat(55, 'Reading uploaded catalogue')
+        try:
+            catalogues.append(read_uploaded_catalogue(settings['_uploaded_catalogue']))
+        except ValueError as exc:
+            errors.append(type(exc).__name__)
     if errors:
         outcome(game_request, 'source_error', 'A catalogue could not be read. All configured catalogues must be available before selecting a release. Check source settings or retry later.')
         raise RuntimeError('Torrent catalogue unavailable')
@@ -172,7 +179,7 @@ def execute_lookup(context, payload):
         .execution_options(populate_existing=True)).scalar_one_or_none()
     record = db.session.execute(select(GlobalSettings).order_by(GlobalSettings.id).with_for_update()
         .execution_options(populate_existing=True)).scalars().first()
-    latest = dict(record.settings or {}) if record else {}
+    latest = with_uploaded_catalogue(dict(record.settings or {}) if record else {})
     if not allowed(game_request, user, latest, selected) or lookup_configuration(latest) != lookup_configuration(settings):
         return outcome(game_request, 'skipped', 'Request, permission, or configuration changed during lookup.')
     library = db.session.get(Library, latest.get('torrentDestinationLibraryUuid'))
@@ -199,8 +206,10 @@ def execute_lookup(context, payload):
         game_request.torrent_lookup_status = 'fulfilled'
         reason = ('Admin selected ' if selected else 'Automatically selected most recent upload '
                   if match.get('selection_reason') == 'latest_upload' else 'Automatically matched ')
+        source_description = ('uploaded catalogue ' + entry['source_name']
+                              if entry['source_url'].startswith('uploaded:') else entry['source_url'])
         game_request.torrent_lookup_message = (reason
-            + entry['title'] + ' from ' + entry['source_url'])[:2000]
+            + entry['title'] + ' from ' + source_description)[:2000]
         satisfied = list(game_request.requesters)
         if game_request.provider_parent_id:
             satisfied += db.session.execute(select(GameRequestUser).join(GameRequest).where(

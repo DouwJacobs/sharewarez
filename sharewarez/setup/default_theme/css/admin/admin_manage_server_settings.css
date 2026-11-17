@@ -280,6 +280,9 @@
 .settings-subsection--first { margin-top: 0; padding-top: 0; border-top: 0; }
 .settings-subsection h4 { margin: 0 0 4px; color: var(--theme-text-primary, #f5f7ff); font-size: 1rem; }
 .settings-subsection > p { margin: 0 0 16px; color: var(--theme-text-secondary, #c5ccdc); font-size: .82rem; }
+.server-settings-page .catalogue-upload-summary { overflow-wrap: anywhere; }
+.server-settings-page #torrentCatalogueFile { max-width: 100%; min-width: 0; height: auto; }
+.server-settings-page #torrentCatalogueUploadResult { margin-top: 12px; }
 
 @media (max-width: 1100px) {
     .settings-primary-grid {

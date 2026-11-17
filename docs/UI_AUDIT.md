@@ -943,3 +943,21 @@ is inferred. A temporary populated preview verified desktop/mobile rendering,
 375 px client/scroll widths, and the shared mobile table presentation. Preview
 rows were removed and viewport overrides reset. Backend tests cover access,
 CSRF, filters, retained history after source/game deletion, and migration rollback.
+
+### Manual catalogue upload — 17 November 2026
+
+Community settings adds a flat Upload a catalogue subsection, using the existing
+labelled file input, ordinary action buttons and inline live feedback. Uploads
+save immediately without submitting other settings drafts. The saved snapshot
+shows name, usable entry count, filename and import time; replace/remove actions
+remain alongside it. The file control is excluded from the settings key patch.
+
+Authenticated browser checks exercised a real multipart upload, rejection of an
+HTML file named .json while preserving the saved snapshot, and Save Settings
+without inadvertently serializing the selected file. Default desktop and
+390 x 844 mobile layouts were inspected. Mobile actions measured 44 px and the
+document client/scroll widths were both 375 px. Canonical and installed assets
+are synchronized. The temporary viewport was reset. Other themes were not
+individually re-audited. Backend regressions cover admin/CSRF checks, bounds,
+replacement conflicts, upload-only fulfilment, replacement during lookup,
+stale admin candidates and migration upgrade/downgrade.

@@ -492,3 +492,73 @@ def test_torrent_request_migration_upgrade_idempotence_and_downgrade(db_session)
                 assert {item['name'] for item in inspect(connection).get_columns('game_requests')} == {'id'}
         finally:
             transaction.rollback()
+
+
+def test_uploaded_catalogue_fulfils_without_network_catalogue_fetch(torrent_request):
+    import hashlib
+    import json
+    from sharewarez.models import UploadedTorrentCatalogue
+    case = torrent_request
+    data = json.dumps({'name': 'Manual catalogue', 'downloads': [{
+        'title': case.request.game_name, 'uris': ['magnet:?xt=urn:btih:' + 'f' * 40]}]}).encode()
+    case.session.add(UploadedTorrentCatalogue(id=1, name='Manual catalogue', filename='fitgirl.json',
+        sha256=hashlib.sha256(data).hexdigest(), entry_count=1, content=data))
+    case.settings.settings = {**case.settings.settings, 'torrentCatalogueUrls': ''}
+    case.session.commit()
+    try:
+        with patch('sharewarez.utils.torrent_catalogues.fetch_catalogue') as fetch, \
+             patch('sharewarez.utils.request_notifications.notify_request_updated'):
+            result = execute_lookup(context(), {'request_id': case.request.id, 'user_id': case.user.id})
+        assert result['status'] == 'fulfilled'
+        fetch.assert_not_called()
+        assert case.request.fulfilled_game.torrent_sources[0].kind == 'magnet'
+        assert 'uploaded catalogue Manual catalogue' in case.request.torrent_lookup_message
+    finally:
+        case.session.query(UploadedTorrentCatalogue).delete()
+        case.session.commit()
+
+
+def test_replaced_upload_invalidates_saved_admin_selection(torrent_request):
+    from sharewarez.models import UploadedTorrentCatalogue
+    from sharewarez.utils.torrent_requests import allowed, configuration
+    case = torrent_request
+    case.user.role = 'admin'
+    record = UploadedTorrentCatalogue(id=1, name='Snapshot', filename='catalogue.json',
+        sha256='a' * 64, entry_count=1, content=b'unused')
+    case.session.add(record)
+    case.session.commit()
+    selected = {'source_url': 'uploaded:' + 'a' * 64}
+    try:
+        assert allowed(case.request, case.user, configuration(), selected)
+        record.sha256 = 'b' * 64
+        case.session.commit()
+        assert not allowed(case.request, case.user, configuration(), selected)
+    finally:
+        case.session.query(UploadedTorrentCatalogue).delete()
+        case.session.commit()
+
+
+def test_uploaded_catalogue_replacement_during_lookup_cannot_fulfil(torrent_request):
+    import hashlib
+    import json
+    from sharewarez.models import UploadedTorrentCatalogue
+    case = torrent_request
+    data = json.dumps({'name': 'Original', 'downloads': [{
+        'title': case.request.game_name, 'uris': ['magnet:?xt=urn:btih:' + 'f' * 40]}]}).encode()
+    record = UploadedTorrentCatalogue(id=1, name='Original', filename='catalogue.json',
+        sha256=hashlib.sha256(data).hexdigest(), entry_count=1, content=data)
+    case.session.add(record)
+    case.settings.settings = {**case.settings.settings, 'torrentCatalogueUrls': ''}
+    case.session.commit()
+    ctx = context()
+    def replace_snapshot(**kwargs):
+        record.sha256 = 'b' * 64
+        case.session.commit()
+    ctx.check_cancelled.side_effect = replace_snapshot
+    try:
+        result = execute_lookup(ctx, {'request_id': case.request.id, 'user_id': case.user.id})
+        assert result['status'] == 'skipped'
+        assert case.request.fulfilled_game_uuid is None
+    finally:
+        case.session.query(UploadedTorrentCatalogue).delete()
+        case.session.commit()

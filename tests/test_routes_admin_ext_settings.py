@@ -599,7 +599,8 @@ class TestSectionSettings:
         assert {panel['data-settings-panel'] for panel in panels} == set(SECTION_KEYS)
         for panel in panels:
             section = panel['data-settings-panel']
-            keys = {control['id'] for control in panel.select('input[id],select[id]') if 'mobile-nav-slot' not in control.get('class', [])}
+            keys = {control['id'] for control in panel.select('input[id],select[id]')
+                    if 'mobile-nav-slot' not in control.get('class', []) and control.get('type') != 'file'}
             assert keys <= SECTION_KEYS[section]
 
 
